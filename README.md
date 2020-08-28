@@ -1,3 +1,12 @@
+# Attention: Incorrect virus detection
+**Some stupid idiot seems to have abused PS2EXE to compile his computer virus script. As a result, a rapidly growing number of virus scanners recognize programs created with PS2EXE as malicious programs and delete them.**
+
+**There is only one hope to save the PS2EXE project: Please send your (harmless) programs created with PS2EXE via the web forms from the virus scanners' vendors for reporting false positives (I've already done it with some of them, please use only the false positive page)!**
+
+**If this is not successful, then I will have to quit PS2EXE as nobody can use it anymore.**
+
+**Thank you for your support**
+
 # PS2EXE
 Overworking of the great script of Ingo Karstein with GUI support. The GUI output and input is activated with one switch, real windows executables are generated. With Powershell 5.x support and graphical front end.
 
@@ -7,9 +16,9 @@ You find the script based version here (https://github.com/MScholtes/TechNet-Gal
 
 Author: Markus Scholtes
 
-Version: 1.0.6
+Version: 1.0.7
 
-Date: 2020-08-10
+Date: 2020-08-21
 
 ## Installation
 
@@ -69,7 +78,7 @@ noVisualStyles = disable visual styles for a generated windows GUI application (
      longPaths = enable long paths ( > 260 characters) if enabled on OS (works only with Windows 10)
 ```
 
-A generated executables has the following reserved parameters:
+A generated executable has the following reserved parameters:
 
 ```
 -debug              Forces the executable to be debugged. It calls "System.Diagnostics.Debugger.Break()".
@@ -130,6 +139,9 @@ $Host.UI.RawUI.FlushInputBuffer()
 ```
 
 ## Changes:
+### 1.0.7 / 2020-08-21
+- bug fix for simultanous progress bars in one pipeline
+
 ### 1.0.6 / 2020-08-10
 - prompt for choice behaves like Powershell now (console mode only)
 - (limited) support for Powershell Core (starts Windows Powershell in the background)
