@@ -16,9 +16,9 @@ You find the script based version here (https://github.com/MScholtes/TechNet-Gal
 
 Author: Markus Scholtes
 
-Version: 1.0.9
+Version: 1.0.10
 
-Date: 2021-02-28
+Date: 2021-04-10
 
 ## Installation
 
@@ -53,8 +53,8 @@ ps2exe [-inputFile] '<file_name>' [[-outputFile] '<file_name>'] [-prepareDebug]
 ```
 
 ```
-      inputFile = Powershell script that you want to convert to executable
-     outputFile = destination executable file name, defaults to inputFile with extension '.exe'
+      inputFile = Powershell script that you want to convert to executable (file has to be UTF8 or UTF16 encoded)
+     outputFile = destination executable file name or folder, defaults to inputFile with extension '.exe'
    prepareDebug = create helpful information for debugging    
      x86 or x64 = compile for 32-bit or 64-bit runtime only
            lcid = location ID for the compiled executable. Current user culture if not specified
@@ -93,6 +93,9 @@ A generated executable has the following reserved parameters:
 
 
 ## Remarks
+
+### List of cmdlets not implemented:
+The basic input/output commands had to be rewritten in C# for PS2EXE. Not implemented are *Write-Progress* in console mode (too much work) and *Start-Transcript*/*Stop-Transcript* (no proper reference implementation by Microsoft).
 
 ### GUI mode output formatting:
 Per default in powershell outputs of commandlets are formatted line per line (as an array of strings). When your command generates 10 lines of output and you use GUI output, 10 message boxes will appear each awaiting for an OK. To prevent this pipe your commandto the comandlet Out-String. This will convert the output to one string array with 10 lines, all output will be shown in one message box (for example: dir C:\ | Out-String).
@@ -141,6 +144,9 @@ $Host.UI.RawUI.FlushInputBuffer()
 ```
 
 ## Changes:
+### 1.0.10 / 2021-04-10
+- parameter outputFile now accepts a target folder (without filename)
+
 ### 1.0.9 / 2021-02-28
 - new parameter UNICODEEncoding to output as UNICODE
 - changed parameter debug to prepareDebug
