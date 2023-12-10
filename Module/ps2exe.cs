@@ -34,7 +34,7 @@ using System.Runtime.Versioning;
 [assembly:TargetFrameworkAttribute(".NETFramework,Version=v4.7,Profile=Client",FrameworkDisplayName=".NET Framework 4.7")]
 #endif
 
-namespace ModuleNameSpace
+namespace PSRunnerNS
 {
 #if noConsole || credentialGUI
 	internal class Credential_Form
@@ -139,7 +139,7 @@ namespace ModuleNameSpace
 	}
 #endif
 
-	internal class MainModuleRawUI : PSHostRawUserInterface
+	internal class PSRunnerRawUI : PSHostRawUserInterface
 	{
 #if noConsole
 		// Speicher für Konsolenfarben bei GUI-Output werden gelesen und gesetzt, aber im Moment nicht genutzt (for future use)
@@ -1343,9 +1343,9 @@ namespace ModuleNameSpace
 	}
 
 
-	internal class MainModuleUI : PSHostUserInterface
+	internal class PSRunnerUI : PSHostUserInterface
 	{
-		public MainModuleRawUI rawUI = null;
+		public PSRunnerRawUI rawUI = null;
 
 		public ConsoleColor ErrorForegroundColor = ConsoleColor.Red;
 		public ConsoleColor ErrorBackgroundColor = ConsoleColor.Black;
@@ -1366,9 +1366,9 @@ namespace ModuleNameSpace
 #endif
 		public ConsoleColor ProgressBackgroundColor = ConsoleColor.DarkCyan;
 
-		public MainModuleUI() : base()
+		public PSRunnerUI() : base()
 		{
-			rawUI = new MainModuleRawUI();
+			rawUI = new PSRunnerRawUI();
 #if !noConsole
 			rawUI.ForegroundColor = Console.ForegroundColor;
 			rawUI.BackgroundColor = Console.BackgroundColor;
@@ -1908,10 +1908,10 @@ namespace ModuleNameSpace
 		}
 	}
 
-	internal class MainModule : PSHost
+	internal class PSRunnerHost : PSHost
 	{
-		private MainAppInterface parent;
-		private MainModuleUI ui = null;
+		private PSRunnerInterface parent;
+		private PSRunnerUI ui = null;
 
 		private CultureInfo originalCultureInfo = System.Threading.Thread.CurrentThread.CurrentCulture;
 
@@ -1919,7 +1919,7 @@ namespace ModuleNameSpace
 
 		private Guid myId = Guid.NewGuid();
 
-		public MainModule(MainAppInterface app, MainModuleUI ui)
+		public PSRunnerHost(PSRunnerInterface app, PSRunnerUI ui)
 		{
 			this.parent = app;
 			this.ui = ui;
@@ -1927,9 +1927,9 @@ namespace ModuleNameSpace
 
 		public class ConsoleColorProxy
 		{
-			private MainModuleUI _ui;
+			private PSRunnerUI _ui;
 
-			public ConsoleColorProxy(MainModuleUI ui)
+			public ConsoleColorProxy(PSRunnerUI ui)
 			{
 				if (ui == null) throw new ArgumentNullException("ui");
 				_ui = ui;
@@ -2055,7 +2055,7 @@ namespace ModuleNameSpace
 		{
 			get
 			{
-				return "PSRunspace-Host";
+				return "PSEXE";
 			}
 		}
 
@@ -2100,13 +2100,13 @@ namespace ModuleNameSpace
 		}
 	}
 
-	internal interface MainAppInterface
+	internal interface PSRunnerInterface
 	{
 		bool ShouldExit { get; set; }
 		int ExitCode { get; set; }
 	}
 
-	internal class MainApp : MainAppInterface
+	internal class PSRunner : PSRunnerInterface
 	{
 		private bool shouldExit;
 
@@ -2143,25 +2143,25 @@ namespace ModuleNameSpace
 #if !noVisualStyles && noConsole
 			Application.EnableVisualStyles();
 #endif
-			MainApp me = new MainApp();
+			PSRunner me = new PSRunner();
 
 #if !NoSepcialArgsHandling
 			bool paramWait = false;
 			string extractFN = string.Empty;
 #endif
 
-			MainModuleUI ui = new MainModuleUI();
-			MainModule host = new MainModule(me, ui);
+			PSRunnerUI ui = new PSRunnerUI();
+			PSRunnerHost host = new PSRunnerHost(me, ui);
 			System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);
 
 			AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler(CurrentDomain_UnhandledException);
 
 			try
 			{
-				using (Runspace myRunSpace = RunspaceFactory.CreateRunspace(host))
+				using (Runspace PSRunSpace = RunspaceFactory.CreateRunspace(host))
 				{
 #if STA || MTA
-					myRunSpace.ApartmentState = System.Threading.ApartmentState.
+					PSRunSpace.ApartmentState = System.Threading.ApartmentState.
 #if STA
 					STA
 #elif MTA
@@ -2169,7 +2169,7 @@ namespace ModuleNameSpace
 #endif
 	;
 #endif
-					myRunSpace.Open();
+					PSRunSpace.Open();
 
 					using (PowerShell pwsh = PowerShell.Create())
 					{
@@ -2190,7 +2190,7 @@ namespace ModuleNameSpace
 						});
 #endif
 
-						pwsh.Runspace = myRunSpace;
+						pwsh.Runspace = PSRunSpace;
 						pwsh.Streams.Error.DataAdded += new EventHandler<DataAddedEventArgs>(delegate (object sender, DataAddedEventArgs e)
 						{
 							ui.WriteErrorLine(((PSDataCollection<ErrorRecord>)sender)[e.Index].Exception.Message);
@@ -2292,7 +2292,7 @@ namespace ModuleNameSpace
 								}
 								else
 										// caution: when called in powershell $FALSE gets converted, when called in cmd.exe not
-										if ((match.Groups[2].Value == "$FALSE") || (match.Groups[2].Value.ToUpper() == "\x24" + "FALSE"))
+										if ((match.Groups[2].Value == "$FALSE") || (match.Groups[2].Value.ToUpper() == "\x24FALSE"))
 								{ // switch found
 									pwsh.AddParameter(match.Groups[1].Value, false);
 									argbuffer = null;
@@ -2339,7 +2339,7 @@ namespace ModuleNameSpace
 							ui.WriteErrorLine(pwsh.InvocationStateInfo.Reason.Message);
 					}
 
-					myRunSpace.Close();
+					PSRunSpace.Close();
 				}
 			}
 			catch (Exception ex)

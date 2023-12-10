@@ -111,7 +111,7 @@ So never store passwords in your scripts!
 ### Distinguish environment by script  
 You can tell whether a script is running in a compiled exe or in a script by `$Host.Name`.  
 ```powershell
-if ($Host.Name -eq "PSRunspace-Host") { Write-Output "PS2EXE" } else { Write-Output "Some other host" }
+if ($Host.Name -eq "PSEXE") { Write-Output "PS2EXE" } else { Write-Output "Some other host" }
 ```
 
 ### Script variables:
