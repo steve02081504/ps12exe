@@ -107,7 +107,7 @@ https://www.powershellgallery.com/packages/ps2exe
 .LINK
 https://github.com/MScholtes/PS2EXE
 #>
-function Invoke-ps2exe
+function ps2exe
 {
 	[CmdletBinding()]
 	Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [SWITCH]$prepareDebug, [SWITCH]$NoSepcialArgsHandling, [SWITCH]$x86, [SWITCH]$x64, [int]$lcid,
