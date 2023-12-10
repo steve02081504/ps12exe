@@ -206,7 +206,7 @@ function Invoke-ps2exe
 
 		$CallParam += " -nested"
 
-		powershell -Command "&'$($MyInvocation.MyCommand.Name)' $CallParam"
+		powershell -Command "&'$PSScriptRoot\ps2exe.ps1' $CallParam"
 		return
 	}
 
@@ -2831,4 +2831,9 @@ $(if (!$noConsole) {@"
 			Remove-Item -LiteralPath $($outputFile+".win32manifest") -Verbose:$FALSE
 		}
 	}
+}
+
+# if this file is called directly, execute the function
+if ($args) {
+	Invoke-ps2exe @args
 }
