@@ -105,6 +105,8 @@ Never store passwords in your compiled script! One can simply decompile the scri
 Output.exe -extract:C:\Output.ps1
 ```
 will decompile the script stored in Output.exe.
+Even if you use the `NoSepcialArgsHandling` parameter, the entire script is explicitly visible to the .net decompiler.
+So never store passwords in your scripts!
 
 ### Distinguish environment by script  
 You can tell whether a script is running in a compiled exe or in a script by `$Host.Name`.  
