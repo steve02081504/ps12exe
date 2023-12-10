@@ -25,6 +25,8 @@ Powershell script to convert to executable (file has to be UTF8 or UTF16 encoded
 destination executable file name or folder, defaults to inputFile with extension '.exe'
 .PARAMETER prepareDebug
 create helpful information for debugging of generated executable. See parameter -debug there
+.PARAMETER NoSepcialArgsHandling
+do not handle special arguments -debug, -extract, -wait and -end. They will be passed to the script inside the executable
 .PARAMETER x86
 compile for 32-bit runtime only
 .PARAMETER x64
@@ -45,8 +47,6 @@ You might want to pipe your output to Out-String to prevent a message box for ev
 encode output as UNICODE in console mode, useful to display special encoded chars
 .PARAMETER credentialGUI
 use GUI for prompting credentials in console mode instead of console input
-.PARAMETER CompilerOptions
-additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)
 .PARAMETER iconFile
 icon file name for the compiled executable
 .PARAMETER title
@@ -108,9 +108,8 @@ https://github.com/MScholtes/PS2EXE
 function Invoke-ps2exe
 {
 	[CmdletBinding()]
-	Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [SWITCH]$prepareDebug, [SWITCH]$x86, [SWITCH]$x64, [int]$lcid,
-		[SWITCH]$STA, [SWITCH]$MTA, [SWITCH]$nested, [SWITCH]$noConsole, [SWITCH]$UNICODEEncoding, [SWITCH]$credentialGUI, [STRING]$CompilerOptions = $NULL,
-		[STRING]$iconFile = $NULL,
+	Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [SWITCH]$prepareDebug, [SWITCH]$NoSepcialArgsHandling, [SWITCH]$x86, [SWITCH]$x64, [int]$lcid,
+		[SWITCH]$STA, [SWITCH]$MTA, [SWITCH]$nested, [SWITCH]$noConsole, [SWITCH]$UNICODEEncoding, [SWITCH]$credentialGUI, [STRING]$iconFile = $NULL,
 		[STRING]$title, [STRING]$description, [STRING]$company, [STRING]$product, [STRING]$copyright, [STRING]$trademark, [STRING]$version,
 		[SWITCH]$configFile, [SWITCH]$noConfigFile, [SWITCH]$noOutput, [SWITCH]$noError, [SWITCH]$noVisualStyles, [SWITCH]$exitOnCancel,
 		[SWITCH]$DPIAware, [SWITCH]$winFormsDPIAware, [SWITCH]$requireAdmin, [SWITCH]$supportOS, [SWITCH]$virtualize, [SWITCH]$longPaths)
@@ -148,13 +147,13 @@ function Invoke-ps2exe
 		Write-Output "       inputFile = Powershell script that you want to convert to executable (file has to be UTF8 or UTF16 encoded)"
 		Write-Output "      outputFile = destination executable file name or folder, defaults to inputFile with extension '.exe'"
 		Write-Output "    prepareDebug = create helpful information for debugging"
+		Write-Output "NoSepcialArgsHandling = do not handle special arguments -debug, -extract, -wait and -end"
 		Write-Output "      x86 or x64 = compile for 32-bit or 64-bit runtime only"
 		Write-Output "            lcid = location ID for the compiled executable. Current user culture if not specified"
 		Write-Output "      STA or MTA = 'Single Thread Apartment' or 'Multi Thread Apartment' mode"
 		Write-Output "       noConsole = the resulting executable will be a Windows Forms app without a console window"
 		Write-Output " UNICODEEncoding = encode output as UNICODE in console mode"
 		Write-Output "   credentialGUI = use GUI for prompting credentials in console mode"
-		Write-Output " CompilerOptions = additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)"
 		Write-Output "        iconFile = icon file name for the compiled executable"
 		Write-Output "           title = title information (displayed in details tab of Windows Explorer's properties dialog)"
 		Write-Output "     description = description information (not displayed, but embedded in executable)"
@@ -204,7 +203,7 @@ function Invoke-ps2exe
 
 		$CallParam += " -nested"
 
-		powershell -Command "&'$PSScriptRoot\ps2exe.ps1' $CallParam"
+		powershell -Command "&'$($MyInvocation.MyCommand.Name)' $CallParam"
 		return
 	}
 
@@ -407,10 +406,11 @@ function Invoke-ps2exe
 	}
 
 	if (!$virtualize)
-	{ $cp.CompilerOptions = "$CompilerOptions /platform:$($platform) /target:$( if ($noConsole){'winexe'}else{'exe'}) $($iconFileParam) $($manifestParam)" }
-	else {
+	{ $cp.CompilerOptions = "/platform:$($platform) /target:$( if ($noConsole){'winexe'}else{'exe'}) $($iconFileParam) $($manifestParam)" }
+	else
+	{
 		Write-Output "Application virtualization is activated, forcing x86 platfom."
-		$cp.CompilerOptions = "$CompilerOptions /platform:x86 /target:$( if ($noConsole) { 'winexe' } else { 'exe' } ) /nowin32manifest $($iconFileParam)"
+		$cp.CompilerOptions = "/platform:x86 /target:$( if ($noConsole) { 'winexe' } else { 'exe' } ) /nowin32manifest $($iconFileParam)"
 	}
 
 	$cp.IncludeDebugInformation = $prepareDebug
@@ -581,18 +581,6 @@ $(if ($noConsole){ @"
 		// Speicher für Konsolenfarben bei GUI-Output werden gelesen und gesetzt, aber im Moment nicht genutzt (for future use)
 		private ConsoleColor GUIBackgroundColor = ConsoleColor.White;
 		private ConsoleColor GUIForegroundColor = ConsoleColor.Black;
-		
-$(if ($noConsole){ @"
-		private string _windowTitleData = null;
-		public PSEXERawUI() {
-			// load assembly:AssemblyTitle
-			AssemblyTitleAttribute titleAttribute = (AssemblyTitleAttribute)Attribute.GetCustomAttribute(Assembly.GetExecutingAssembly(), typeof(AssemblyTitleAttribute));
-			if (titleAttribute != null)
-				_windowTitleData = titleAttribute.Title;
-			else
-				_windowTitleData = System.AppDomain.CurrentDomain.FriendlyName;
-		}
-"@ })
 "@ } else {@"
 		const int STD_OUTPUT_HANDLE = -11;
 
@@ -1008,15 +996,13 @@ $(if (!$noConsole){ @"
 $(if (!$noConsole){ @"
 				return Console.Title;
 "@ } else {@"
-				return _windowTitleData;
+				return System.AppDomain.CurrentDomain.FriendlyName;
 "@ })
 			}
 			set
 			{
 $(if (!$noConsole){ @"
 				Console.Title = value;
-"@ } else {@"
-				_windowTitleData = value;
 "@ })
 			}
 		}
@@ -1151,17 +1137,7 @@ $(if ($noConsole){ @"
 			foreach (ChoiceDescription sAuswahl in arrChoice)
 			{
 				aradioButton[Counter] = new RadioButton();
-				string ltext = sAuswahl.Label;
-				// back space (\b) handling
-				while (ltext.IndexOf('\b') > -1)
-				{
-					int pos = ltext.IndexOf('\b');
-					if (pos > 0)
-						ltext = ltext.Substring(0, pos - 1) + ltext.Substring(pos + 1);
-					else
-						ltext = ltext.Substring(1);
-				}
-				aradioButton[Counter].Text = ltext;
+				aradioButton[Counter].Text = sAuswahl.Label;
 				if (Counter == intDefault)
 					aradioButton[Counter].Checked = true;
 				aradioButton[Counter].Location = new Point(9, iPosY);
@@ -1780,7 +1756,7 @@ $(if (!$noVisualStyles) {@"
 
 	internal class MainModuleUI : PSHostUserInterface
 	{
-		public MainModuleRawUI rawUI = null;
+		private MainModuleRawUI rawUI = null;
 
 		public ConsoleColor ErrorForegroundColor = ConsoleColor.Red;
 		public ConsoleColor ErrorBackgroundColor = ConsoleColor.Black;
@@ -1817,7 +1793,7 @@ $(if (!$noConsole) {@"
 			if (!string.IsNullOrEmpty(message)) WriteLine(message);
 "@ } else {@"
 			if ((!string.IsNullOrEmpty(caption)) || (!string.IsNullOrEmpty(message)))
-			{ string sTitel = rawUI.WindowTitle, sMeldung = "";
+			{ string sTitel = System.AppDomain.CurrentDomain.FriendlyName, sMeldung = "";
 
 				if (!string.IsNullOrEmpty(caption)) sTitel = caption;
 				if (!string.IsNullOrEmpty(message)) sMeldung = message;
@@ -2194,7 +2170,7 @@ $(if (!$noOutput) { if (!$noConsole) {@"
 			Console.BackgroundColor = bgc;
 "@ } else {@"
 			if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
-				MessageBox.Show(value, rawUI.WindowTitle);
+				MessageBox.Show(value, System.AppDomain.CurrentDomain.FriendlyName);
 "@ } })
 		}
 
@@ -2204,7 +2180,7 @@ $(if (!$noOutput) { if (!$noConsole) {@"
 			Console.Write(value);
 "@ } else {@"
 			if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
-				MessageBox.Show(value, rawUI.WindowTitle);
+				MessageBox.Show(value, System.AppDomain.CurrentDomain.FriendlyName);
 "@ } })
 		}
 
@@ -2214,7 +2190,7 @@ $(if (!$noOutput) { if (!$noConsole) {@"
 $(if (!$noError) { if (!$noConsole) {@"
 			WriteLineInternal(DebugForegroundColor, DebugBackgroundColor, string.Format("DEBUG: {0}", message));
 "@ } else {@"
-			MessageBox.Show(message, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
+			MessageBox.Show(message, System.AppDomain.CurrentDomain.FriendlyName, MessageBoxButtons.OK, MessageBoxIcon.Information);
 "@ } })
 		}
 
@@ -2227,7 +2203,7 @@ $(if (!$noError) { if (!$noConsole) {@"
 			else
 				WriteLineInternal(ErrorForegroundColor, ErrorBackgroundColor, string.Format("ERROR: {0}", value));
 "@ } else {@"
-			MessageBox.Show(value, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
+			MessageBox.Show(value, System.AppDomain.CurrentDomain.FriendlyName, MessageBoxButtons.OK, MessageBoxIcon.Error);
 "@ } })
 		}
 
@@ -2236,7 +2212,7 @@ $(if (!$noError) { if (!$noConsole) {@"
 $(if (!$noOutput) { if (!$noConsole) {@"
 			Console.WriteLine();
 "@ } else {@"
-			MessageBox.Show("", rawUI.WindowTitle);
+			MessageBox.Show("", System.AppDomain.CurrentDomain.FriendlyName);
 "@ } })
 		}
 
@@ -2251,7 +2227,7 @@ $(if (!$noOutput) { if (!$noConsole) {@"
 			Console.BackgroundColor = bgc;
 "@ } else {@"
 			if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
-				MessageBox.Show(value, rawUI.WindowTitle);
+				MessageBox.Show(value, System.AppDomain.CurrentDomain.FriendlyName);
 "@ } })
 		}
 
@@ -2274,7 +2250,7 @@ $(if (!$noOutput) { if (!$noConsole) {@"
 			Console.WriteLine(value);
 "@ } else {@"
 			if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
-				MessageBox.Show(value, rawUI.WindowTitle);
+				MessageBox.Show(value, System.AppDomain.CurrentDomain.FriendlyName);
 "@ } })
 		}
 
@@ -2304,7 +2280,7 @@ $(if ($noConsole) {@"
 $(if (!$noOutput) { if (!$noConsole) {@"
 			WriteLine(VerboseForegroundColor, VerboseBackgroundColor, string.Format("VERBOSE: {0}", message));
 "@ } else {@"
-			MessageBox.Show(message, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
+			MessageBox.Show(message, System.AppDomain.CurrentDomain.FriendlyName, MessageBoxButtons.OK, MessageBoxIcon.Information);
 "@ } })
 		}
 
@@ -2314,7 +2290,7 @@ $(if (!$noOutput) { if (!$noConsole) {@"
 $(if (!$noError) { if (!$noConsole) {@"
 			WriteLineInternal(WarningForegroundColor, WarningBackgroundColor, string.Format("WARNING: {0}", message));
 "@ } else {@"
-			MessageBox.Show(message, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+			MessageBox.Show(message, System.AppDomain.CurrentDomain.FriendlyName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
 "@ } })
 		}
 	}
@@ -2546,8 +2522,10 @@ $(if (!$noConsole -and $UNICODEEncoding) {@"
 			$(if (!$noVisualStyles -and $noConsole) { "Application.EnableVisualStyles();" })
 			MainApp me = new MainApp();
 
+$(if (!$NoSepcialArgsHandling) {@"
 			bool paramWait = false;
 			string extractFN = string.Empty;
+"@ })
 
 			MainModuleUI ui = new MainModuleUI();
 			MainModule host = new MainModule(me, ui);
@@ -2604,6 +2582,7 @@ $(if (!$noConsole) {@"
 							ui.WriteLine(((PSDataCollection<PSObject>)sender)[e.Index].ToString());
 						});
 
+$(if (!$NoSepcialArgsHandling) {@"
 						int separator = 0;
 						int idx = 0;
 						foreach (string s in args)
@@ -2636,20 +2615,20 @@ $(if (!$noConsole) {@"
 							}
 							idx++;
 						}
-
+"@ })
 						Assembly executingAssembly = Assembly.GetExecutingAssembly();
 						using (System.IO.Stream scriptstream = executingAssembly.GetManifestResourceStream("$([System.IO.Path]::GetFileName($inputFile))"))
 						{
 							using (System.IO.StreamReader scriptreader = new System.IO.StreamReader(scriptstream, System.Text.Encoding.UTF8))
 							{
 								string script = scriptreader.ReadToEnd();
-
+$(if (!$NoSepcialArgsHandling) {@"
 								if (!string.IsNullOrEmpty(extractFN))
 								{
 									System.IO.File.WriteAllText(extractFN, script);
 									return 0;
 								}
-
+"@ })
 								posh.AddScript(script);
 							}
 						}
@@ -2659,7 +2638,7 @@ $(if (!$noConsole) {@"
 						// regex for named parameters
 						System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex(@"^-([^: ]+)[ :]?([^:]*)$");
 
-						for (int i = separator; i < args.Length; i++)
+						for (int i = $(if (!$NoSepcialArgsHandling) {'separator'}else{'0'}); i < args.Length; i++)
 						{
 							System.Text.RegularExpressions.Match match = regex.Match(args[i]);
 							double dummy;
@@ -2738,10 +2717,11 @@ $(if (!$noError) { if (!$noConsole) {@"
 				Console.Write("An exception occured: ");
 				Console.WriteLine(ex.Message);
 "@ } else {@"
-				MessageBox.Show("An exception occured: " + ex.Message, ui.rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
+				MessageBox.Show("An exception occured: " + ex.Message, System.AppDomain.CurrentDomain.FriendlyName, MessageBoxButtons.OK, MessageBoxIcon.Error);
 "@ } })
 			}
 
+$(if (!$NoSepcialArgsHandling) {@"
 			if (paramWait)
 			{
 $(if (!$noConsole) {@"
@@ -2751,6 +2731,7 @@ $(if (!$noConsole) {@"
 				MessageBox.Show("Click OK to exit...", System.AppDomain.CurrentDomain.FriendlyName);
 "@ })
 			}
+"@ })
 			return me.ExitCode;
 		}
 
@@ -2824,9 +2805,4 @@ $(if (!$noConsole) {@"
 			Remove-Item -LiteralPath $($outputFile+".win32manifest") -Verbose:$FALSE
 		}
 	}
-}
-
-# if this file is called directly, execute the function
-if ($args) {
-	Invoke-ps2exe @args
 }
