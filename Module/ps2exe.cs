@@ -2071,7 +2071,7 @@ namespace PSRunnerNS
 		{
 			get
 			{
-				return new Version(0, 5, 0, 29);
+				return new Version(0, 0, 0, 0);
 			}
 		}
 
