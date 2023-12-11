@@ -1,8 +1,8 @@
 ﻿#Requires -Version 3.0
 
 [CmdletBinding()]
-Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [STRING]$CompilerOptions = '/o+ /debug-', [STRING]$TempDir = $NULL,
-	[scriptblock]$minifyer = $null,
+Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [STRING]$CompilerOptions = '/o+ /debug-',
+	[STRING]$TempDir = $NULL, [scriptblock]$minifyer = $null,
 	[SWITCH]$SepcArgsHandling, [SWITCH]$prepareDebug, [SWITCH]$x86, [SWITCH]$x64, [int]$lcid, [SWITCH]$STA, [SWITCH]$MTA,
 	[SWITCH]$nested, [SWITCH]$noConsole, [SWITCH]$UNICODEEncoding, [SWITCH]$credentialGUI,
 	[STRING]$iconFile = $NULL, [STRING]$title, [STRING]$description, [STRING]$company, [STRING]$product, [STRING]$copyright, [STRING]$trademark, [STRING]$version,
@@ -10,7 +10,7 @@ Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [STRING]$Compiler
 	[SWITCH]$DPIAware, [SWITCH]$winFormsDPIAware, [SWITCH]$requireAdmin, [SWITCH]$supportOS, [SWITCH]$virtualize, [SWITCH]$longPaths,
 	[STRING]$Content = $NULL
 )
-
+#_if PSScript #在PSEXE中不需要提供函数 直接执行函数体
 <#
 .SYNOPSIS
 Converts powershell scripts to standalone executables.
@@ -113,8 +113,8 @@ Compiles C:\Data\MyScript.ps1 to C:\Data\MyScriptGUI.exe as graphical executable
 #>
 function ps2exe {
 	[CmdletBinding()]
-	Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [STRING]$CompilerOptions = '/o+ /debug-', [STRING]$TempDir = $NULL,
-		[scriptblock]$minifyer = $null,
+	Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [STRING]$CompilerOptions = '/o+ /debug-',
+		[STRING]$TempDir = $NULL, [scriptblock]$minifyer = $null,
 		[SWITCH]$SepcArgsHandling, [SWITCH]$prepareDebug, [SWITCH]$x86, [SWITCH]$x64, [int]$lcid, [SWITCH]$STA, [SWITCH]$MTA,
 		[SWITCH]$nested, [SWITCH]$noConsole, [SWITCH]$UNICODEEncoding, [SWITCH]$credentialGUI,
 		[STRING]$iconFile = $NULL, [STRING]$title, [STRING]$description, [STRING]$company, [STRING]$product, [STRING]$copyright, [STRING]$trademark, [STRING]$version,
@@ -122,7 +122,9 @@ function ps2exe {
 		[SWITCH]$DPIAware, [SWITCH]$winFormsDPIAware, [SWITCH]$requireAdmin, [SWITCH]$supportOS, [SWITCH]$virtualize, [SWITCH]$longPaths,
 		[STRING]$Content = $NULL
 	)
-
+#_endif
+	$SavePos = [char]27 + '[s'
+	$RestorePos = [char]27 + '[u'
 	if ([STRING]::IsNullOrEmpty($inputFile) -and [STRING]::IsNullOrEmpty($Content)) {
 		$Content = $input
 		if ($inputFile.Count -gt 1) {
@@ -131,98 +133,223 @@ function ps2exe {
 		}
 	}
 	if ([STRING]::IsNullOrEmpty($inputFile) -and [STRING]::IsNullOrEmpty($Content)) {
-		Write-Output "Usage:`n"
-		Write-Output "ps2exe ([-inputFile] '<filename>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>'] [-TempDir '<directory>']"
-		Write-Output "       [-Minifyer <scriptblock>]"
-		Write-Output "       [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]"
-		Write-Output "       [-credentialGUI] [-iconFile '<filename>'] [-title '<title>'] [-description '<description>']"
-		Write-Output "       [-company '<company>'] [-product '<product>'] [-copyright '<copyright>'] [-trademark '<trademark>']"
-		Write-Output "       [-version '<version>'] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]"
-		Write-Output "       [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]`n"
-		Write-Output "       inputFile = Powershell script file that you want to convert to executable (file has to be UTF8 or UTF16 encoded)"
-		Write-Output "         Content = Powershell script content that you want to convert to executable"
-		Write-Output "      outputFile = destination executable file name or folder, defaults to inputFile with extension '.exe'"
-		Write-Output " CompilerOptions = additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)"
-		Write-Output "         TempDir = directory for storing temporary files (default is random generated temp directory in %temp%)"
-		Write-Output "        Minifyer = scriptblock to minify the script before compiling"
-		Write-Output "SepcArgsHandling = handle special arguments -debug, -extract, -wait and -end"
-		Write-Output "    prepareDebug = create helpful information for debugging"
-		Write-Output "      x86 or x64 = compile for 32-bit or 64-bit runtime only"
-		Write-Output "            lcid = location ID for the compiled executable. Current user culture if not specified"
-		Write-Output "      STA or MTA = 'Single Thread Apartment' or 'Multi Thread Apartment' mode"
-		Write-Output "       noConsole = the resulting executable will be a Windows Forms app without a console window"
-		Write-Output " UNICODEEncoding = encode output as UNICODE in console mode"
-		Write-Output "   credentialGUI = use GUI for prompting credentials in console mode"
-		Write-Output "        iconFile = icon file name for the compiled executable"
-		Write-Output "           title = title information (displayed in details tab of Windows Explorer's properties dialog)"
-		Write-Output "     description = description information (not displayed, but embedded in executable)"
-		Write-Output "         company = company information (not displayed, but embedded in executable)"
-		Write-Output "         product = product information (displayed in details tab of Windows Explorer's properties dialog)"
-		Write-Output "       copyright = copyright information (displayed in details tab of Windows Explorer's properties dialog)"
-		Write-Output "       trademark = trademark information (displayed in details tab of Windows Explorer's properties dialog)"
-		Write-Output "         version = version information (displayed in details tab of Windows Explorer's properties dialog)"
-		Write-Output "      configFile = write a config file (<outputfile>.exe.config)"
-		Write-Output "        noOutput = the resulting executable will generate no standard output (includes verbose and information channel)"
-		Write-Output "         noError = the resulting executable will generate no error output (includes warning and debug channel)"
-		Write-Output "  noVisualStyles = disable visual styles for a generated windows GUI application (only with -noConsole)"
-		Write-Output "    exitOnCancel = exits program when Cancel or ""X"" is selected in a Read-Host input box (only with -noConsole)"
-		Write-Output "        DPIAware = if display scaling is activated, GUI controls will be scaled if possible"
-		Write-Output "winFormsDPIAware = if display scaling is activated, WinForms use DPI scaling (requires Windows 10 and .Net 4.7 or up)"
-		Write-Output "    requireAdmin = if UAC is enabled, compiled executable run only in elevated context (UAC dialog appears if required)"
-		Write-Output "       supportOS = use functions of newest Windows versions (execute [Environment]::OSVersion to see the difference)"
-		Write-Output "      virtualize = application virtualization is activated (forcing x86 runtime)"
-		Write-Output "       longPaths = enable long paths ( > 260 characters) if enabled on OS (works only with Windows 10 or up)`n"
-		Write-Output "Input not specified!"
+		Write-Host "Usage:`n"
+		Write-Host "ps2exe ([-inputFile] '<filename>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>']"
+		Write-Host "       [-TempDir '<directory>'] [-Minifyer '<scriptblock>']"
+		Write-Host "       [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]"
+		Write-Host "       [-credentialGUI] [-iconFile '<filename>'] [-title '<title>'] [-description '<description>']"
+		Write-Host "       [-company '<company>'] [-product '<product>'] [-copyright '<copyright>'] [-trademark '<trademark>']"
+		Write-Host "       [-version '<version>'] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]"
+		Write-Host "       [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]`n"
+		Write-Host "       inputFile = Powershell script file that you want to convert to executable (file has to be UTF8 or UTF16 encoded)"
+		Write-Host "         Content = Powershell script content that you want to convert to executable"
+		Write-Host "      outputFile = destination executable file name or folder, defaults to inputFile with extension '.exe'"
+		Write-Host " CompilerOptions = additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)"
+		Write-Host "         TempDir = directory for storing temporary files (default is random generated temp directory in %temp%)"
+		Write-Host "        Minifyer = scriptblock to minify the script before compiling"
+		Write-Host "SepcArgsHandling = handle special arguments -debug, -extract, -wait and -end"
+		Write-Host "    prepareDebug = create helpful information for debugging"
+		Write-Host "      x86 or x64 = compile for 32-bit or 64-bit runtime only"
+		Write-Host "            lcid = location ID for the compiled executable. Current user culture if not specified"
+		Write-Host "      STA or MTA = 'Single Thread Apartment' or 'Multi Thread Apartment' mode"
+		Write-Host "       noConsole = the resulting executable will be a Windows Forms app without a console window"
+		Write-Host " UNICODEEncoding = encode output as UNICODE in console mode"
+		Write-Host "   credentialGUI = use GUI for prompting credentials in console mode"
+		Write-Host "        iconFile = icon file name for the compiled executable"
+		Write-Host "           title = title information (displayed in details tab of Windows Explorer's properties dialog)"
+		Write-Host "     description = description information (not displayed, but embedded in executable)"
+		Write-Host "         company = company information (not displayed, but embedded in executable)"
+		Write-Host "         product = product information (displayed in details tab of Windows Explorer's properties dialog)"
+		Write-Host "       copyright = copyright information (displayed in details tab of Windows Explorer's properties dialog)"
+		Write-Host "       trademark = trademark information (displayed in details tab of Windows Explorer's properties dialog)"
+		Write-Host "         version = version information (displayed in details tab of Windows Explorer's properties dialog)"
+		Write-Host "      configFile = write a config file (<outputfile>.exe.config)"
+		Write-Host "        noOutput = the resulting executable will generate no standard output (includes verbose and information channel)"
+		Write-Host "         noError = the resulting executable will generate no error output (includes warning and debug channel)"
+		Write-Host "  noVisualStyles = disable visual styles for a generated windows GUI application (only with -noConsole)"
+		Write-Host "    exitOnCancel = exits program when Cancel or ""X"" is selected in a Read-Host input box (only with -noConsole)"
+		Write-Host "        DPIAware = if display scaling is activated, GUI controls will be scaled if possible"
+		Write-Host "winFormsDPIAware = if display scaling is activated, WinForms use DPI scaling (requires Windows 10 and .Net 4.7 or up)"
+		Write-Host "    requireAdmin = if UAC is enabled, compiled executable run only in elevated context (UAC dialog appears if required)"
+		Write-Host "       supportOS = use functions of newest Windows versions (execute [Environment]::OSVersion to see the difference)"
+		Write-Host "      virtualize = application virtualization is activated (forcing x86 runtime)"
+		Write-Host "       longPaths = enable long paths ( > 260 characters) if enabled on OS (works only with Windows 10 or up)`n"
+		Write-Host "Input not specified!"
 		return
 	}
-
-	if (-not $Content) {
-		if (!(Test-Path $inputFile -PathType Leaf)) {
-			Write-Error "Input file $($inputfile) not found!"
-			return
-		}
+	function bytesOfString($str) {
+		[system.Text.Encoding]::UTF8.GetBytes($str).Count
 	}
-	elseif ($inputFile) {
-		Write-Error "Input file and content cannot be used at the same time!"
-		return
-	}
-	if ($inputFile) {
-		Write-Output "Reading input file $([System.IO.Path]::GetFileName($inputFile)) size $((Get-Item $inputFile).Length) bytes"
-		$Content = Get-Content -Raw -LiteralPath $inputFile -Encoding UTF8 -ErrorAction SilentlyContinue
-		if ([STRING]::IsNullOrEmpty($Content)) {
-			Write-Error "No data found. May be read error or file protected."
-			return
-		}
-	}
-	if ($minifyer) {
-		Write-Output "Minifying script..."
-		try {
-			$MinifyedContent = & $minifyer ($_ = $Content)
-			& {
-				$CursorPos = $host.UI.RawUI.CursorPosition
-				$CursorPos.Y -= 1
-				try { $host.UI.RawUI.CursorPosition = $CursorPos }catch { $Error.RemoveAt(0) }
+	#_if PSScript #在PSEXE中主机永远是winpwsh，所以不会内嵌
+	if (!$nested) {
+	#_endif
+		if (-not $Content) {
+			if (!(Test-Path $inputFile -PathType Leaf)) {
+				Write-Error "Input file $($inputfile) not found!"
+				return
 			}
-			Write-Output "Minifyed script -> $($MinifyedContent.Length) bytes"
 		}
-		catch {
-			Write-Error "Minifyer failed: $_"
+		elseif ($inputFile) {
+			Write-Error "Input file and content cannot be used at the same time!"
+			return
 		}
-		if (-not $MinifyedContent) {
-			Write-Warning "Minifyer failed, using original script."
+		function ReadScriptFile($File) {
+			Write-Host "Reading file $([System.IO.Path]::GetFileName($File)) size $((Get-Item $File).Length) bytes"
+			$Content = Get-Content -LiteralPath $File -Encoding UTF8 -ErrorAction SilentlyContinue
+			if (-not $Content) {
+				Write-Error "No data found. May be read error or file protected."
+				return
+			}
+			Write-Verbose "Done reading file $([System.IO.Path]::GetFileName($File)), starting preprocess..."
+			Preprocessor $Content $File
+			Write-Verbose "Done preprocess file $([System.IO.Path]::GetFileName($File))"
 		}
-		else {
-			$Content = $MinifyedContent
+		function Preprocessor($Content, $FilePath) {
+			$Result = @()
+			# 处理#_if <PSEXE/PSScript>、#_else、#_endif
+			for ($index = 0; $index -lt $Content.Count; $index++) {
+				$Line = $Content[$index]
+				if ($Line -match "^\s*#_if\s+(?<condition>\S+)\s*(?!#.*)") {
+					$condition = $Matches["condition"]
+					$condition = switch ($condition) {
+						'PSEXE' { $TRUE }
+						'PSScript' { $False }
+						default { Write-Error "Unknown condition: $condition`nassuming false."; $False }
+					}
+					while ($index -lt $Content.Count) {
+						$index++
+						$Line = $Content[$index]
+						if ($Line -match "^\s*#_else\s*(?!#.*)") {
+							$condition = -not $condition
+						}
+						if ($Line -match "^\s*#_endif\s*(?!#.*)") {
+							break
+						}
+						if ($condition) {
+							$Result += $Line
+						}
+					}
+					if ($Line -notmatch "^\s*#_endif\s*(?!#.*)") {
+						Write-Error "Missing #_endif"
+						return
+					}
+				}
+				else {
+					$Result += $Line
+				}
+			}
+			$ScriptRoot = [System.IO.Path]::GetDirectoryName($FilePath)
+			function GetIncludeFilePath($rest) {
+				if($rest -match "((\'[^\']*\')+)\s*(?!#.*)") {
+					$file = $Matches[1]
+					$file = $file.Substring(1, $file.Length - 2).Replace("''", "'")
+				}
+				elseif($rest -match '((\"[^\"]*\")+)\s*(?!#.*)') {
+					$file = $Matches[1]
+					$file = $file.Substring(1, $file.Length - 2).Replace('""', '"')
+				}
+				else{ $file = $rest }
+				$file = $file.Replace('$PSScriptRoot', $ScriptRoot)
+				# 若是相对路径，则转换为基于$FilePath的绝对路径
+				if ($file -notmatch "^[a-zA-Z]:") {
+					$file = [System.IO.Path]::Combine($ScriptRoot, $file)
+				}
+				if (!(Test-Path $file -PathType Leaf)) {
+					Write-Error "Include file $file not found!"
+					return
+				}
+				$file
+			}
+			$Content = $Result |
+			# 处理#_!!<line>
+			ForEach-Object {
+				if($_ -match "^(\s*)#_!!(?<line>.*)") {
+					$Matches[1]+$Matches["line"]
+				} else{ $_ }
+			} |
+			# 处理#_include <file>、#_include_as_value <valuename> <file>
+			ForEach-Object {
+				if ($_ -match "^\s*#_include\s+(?<rest>.+)\s*") {
+					$file = GetIncludeFilePath $Matches["rest"]
+					if (!$file) { return }
+					ReadScriptFile $file
+				}
+				elseif ($_ -match "^\s*#_include_as_value\s+(?<valuename>[a-zA-Z_][a-zA-Z_0-9]+)\s+(?<rest>.+)\s*") {
+					$valuename = $Matches["valuename"]
+					$file = GetIncludeFilePath $Matches["rest"]
+					if (!$file) { return }
+					Write-Host "Reading file $([System.IO.Path]::GetFileName($File)) size $((Get-Item $File).Length) bytes"
+					$IncludeContent = Get-Content -LiteralPath $file -Encoding UTF8 -ErrorAction SilentlyContinue
+					if (-not $IncludeContent) {
+						Write-Error "No data found. May be read error or file protected."
+						return
+					}
+					$IncludeContent = $IncludeContent -join "`n"
+					$IncludeContent = $IncludeContent.Replace("'", "''")
+					"`$$valuename = '$IncludeContent'"
+				}
+				else {
+					$_
+				}
+			}
+			$Content -join "`n"
+		}
+		if ($inputFile) {
+			$Content = ReadScriptFile $inputFile
+			if (!$Content) { return }
+			if ((bytesOfString $Content) -ne (Get-Item $inputFile).Length) {
+				Write-Host "Preprocessed script -> $(bytesOfString $Content) bytes"
+			}
+		}
+		if ($minifyer) {
+			Write-Host "${SavePos}Minifying script..."
+			try {
+				$MinifyedContent = & $minifyer ($_ = $Content)
+				Write-Host "${RestorePos}Minifyed script -> $(bytesOfString $MinifyedContent) bytes"
+			}
+			catch {
+				Write-Error "Minifyer failed: $_"
+			}
+			if (-not $MinifyedContent) {
+				Write-Warning "Minifyer failed, using original script."
+			}
+			else {
+				$Content = $MinifyedContent
+			}
+		}
+	#_if PSScript
+	}
+	else {
+		$Content = Get-Content -Raw -LiteralPath $inputFile -Encoding UTF8 -ErrorAction SilentlyContinue
+		if (!$Content) {
+			Write-Error "Temp file $($inputfile) not found!"
+			return
 		}
 	}
-
+	#_endif
+	# retrieve absolute paths independent if path is given relative oder absolute
+	$inputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($inputFile)
+	if ([STRING]::IsNullOrEmpty($outputFile)) {
+		$outputFile = ([System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($inputFile), [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
+	}
+	else {
+		$outputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($outputFile)
+		if ((Test-Path $outputFile -PathType Container)) {
+			$outputFile = ([System.IO.Path]::Combine($outputFile, [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
+		}
+	}
+	#_if PSScript #在PSEXE中主机永远是winpwsh，可省略该部分
 	if (!$nested -and ($PSVersionTable.PSEdition -eq "Core")) {
 		# starting Windows Powershell
 		$Params = ([hashtable]$PSBoundparameters).Clone()
 		$Params.Remove("minifyer")
 		$Params.Remove("Content")
 		$Params.Remove("inputFile")
-		$Params.Add("Content", $Content)
+		$Params.Remove("outputFile")
+		$TempFile = [System.IO.Path]::GetTempFileName()
+		$Content | Set-Content $TempFile -Encoding UTF8 -NoNewline
+		$Params.Add("inputFile", $TempFile)
+		$Params.Add("outputFile", $outputFile)
 		$CallParam = foreach ($Param in $Params.GetEnumerator()) {
 			if ($Param.Value -is [Switch]) {
 				"-$($Param.Key):`$$([bool]$Param.Value)"
@@ -235,21 +362,10 @@ function ps2exe {
 			}
 		}
 
-		powershell -noprofile -Command "&'$PSScriptRoot\ps2exe.ps1' $CallParam -nested"
+		powershell -noprofile -Command "&'$PSScriptRoot\ps2exe.ps1' $CallParam -nested" | Out-Host
 		return
 	}
-
-	# retrieve absolute paths independent if path is given relative oder absolute
-	$inputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($inputFile)
-	if ([STRING]::IsNullOrEmpty($outputFile)) {
-		$outputFile = ([System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($inputFile), [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
-	}
-	else {
-		$outputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($outputFile)
-		if ((Test-Path $outputFile -PathType Container)) {
-			$outputFile = ([System.IO.Path]::Combine($outputFile, [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
-		}
-	}
+	#_endif
 
 	if ($inputFile -eq $outputFile) {
 		Write-Error "Input file is identical to output file!"
@@ -404,7 +520,7 @@ function ps2exe {
 		$CompilerOptions += $manifestParam 
 	}
 	else {
-		Write-Output "Application virtualization is activated, forcing x86 platfom."
+		Write-Host "Application virtualization is activated, forcing x86 platfom."
 		$CompilerOptions += "/platform:x86"
 		$CompilerOptions += "/target:$( if ($noConsole){'winexe'}else{'exe'})"
 		$CompilerOptions += "/nowin32manifest"
@@ -448,8 +564,12 @@ function ps2exe {
 	
 	Write-Verbose "Using Compiler Options: $($cp.CompilerOptions)"
 
-	# Read Script file
-	[string]$programFrame = Get-Content $PSScriptRoot/ps2exe.cs -Raw -Encoding UTF8
+	# Read the program frame from the ps2exe.cs file
+	#_if PSEXE #这是该脚本被ps2exe编译时使用的预处理代码
+		#_include_as_value programFrame "$PSScriptRoot/ps2exe.cs" #将ps2exe.cs中的内容内嵌到该脚本中
+	#_else #否则正常读取cs文件
+		[string]$programFrame = Get-Content $PSScriptRoot/ps2exe.cs -Raw -Encoding UTF8
+	#_endif
 
 	$programFrame = $programFrame.Replace("`$lcid", $lcid)
 	$programFrame = $programFrame.Replace("`$title", $title)
@@ -460,13 +580,14 @@ function ps2exe {
 	$programFrame = $programFrame.Replace("`$description", $description)
 	$programFrame = $programFrame.Replace("`$company", $company)
 
-	Write-Output "Compiling file...`n"
+	Write-Host "${SavePos}Compiling file..."
 	if (-not $TempDir) {
-		$TempDir = $TempTempDir = [System.IO.Path]::GetTempFileName()
+		$TempDir = $TempTempDir = [System.IO.Path]::GetTempPath() + [System.IO.Path]::GetRandomFileName()
 		New-Item -Path $TempTempDir -ItemType Directory | Out-Null
 	}
-	$Content | Set-Content $TempDir/main.ps1 -Encoding UTF8
-	[VOID]$cp.EmbeddedResources.Add("$TempDir/main.ps1")
+	$TempDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($TempDir)
+	$Content | Set-Content $TempDir\main.ps1 -Encoding UTF8 -NoNewline
+	[VOID]$cp.EmbeddedResources.Add("$TempDir\main.ps1")
 	$cr = $cop.CompileAssemblyFromSource($cp, $programFrame)
 	if ($TempTempDir) {
 		Remove-Item $TempTempDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -480,24 +601,20 @@ function ps2exe {
 	}
 	else {
 		if (Test-Path $outputFile) {
-			& {
-				$CursorPos = $host.UI.RawUI.CursorPosition
-				$CursorPos.Y -= 2
-				try { $host.UI.RawUI.CursorPosition = $CursorPos }catch { $Error.RemoveAt(0) }
-			}
-			Write-Output "Output file written -> $((Get-Item $outputFile).Length) bytes"
+			Write-Host "${RestorePos}Compiled file written -> $((Get-Item $outputFile).Length) bytes"
+			Write-Verbose "Path: $outputFile"
 
 			if ($prepareDebug) {
 				$cr.TempFiles | Where-Object { $_ -ilike "*.cs" } | Select-Object -First 1 | ForEach-Object {
 					$dstSrc = ([System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($outputFile), [System.IO.Path]::GetFileNameWithoutExtension($outputFile) + ".cs"))
-					Write-Output "Source file name for debug copied: $($dstSrc)"
+					Write-Host "Source file name for debug copied: $($dstSrc)"
 					Copy-Item -Path $_ -Destination $dstSrc -Force
 				}
 				$cr.TempFiles | Remove-Item -Verbose:$FALSE -Force -ErrorAction SilentlyContinue
 			}
 			if ($CFGFILE) {
 				$configFileForEXE3 | Set-Content ($outputFile + ".config") -Encoding UTF8
-				Write-Output "Config file for EXE created"
+				Write-Host "Config file for EXE created"
 			}
 		}
 		else {
@@ -510,9 +627,11 @@ function ps2exe {
 			Remove-Item $($outputFile + ".win32manifest") -Verbose:$FALSE
 		}
 	}
+#_if PSScript
 }
 
 # if this file is called directly, execute the function
 if ($PSBoundParameters.Count -gt 0) {
 	ps2exe @PSBoundParameters
 }
+#_endif
