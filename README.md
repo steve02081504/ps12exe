@@ -12,6 +12,7 @@ compiles "source.ps1" into the executable target.exe (if ".\target.exe" is omitt
 
 ```powershell
 ps2exe ([-inputFile] '<filename>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>'] [-TempDir '<directory>']
+       [-Minifyer <scriptblock>]
        [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]
        [-credentialGUI] [-iconFile '<filename>'] [-title '<title>'] [-description '<description>']
        [-company '<company>'] [-product '<product>'] [-copyright '<copyright>'] [-trademark '<trademark>']
@@ -25,6 +26,7 @@ ps2exe ([-inputFile] '<filename>' | -Content '<script>') [-outputFile '<filename
       outputFile = destination executable file name or folder, defaults to inputFile with extension '.exe'
  CompilerOptions = additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)
          TempDir = directory for storing temporary files (default is random generated temp directory in %temp%)
+        Minifyer = scriptblock to minify the script before compiling
 SepcArgsHandling = handle special arguments -debug, -extract, -wait and -end
     prepareDebug = create helpful information for debugging
       x86 or x64 = compile for 32-bit or 64-bit runtime only

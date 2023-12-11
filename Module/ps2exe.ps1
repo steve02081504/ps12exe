@@ -2,6 +2,7 @@
 
 [CmdletBinding()]
 Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [STRING]$CompilerOptions = '/o+ /debug-', [STRING]$TempDir = $NULL,
+	[scriptblock]$minifyer = $null,
 	[SWITCH]$SepcArgsHandling, [SWITCH]$prepareDebug, [SWITCH]$x86, [SWITCH]$x64, [int]$lcid, [SWITCH]$STA, [SWITCH]$MTA,
 	[SWITCH]$nested, [SWITCH]$noConsole, [SWITCH]$UNICODEEncoding, [SWITCH]$credentialGUI,
 	[STRING]$iconFile = $NULL, [STRING]$title, [STRING]$description, [STRING]$company, [STRING]$product, [STRING]$copyright, [STRING]$trademark, [STRING]$version,
@@ -37,6 +38,8 @@ destination executable file name or folder, defaults to inputFile with extension
 additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)
 .PARAMETER TempDir
 directory for storing temporary files (default is random generated temp directory in %temp%)
+.PARAMETER Minifyer
+scriptblock to minify the script before compiling
 .PARAMETER SepcArgsHandling
 handle special arguments -debug, -extract, -wait and -end. They will be passed to the script inside the executable
 .PARAMETER prepareDebug
@@ -111,6 +114,7 @@ Compiles C:\Data\MyScript.ps1 to C:\Data\MyScriptGUI.exe as graphical executable
 function ps2exe {
 	[CmdletBinding()]
 	Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [STRING]$CompilerOptions = '/o+ /debug-', [STRING]$TempDir = $NULL,
+		[scriptblock]$minifyer = $null,
 		[SWITCH]$SepcArgsHandling, [SWITCH]$prepareDebug, [SWITCH]$x86, [SWITCH]$x64, [int]$lcid, [SWITCH]$STA, [SWITCH]$MTA,
 		[SWITCH]$nested, [SWITCH]$noConsole, [SWITCH]$UNICODEEncoding, [SWITCH]$credentialGUI,
 		[STRING]$iconFile = $NULL, [STRING]$title, [STRING]$description, [STRING]$company, [STRING]$product, [STRING]$copyright, [STRING]$trademark, [STRING]$version,
@@ -129,6 +133,7 @@ function ps2exe {
 	if ([STRING]::IsNullOrEmpty($inputFile) -and [STRING]::IsNullOrEmpty($Content)) {
 		Write-Output "Usage:`n"
 		Write-Output "ps2exe ([-inputFile] '<filename>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>'] [-TempDir '<directory>']"
+		Write-Output "       [-Minifyer <scriptblock>]"
 		Write-Output "       [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]"
 		Write-Output "       [-credentialGUI] [-iconFile '<filename>'] [-title '<title>'] [-description '<description>']"
 		Write-Output "       [-company '<company>'] [-product '<product>'] [-copyright '<copyright>'] [-trademark '<trademark>']"
@@ -139,6 +144,7 @@ function ps2exe {
 		Write-Output "      outputFile = destination executable file name or folder, defaults to inputFile with extension '.exe'"
 		Write-Output " CompilerOptions = additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)"
 		Write-Output "         TempDir = directory for storing temporary files (default is random generated temp directory in %temp%)"
+		Write-Output "        Minifyer = scriptblock to minify the script before compiling"
 		Write-Output "SepcArgsHandling = handle special arguments -debug, -extract, -wait and -end"
 		Write-Output "    prepareDebug = create helpful information for debugging"
 		Write-Output "      x86 or x64 = compile for 32-bit or 64-bit runtime only"
@@ -170,9 +176,54 @@ function ps2exe {
 		return
 	}
 
+	if (-not $Content) {
+		if (!(Test-Path $inputFile -PathType Leaf)) {
+			Write-Error "Input file $($inputfile) not found!"
+			return
+		}
+	}
+	elseif ($inputFile) {
+		Write-Error "Input file and content cannot be used at the same time!"
+		return
+	}
+	if ($inputFile) {
+		Write-Output "Reading input file $([System.IO.Path]::GetFileName($inputFile)) size $((Get-Item $inputFile).Length) bytes"
+		$Content = Get-Content -Raw -LiteralPath $inputFile -Encoding UTF8 -ErrorAction SilentlyContinue
+		if ([STRING]::IsNullOrEmpty($Content)) {
+			Write-Error "No data found. May be read error or file protected."
+			return
+		}
+	}
+	if ($minifyer) {
+		Write-Output "Minifying script..."
+		try {
+			$MinifyedContent = & $minifyer ($_ = $Content)
+			& {
+				$CursorPos = $host.UI.RawUI.CursorPosition
+				$CursorPos.Y -= 1
+				try { $host.UI.RawUI.CursorPosition = $CursorPos }catch { $Error.RemoveAt(0) }
+			}
+			Write-Output "Minifyed script -> $($MinifyedContent.Length) bytes"
+		}
+		catch {
+			Write-Error "Minifyer failed: $_"
+		}
+		if (-not $MinifyedContent) {
+			Write-Warning "Minifyer failed, using original script."
+		}
+		else {
+			$Content = $MinifyedContent
+		}
+	}
+
 	if (!$nested -and ($PSVersionTable.PSEdition -eq "Core")) {
 		# starting Windows Powershell
-		$CallParam = foreach ($Param in $PSBoundparameters.GetEnumerator()) {
+		$Params = ([hashtable]$PSBoundparameters).Clone()
+		$Params.Remove("minifyer")
+		$Params.Remove("Content")
+		$Params.Remove("inputFile")
+		$Params.Add("Content", $Content)
+		$CallParam = foreach ($Param in $Params.GetEnumerator()) {
 			if ($Param.Value -is [Switch]) {
 				"-$($Param.Key):`$$([bool]$Param.Value)"
 			}
@@ -198,16 +249,6 @@ function ps2exe {
 		if ((Test-Path $outputFile -PathType Container)) {
 			$outputFile = ([System.IO.Path]::Combine($outputFile, [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
 		}
-	}
-	if (-not $Content) {
-		if (!(Test-Path $inputFile -PathType Leaf)) {
-			Write-Error "Input file $($inputfile) not found!"
-			return
-		}
-	}
-	elseif ($inputFile) {
-		Write-Error "Input file and content cannot be used at the same time!"
-		return
 	}
 
 	if ($inputFile -eq $outputFile) {
@@ -374,14 +415,6 @@ function ps2exe {
 	if ($prepareDebug) {
 		$cp.TempFiles.KeepFiles = $TRUE
 	}
-	if ($inputFile) {
-		Write-Output "Reading input file $([System.IO.Path]::GetFileName($inputFile)) size $((Get-Item $inputFile).Length) bytes"
-		$Content = Get-Content -Raw -LiteralPath $inputFile -Encoding UTF8 -ErrorAction SilentlyContinue
-		if ([STRING]::IsNullOrEmpty($Content)) {
-			Write-Error "No data found. May be read error or file protected."
-			return
-		}
-	}
 
 	$configFileForEXE3 = "<?xml version=""1.0"" encoding=""utf-8"" ?>`r`n<configuration><startup>$(
 		if ($winFormsDPIAware) {'<supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.7" /></startup>'}
@@ -428,14 +461,14 @@ function ps2exe {
 	$programFrame = $programFrame.Replace("`$company", $company)
 
 	Write-Output "Compiling file...`n"
-	if(-not $TempDir){
+	if (-not $TempDir) {
 		$TempDir = $TempTempDir = [System.IO.Path]::GetTempFileName()
 		New-Item -Path $TempTempDir -ItemType Directory | Out-Null
 	}
 	$Content | Set-Content $TempDir/main.ps1 -Encoding UTF8
 	[VOID]$cp.EmbeddedResources.Add("$TempDir/main.ps1")
 	$cr = $cop.CompileAssemblyFromSource($cp, $programFrame)
-	if($TempTempDir){
+	if ($TempTempDir) {
 		Remove-Item $TempTempDir -Recurse -Force -ErrorAction SilentlyContinue
 	}
 	if ($cr.Errors.Count -gt 0) {
@@ -450,7 +483,7 @@ function ps2exe {
 			& {
 				$CursorPos = $host.UI.RawUI.CursorPosition
 				$CursorPos.Y -= 2
-				try{ $host.UI.RawUI.CursorPosition = $CursorPos }catch{ $Error.RemoveAt(0) }
+				try { $host.UI.RawUI.CursorPosition = $CursorPos }catch { $Error.RemoveAt(0) }
 			}
 			Write-Output "Output file written -> $((Get-Item $outputFile).Length) bytes"
 
