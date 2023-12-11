@@ -1,5 +1,15 @@
 ﻿#Requires -Version 3.0
 
+[CmdletBinding()]
+Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [STRING]$CompilerOptions = '/o+ /debug-', [STRING]$TempDir = $NULL,
+	[SWITCH]$SepcArgsHandling, [SWITCH]$prepareDebug, [SWITCH]$x86, [SWITCH]$x64, [int]$lcid, [SWITCH]$STA, [SWITCH]$MTA,
+	[SWITCH]$nested, [SWITCH]$noConsole, [SWITCH]$UNICODEEncoding, [SWITCH]$credentialGUI,
+	[STRING]$iconFile = $NULL, [STRING]$title, [STRING]$description, [STRING]$company, [STRING]$product, [STRING]$copyright, [STRING]$trademark, [STRING]$version,
+	[SWITCH]$configFile, [SWITCH]$noConfigFile, [SWITCH]$noOutput, [SWITCH]$noError, [SWITCH]$noVisualStyles, [SWITCH]$exitOnCancel,
+	[SWITCH]$DPIAware, [SWITCH]$winFormsDPIAware, [SWITCH]$requireAdmin, [SWITCH]$supportOS, [SWITCH]$virtualize, [SWITCH]$longPaths,
+	[STRING]$Content = $NULL
+)
+
 <#
 .SYNOPSIS
 Converts powershell scripts to standalone executables.
@@ -10,7 +20,7 @@ real windows executables are generated. You may use the graphical front end Win-
 Please see Remarks on project page for topics "GUI mode output formatting", "Config files", "Password security",
 "Script variables" and "Window in background in -noConsole mode".
 
-A generated executable has the following reserved parameters:
+With `SepcArgsHandling`, generated executable has the following reserved parameters:
 
 -debug              Forces the executable to be debugged. It calls "System.Diagnostics.Debugger.Launch()".
 -extract:<FILENAME> Extracts the powerShell script inside the executable and saves it as FILENAME.
@@ -23,10 +33,14 @@ A generated executable has the following reserved parameters:
 Powershell script to convert to executable (file has to be UTF8 or UTF16 encoded)
 .PARAMETER outputFile
 destination executable file name or folder, defaults to inputFile with extension '.exe'
+.PARAMETER CompilerOptions
+additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)
+.PARAMETER TempDir
+directory for storing temporary files (default is random generated temp directory in %temp%)
+.PARAMETER SepcArgsHandling
+handle special arguments -debug, -extract, -wait and -end. They will be passed to the script inside the executable
 .PARAMETER prepareDebug
 create helpful information for debugging of generated executable. See parameter -debug there
-.PARAMETER NoSepcialArgsHandling
-do not handle special arguments -debug, -extract, -wait and -end. They will be passed to the script inside the executable
 .PARAMETER x86
 compile for 32-bit runtime only
 .PARAMETER x64
@@ -47,8 +61,6 @@ You might want to pipe your output to Out-String to prevent a message box for ev
 encode output as UNICODE in console mode, useful to display special encoded chars
 .PARAMETER credentialGUI
 use GUI for prompting credentials in console mode instead of console input
-.PARAMETER CompilerOptions
-additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)
 .PARAMETER iconFile
 icon file name for the compiled executable
 .PARAMETER title
@@ -90,50 +102,51 @@ application virtualization is activated (forcing x86 runtime)
 .PARAMETER longPaths
 enable long paths ( > 260 characters) if enabled on OS (works only with Windows 10 or up)
 .EXAMPLE
-Invoke-ps2exe C:\Data\MyScript.ps1
+ps2exe C:\Data\MyScript.ps1
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScript.exe as console executable
 .EXAMPLE
 ps2exe -inputFile C:\Data\MyScript.ps1 -outputFile C:\Data\MyScriptGUI.exe -iconFile C:\Data\Icon.ico -noConsole -title "MyScript" -version 0.0.0.1
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScriptGUI.exe as graphical executable, icon and meta data
-.EXAMPLE
-Win-PS2EXE
-Start graphical front end to Invoke-ps2exe
-.NOTES
-Version: 0.5.0.29
-Date: 2023-09-23
-Author: Ingo Karstein, Markus Scholtes
-.LINK
-https://www.powershellgallery.com/packages/ps2exe
-.LINK
-https://github.com/MScholtes/PS2EXE
 #>
 function ps2exe {
 	[CmdletBinding()]
-	Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [SWITCH]$prepareDebug, [SWITCH]$NoSepcialArgsHandling, [SWITCH]$x86, [SWITCH]$x64, [int]$lcid,
-		[SWITCH]$STA, [SWITCH]$MTA, [SWITCH]$nested, [SWITCH]$noConsole, [SWITCH]$UNICODEEncoding, [SWITCH]$credentialGUI, [STRING[]]$CompilerOptions = @(),
+	Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [STRING]$CompilerOptions = '/o+ /debug-', [STRING]$TempDir = $NULL,
+		[SWITCH]$SepcArgsHandling, [SWITCH]$prepareDebug, [SWITCH]$x86, [SWITCH]$x64, [int]$lcid, [SWITCH]$STA, [SWITCH]$MTA,
+		[SWITCH]$nested, [SWITCH]$noConsole, [SWITCH]$UNICODEEncoding, [SWITCH]$credentialGUI,
 		[STRING]$iconFile = $NULL, [STRING]$title, [STRING]$description, [STRING]$company, [STRING]$product, [STRING]$copyright, [STRING]$trademark, [STRING]$version,
 		[SWITCH]$configFile, [SWITCH]$noConfigFile, [SWITCH]$noOutput, [SWITCH]$noError, [SWITCH]$noVisualStyles, [SWITCH]$exitOnCancel,
-		[SWITCH]$DPIAware, [SWITCH]$winFormsDPIAware, [SWITCH]$requireAdmin, [SWITCH]$supportOS, [SWITCH]$virtualize, [SWITCH]$longPaths)
+		[SWITCH]$DPIAware, [SWITCH]$winFormsDPIAware, [SWITCH]$requireAdmin, [SWITCH]$supportOS, [SWITCH]$virtualize, [SWITCH]$longPaths,
+		[STRING]$Content = $NULL
+	)
 
-	if ([STRING]::IsNullOrEmpty($inputFile)) {
+	if ([STRING]::IsNullOrEmpty($inputFile) -and [STRING]::IsNullOrEmpty($Content)) {
+		$Content = $input
+		if ($inputFile.Count -gt 1) {
+			$Content | ForEach-Object { ps2exe -Content $_ @PSBoundParameters }
+			return
+		}
+	}
+	if ([STRING]::IsNullOrEmpty($inputFile) -and [STRING]::IsNullOrEmpty($Content)) {
 		Write-Output "Usage:`n"
-		Write-Output "Invoke-ps2exe [-inputFile] '<filename>' [[-outputFile] '<filename>']"
-		Write-Output "              [-prepareDebug] [-x86|-x64] [-lcid <id>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]"
-		Write-Output "              [-credentialGUI] [-iconFile '<filename>'] [-title '<title>'] [-description '<description>']"
-		Write-Output "              [-company '<company>'] [-product '<product>'] [-copyright '<copyright>'] [-trademark '<trademark>']"
-		Write-Output "              [-version '<version>'] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]"
-		Write-Output "              [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]`n"
-		Write-Output "       inputFile = Powershell script that you want to convert to executable (file has to be UTF8 or UTF16 encoded)"
+		Write-Output "ps2exe ([-inputFile] '<filename>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>'] [-TempDir '<directory>']"
+		Write-Output "       [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]"
+		Write-Output "       [-credentialGUI] [-iconFile '<filename>'] [-title '<title>'] [-description '<description>']"
+		Write-Output "       [-company '<company>'] [-product '<product>'] [-copyright '<copyright>'] [-trademark '<trademark>']"
+		Write-Output "       [-version '<version>'] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]"
+		Write-Output "       [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]`n"
+		Write-Output "       inputFile = Powershell script file that you want to convert to executable (file has to be UTF8 or UTF16 encoded)"
+		Write-Output "         Content = Powershell script content that you want to convert to executable"
 		Write-Output "      outputFile = destination executable file name or folder, defaults to inputFile with extension '.exe'"
+		Write-Output " CompilerOptions = additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)"
+		Write-Output "         TempDir = directory for storing temporary files (default is random generated temp directory in %temp%)"
+		Write-Output "SepcArgsHandling = handle special arguments -debug, -extract, -wait and -end"
 		Write-Output "    prepareDebug = create helpful information for debugging"
-		Write-Output "NoSepcialArgsHandling = do not handle special arguments -debug, -extract, -wait and -end"
 		Write-Output "      x86 or x64 = compile for 32-bit or 64-bit runtime only"
 		Write-Output "            lcid = location ID for the compiled executable. Current user culture if not specified"
 		Write-Output "      STA or MTA = 'Single Thread Apartment' or 'Multi Thread Apartment' mode"
 		Write-Output "       noConsole = the resulting executable will be a Windows Forms app without a console window"
 		Write-Output " UNICODEEncoding = encode output as UNICODE in console mode"
 		Write-Output "   credentialGUI = use GUI for prompting credentials in console mode"
-		Write-Output " CompilerOptions = additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)"
 		Write-Output "        iconFile = icon file name for the compiled executable"
 		Write-Output "           title = title information (displayed in details tab of Windows Explorer's properties dialog)"
 		Write-Output "     description = description information (not displayed, but embedded in executable)"
@@ -153,35 +166,25 @@ function ps2exe {
 		Write-Output "       supportOS = use functions of newest Windows versions (execute [Environment]::OSVersion to see the difference)"
 		Write-Output "      virtualize = application virtualization is activated (forcing x86 runtime)"
 		Write-Output "       longPaths = enable long paths ( > 260 characters) if enabled on OS (works only with Windows 10 or up)`n"
-		Write-Output "Input file not specified!"
+		Write-Output "Input not specified!"
 		return
 	}
 
 	if (!$nested -and ($PSVersionTable.PSEdition -eq "Core")) {
 		# starting Windows Powershell
-		$CallParam = ""
-		foreach ($Param in $PSBoundparameters.GetEnumerator()) {
-			if ($Param.Value -is [System.Management.Automation.SwitchParameter]) {
-				if ($Param.Value.IsPresent)
-				{	$CallParam += " -$($Param.Key):`$TRUE" }
-				else
-				{ $CallParam += " -$($Param.Key):`$FALSE" }
+		$CallParam = foreach ($Param in $PSBoundparameters.GetEnumerator()) {
+			if ($Param.Value -is [Switch]) {
+				"-$($Param.Key):`$$([bool]$Param.Value)"
+			}
+			elseif ($Param.Value -is [string]) {
+				"-$($Param.Key):'$(($Param.Value).Replace("'", "''"))'"
 			}
 			else {
-				if ($Param.Value -is [STRING]) {
-					if (($Param.Value -match " ") -or ([STRING]::IsNullOrEmpty($Param.Value)))
-					{	$CallParam += " -$($Param.Key) '$($Param.Value)'" }
-					else
-					{	$CallParam += " -$($Param.Key) $($Param.Value)" }
-				}
-				else
-				{ $CallParam += " -$($Param.Key) $($Param.Value)" }
+				"-$($Param.Key):$($Param.Value)"
 			}
 		}
 
-		$CallParam += " -nested"
-
-		powershell -Command "&'$PSScriptRoot\ps2exe.ps1' $CallParam"
+		powershell -noprofile -Command "&'$PSScriptRoot\ps2exe.ps1' $CallParam -nested"
 		return
 	}
 
@@ -196,9 +199,14 @@ function ps2exe {
 			$outputFile = ([System.IO.Path]::Combine($outputFile, [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
 		}
 	}
-
-	if (!(Test-Path $inputFile -PathType Leaf)) {
-		Write-Error "Input file $($inputfile) not found!"
+	if (-not $Content) {
+		if (!(Test-Path $inputFile -PathType Leaf)) {
+			Write-Error "Input file $($inputfile) not found!"
+			return
+		}
+	}
+	elseif ($inputFile) {
+		Write-Error "Input file and content cannot be used at the same time!"
 		return
 	}
 
@@ -283,8 +291,6 @@ function ps2exe {
 		}
 	}
 
-	Write-Output ""
-
 	$type = ('System.Collections.Generic.Dictionary`2') -as "Type"
 	$type = $type.MakeGenericType( @( ("System.String" -as "Type"), ("system.string" -as "Type") ) )
 	$o = [Activator]::CreateInstance($type)
@@ -345,6 +351,8 @@ function ps2exe {
 		$win32manifest | Set-Content ($outputFile + ".win32manifest") -Encoding UTF8
 	}
 
+	[string[]]$CompilerOptions = @($CompilerOptions)
+
 	if (!([STRING]::IsNullOrEmpty($iconFile))) {
 		$CompilerOptions += "`"/win32icon:$($iconFile)`""
 	}
@@ -352,14 +360,13 @@ function ps2exe {
 	if (!$virtualize) {
 		$CompilerOptions += "/platform:$($platform)"
 		$CompilerOptions += "/target:$( if ($noConsole){'winexe'}else{'exe'})"
-		$CompilerOptions += "/target:$( if ($noConsole){'winexe'}else{'exe'})"
 		$CompilerOptions += $manifestParam 
 	}
 	else {
 		Write-Output "Application virtualization is activated, forcing x86 platfom."
-		$CompilerOptions = "/platform:x86"
-		$CompilerOptions = "/target:$( if ($noConsole) { 'winexe' } else { 'exe' } )"
-		$CompilerOptions = "/nowin32manifest"
+		$CompilerOptions += "/platform:x86"
+		$CompilerOptions += "/target:$( if ($noConsole){'winexe'}else{'exe'})"
+		$CompilerOptions += "/nowin32manifest"
 	}
 
 	$cp.IncludeDebugInformation = $prepareDebug
@@ -367,68 +374,40 @@ function ps2exe {
 	if ($prepareDebug) {
 		$cp.TempFiles.KeepFiles = $TRUE
 	}
+	if ($inputFile) {
+		Write-Output "Reading input file $([System.IO.Path]::GetFileName($inputFile)) size $((Get-Item $inputFile).Length) bytes"
+		$Content = Get-Content -Raw -LiteralPath $inputFile -Encoding UTF8 -ErrorAction SilentlyContinue
+		if ([STRING]::IsNullOrEmpty($Content)) {
+			Write-Error "No data found. May be read error or file protected."
+			return
+		}
+	}
 
-	Write-Output "Reading input file $inputFile"
-	$content = Get-Content -LiteralPath $inputFile -Encoding UTF8 -ErrorAction SilentlyContinue
-	if ([STRING]::IsNullOrEmpty($content)) {
-		Write-Error "No data found. May be read error or file protected."
-		return
-	}
-	$scriptInp = [STRING]::Join("`r`n", $content)
-	$script = [System.Convert]::ToBase64String(([System.Text.Encoding]::UTF8.GetBytes($scriptInp)))
-
-	if ($winFormsDPIAware) {
-		$configFileForEXE3 = "<?xml version=""1.0"" encoding=""utf-8"" ?>`r`n<configuration><startup><supportedRuntime version=""v4.0"" sku="".NETFramework,Version=v4.7"" /></startup>"
-	}
-	else {
-		$configFileForEXE3 = "<?xml version=""1.0"" encoding=""utf-8"" ?>`r`n<configuration><startup><supportedRuntime version=""v4.0"" sku="".NETFramework,Version=v4.0"" /></startup>"
-	}
-	if ($longPaths) {
-		$configFileForEXE3 += "<runtime><AppContextSwitchOverrides value=""Switch.System.IO.UseLegacyPathHandling=false;Switch.System.IO.BlockLongPaths=false"" /></runtime>"
-	}
-	if ($winFormsDPIAware) {
-		$configFileForEXE3 += "<System.Windows.Forms.ApplicationConfigurationSection><add key=""DpiAwareness"" value=""PerMonitorV2"" /></System.Windows.Forms.ApplicationConfigurationSection>"
-	}
-	$configFileForEXE3 += "</configuration>"
+	$configFileForEXE3 = "<?xml version=""1.0"" encoding=""utf-8"" ?>`r`n<configuration><startup>$(
+		if ($winFormsDPIAware) {'<supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.7" /></startup>'}
+		else {'<supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.0" /></startup>'})$(
+		if ($longPaths) {
+			'<runtime><AppContextSwitchOverrides value="Switch.System.IO.UseLegacyPathHandling=false;Switch.System.IO.BlockLongPaths=false" /></runtime>'
+		})$(
+		if ($winFormsDPIAware) {
+			'<System.Windows.Forms.ApplicationConfigurationSection><add key="DpiAwareness" value="PerMonitorV2" /></System.Windows.Forms.ApplicationConfigurationSection>'
+		})</configuration>"
 
 	[string[]]$Constants = @() 
 
-	if ($lcid) {
-		$Constants += "culture"
-	}
-	if ($noError) {
-		$Constants += "noError"
-	}
-	if ($noConsole) {
-		$Constants += "noConsole"
-	}
-	if ($noOutput) {
-		$Constants += "noOutput"
-	}
-	if ($version) {
-		$Constants += "version"
-	}
-	if ($credentialGUI) {
-		$Constants += "credentialGUI"
-	}
-	if ($noVisualStyles) {
-		$Constants += "noVisualStyles"
-	}
-	if ($exitOnCancel) {
-		$Constants += "exitOnCancel"
-	}
-	if ($STA) {
-		$Constants += "STA"
-	}
-	if ($MTA) {
-		$Constants += "MTA"
-	}
-	if ($UNICODEEncoding) {
-		$Constants += "UNICODEEncoding"
-	}
-	if ($winFormsDPIAware) {
-		$Constants += "winFormsDPIAware"
-	}
+	if ($lcid) { $Constants += "culture" }
+	if ($noError) { $Constants += "noError" }
+	if ($noConsole) { $Constants += "noConsole" }
+	if ($noOutput) { $Constants += "noOutput" }
+	if ($version) { $Constants += "version" }
+	if ($credentialGUI) { $Constants += "credentialGUI" }
+	if ($noVisualStyles) { $Constants += "noVisualStyles" }
+	if ($exitOnCancel) { $Constants += "exitOnCancel" }
+	if ($STA) { $Constants += "STA" }
+	if ($MTA) { $Constants += "MTA" }
+	if ($UNICODEEncoding) { $Constants += "UNICODEEncoding" }
+	if ($winFormsDPIAware) { $Constants += "winFormsDPIAware" }
+	if ($SepcArgsHandling) { $Constants += "SepcArgsHandling" }
 
 	$CompilerOptions += "/define:$([string]::Join(";", $Constants))"
 	
@@ -437,9 +416,8 @@ function ps2exe {
 	Write-Verbose "Using Compiler Options: $($cp.CompilerOptions)"
 
 	# Read Script file
-	[string]$programFrame = [string]::Join("`n", (Get-Content (Join-Path $PSScriptRoot ./ps2exe.cs)))
+	[string]$programFrame = Get-Content $PSScriptRoot/ps2exe.cs -Raw -Encoding UTF8
 
-	$programFrame = $programFrame.Replace("`$script", $script)
 	$programFrame = $programFrame.Replace("`$lcid", $lcid)
 	$programFrame = $programFrame.Replace("`$title", $title)
 	$programFrame = $programFrame.Replace("`$product", $product)
@@ -450,7 +428,16 @@ function ps2exe {
 	$programFrame = $programFrame.Replace("`$company", $company)
 
 	Write-Output "Compiling file...`n"
+	if(-not $TempDir){
+		$TempDir = $TempTempDir = [System.IO.Path]::GetTempFileName()
+		New-Item -Path $TempTempDir -ItemType Directory | Out-Null
+	}
+	$Content | Set-Content $TempDir/main.ps1 -Encoding UTF8
+	[VOID]$cp.EmbeddedResources.Add("$TempDir/main.ps1")
 	$cr = $cop.CompileAssemblyFromSource($cp, $programFrame)
+	if($TempTempDir){
+		Remove-Item $TempTempDir -Recurse -Force -ErrorAction SilentlyContinue
+	}
 	if ($cr.Errors.Count -gt 0) {
 		if (Test-Path $outputFile) {
 			Remove-Item $outputFile -Verbose:$FALSE
@@ -460,7 +447,12 @@ function ps2exe {
 	}
 	else {
 		if (Test-Path $outputFile) {
-			Write-Output "Output file $outputFile written"
+			& {
+				$CursorPos = $host.UI.RawUI.CursorPosition
+				$CursorPos.Y -= 2
+				try{ $host.UI.RawUI.CursorPosition = $CursorPos }catch{ $Error.RemoveAt(0) }
+			}
+			Write-Output "Output file written -> $((Get-Item $outputFile).Length) bytes"
 
 			if ($prepareDebug) {
 				$cr.TempFiles | Where-Object { $_ -ilike "*.cs" } | Select-Object -First 1 | ForEach-Object {
@@ -488,6 +480,6 @@ function ps2exe {
 }
 
 # if this file is called directly, execute the function
-if ($args) {
-	ps2exe @args
+if ($PSBoundParameters.Count -gt 0) {
+	ps2exe @PSBoundParameters
 }

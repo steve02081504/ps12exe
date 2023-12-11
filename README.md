@@ -1,81 +1,63 @@
 # PS2EXE
-Overworking of the great script of Ingo Karstein with GUI support. The GUI output and input is activated with one switch, real windows executables are generated. With Powershell 5.x support and graphical front end.
-
-Module version.
-
-You find the script based version here (https://github.com/MScholtes/TechNet-Gallery) and here: [PS2EXE-GUI: "Convert" PowerShell Scripts to EXE Files with GUI](https://gallery.technet.microsoft.com/PS2EXE-GUI-Convert-e7cb69d5).
-
-Author: Markus Scholtes
-
-Version: 1.0.13
-
-Date: 2023-09-26
-
-## Installation
-
-```powershell
-PS C:\> Install-Module ps2exe
-```
-(on Powershell V4 you may have to install PowershellGet before) or download from here: https://www.powershellgallery.com/packages/ps2exe/.
 
 ## Usage
+
 ```powershell
-  Invoke-ps2exe .\source.ps1 .\target.exe
+ps2exe .\source.ps1 .\target.exe
 ```
-or
-```powershell
-  ps2exe .\source.ps1 .\target.exe
-```
+
 compiles "source.ps1" into the executable target.exe (if ".\target.exe" is omitted, output is written to ".\source.exe").
 
-or start Win-PS2EXE for a graphical front end with
-```powershell
-  Win-PS2EXE
-```
-
 ## Parameter
+
 ```powershell
-ps2exe [-inputFile] '<file_name>' [[-outputFile] '<file_name>']
-       [-prepareDebug] [-x86|-x64] [-lcid <id>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]
+ps2exe ([-inputFile] '<filename>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>'] [-TempDir '<directory>']
+       [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]
        [-credentialGUI] [-iconFile '<filename>'] [-title '<title>'] [-description '<description>']
        [-company '<company>'] [-product '<product>'] [-copyright '<copyright>'] [-trademark '<trademark>']
        [-version '<version>'] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
-       [-DPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
+       [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
 ```
 
-```
-      inputFile = Powershell script that you want to convert to executable (file has to be UTF8 or UTF16 encoded)
-     outputFile = destination executable file name or folder, defaults to inputFile with extension '.exe'
-   prepareDebug = create helpful information for debugging    
-     x86 or x64 = compile for 32-bit or 64-bit runtime only
-           lcid = location ID for the compiled executable. Current user culture if not specified
-     STA or MTA = 'Single Thread Apartment' or 'Multi Thread Apartment' mode
-      noConsole = the resulting executable will be a Windows Forms app without a console window
-UNICODEEncoding = encode output as UNICODE in console mode
-  credentialGUI = use GUI for prompting credentials in console mode
-       iconFile = icon file name for the compiled executable
-          title = title information (displayed in details tab of Windows Explorer's properties dialog)
-    description = description information (not displayed, but embedded in executable)
-        company = company information (not displayed, but embedded in executable)
-        product = product information (displayed in details tab of Windows Explorer's properties dialog)
-      copyright = copyright information (displayed in details tab of Windows Explorer's properties dialog)
-      trademark = trademark information (displayed in details tab of Windows Explorer's properties dialog)
-        version = version information (displayed in details tab of Windows Explorer's properties dialog)
-     configFile = write config file (<outputfile>.exe.config)
-       noOutput = the resulting executable will generate no standard output (includes verbose and information channel)
-        noError = the resulting executable will generate no error output (includes warning and debug channel)
- noVisualStyles = disable visual styles for a generated windows GUI application (only with -noConsole)
-   exitOnCancel = exits program when Cancel or "X" is selected in a Read-Host input box (only with -noConsole)
-       DPIAware = if display scaling is activated, GUI controls will be scaled if possible (only with -noConsole)
-   requireAdmin = if UAC is enabled, compiled executable run only in elevated context (UAC dialog appears if required)
-      supportOS = use functions of newest Windows versions (execute [Environment]::OSVersion to see the difference)
-     virtualize = application virtualization is activated (forcing x86 runtime)
-      longPaths = enable long paths ( > 260 characters) if enabled on OS (works only with Windows 10)
+```text
+       inputFile = Powershell script file that you want to convert to executable (file has to be UTF8 or UTF16 encoded)
+         Content = Powershell script content that you want to convert to executable
+      outputFile = destination executable file name or folder, defaults to inputFile with extension '.exe'
+ CompilerOptions = additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)
+         TempDir = directory for storing temporary files (default is random generated temp directory in %temp%)
+SepcArgsHandling = handle special arguments -debug, -extract, -wait and -end
+    prepareDebug = create helpful information for debugging
+      x86 or x64 = compile for 32-bit or 64-bit runtime only
+            lcid = location ID for the compiled executable. Current user culture if not specified
+      STA or MTA = 'Single Thread Apartment' or 'Multi Thread Apartment' mode
+       noConsole = the resulting executable will be a Windows Forms app without a console window
+ UNICODEEncoding = encode output as UNICODE in console mode
+   credentialGUI = use GUI for prompting credentials in console mode
+        iconFile = icon file name for the compiled executable
+           title = title information (displayed in details tab of Windows Explorer's properties dialog)
+     description = description information (not displayed, but embedded in executable)
+         company = company information (not displayed, but embedded in executable)
+         product = product information (displayed in details tab of Windows Explorer's properties dialog)
+       copyright = copyright information (displayed in details tab of Windows Explorer's properties dialog)
+       trademark = trademark information (displayed in details tab of Windows Explorer's properties dialog)
+         version = version information (displayed in details tab of Windows Explorer's properties dialog)
+      configFile = write a config file (<outputfile>.exe.config)
+        noOutput = the resulting executable will generate no standard output (includes verbose and information channel)
+         noError = the resulting executable will generate no error output (includes warning and debug channel)
+  noVisualStyles = disable visual styles for a generated windows GUI application (only with -noConsole)
+    exitOnCancel = exits program when Cancel or "X" is selected in a Read-Host input box (only with -noConsole)
+        DPIAware = if display scaling is activated, GUI controls will be scaled if possible
+winFormsDPIAware = if display scaling is activated, WinForms use DPI scaling (requires Windows 10 and .Net 4.7 or up)
+    requireAdmin = if UAC is enabled, compiled executable run only in elevated context (UAC dialog appears if required)
+       supportOS = use functions of newest Windows versions (execute [Environment]::OSVersion to see the difference)
+      virtualize = application virtualization is activated (forcing x86 runtime)
+       longPaths = enable long paths ( > 260 characters) if enabled on OS (works only with Windows 10 or up)
+
 ```
 
-A generated executable has the following reserved parameters:
+With `SepcArgsHandling` parameter, generated executable has the following reserved parameters:
 
-```
+```text
 -debug              Forces the executable to be debugged. It calls "System.Diagnostics.Debugger.Launch()".
 -extract:<FILENAME> Extracts the powerShell script inside the executable and saves it as FILENAME.
                     The script will not be executed.
@@ -83,7 +65,6 @@ A generated executable has the following reserved parameters:
 -end                All following options will be passed to the script inside the executable.
                     All preceding options are used by the executable itself and will not be passed to the script.
 ```
-
 
 ## Remarks
 
@@ -100,13 +81,14 @@ PS2EXE can create config files with the name of the generated executable + ".con
 Compiled scripts process parameters like the original script does. One restriction comes from the Windows environment: for all executables all parameters have the type STRING, if there is no implicit conversion for your parameter type you have to convert explicitly in your script. You can even pipe content to the executable with the same restriction (all piped values have the type STRING).
 
 ### Password security:
-Never store passwords in your compiled script! One can simply decompile the script with the parameter -extract. For example 
+Never store passwords in your compiled script!  
+if you use the `SepcArgsHandling` parameter, everyone can simply decompile the script with the parameter `-extract`.  
+For example  
 ```powershell
-Output.exe -extract:C:\Output.ps1
+Output.exe -extract:.\Output.ps1
 ```
 will decompile the script stored in Output.exe.
-Even if you use the `NoSepcialArgsHandling` parameter, the entire script is explicitly visible to the .net decompiler.
-So never store passwords in your scripts!
+Even you don't use it, the entire script is still explicitly visible to any .net decompiler.
 
 ### Distinguish environment by script  
 You can tell whether a script is running in a compiled exe or in a script by `$Host.Name`.  
@@ -123,10 +105,10 @@ You can retrieve the script/executable path independant of compiled/not compiled
 
 ```powershell
 if ($MyInvocation.MyCommand.CommandType -eq "ExternalScript")
- { $ScriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition }
- else
- { $ScriptPath = Split-Path -Parent -Path ([Environment]::GetCommandLineArgs()[0]) 
-     if (!$ScriptPath){ $ScriptPath = "." } }
+{ $ScriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition }
+else
+{ $ScriptPath = Split-Path -Parent -Path ([Environment]::GetCommandLineArgs()[0]) 
+if (!$ScriptPath){ $ScriptPath = "." } }
 ```
 
 ### Window in background in -noConsole mode:

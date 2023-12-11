@@ -148,7 +148,7 @@ namespace PSRunnerNS
 		
 #if noConsole
 		private string _windowTitleData = null;
-		public PSEXERawUI() {
+		public PSRunnerRawUI() {
 			// load assembly:AssemblyTitle
 			AssemblyTitleAttribute titleAttribute = (AssemblyTitleAttribute)Attribute.GetCustomAttribute(Assembly.GetExecutingAssembly(), typeof(AssemblyTitleAttribute));
 			if (titleAttribute != null)
@@ -2145,7 +2145,7 @@ namespace PSRunnerNS
 #endif
 			PSRunner me = new PSRunner();
 
-#if !NoSepcialArgsHandling
+#if SepcArgsHandling
 			bool paramWait = false;
 			string extractFN = string.Empty;
 #endif
@@ -2213,7 +2213,7 @@ namespace PSRunnerNS
 							ui.WriteLine(((PSDataCollection<PSObject>)sender)[e.Index].ToString());
 						});
 
-#if !NoSepcialArgsHandling
+#if SepcArgsHandling
 						int separator = 0;
 						int idx = 0;
 						foreach (string s in args)
@@ -2248,15 +2248,22 @@ namespace PSRunnerNS
 						}
 #endif
 
-						string script = System.Text.Encoding.UTF8.GetString(System.Convert.FromBase64String(@"$script"));
-
-						if (!string.IsNullOrEmpty(extractFN))
+						Assembly executingAssembly = Assembly.GetExecutingAssembly();
+						using (System.IO.Stream scriptstream = executingAssembly.GetManifestResourceStream("main.ps1"))
 						{
-							System.IO.File.WriteAllText(extractFN, script);
-							return 0;
+							using (System.IO.StreamReader scriptreader = new System.IO.StreamReader(scriptstream, System.Text.Encoding.UTF8))
+							{
+								string script = scriptreader.ReadToEnd();
+#if SepcArgsHandling
+								if (!string.IsNullOrEmpty(extractFN))
+								{
+									System.IO.File.WriteAllText(extractFN, script);
+									return 0;
+								}
+#endif
+								pwsh.AddScript(script);
+							}
 						}
-
-						pwsh.AddScript(script);
 
 						// parse parameters
 						string argbuffer = null;
@@ -2264,7 +2271,7 @@ namespace PSRunnerNS
 						System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex(@"^-([^: ]+)[ :]?([^:]*)$");
 
 						for (int i =
-#if !NoSepcialArgsHandling
+#if SepcArgsHandling
 						separator
 #else
 						0
@@ -2354,7 +2361,7 @@ namespace PSRunnerNS
 #endif
 			}
 
-#if !NoSepcialArgsHandling
+#if SepcArgsHandling
 			if (paramWait)
 			{
 #if !noConsole
