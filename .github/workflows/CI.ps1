@@ -8,8 +8,12 @@ try{
 }catch{}
 
 if($error){
+	Write-Output "::group::PSVersion"
+	Write-Output $PSVersionTable
+	Write-Output "::endgroup::"
+
 	$error | ForEach-Object {
-		Write-Output "::error file=$($_.InvocationInfo.ScriptName),line=$($_.InvocationInfo.ScriptLineNumber),col=$($_.InvocationInfo.OffsetInLine),endColumn=$($_.InvocationInfo.OffsetInLine),tittle=error::script error"
+		Write-Output "::error file=$($_.InvocationInfo.ScriptName),line=$($_.InvocationInfo.ScriptLineNumber),col=$($_.InvocationInfo.OffsetInLine),endColumn=$($_.InvocationInfo.OffsetInLine),tittle=error::$_"
 		Write-Output "::group::script stack trace"
 		Write-Output $_.ScriptStackTrace
 		Write-Output "::endgroup::"
