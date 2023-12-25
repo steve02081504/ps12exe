@@ -1,14 +1,22 @@
-# PS2EXE
+# ps12exe
 
-[![CI](https://github.com/steve02081504/PS2EXE/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/PS2EXE/actions/workflows/CI.yml)
+[![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
 [中文](./README_CN.md)
 
+## Install
+
+```powershell
+Install-Module ps12exe
+```
+
+(you can also clone this repository and run `./ps12exe.ps1` directly)
+
 ## Usage
 
 ```powershell
-ps2exe .\source.ps1 .\target.exe
+ps12exe .\source.ps1 .\target.exe
 ```
 
 compiles `source.ps1` into the executable target.exe (if `.\target.exe` is omitted, output is written to `.\source.exe`).
@@ -23,14 +31,14 @@ Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tre
 - Added [`-Minifyer` parameter](#minifyer) to allow you to pre-process scripts before compilation to get smaller generated executables
 - Optimised option handling and window title display under the `-noConsole` parameter, you can now customise the title of popup windows by setting `$Host.UI.RawUI.WindowTitle`.
 - Removed exe files from code repository
-- Removed the code for PS2EXE-GUI, considering it's cumbersome to use and requires extra effort to maintain
+- Removed the code for ps12exe-GUI, considering it's cumbersome to use and requires extra effort to maintain
 - Separated the cs file from the ps1 file, easier to read and maintain.
 - and more...
 
 ## Parameter
 
 ```powershell
-ps2exe ([-inputFile] '<filename>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>']
+ps12exe ([-inputFile] '<filename>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>']
        [-TempDir '<directory>'] [-Minifyer '<scriptblock>']
        [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]
        [-credentialGUI] [-iconFile '<filename>'] [-title '<title>'] [-description '<description>']
@@ -91,14 +99,14 @@ With `SepcArgsHandling` parameter, generated executable has the following reserv
 
 ### Prepossessing
 
-PS2EXE preprocesses the script before compiling.  
+ps12exe preprocesses the script before compiling.  
 
 ```powershell
-# Read the program frame from the ps2exe.cs file
-#_if PSEXE #This is the preprocessing code used when the script is compiled by ps2exe
-	#_include_as_value programFrame "$PSScriptRoot/ps2exe.cs" #Inline the contents of ps2exe.cs into this script
+# Read the program frame from the ps12exe.cs file
+#_if PSEXE #This is the preprocessing code used when the script is compiled by ps12exe
+	#_include_as_value programFrame "$PSScriptRoot/ps12exe.cs" #Inline the contents of ps12exe.cs into this script
 #_else #Otherwise read the cs file normally
-	[string]$programFrame = Get-Content $PSScriptRoot/ps2exe.cs -Raw -Encoding UTF8
+	[string]$programFrame = Get-Content $PSScriptRoot/ps12exe.cs -Raw -Encoding UTF8
 #_endif
 ```
 
@@ -153,18 +161,18 @@ Any line beginning with `#_!!` line that `#_!!` will be removed.
 
 ### Minifyer
 
-Since PS2EXE's "compilation" embeds everything in the script verbatim as a resource in the resulting executable, the resulting executable will be large if the script has a lot of useless strings.  
+Since ps12exe's "compilation" embeds everything in the script verbatim as a resource in the resulting executable, the resulting executable will be large if the script has a lot of useless strings.  
 You can specify a script block with the `-Minifyer` parameter that will process the script after preprocessing before compilation to achieve a smaller generated executable.  
 
 If you don't know how to write such a script block, you can use [psminnifyer](https://github.com/steve02081504/psminnifyer).
 
 ```powershell
-& ./ps2exe.ps1 ./main.ps1 -NoConsole -Minifyer { $_ | &./psminnifyer.ps1 }
+& ./ps12exe.ps1 ./main.ps1 -NoConsole -Minifyer { $_ | &./psminnifyer.ps1 }
 ```
 
 ### List of cmdlets not implemented
 
-The basic input/output commands had to be rewritten in C# for PS2EXE. Not implemented are *`Write-Progress`* in console mode (too much work) and *`Start-Transcript`*/*`Stop-Transcript`* (no proper reference implementation by Microsoft).
+The basic input/output commands had to be rewritten in C# for ps12exe. Not implemented are *`Write-Progress`* in console mode (too much work) and *`Start-Transcript`*/*`Stop-Transcript`* (no proper reference implementation by Microsoft).
 
 ### GUI mode output formatting
 
@@ -172,7 +180,7 @@ Per default in powershell outputs of commandlets are formatted line per line (as
 
 ### Config files
 
-PS2EXE can create config files with the name of the `generated executable + ".config"`. In most cases those config files are not necessary, they are a manifest that tells which .Net Framework version should be used. As you will usually use the actual .Net Framework, try running your excutable without the config file.
+ps12exe can create config files with the name of the `generated executable + ".config"`. In most cases those config files are not necessary, they are a manifest that tells which .Net Framework version should be used. As you will usually use the actual .Net Framework, try running your excutable without the config file.
 
 ### Parameter processing
 
@@ -190,19 +198,19 @@ Output.exe -extract:.\Output.ps1
 
 will decompile the script stored in Output.exe.
 Even if you don't use it, the entire script is still easily visible to any .net decompiler.
-![图片](https://github.com/steve02081504/PS2EXE/assets/31927825/92d96e53-ba52-406f-ae8b-538891f42779)
+![图片](https://github.com/steve02081504/ps12exe/assets/31927825/92d96e53-ba52-406f-ae8b-538891f42779)
 
 ### Distinguish environment by script  
 
 You can tell whether a script is running in a compiled exe or in a script by `$Host.Name`.  
 
 ```powershell
-if ($Host.Name -eq "PSEXE") { Write-Output "PS2EXE" } else { Write-Output "Some other host" }
+if ($Host.Name -eq "PSEXE") { Write-Output "ps12exe" } else { Write-Output "Some other host" }
 ```
 
 ### Script variables
 
-Since PS2EXE converts a script to an executable, script related variables are not available anymore. Especially the variable `$PSScriptRoot` is empty.
+Since ps12exe converts a script to an executable, script related variables are not available anymore. Especially the variable `$PSScriptRoot` is empty.
 
 The variable `$MyInvocation` is set to other values than in a script.
 

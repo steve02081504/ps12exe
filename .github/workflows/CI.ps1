@@ -2,8 +2,8 @@ $error.clear()
 
 try{
 	mkdir $PSScriptRoot/../../build | Out-Null
-	& $PSScriptRoot/../../ps2exe.ps1 $PSScriptRoot/../../ps2exe.ps1 $PSScriptRoot/../../build/ps2exe.exe -verbose | Out-Host
-	& $PSScriptRoot/../../build/ps2exe.exe $PSScriptRoot/../../ps2exe.ps1 -verbose | Out-Host
+	& $PSScriptRoot/../../ps12exe.ps1 $PSScriptRoot/../../ps12exe.ps1 $PSScriptRoot/../../build/ps12exe.exe -verbose | Out-Host
+	& $PSScriptRoot/../../build/ps12exe.exe $PSScriptRoot/../../ps12exe.ps1 -verbose | Out-Host
 	Remove-Item $PSScriptRoot/../../build -Recurse -Force
 }catch{}
 

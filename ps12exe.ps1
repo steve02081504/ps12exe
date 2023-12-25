@@ -16,7 +16,7 @@ Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [STRING]$Compiler
 Converts powershell scripts to standalone executables.
 .DESCRIPTION
 Converts powershell scripts to standalone executables. GUI output and input is activated with one switch,
-real windows executables are generated. You may use the graphical front end Win-PS2EXE for convenience.
+real windows executables are generated. You may use the graphical front end Win-ps12exe for convenience.
 
 Please see Remarks on project page for topics "GUI mode output formatting", "Config files", "Password security",
 "Script variables" and "Window in background in -noConsole mode".
@@ -105,13 +105,13 @@ application virtualization is activated (forcing x86 runtime)
 .PARAMETER longPaths
 enable long paths ( > 260 characters) if enabled on OS (works only with Windows 10 or up)
 .EXAMPLE
-ps2exe C:\Data\MyScript.ps1
+ps12exe C:\Data\MyScript.ps1
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScript.exe as console executable
 .EXAMPLE
-ps2exe -inputFile C:\Data\MyScript.ps1 -outputFile C:\Data\MyScriptGUI.exe -iconFile C:\Data\Icon.ico -noConsole -title "MyScript" -version 0.0.0.1
+ps12exe -inputFile C:\Data\MyScript.ps1 -outputFile C:\Data\MyScriptGUI.exe -iconFile C:\Data\Icon.ico -noConsole -title "MyScript" -version 0.0.0.1
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScriptGUI.exe as graphical executable, icon and meta data
 #>
-function ps2exe {
+function ps12exe {
 	[CmdletBinding()]
 	Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [STRING]$CompilerOptions = '/o+ /debug-',
 		[STRING]$TempDir = $NULL, [scriptblock]$minifyer = $null,
@@ -128,13 +128,13 @@ function ps2exe {
 	if ([STRING]::IsNullOrEmpty($inputFile) -and [STRING]::IsNullOrEmpty($Content)) {
 		$Content = $input
 		if ($inputFile.Count -gt 1) {
-			$Content | ForEach-Object { ps2exe -Content $_ @PSBoundParameters }
+			$Content | ForEach-Object { ps12exe -Content $_ @PSBoundParameters }
 			return
 		}
 	}
 	if ([STRING]::IsNullOrEmpty($inputFile) -and [STRING]::IsNullOrEmpty($Content)) {
 		Write-Host "Usage:`n"
-		Write-Host "ps2exe ([-inputFile] '<filename>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>']"
+		Write-Host "ps12exe ([-inputFile] '<filename>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>']"
 		Write-Host "       [-TempDir '<directory>'] [-Minifyer '<scriptblock>']"
 		Write-Host "       [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]"
 		Write-Host "       [-credentialGUI] [-iconFile '<filename>'] [-title '<title>'] [-description '<description>']"
@@ -362,7 +362,7 @@ function ps2exe {
 			}
 		}
 
-		powershell -noprofile -Command "&'$PSScriptRoot\ps2exe.ps1' $CallParam -nested" | Out-Host
+		powershell -noprofile -Command "&'$PSScriptRoot\ps12exe.ps1' $CallParam -nested" | Out-Host
 		return
 	}
 	#_endif
@@ -564,11 +564,11 @@ function ps2exe {
 	
 	Write-Verbose "Using Compiler Options: $($cp.CompilerOptions)"
 
-	# Read the program frame from the ps2exe.cs file
-	#_if PSEXE #这是该脚本被ps2exe编译时使用的预处理代码
-		#_include_as_value programFrame "$PSScriptRoot/ps2exe.cs" #将ps2exe.cs中的内容内嵌到该脚本中
+	# Read the program frame from the ps12exe.cs file
+	#_if PSEXE #这是该脚本被ps12exe编译时使用的预处理代码
+		#_include_as_value programFrame "$PSScriptRoot/ps12exe.cs" #将ps12exe.cs中的内容内嵌到该脚本中
 	#_else #否则正常读取cs文件
-		[string]$programFrame = Get-Content $PSScriptRoot/ps2exe.cs -Raw -Encoding UTF8
+		[string]$programFrame = Get-Content $PSScriptRoot/ps12exe.cs -Raw -Encoding UTF8
 	#_endif
 
 	$programFrame = $programFrame.Replace("`$lcid", $lcid)
@@ -632,6 +632,6 @@ function ps2exe {
 
 # if this file is called directly, execute the function
 if ($PSBoundParameters.Count -gt 0) {
-	ps2exe @PSBoundParameters
+	ps12exe @PSBoundParameters
 }
 #_endif

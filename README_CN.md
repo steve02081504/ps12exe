@@ -1,12 +1,20 @@
-# PS2EXE
+# ps12exe
 
-[![CI](https://github.com/steve02081504/PS2EXE/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/PS2EXE/actions/workflows/CI.yml)
+[![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+
+## 安装
+
+```powershell
+Install-Module ps12exe
+```
+
+（你也可以clone本仓库，然后直接运行`.\ps12exe.ps1`）
 
 ## 使用方法
 
 ```powershell
-ps2exe .\source.ps1 .\target.exe
+ps12exe .\source.ps1 .\target.exe
 ```
 
 将`source.ps1`编译为`target.exe`（如果省略`.\target.exe`，输出将写入`.\source.exe`）。
@@ -21,14 +29,14 @@ ps2exe .\source.ps1 .\target.exe
 - 追加了[`-Minifyer`参数](#minifyer)，允许你在编译前对脚本进行预处理，以获得更小的生成可执行文件
 - 优化了`-noConsole`参数下的选项处理和窗口标题显示，你现在可以通过设置`$Host.UI.RawUI.WindowTitle`来自定义弹窗的标题
 - 移除了代码仓库中的exe文件
-- 删除了PS2EXE-GUI的代码，考虑到其使用麻烦并需要额外的精力维护
+- 删除了ps12exe-GUI的代码，考虑到其使用麻烦并需要额外的精力维护
 - 将cs文件从ps1文件中分离出来，阅读和维护更方便
 - 以及更多...
 
 ## 参数
 
 ```powershell
-ps2exe ([-inputFile] '<filename>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>']
+ps12exe ([-inputFile] '<filename>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>']
        [-TempDir '<directory>'] [-Minifyer '<scriptblock>']
        [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]
        [-credentialGUI] [-iconFile '<filename>'] [-title '<title>'] [-description '<description>']
@@ -88,14 +96,14 @@ winFormsDPIAware = 如果激活了显示缩放，WinForms 将使用 DPI 缩放�
 
 ### 预处理
 
-PS2EXE 会在编译前对脚本进行预处理。  
+ps12exe 会在编译前对脚本进行预处理。  
 
 ```powershell
-# Read the program frame from the ps2exe.cs file
-#_if PSEXE #这是该脚本被ps2exe编译时使用的预处理代码
-	#_include_as_value programFrame "$PSScriptRoot/ps2exe.cs" #将ps2exe.cs中的内容内嵌到该脚本中
+# Read the program frame from the ps12exe.cs file
+#_if PSEXE #这是该脚本被ps12exe编译时使用的预处理代码
+	#_include_as_value programFrame "$PSScriptRoot/ps12exe.cs" #将ps12exe.cs中的内容内嵌到该脚本中
 #_else #否则正常读取cs文件
-	[string]$programFrame = Get-Content $PSScriptRoot/ps2exe.cs -Raw -Encoding UTF8
+	[string]$programFrame = Get-Content $PSScriptRoot/ps12exe.cs -Raw -Encoding UTF8
 #_endif
 ```
 
@@ -150,18 +158,18 @@ elseif
 
 ### Minifyer
 
-由于PS2EXE的"编译"会将脚本中的所有内容作为资源逐字嵌入到生成的可执行文件中，因此如果脚本中有大量无用字符串，生成的可执行文件就会很大。  
+由于ps12exe的"编译"会将脚本中的所有内容作为资源逐字嵌入到生成的可执行文件中，因此如果脚本中有大量无用字符串，生成的可执行文件就会很大。  
 你可以使用 `-Minifyer` 参数指定一个脚本块，它将在编译前对脚本进行预处理，以获得更小的生成可执行文件。  
 
 如果不知道如何编写这样的脚本块，可以使用 [psminnifyer](https://github.com/steve02081504/psminnifyer)。
 
 ```powershell
-& ./ps2exe.ps1 ./main.ps1 -NoConsole -Minifyer { $_ | &./psminnifyer.ps1 }
+& ./ps12exe.ps1 ./main.ps1 -NoConsole -Minifyer { $_ | &./psminnifyer.ps1 }
 ```
 
 ### 未实现的 cmdlet 列表
 
-PS2EXE 的基本输入/输出命令必须用 C# 重写。未实现的有控制台模式下的 *`Write-Progress`*（工作量太大）和*`Start-Transcript`*/*`Stop-Transcript`*（微软没有适当的参考实现）。
+ps12exe 的基本输入/输出命令必须用 C# 重写。未实现的有控制台模式下的 *`Write-Progress`*（工作量太大）和*`Start-Transcript`*/*`Stop-Transcript`*（微软没有适当的参考实现）。
 
 ### GUI 模式输出格式
 
@@ -169,7 +177,7 @@ PS2EXE 的基本输入/输出命令必须用 C# 重写。未实现的有控制�
 
 ### 配置文件
 
-PS2EXE 可以创建配置文件，文件名为`生成的可执行文件 + ".config"`。在大多数情况下，这些配置文件并不是必需的，它们只是一个清单，告诉你应该使用哪个 .Net Framework 版本。由于你通常会使用实际的 .Net Framework，请尝试在不使用配置文件的情况下运行你的可执行文件。
+ps12exe 可以创建配置文件，文件名为`生成的可执行文件 + ".config"`。在大多数情况下，这些配置文件并不是必需的，它们只是一个清单，告诉你应该使用哪个 .Net Framework 版本。由于你通常会使用实际的 .Net Framework，请尝试在不使用配置文件的情况下运行你的可执行文件。
 
 ### 参数处理
 
@@ -187,19 +195,19 @@ Output.exe -extract:.\Output.ps1
 
 将反编译存储在 Output.exe 中的脚本。
 即使你不使用它，整个脚本对任何 .net 反编译器来说仍然是轻松可见的。
-![图片](https://github.com/steve02081504/PS2EXE/assets/31927825/92d96e53-ba52-406f-ae8b-538891f42779)
+![图片](https://github.com/steve02081504/ps12exe/assets/31927825/92d96e53-ba52-406f-ae8b-538891f42779)
 
 ### 按脚本区分环境  
 
 你可以通过 `$Host.Name` 判断脚本是在编译后的 exe 中运行还是在脚本中运行。 
 
 ```powershell
-if ($Host.Name -eq "PSEXE") { Write-Output "PS2EXE" } else { Write-Output "Some other host" }
+if ($Host.Name -eq "PSEXE") { Write-Output "ps12exe" } else { Write-Output "Some other host" }
 ```
 
 ### 脚本变量
 
-由于 PS2EXE 会将脚本转换为可执行文件，因此与脚本相关的变量将不再可用。特别是变量`$PSScriptRoot`是空的。
+由于 ps12exe 会将脚本转换为可执行文件，因此与脚本相关的变量将不再可用。特别是变量`$PSScriptRoot`是空的。
 
 变量`$MyInvocation`被设置为脚本以外的值。
 
