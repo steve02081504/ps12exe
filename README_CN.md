@@ -36,50 +36,45 @@ ps12exe .\source.ps1 .\target.exe
 
 ## 参数
 
+
 ```powershell
-ps12exe ([-inputFile] '<filename|url>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>']
-        [-TempDir '<directory>'] [-Minifyer '<scriptblock>']
-        [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]
-        [-credentialGUI] [-iconFile '<filename|url>'] [-title '<title>'] [-description '<description>']
-        [-company '<company>'] [-product '<product>'] [-copyright '<copyright>'] [-trademark '<trademark>']
-        [-version '<version>'] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
+[input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>']
+        [-CompilerOptions '<options>'] [-TempDir '<directory>'] [-minifyer '<scriptblock>'] [-noConsole]
+        [-SepcArgsHandling] [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug]
+        [-resourceParams @{iconFile='<filename|url>'; title='<title>'; description='<description>'; company='<company>';
+        product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}]
+        [-lcid <lcid>] [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
 ```
 
 ```text
-       inputFile = 你要转换为可执行文件的 Powershell 脚本文件（文件必须为 UTF8 或 UTF16 编码）
-         Content = 要转换为可执行文件的 Powershell 脚本内容
-      outputFile = 目标可执行文件名或文件夹，默认为带扩展名".exe "的 inputFile
- CompilerOptions = 附加编译器选项（请参阅 https://msdn.microsoft.com/en-us/library/78f4aasd.aspx）
-         TempDir = 用于存储临时文件的目录（默认为随机生成的临时目录，位于 %temp% 中）
-        Minifyer = 脚本块，用于在编译前将脚本最小化
-SepcArgsHandling = 处理特殊参数 -debug、-extract、-wait 和 -end
-    prepareDebug = 为调试创建有用信息
-      x86 或 x64 = 仅针对 32 位或 64 位运行时编译
-            lcid = 编译后可执行文件的位置 ID。如果未指定，则为当前用户文化
-        STA或MTA = "单线程公寓 "或 "多线程公寓 "模式
-       noConsole = 生成的可执行文件将是不带控制台窗口的 Windows 窗体应用程序
- UNICODEEncoding = 在控制台模式下将输出编码为 UNICODE
-   credentialGUI = 在控制台模式下使用图形用户界面提示凭据
-        iconFile = 编译后可执行文件的图标文件名
-           title = 标题信息（显示在 Windows 资源管理器属性对话框的详细信息选项卡中）
-     description = 说明信息（不显示，但嵌入在可执行文件中）
-         company = 公司信息（不显示，但嵌入在可执行文件中）
-         product = 产品信息（显示在 Windows 资源管理器属性对话框的详细信息选项卡中）
-       copyright = 版权信息（显示在 Windows 资源管理器属性对话框的详细信息选项卡中）
-       trademark = 商标信息（显示在 Windows 资源管理器属性对话框的详细信息选项卡中）
-         version = 版本信息（显示在 Windows 资源管理器属性对话框的详细信息选项卡中）
-      configFile = 写入配置文件（<outputfile>.exe.config）
-        noOutput = 生成的可执行文件将不产生标准输出（包括详细说明和信息通道）
-         noError = 生成的可执行文件将不产生错误输出（包括警告和调试通道）
-  noVisualStyles = 禁用生成的 Windows GUI 应用程序的可视化样式（仅与 -noConsole 一起使用）
-    exitOnCancel = 当在 "读取主机 "输入框中选择 "取消 "或 "X "时退出程序（仅适用于 -noConsole）
-        DPIAware = 如果激活了显示缩放，GUI 控件将尽可能按比例缩放
-winFormsDPIAware = 如果激活了显示缩放，WinForms 将使用 DPI 缩放（要求 Windows 10 和 .Net 4.7 或更高版本）
-    requireAdmin = 如果启用 UAC，编译后的可执行文件只能在提升的上下文中运行（如果需要，会出现 UAC 对话框）
-       supportOS = 使用最新 Windows 版本的功能（执行 [Environment]::OSVersion 查看差异）
-      virtualize = 激活应用程序虚拟化（强制 x86 运行时）
-       longPaths = 如果操作系统支持，则启用长路径（> 260 个字符）（仅适用于 Windows 10 或更高版本）
+           input = Powershell 脚本文件的内容，与 -Content 参数相同。
+       inputFile = 要转换为可执行文件的 Powershell 脚本文件的路径或网址（文件必须是 UTF8 或 UTF16 编码）
+         Content = 要转换为可执行文件的 Powershell 脚本的内容
+      outputFile = 目标可执行文件的名称或所在的文件夹，默认为 inputFile 加上 ".exe" 扩展名
+ CompilerOptions = 附加的编译器选项（请参阅 https://msdn.microsoft.com/en-us/library/78f4aasd.aspx）
+         TempDir = 用于存放临时文件的目录（默认为位于 %temp% 中的随机生成的临时目录）
+        minifyer = 用于在编译前缩小脚本的脚本块
+SepcArgsHandling = 生成的可执行文件将处理以下特殊参数：-debug、-extract、-wait 和 -end
+    prepareDebug = 为调试生成有用的信息
+    architecture = 仅针对特定的运行时编译。可选的值有 "x64"、"x86" 和 "anycpu"
+            lcid = 编译后可执行文件的区域设置 ID。如果未指定，则为当前用户的区域设置
+  threadingModel = "单线程公寓"或 "多线程公寓"模式
+       noConsole = 生成的可执行文件将是没有控制台窗口的 Windows 窗体应用程序
+ UNICODEEncoding = 在控制台模式下将输出以 UNICODE 编码
+   credentialGUI = 在控制台模式下使用图形用户界面来提示凭据
+  resourceParams = 包含编译后可执行文件的资源参数的哈希表
+      configFile = 生成配置文件（<outputfile>.exe.config）
+        noOutput = 生成的可执行文件将不输出任何标准输出（包括详细和信息通道）
+         noError = 生成的可执行文件将不输出任何错误输出（包括警告和调试通道）
+  noVisualStyles = 禁用生成的 Windows GUI 应用程序的视觉样式（仅与 -noConsole 一起使用）
+    exitOnCancel = 在 "读取主机"输入框中选择 "取消"或 "X"时退出程序（仅适用于 -noConsole）
+        DPIAware = 如果启用了显示缩放功能，将尽可能地缩放图形用户界面的控件
+winFormsDPIAware = 如果启用了显示缩放，WinForms 将使用 DPI 缩放（需要 Windows 10 和 .Net 4.7 或更高版本）
+    requireAdmin = 如果启用了 UAC，编译后的可执行文件只能在提升的权限下运行（如果需要，会弹出 UAC 对话框）
+       supportOS = 使用最新 Windows 版本的特性（执行 [Environment]::OSVersion 查看区别）
+      virtualize = 启用应用程序虚拟化（强制使用 x86 运行时）
+       longPaths = 启用长路径（超过 260 个字符）如果操作系统支持（仅适用于 Windows 10 或更高版本）
 ```
 
 使用 `SepcArgsHandling` 参数，生成的可执行文件具有以下保留参数：
@@ -182,7 +177,7 @@ ps12exe 可以创建配置文件，文件名为`生成的可执行文件 + ".con
 
 ### 参数处理
 
-编译后的脚本会像原始脚本一样处理参数。其中一个限制来自 Windows 环境：对于所有可执行文件，所有参数的类型都是 STRING，如果参数类型没有隐式转换，则必须在脚本中进行显式转换。你甚至可以通过管道将内容传送到可执行文件，但有同样的限制（所有管道传送的值都是 STRING 类型）。
+编译后的脚本会像原始脚本一样处理参数。其中一个限制来自 Windows 环境：对于所有可执行文件，所有参数的类型都是 String，如果参数类型没有隐式转换，则必须在脚本中进行显式转换。你甚至可以通过管道将内容传送到可执行文件，但有同样的限制（所有管道传送的值都是 String 类型）。
 
 ### 密码安全
 

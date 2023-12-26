@@ -1,14 +1,70 @@
-﻿#Requires -Version 3.0
+﻿#Requires -Version 5.0
 
-[CmdletBinding()]
-Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [STRING]$CompilerOptions = '/o+ /debug-',
-	[STRING]$TempDir = $NULL, [scriptblock]$minifyer = $null,
-	[SWITCH]$SepcArgsHandling, [SWITCH]$prepareDebug, [SWITCH]$x86, [SWITCH]$x64, [int]$lcid, [SWITCH]$STA, [SWITCH]$MTA,
-	[SWITCH]$nested, [SWITCH]$noConsole, [SWITCH]$UNICODEEncoding, [SWITCH]$credentialGUI,
-	[STRING]$iconFile = $NULL, [STRING]$title, [STRING]$description, [STRING]$company, [STRING]$product, [STRING]$copyright, [STRING]$trademark, [STRING]$version,
-	[SWITCH]$configFile, [SWITCH]$noConfigFile, [SWITCH]$noOutput, [SWITCH]$noError, [SWITCH]$noVisualStyles, [SWITCH]$exitOnCancel,
-	[SWITCH]$DPIAware, [SWITCH]$winFormsDPIAware, [SWITCH]$requireAdmin, [SWITCH]$supportOS, [SWITCH]$virtualize, [SWITCH]$longPaths,
-	[STRING]$Content = $NULL
+[CmdletBinding(DefaultParameterSetName = 'InputFile')]
+Param(
+	[Parameter(ParameterSetName = 'ImportDefs', DontShow)]
+	[Switch]$ImportDefs,
+	[Parameter(ParameterSetName = 'InputFile', Position = 0)]
+	[ValidatePattern("^(https?|ftp)://.*|.*\.(ps1|psd1|tmp)|()$")]
+	[String]$inputFile,
+	[Parameter(ParameterSetName = 'ContentArg', Position = 0, Mandatory)]
+	[Parameter(ParameterSetName = 'ContentPipe', ValueFromPipeline = $TRUE)]
+	[String]$Content,
+	[Parameter(ParameterSetName = 'InputFile', Position = 1)]
+	[Parameter(ParameterSetName = 'ContentArg', Position = 1, Mandatory)]
+	[Parameter(ParameterSetName = 'ContentPipe', Position = 0, Mandatory)]
+	[ValidatePattern(".*\.(exe|com)$")]
+	[String]$outputFile = $NULL, [String]$CompilerOptions = '/o+ /debug-', [String]$TempDir = $NULL,
+	[scriptblock]$minifyer = $null, [Switch]$noConsole, [Switch]$SepcArgsHandling, [Switch]$prepareDebug,
+	[ValidateSet('x64', 'x86', 'anycpu')]
+	[String]$architecture = 'anycpu',
+	[ValidateSet('STA', 'MTA')]
+	[String]$threadingModel = 'STA',
+	[HashTable]$resourceParams = @{},
+	[int]$lcid,
+	[Switch]$UNICODEEncoding,
+	[Switch]$credentialGUI,
+	[Switch]$configFile,
+	[Switch]$noOutput,
+	[Switch]$noError,
+	[Switch]$noVisualStyles,
+	[Switch]$exitOnCancel,
+	[Switch]$DPIAware,
+	[Switch]$winFormsDPIAware,
+	[Switch]$requireAdmin,
+	[Switch]$supportOS,
+	[Switch]$virtualize,
+	[Switch]$longPaths,
+	# 兼容旧版参数列表，不进入文档
+	[Parameter(DontShow)]
+	[Switch]$noConfigFile,
+	[Parameter(DontShow)]
+	[Switch]$x86,
+	[Parameter(DontShow)]
+	[Switch]$x64,
+	[Parameter(DontShow)]
+	[Switch]$STA,
+	[Parameter(DontShow)]
+	[Switch]$MTA,
+	[Parameter(DontShow)]
+	[String]$iconFile,
+	[Parameter(DontShow)]
+	[String]$title,
+	[Parameter(DontShow)]
+	[String]$description,
+	[Parameter(DontShow)]
+	[String]$company,
+	[Parameter(DontShow)]
+	[String]$product,
+	[Parameter(DontShow)]
+	[String]$copyright,
+	[Parameter(DontShow)]
+	[String]$trademark,
+	[Parameter(DontShow)]
+	[String]$version,
+	# 内部参数，不进入文档
+	[Parameter(DontShow)]
+	[Switch]$nested
 )
 #_if PSScript #在PSEXE中不需要提供函数 直接执行函数体
 <#
@@ -30,80 +86,89 @@ With `SepcArgsHandling`, generated executable has the following reserved paramet
 										key to be pressed.
 -end                All following options will be passed to the script inside the executable.
 										All preceding options are used by the executable itself.
+
 .PARAMETER inputFile
-Powershell script to convert to executable (file has to be UTF8 or UTF16 encoded)
+Powershell script file path or url to convert to executable (file has to be UTF8 or UTF16 encoded)
+
+.PARAMETER Content
+The content of the PowerShell script to convert to executable
+
 .PARAMETER outputFile
 destination executable file name or folder, defaults to inputFile with extension '.exe'
+
 .PARAMETER CompilerOptions
 additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)
+
 .PARAMETER TempDir
 directory for storing temporary files (default is random generated temp directory in %temp%)
-.PARAMETER Minifyer
+
+.PARAMETER minifyer
 scriptblock to minify the script before compiling
+
 .PARAMETER SepcArgsHandling
-handle special arguments -debug, -extract, -wait and -end. They will be passed to the script inside the executable
-.PARAMETER prepareDebug
-create helpful information for debugging of generated executable. See parameter -debug there
-.PARAMETER x86
-compile for 32-bit runtime only
-.PARAMETER x64
-compile for 64-bit runtime only
-.PARAMETER lcid
-location ID for the compiled executable. Current user culture if not specified
-.PARAMETER STA
-Single Thread Apartment mode
-.PARAMETER MTA
-Multi Thread Apartment mode
-.PARAMETER nested
-internal use
+the resulting executable will handle special arguments -debug, -extract, -wait and -end.
+
 .PARAMETER noConsole
 the resulting executable will be a Windows Forms app without a console window.
 You might want to pipe your output to Out-String to prevent a message box for every line of output
 (example: dir C:\ | Out-String)
+
+.PARAMETER prepareDebug
+create helpful information for debugging of generated executable. See parameter -debug there
+
+.PARAMETER architecture
+compile for specific runtime only. Possible values are 'x64' and 'x86' and 'anycpu'
+
+.PARAMETER threadingModel
+Threading model for the compiled executable. Possible values are 'STA' and 'MTA'
+
+.PARAMETER resourceParams
+A hashtable that contains resource parameters for the compiled executable. Possible keys are 'iconFile', 'title', 'description', 'company', 'product', 'copyright', 'trademark', 'version'
+iconFile can be a file path or url to an icon file. All other values are strings.
+see https://msdn.microsoft.com/en-us/library/system.reflection.assemblytitleattribute(v=vs.110).aspx for details
+
+.PARAMETER lcid
+location ID for the compiled executable. Current user culture if not specified
+
 .PARAMETER UNICODEEncoding
 encode output as UNICODE in console mode, useful to display special encoded chars
+
 .PARAMETER credentialGUI
 use GUI for prompting credentials in console mode instead of console input
-.PARAMETER iconFile
-icon file name for the compiled executable
-.PARAMETER title
-title information (displayed in details tab of Windows Explorer's properties dialog)
-.PARAMETER description
-description information (not displayed, but embedded in executable)
-.PARAMETER company
-company information (not displayed, but embedded in executable)
-.PARAMETER product
-product information (displayed in details tab of Windows Explorer's properties dialog)
-.PARAMETER copyright
-copyright information (displayed in details tab of Windows Explorer's properties dialog)
-.PARAMETER trademark
-trademark information (displayed in details tab of Windows Explorer's properties dialog)
-.PARAMETER version
-version information (displayed in details tab of Windows Explorer's properties dialog)
+
 .PARAMETER configFile
 write a config file (<outputfile>.exe.config)
-.PARAMETER noConfigFile
-compatibility parameter
+
 .PARAMETER noOutput
 the resulting executable will generate no standard output (includes verbose and information channel)
+
 .PARAMETER noError
 the resulting executable will generate no error output (includes warning and debug channel)
+
 .PARAMETER noVisualStyles
 disable visual styles for a generated windows GUI application. Only applicable with parameter -noConsole
+
 .PARAMETER exitOnCancel
 exits program when Cancel or "X" is selected in a Read-Host input box. Only applicable with parameter -noConsole
+
 .PARAMETER DPIAware
 if display scaling is activated, GUI controls will be scaled if possible.
+
 .PARAMETER winFormsDPIAware
 creates an entry in the config file for WinForms to use DPI scaling. Forces -configFile and -supportOS
+
 .PARAMETER requireAdmin
 if UAC is enabled, compiled executable will run only in elevated context (UAC dialog appears if required)
+
 .PARAMETER supportOS
 use functions of newest Windows versions (execute [Environment]::OSVersion to see the difference)
+
 .PARAMETER virtualize
 application virtualization is activated (forcing x86 runtime)
+
 .PARAMETER longPaths
 enable long paths ( > 260 characters) if enabled on OS (works only with Windows 10 or up)
+
 .EXAMPLE
 ps12exe C:\Data\MyScript.ps1
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScript.exe as console executable
@@ -112,57 +177,98 @@ ps12exe -inputFile C:\Data\MyScript.ps1 -outputFile C:\Data\MyScriptGUI.exe -ico
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScriptGUI.exe as graphical executable, icon and meta data
 #>
 function ps12exe {
-	[CmdletBinding()]
-	Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [STRING]$CompilerOptions = '/o+ /debug-',
-		[STRING]$TempDir = $NULL, [scriptblock]$minifyer = $null,
-		[SWITCH]$SepcArgsHandling, [SWITCH]$prepareDebug, [SWITCH]$x86, [SWITCH]$x64, [int]$lcid, [SWITCH]$STA, [SWITCH]$MTA,
-		[SWITCH]$nested, [SWITCH]$noConsole, [SWITCH]$UNICODEEncoding, [SWITCH]$credentialGUI,
-		[STRING]$iconFile = $NULL, [STRING]$title, [STRING]$description, [STRING]$company, [STRING]$product, [STRING]$copyright, [STRING]$trademark, [STRING]$version,
-		[SWITCH]$configFile, [SWITCH]$noConfigFile, [SWITCH]$noOutput, [SWITCH]$noError, [SWITCH]$noVisualStyles, [SWITCH]$exitOnCancel,
-		[SWITCH]$DPIAware, [SWITCH]$winFormsDPIAware, [SWITCH]$requireAdmin, [SWITCH]$supportOS, [SWITCH]$virtualize, [SWITCH]$longPaths,
-		[STRING]$Content = $NULL
+	[CmdletBinding(DefaultParameterSetName = 'InputFile')]
+	Param(
+		[Parameter(ParameterSetName = 'InputFile', Position = 0)]
+		[ValidatePattern("^(https?|ftp)://.*|.*\.(ps1|psd1|tmp)|()$")]
+		[String]$inputFile,
+		[Parameter(ParameterSetName = 'ContentArg', Position = 0, Mandatory)]
+		[Parameter(ParameterSetName = 'ContentPipe', ValueFromPipeline = $TRUE)]
+		[String]$Content,
+		[Parameter(ParameterSetName = 'InputFile', Position = 1)]
+		[Parameter(ParameterSetName = 'ContentArg', Position = 1, Mandatory)]
+		[Parameter(ParameterSetName = 'ContentPipe', Position = 0, Mandatory)]
+		[ValidatePattern(".*\.(exe|com)$")]
+		[String]$outputFile = $NULL, [String]$CompilerOptions = '/o+ /debug-', [String]$TempDir = $NULL,
+		[scriptblock]$minifyer = $null, [Switch]$noConsole, [Switch]$SepcArgsHandling, [Switch]$prepareDebug,
+		[ValidateSet('x64', 'x86', 'anycpu')]
+		[String]$architecture = 'anycpu',
+		[ValidateSet('STA', 'MTA')]
+		[String]$threadingModel = 'STA',
+		[HashTable]$resourceParams = @{},
+		[int]$lcid,
+		[Switch]$UNICODEEncoding,
+		[Switch]$credentialGUI,
+		[Switch]$configFile,
+		[Switch]$noOutput,
+		[Switch]$noError,
+		[Switch]$noVisualStyles,
+		[Switch]$exitOnCancel,
+		[Switch]$DPIAware,
+		[Switch]$winFormsDPIAware,
+		[Switch]$requireAdmin,
+		[Switch]$supportOS,
+		[Switch]$virtualize,
+		[Switch]$longPaths,
+		# 兼容旧版参数列表，不进入文档
+		[Parameter(DontShow)]
+		[Switch]$noConfigFile,
+		[Parameter(DontShow)]
+		[Switch]$x86,
+		[Parameter(DontShow)]
+		[Switch]$x64,
+		[Parameter(DontShow)]
+		[Switch]$STA,
+		[Parameter(DontShow)]
+		[Switch]$MTA,
+		[Parameter(DontShow)]
+		[String]$iconFile,
+		[Parameter(DontShow)]
+		[String]$title,
+		[Parameter(DontShow)]
+		[String]$description,
+		[Parameter(DontShow)]
+		[String]$company,
+		[Parameter(DontShow)]
+		[String]$product,
+		[Parameter(DontShow)]
+		[String]$copyright,
+		[Parameter(DontShow)]
+		[String]$trademark,
+		[Parameter(DontShow)]
+		[String]$version,
+		# 内部参数，不进入文档
+		[Parameter(DontShow)]
+		[Switch]$nested
 	)
 #_endif
-	$SavePos = [char]27 + '[s'
-	$RestorePos = [char]27 + '[u'
-	if ([STRING]::IsNullOrEmpty($inputFile) -and [STRING]::IsNullOrEmpty($Content)) {
-		$Content = $input
-		if ($inputFile.Count -gt 1) {
-			$Content | ForEach-Object { ps12exe -Content $_ @PSBoundParameters }
-			return
-		}
-	}
-	if ([STRING]::IsNullOrEmpty($inputFile) -and [STRING]::IsNullOrEmpty($Content)) {
+	$SavePos = [char]27 + '[s'; $RestorePos = [char]27 + '[u'
+	if (-not ($inputFile -or $Content)) {
 		Write-Host "Usage:`n"
-		Write-Host "ps12exe ([-inputFile] '<filename|url>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>']"
-		Write-Host "        [-TempDir '<directory>'] [-Minifyer '<scriptblock>']"
-		Write-Host "        [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]"
-		Write-Host "        [-credentialGUI] [-iconFile '<filename|url>'] [-title '<title>'] [-description '<description>']"
-		Write-Host "        [-company '<company>'] [-product '<product>'] [-copyright '<copyright>'] [-trademark '<trademark>']"
-		Write-Host "        [-version '<version>'] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]"
-		Write-Host "        [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]`n"
-		Write-Host "       inputFile = Powershell script file that you want to convert to executable (file has to be UTF8 or UTF16 encoded)"
+		Write-Host "[input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>']"
+		Write-Host "        [-CompilerOptions '<options>'] [-TempDir '<directory>'] [-minifyer '<scriptblock>'] [-noConsole]"
+		Write-Host "        [-SepcArgsHandling] [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug]"
+		Write-Host "        [-resourceParams @{iconFile='<filename|url>'; title='<title>'; description='<description>'; company='<company>';"
+		Write-Host "        product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}]"
+		Write-Host "        [-lcid <lcid>] [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]"
+		Write-Host "        [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]"
+		Write-Host
+		Write-Host "           input = String of the contents of the powershell script file, same as -Content."
+		Write-Host "       inputFile = Powershell script file path or url that you want to convert to executable (file has to be UTF8 or UTF16 encoded)"
 		Write-Host "         Content = Powershell script content that you want to convert to executable"
 		Write-Host "      outputFile = destination executable file name or folder, defaults to inputFile with extension '.exe'"
 		Write-Host " CompilerOptions = additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)"
 		Write-Host "         TempDir = directory for storing temporary files (default is random generated temp directory in %temp%)"
-		Write-Host "        Minifyer = scriptblock to minify the script before compiling"
-		Write-Host "SepcArgsHandling = handle special arguments -debug, -extract, -wait and -end"
+		Write-Host "        minifyer = scriptblock to minify the script before compiling"
+		Write-Host "SepcArgsHandling = the resulting executable will handle special arguments -debug, -extract, -wait and -end"
 		Write-Host "    prepareDebug = create helpful information for debugging"
-		Write-Host "      x86 or x64 = compile for 32-bit or 64-bit runtime only"
+		Write-Host "    architecture = compile for specific runtime only. Possible values are 'x64' and 'x86' and 'anycpu'"
 		Write-Host "            lcid = location ID for the compiled executable. Current user culture if not specified"
-		Write-Host "      STA or MTA = 'Single Thread Apartment' or 'Multi Thread Apartment' mode"
+		Write-Host "  threadingModel = 'Single Thread Apartment' or 'Multi Thread Apartment' mode"
 		Write-Host "       noConsole = the resulting executable will be a Windows Forms app without a console window"
 		Write-Host " UNICODEEncoding = encode output as UNICODE in console mode"
 		Write-Host "   credentialGUI = use GUI for prompting credentials in console mode"
-		Write-Host "        iconFile = icon file name for the compiled executable"
-		Write-Host "           title = title information (displayed in details tab of Windows Explorer's properties dialog)"
-		Write-Host "     description = description information (not displayed, but embedded in executable)"
-		Write-Host "         company = company information (not displayed, but embedded in executable)"
-		Write-Host "         product = product information (displayed in details tab of Windows Explorer's properties dialog)"
-		Write-Host "       copyright = copyright information (displayed in details tab of Windows Explorer's properties dialog)"
-		Write-Host "       trademark = trademark information (displayed in details tab of Windows Explorer's properties dialog)"
-		Write-Host "         version = version information (displayed in details tab of Windows Explorer's properties dialog)"
+		Write-Host "  resourceParams = A hashtable that contains resource parameters for the compiled executable"
 		Write-Host "      configFile = write a config file (<outputfile>.exe.config)"
 		Write-Host "        noOutput = the resulting executable will generate no standard output (includes verbose and information channel)"
 		Write-Host "         noError = the resulting executable will generate no error output (includes warning and debug channel)"
@@ -177,6 +283,38 @@ function ps12exe {
 		Write-Host "Input not specified!"
 		return
 	}
+	# 处理兼容旧版参数列表
+	if ($x86 -and $x64) {
+		Write-Error "-x86 cannot be combined with -x64"
+		return
+	}
+	if ($x86) { $architecture = 'x86' }
+	if ($x64) { $architecture = 'x64' }
+	if ($STA -and $MTA) {
+		Write-Error "-STA cannot be combined with -MTA"
+		return
+	}
+	if ($STA) { $threadingModel = 'STA' }
+	if ($MTA) { $threadingModel = 'MTA' }
+	$resourceParamKeys = @('iconFile', 'title', 'description', 'company', 'product', 'copyright', 'trademark', 'version')
+	$resourceParamKeys | ForEach-Object {
+		if ($PSBoundParameters.ContainsKey($_)) {
+			$resourceParams[$_] = $PSBoundParameters[$_]
+		}
+	}
+	$resourceParams.GetEnumerator() | ForEach-Object {
+		if (-not $resourceParamKeys.Contains($_.Key)) {
+			Write-Warning "Parameter -resourceParams has an invalid key: $($_.Key)"
+		}
+	}
+	if ($configFile -and $noConfigFile) {
+		Write-Error "-configFile cannot be combined with -noConfigFile"
+		return
+	}
+	if ($noConfigFile) { $configFile = $FALSE }
+	# 由于其他的resourceParams参数需要转义，iconFile参数不需要转义，所以提取出来单独处理
+	$iconFile = $resourceParams['iconFile']
+	$resourceParams.Remove('iconFile')
 	function bytesOfString($str) {
 		[system.Text.Encoding]::UTF8.GetBytes($str).Count
 	}
@@ -188,7 +326,7 @@ function ps12exe {
 			return
 		}
 		function ReadScriptFile($File) {
-			$Content = if($File -match "^(https?|ftp)://") {
+			$Content = if ($File -match "^(https?|ftp)://") {
 				(Invoke-WebRequest -Uri $File -ErrorAction SilentlyContinue).Content
 			}
 			else {
@@ -238,17 +376,17 @@ function ps12exe {
 					$Result += $Line
 				}
 			}
-			$ScriptRoot = $FilePath.Substring(0,$FilePath.LastIndexOfAny(@('\', '/')))
+			$ScriptRoot = $FilePath.Substring(0, $FilePath.LastIndexOfAny(@('\', '/')))
 			function GetIncludeFilePath($rest) {
-				if($rest -match "((\'[^\']*\')+)\s*(?!#.*)") {
+				if ($rest -match "((\'[^\']*\')+)\s*(?!#.*)") {
 					$file = $Matches[1]
 					$file = $file.Substring(1, $file.Length - 2).Replace("''", "'")
 				}
-				elseif($rest -match '((\"[^\"]*\")+)\s*(?!#.*)') {
+				elseif ($rest -match '((\"[^\"]*\")+)\s*(?!#.*)') {
 					$file = $Matches[1]
 					$file = $file.Substring(1, $file.Length - 2).Replace('""', '"')
 				}
-				else{ $file = $rest }
+				else { $file = $rest }
 				$file = $file.Replace('$PSScriptRoot', $ScriptRoot)
 				# 若是相对路径，则转换为基于$FilePath的绝对路径
 				if ($file -notmatch "^[a-zA-Z]:") {
@@ -263,9 +401,10 @@ function ps12exe {
 			$Content = $Result |
 			# 处理#_!!<line>
 			ForEach-Object {
-				if($_ -match "^(\s*)#_!!(?<line>.*)") {
-					$Matches[1]+$Matches["line"]
-				} else{ $_ }
+				if ($_ -match "^(\s*)#_!!(?<line>.*)") {
+					$Matches[1] + $Matches["line"]
+				}
+				else { $_ }
 			} |
 			# 处理#_include <file>、#_include_as_value <valuename> <file>
 			ForEach-Object {
@@ -304,7 +443,7 @@ function ps12exe {
 		if ($minifyer) {
 			Write-Host "${SavePos}Minifying script..."
 			try {
-				$MinifyedContent = &{ .$minifyer ($_ = $Content) }
+				$MinifyedContent = & { .$minifyer ($_ = $Content) }
 				Write-Host "${RestorePos}Minifyed script -> $(bytesOfString $MinifyedContent) bytes"
 			}
 			catch {
@@ -328,11 +467,15 @@ function ps12exe {
 	}
 	#_endif
 	# retrieve absolute paths independent if path is given relative oder absolute
-	if($inputFile -notmatch "^(https?|ftp)://") {
+	
+	if (-not $inputFile) {
+		$inputFile = '.\a.ps1'
+	}
+	if ($inputFile -notmatch "^(https?|ftp)://") {
 		$inputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($inputFile)
 	}
-	if ([STRING]::IsNullOrEmpty($outputFile)) {
-		if($inputFile -match "^https?://") {
+	if (-not $outputFile) {
+		if ($inputFile -match "^https?://") {
 			$outputFile = ([System.IO.Path]::Combine($PWD, [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
 		}
 		else {
@@ -353,21 +496,34 @@ function ps12exe {
 		$Params.Remove("Content")
 		$Params.Remove("inputFile")
 		$Params.Remove("outputFile")
+		$Params.Remove("resourceParams") #使用旧版参数列表传递hashtable参数更为保险
+		$Params.Remove("x86"); $Params.Remove("x64")
+		$Params.Remove("STA"); $Params.Remove("MTA")
 		$TempFile = [System.IO.Path]::GetTempFileName()
 		$Content | Set-Content $TempFile -Encoding UTF8 -NoNewline
-		$Params.Add("inputFile", $TempFile)
 		$Params.Add("outputFile", $outputFile)
+		$Params.Add("inputFile", $TempFile)
+		$resourceParamKeys | ForEach-Object {
+			if ($resourceParams.ContainsKey($_) -and $resourceParams[$_]) {
+				$Params.Add($_, $PSBoundParameters[$_])
+			}
+		}
+		if ($iconFile) {
+			$Params['iconFile'] = $iconFile
+		}
 		$CallParam = foreach ($Param in $Params.GetEnumerator()) {
 			if ($Param.Value -is [Switch]) {
 				"-$($Param.Key):`$$([bool]$Param.Value)"
 			}
-			elseif ($Param.Value -is [string]) {
+			elseif ($Param.Value -is [string] -and $Param.Value) {
 				"-$($Param.Key):'$(($Param.Value).Replace("'", "''"))'"
 			}
 			else {
 				"-$($Param.Key):$($Param.Value)"
 			}
 		}
+
+		Write-Verbose "Starting WinPowershell ps12exe with parameters: $CallParam"
 
 		powershell -noprofile -Command "&'$PSScriptRoot\ps12exe.ps1' $CallParam -nested" | Out-Host
 		return
@@ -379,12 +535,7 @@ function ps12exe {
 		return
 	}
 
-	if (($outputFile -notlike "*.exe") -and ($outputFile -notlike "*.com")) {
-		Write-Error "Output file must have extension '.exe' or '.com'!"
-		return
-	}
-
-	if (!([STRING]::IsNullOrEmpty($iconFile))) {
+	if ($iconFile) {
 		# retrieve absolute path independent if path is given relative oder absolute
 		$iconFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($iconFile)
 
@@ -398,12 +549,17 @@ function ps12exe {
 		$supportOS = $TRUE
 	}
 
-	if ($requireAdmin -and $virtualize) {
-		Write-Error "-requireAdmin cannot be combined with -virtualize"
-		return
+	if ($virtualize) {
+		$checkList = @("requireAdmin", "supportOS", "longPaths")
+		foreach ($_ in $checkList) {
+			if ($PSBoundParameters[$_]) {
+				Write-Error "-virtualize cannot be combined with -$_"
+				return
+			}
+		}
 	}
-	if ($supportOS -and $virtualize) {
-		Write-Error "-supportOS cannot be combined with -virtualize"
+	if ($longPaths -and $virtualize) {
+		Write-Error "-longPaths cannot be combined with -virtualize"
 		return
 	}
 	if ($longPaths -and $virtualize) {
@@ -411,14 +567,7 @@ function ps12exe {
 		return
 	}
 
-	$CFGFILE = $FALSE
-	if ($configFile) {
-		$CFGFILE = $TRUE
-		if ($noConfigFile) {
-			Write-Error "-configFile cannot be combined with -noConfigFile"
-			return
-		}
-	}
+	$CFGFILE = [bool]$configFile
 	if (!$CFGFILE -and $longPaths) {
 		Write-Warning "Forcing generation of a config file, since the option -longPaths requires this"
 		$CFGFILE = $TRUE
@@ -429,29 +578,10 @@ function ps12exe {
 		$CFGFILE = $TRUE
 	}
 
-	if ($STA -and $MTA) {
-		Write-Error "You cannot use switches -STA and -MTA at the same time!"
-		return
-	}
-
-	if (!$MTA -and !$STA) {
-		# Set default apartment mode for powershell version if not set by parameter
-		$STA = $TRUE
-	}
-
 	# escape escape sequences in version info
-	$title = $title -replace "\\", "\\"
-	$product = $product -replace "\\", "\\"
-	$copyright = $copyright -replace "\\", "\\"
-	$trademark = $trademark -replace "\\", "\\"
-	$description = $description -replace "\\", "\\"
-	$company = $company -replace "\\", "\\"
-
-	if (![STRING]::IsNullOrEmpty($version)) {
-		# check for correct version number information
-		if ($version -notmatch "(^\d+\.\d+\.\d+\.\d+$)|(^\d+\.\d+\.\d+$)|(^\d+\.\d+$)|(^\d+$)") {
-			Write-Error "Version number has to be supplied in the form n.n.n.n, n.n.n, n.n or n (with n as number)!"
-			return
+	$resourceParamKeys | ForEach-Object {
+		if ($resourceParams.ContainsKey($_)) {
+			$resourceParams[$_] = $resourceParams[$_] -replace "\\", "\\"
 		}
 	}
 
@@ -482,9 +612,6 @@ function ps12exe {
 		$referenceAssembies += ([System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.ManifestModule.Name -ieq "System.Windows.Forms.dll" } | Select-Object -First 1).Location
 		$referenceAssembies += ([System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.ManifestModule.Name -ieq "System.Drawing.dll" } | Select-Object -First 1).Location
 	}
-
-	$platform = "anycpu"
-	if ($x64 -and !$x86) { $platform = "x64" } else { if ($x86 -and !$x64) { $platform = "x86" } }
 
 	$cop = (New-Object Microsoft.CSharp.CSharpCodeProvider($o))
 	$cp = New-Object System.CodeDom.Compiler.CompilerParameters($referenceAssembies, $outputFile)
@@ -517,12 +644,8 @@ function ps12exe {
 
 	[string[]]$CompilerOptions = @($CompilerOptions)
 
-	if (!([STRING]::IsNullOrEmpty($iconFile))) {
-		$CompilerOptions += "`"/win32icon:$($iconFile)`""
-	}
-
 	if (!$virtualize) {
-		$CompilerOptions += "/platform:$($platform)"
+		$CompilerOptions += "/platform:$architecture"
 		$CompilerOptions += "/target:$( if ($noConsole){'winexe'}else{'exe'})"
 		$CompilerOptions += $manifestParam 
 	}
@@ -551,6 +674,7 @@ function ps12exe {
 
 	[string[]]$Constants = @() 
 
+	$Constants += $threadingModel
 	if ($lcid) { $Constants += "culture" }
 	if ($noError) { $Constants += "noError" }
 	if ($noConsole) { $Constants += "noConsole" }
@@ -559,17 +683,9 @@ function ps12exe {
 	if ($credentialGUI) { $Constants += "credentialGUI" }
 	if ($noVisualStyles) { $Constants += "noVisualStyles" }
 	if ($exitOnCancel) { $Constants += "exitOnCancel" }
-	if ($STA) { $Constants += "STA" }
-	if ($MTA) { $Constants += "MTA" }
 	if ($UNICODEEncoding) { $Constants += "UNICODEEncoding" }
 	if ($winFormsDPIAware) { $Constants += "winFormsDPIAware" }
 	if ($SepcArgsHandling) { $Constants += "SepcArgsHandling" }
-
-	$CompilerOptions += "/define:$([string]::Join(";", $Constants))"
-	
-	$cp.CompilerOptions = [string]::Join(" ", $CompilerOptions)
-	
-	Write-Verbose "Using Compiler Options: $($cp.CompilerOptions)"
 
 	# Read the program frame from the ps12exe.cs file
 	#_if PSEXE #这是该脚本被ps12exe编译时使用的预处理代码
@@ -579,13 +695,9 @@ function ps12exe {
 	#_endif
 
 	$programFrame = $programFrame.Replace("`$lcid", $lcid)
-	$programFrame = $programFrame.Replace("`$title", $title)
-	$programFrame = $programFrame.Replace("`$product", $product)
-	$programFrame = $programFrame.Replace("`$copyright", $copyright)
-	$programFrame = $programFrame.Replace("`$trademark", $trademark)
-	$programFrame = $programFrame.Replace("`$version", $version)
-	$programFrame = $programFrame.Replace("`$description", $description)
-	$programFrame = $programFrame.Replace("`$company", $company)
+	$resourceParamKeys | ForEach-Object {
+		$programFrame = $programFrame.Replace("`$($_)", $resourceParams[$_])
+	}
 
 	if (-not $TempDir) {
 		$TempDir = $TempTempDir = [System.IO.Path]::GetTempPath() + [System.IO.Path]::GetRandomFileName()
@@ -593,15 +705,25 @@ function ps12exe {
 	}
 	$TempDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($TempDir)
 	$Content | Set-Content $TempDir\main.ps1 -Encoding UTF8 -NoNewline
-	if($iconFile -match "^(https?|ftp)://") {
+	if ($iconFile -match "^(https?|ftp)://") {
 		Invoke-WebRequest -Uri $iconFile -OutFile $TempDir\icon.ico
 		if (!(Test-Path $TempDir\icon.ico -PathType Leaf)) {
-			Write-Error "Icon file $iconFile not downloaded!"
+			Write-Error "Icon file $iconFile failed to download!"
 			return
 		}
 		$iconFile = "$TempDir\icon.ico"
 	}
+
+	if ($iconFile) {
+		$CompilerOptions += "`"/win32icon:$iconFile`""
+	}
+
 	Write-Host "${SavePos}Compiling file..."
+
+	$CompilerOptions += "/define:$($Constants -join ';')"
+	$cp.CompilerOptions = $CompilerOptions -join ' '
+	Write-Verbose "Using Compiler Options: $($cp.CompilerOptions)"
+
 	[VOID]$cp.EmbeddedResources.Add("$TempDir\main.ps1")
 	$cr = $cop.CompileAssemblyFromSource($cp, $programFrame)
 	if ($TempTempDir) {
@@ -646,7 +768,7 @@ function ps12exe {
 }
 
 # if this file is called directly, execute the function
-if ($PSBoundParameters.Count -gt 0) {
+if (-not $ImportDefs) {
 	ps12exe @PSBoundParameters
 }
 #_endif

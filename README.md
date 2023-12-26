@@ -39,38 +39,32 @@ Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tre
 ## Parameter
 
 ```powershell
-ps12exe ([-inputFile] '<filename|url>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>']
-       [-TempDir '<directory>'] [-Minifyer '<scriptblock>']
-       [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]
-       [-credentialGUI] [-iconFile '<filename|url>'] [-title '<title>'] [-description '<description>']
-       [-company '<company>'] [-product '<product>'] [-copyright '<copyright>'] [-trademark '<trademark>']
-       [-version '<version>'] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
-       [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
+[input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>']
+        [-CompilerOptions '<options>'] [-TempDir '<directory>'] [-minifyer '<scriptblock>'] [-noConsole]
+        [-SepcArgsHandling] [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug]
+        [-resourceParams @{iconFile='<filename|url>'; title='<title>'; description='<description>'; company='<company>';
+        product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}]
+        [-lcid <lcid>] [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
+        [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
 ```
 
 ```text
-       inputFile = Powershell script file that you want to convert to executable (file has to be UTF8 or UTF16 encoded)
+           input = String of the contents of the powershell script file, same as -Content.
+       inputFile = Powershell script file path or url that you want to convert to executable (file has to be UTF8 or UTF16 encoded)
          Content = Powershell script content that you want to convert to executable
       outputFile = destination executable file name or folder, defaults to inputFile with extension '.exe'
  CompilerOptions = additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)
          TempDir = directory for storing temporary files (default is random generated temp directory in %temp%)
-        Minifyer = scriptblock to minify the script before compiling
-SepcArgsHandling = handle special arguments -debug, -extract, -wait and -end
+        minifyer = scriptblock to minify the script before compiling
+SepcArgsHandling = the resulting executable will handle special arguments -debug, -extract, -wait and -end
     prepareDebug = create helpful information for debugging
-      x86 or x64 = compile for 32-bit or 64-bit runtime only
+    architecture = compile for specific runtime only. Possible values are 'x64' and 'x86' and 'anycpu'
             lcid = location ID for the compiled executable. Current user culture if not specified
-      STA or MTA = 'Single Thread Apartment' or 'Multi Thread Apartment' mode
+  threadingModel = 'Single Thread Apartment' or 'Multi Thread Apartment' mode
        noConsole = the resulting executable will be a Windows Forms app without a console window
  UNICODEEncoding = encode output as UNICODE in console mode
    credentialGUI = use GUI for prompting credentials in console mode
-        iconFile = icon file name for the compiled executable
-           title = title information (displayed in details tab of Windows Explorer's properties dialog)
-     description = description information (not displayed, but embedded in executable)
-         company = company information (not displayed, but embedded in executable)
-         product = product information (displayed in details tab of Windows Explorer's properties dialog)
-       copyright = copyright information (displayed in details tab of Windows Explorer's properties dialog)
-       trademark = trademark information (displayed in details tab of Windows Explorer's properties dialog)
-         version = version information (displayed in details tab of Windows Explorer's properties dialog)
+  resourceParams = A hashtable that contains resource parameters for the compiled executable
       configFile = write a config file (<outputfile>.exe.config)
         noOutput = the resulting executable will generate no standard output (includes verbose and information channel)
          noError = the resulting executable will generate no error output (includes warning and debug channel)
@@ -185,7 +179,7 @@ ps12exe can create config files with the name of the `generated executable + ".c
 
 ### Parameter processing
 
-Compiled scripts process parameters like the original script does. One restriction comes from the Windows environment: for all executables all parameters have the type STRING, if there is no implicit conversion for your parameter type you have to convert explicitly in your script. You can even pipe content to the executable with the same restriction (all piped values have the type STRING).
+Compiled scripts process parameters like the original script does. One restriction comes from the Windows environment: for all executables all parameters have the type String, if there is no implicit conversion for your parameter type you have to convert explicitly in your script. You can even pipe content to the executable with the same restriction (all piped values have the type String).
 
 ### Password security
 
