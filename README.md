@@ -29,6 +29,7 @@ Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tre
 - Special parameters are no longer enabled by default in the generated files, but can be enabled with the new `-SepcArgsHandling` parameter if needed.
 - The `-CompilerOptions` parameter has been added to allow you to further customise the generated executable.
 - Added [`-Minifyer` parameter](#minifyer) to allow you to pre-process scripts before compilation to get smaller generated executables
+- Support for compiling scripts and including files from urls, support for downloading icons from urls
 - Optimised option handling and window title display under the `-noConsole` parameter, you can now customise the title of popup windows by setting `$Host.UI.RawUI.WindowTitle`.
 - Removed exe files from code repository
 - Removed the code for ps12exe-GUI, considering it's cumbersome to use and requires extra effort to maintain
@@ -38,10 +39,10 @@ Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tre
 ## Parameter
 
 ```powershell
-ps12exe ([-inputFile] '<filename>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>']
+ps12exe ([-inputFile] '<filename|url>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>']
        [-TempDir '<directory>'] [-Minifyer '<scriptblock>']
        [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]
-       [-credentialGUI] [-iconFile '<filename>'] [-title '<title>'] [-description '<description>']
+       [-credentialGUI] [-iconFile '<filename|url>'] [-title '<title>'] [-description '<description>']
        [-company '<company>'] [-product '<product>'] [-copyright '<copyright>'] [-trademark '<trademark>']
        [-version '<version>'] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
        [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
@@ -123,14 +124,14 @@ ps12exe preprocesses the script before compiling.
 Only the following conditions are now supported: `PSEXE` and `PSScript`.  
 `PSEXE` is true , `PSScript` is false.  
 
-#### `#_include <filename>`/`#_include_as_value <valuename> <file>`
+#### `#_include <filename|url>`/`#_include_as_value <valuename> <file|url>`
 
 ```powershell
-#_include <filename>
-#_include_as_value <valuename> <file>
+#_include <filename|url>
+#_include_as_value <valuename> <file|url>
 ```
 
-Includes the content of the file `<filename>` or `<file>` into the script. The content of the file is inserted at the position of the `#_include`/`#_include_as_value` command.  
+Includes the content of the file `<filename|url>` or `<file|url>` into the script. The content of the file is inserted at the position of the `#_include`/`#_include_as_value` command.  
 
 Unlike the `#_if` statement, if you don't enclose the filename in quotes, the `#_include` family treats the trailing space & `#` as part of the filename as well.  
 

@@ -27,6 +27,7 @@ ps12exe .\source.ps1 .\target.exe
 - 生成的文件中特殊参数不再默认启用，如有需要可使用`-SepcArgsHandling`参数启用
 - 追加了`-CompilerOptions`参数，允许你进一步定制生成的可执行文件
 - 追加了[`-Minifyer`参数](#minifyer)，允许你在编译前对脚本进行预处理，以获得更小的生成可执行文件
+- 支持自url编译脚本和url include文件、支持自url下载图标
 - 优化了`-noConsole`参数下的选项处理和窗口标题显示，你现在可以通过设置`$Host.UI.RawUI.WindowTitle`来自定义弹窗的标题
 - 移除了代码仓库中的exe文件
 - 删除了ps12exe-GUI的代码，考虑到其使用麻烦并需要额外的精力维护
@@ -36,13 +37,13 @@ ps12exe .\source.ps1 .\target.exe
 ## 参数
 
 ```powershell
-ps12exe ([-inputFile] '<filename>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>']
-       [-TempDir '<directory>'] [-Minifyer '<scriptblock>']
-       [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]
-       [-credentialGUI] [-iconFile '<filename>'] [-title '<title>'] [-description '<description>']
-       [-company '<company>'] [-product '<product>'] [-copyright '<copyright>'] [-trademark '<trademark>']
-       [-version '<version>'] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
-       [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
+ps12exe ([-inputFile] '<filename|url>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>']
+        [-TempDir '<directory>'] [-Minifyer '<scriptblock>']
+        [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]
+        [-credentialGUI] [-iconFile '<filename|url>'] [-title '<title>'] [-description '<description>']
+        [-company '<company>'] [-product '<product>'] [-copyright '<copyright>'] [-trademark '<trademark>']
+        [-version '<version>'] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
+        [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
 ```
 
 ```text
@@ -120,14 +121,14 @@ ps12exe 会在编译前对脚本进行预处理。
 现在只支持以下条件： `PSEXE` 和 `PSScript`。  
 `PSEXE` 为 true；`PSScript` 为 false。  
 
-#### `#_include <filename>`/`#_include_as_value <valuename> <file>`
+#### `#_include <filename|url>`/`#_include_as_value <valuename> <file|url>`
 
 ```powershell
-#_include <filename>
-#_include_as_value <valuename> <file>
+#_include <filename|url>
+#_include_as_value <valuename> <file|url>
 ```
 
-将文件 `<filename>` 或 `<file>` 的内容包含到脚本中。文件内容会插入到 `#_include`/`#_include_as_value` 命令的位置。  
+将文件 `<filename|url>` 或 `<file|url>` 的内容包含到脚本中。文件内容会插入到 `#_include`/`#_include_as_value` 命令的位置。  
 
 与`#_if`语句不同 如果你不使用引号将文件名括起来，`#_include`系列预处理命令会将末尾的空格、`#`也视为文件名的一部分  
 

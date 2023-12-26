@@ -134,13 +134,13 @@ function ps12exe {
 	}
 	if ([STRING]::IsNullOrEmpty($inputFile) -and [STRING]::IsNullOrEmpty($Content)) {
 		Write-Host "Usage:`n"
-		Write-Host "ps12exe ([-inputFile] '<filename>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>']"
-		Write-Host "       [-TempDir '<directory>'] [-Minifyer '<scriptblock>']"
-		Write-Host "       [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]"
-		Write-Host "       [-credentialGUI] [-iconFile '<filename>'] [-title '<title>'] [-description '<description>']"
-		Write-Host "       [-company '<company>'] [-product '<product>'] [-copyright '<copyright>'] [-trademark '<trademark>']"
-		Write-Host "       [-version '<version>'] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]"
-		Write-Host "       [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]`n"
+		Write-Host "ps12exe ([-inputFile] '<filename|url>' | -Content '<script>') [-outputFile '<filename>'] [-CompilerOptions '<options>']"
+		Write-Host "        [-TempDir '<directory>'] [-Minifyer '<scriptblock>']"
+		Write-Host "        [-SepcArgsHandling] [-prepareDebug] [-x86|-x64] [-lcid <lcid>] [-STA|-MTA] [-noConsole] [-UNICODEEncoding]"
+		Write-Host "        [-credentialGUI] [-iconFile '<filename|url>'] [-title '<title>'] [-description '<description>']"
+		Write-Host "        [-company '<company>'] [-product '<product>'] [-copyright '<copyright>'] [-trademark '<trademark>']"
+		Write-Host "        [-version '<version>'] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]"
+		Write-Host "        [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]`n"
 		Write-Host "       inputFile = Powershell script file that you want to convert to executable (file has to be UTF8 or UTF16 encoded)"
 		Write-Host "         Content = Powershell script content that you want to convert to executable"
 		Write-Host "      outputFile = destination executable file name or folder, defaults to inputFile with extension '.exe'"
@@ -183,19 +183,19 @@ function ps12exe {
 	#_if PSScript #在PSEXE中主机永远是winpwsh，所以不会内嵌
 	if (!$nested) {
 	#_endif
-		if (-not $Content) {
-			if (!(Test-Path $inputFile -PathType Leaf)) {
-				Write-Error "Input file $($inputfile) not found!"
-				return
-			}
-		}
-		elseif ($inputFile) {
+		if ($inputFile -and $Content) {
 			Write-Error "Input file and content cannot be used at the same time!"
 			return
 		}
 		function ReadScriptFile($File) {
-			Write-Host "Reading file $([System.IO.Path]::GetFileName($File)) size $((Get-Item $File).Length) bytes"
-			$Content = Get-Content -LiteralPath $File -Encoding UTF8 -ErrorAction SilentlyContinue
+			$Content = if($File -match "^(https?|ftp)://") {
+				(Invoke-WebRequest -Uri $File -ErrorAction SilentlyContinue).Content
+			}
+			else {
+				Get-Content -LiteralPath $File -Encoding UTF8 -ErrorAction SilentlyContinue -Raw
+			}
+			Write-Host "Reading file $([System.IO.Path]::GetFileName($File)) size $($Content.Length) bytes"
+			$Content = $Content -join "`n" -split '\r?\n'
 			if (-not $Content) {
 				Write-Error "No data found. May be read error or file protected."
 				return
@@ -238,7 +238,7 @@ function ps12exe {
 					$Result += $Line
 				}
 			}
-			$ScriptRoot = [System.IO.Path]::GetDirectoryName($FilePath)
+			$ScriptRoot = $FilePath.Substring(0,$FilePath.LastIndexOfAny(@('\', '/')))
 			function GetIncludeFilePath($rest) {
 				if($rest -match "((\'[^\']*\')+)\s*(?!#.*)") {
 					$file = $Matches[1]
@@ -252,7 +252,7 @@ function ps12exe {
 				$file = $file.Replace('$PSScriptRoot', $ScriptRoot)
 				# 若是相对路径，则转换为基于$FilePath的绝对路径
 				if ($file -notmatch "^[a-zA-Z]:") {
-					$file = [System.IO.Path]::Combine($ScriptRoot, $file)
+					$file = "$ScriptRoot/$file"
 				}
 				if (!(Test-Path $file -PathType Leaf)) {
 					Write-Error "Include file $file not found!"
@@ -297,7 +297,7 @@ function ps12exe {
 		if ($inputFile) {
 			$Content = ReadScriptFile $inputFile
 			if (!$Content) { return }
-			if ((bytesOfString $Content) -ne (Get-Item $inputFile).Length) {
+			if ((bytesOfString $Content) -ne (Get-Item $inputFile -ErrorAction Ignore).Length) {
 				Write-Host "Preprocessed script -> $(bytesOfString $Content) bytes"
 			}
 		}
@@ -328,9 +328,16 @@ function ps12exe {
 	}
 	#_endif
 	# retrieve absolute paths independent if path is given relative oder absolute
-	$inputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($inputFile)
+	if($inputFile -notmatch "^(https?|ftp)://") {
+		$inputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($inputFile)
+	}
 	if ([STRING]::IsNullOrEmpty($outputFile)) {
-		$outputFile = ([System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($inputFile), [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
+		if($inputFile -match "^https?://") {
+			$outputFile = ([System.IO.Path]::Combine($PWD, [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
+		}
+		else {
+			$outputFile = ([System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($inputFile), [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
+		}
 	}
 	else {
 		$outputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($outputFile)
@@ -580,13 +587,21 @@ function ps12exe {
 	$programFrame = $programFrame.Replace("`$description", $description)
 	$programFrame = $programFrame.Replace("`$company", $company)
 
-	Write-Host "${SavePos}Compiling file..."
 	if (-not $TempDir) {
 		$TempDir = $TempTempDir = [System.IO.Path]::GetTempPath() + [System.IO.Path]::GetRandomFileName()
 		New-Item -Path $TempTempDir -ItemType Directory | Out-Null
 	}
 	$TempDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($TempDir)
 	$Content | Set-Content $TempDir\main.ps1 -Encoding UTF8 -NoNewline
+	if($iconFile -match "^(https?|ftp)://") {
+		Invoke-WebRequest -Uri $iconFile -OutFile $TempDir\icon.ico
+		if (!(Test-Path $TempDir\icon.ico -PathType Leaf)) {
+			Write-Error "Icon file $iconFile not downloaded!"
+			return
+		}
+		$iconFile = "$TempDir\icon.ico"
+	}
+	Write-Host "${SavePos}Compiling file..."
 	[VOID]$cp.EmbeddedResources.Add("$TempDir\main.ps1")
 	$cr = $cop.CompileAssemblyFromSource($cp, $programFrame)
 	if ($TempTempDir) {
