@@ -304,7 +304,7 @@ function ps12exe {
 		if ($minifyer) {
 			Write-Host "${SavePos}Minifying script..."
 			try {
-				$MinifyedContent = & $minifyer ($_ = $Content)
+				$MinifyedContent = &{ .$minifyer ($_ = $Content) }
 				Write-Host "${RestorePos}Minifyed script -> $(bytesOfString $MinifyedContent) bytes"
 			}
 			catch {
