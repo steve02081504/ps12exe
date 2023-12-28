@@ -1,0 +1,21 @@
+name: Publish Release to PowerShell Gallery
+
+on:
+  push:
+    tags:
+      - v*
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish'
+        required: true
+        default: 'v0.0.0'
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run a one-line script
+        shell: pwsh
+        run: ./.github/workflows/publish.ps1 -version ${{ github.event.inputs.version || github.ref_name }} -ApiKey ${{ secrets.NUGET_API_KEY }}

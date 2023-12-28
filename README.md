@@ -34,7 +34,7 @@ Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tre
 - Support for compiling scripts and including files from urls, support for downloading icons from urls
 - Optimised option handling and window title display under the `-noConsole` parameter, you can now customise the title of popup windows by setting `$Host.UI.RawUI.WindowTitle`.
 - Removed exe files from code repository
-- Removed the code for ps12exe-GUI, considering it's cumbersome to use and requires extra effort to maintain
+- Removed the code for PS2EXE-GUI, considering it's cumbersome to use and requires extra effort to maintain
 - Separated the cs file from the ps1 file, easier to read and maintain.
 - and more...
 

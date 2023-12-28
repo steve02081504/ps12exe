@@ -32,7 +32,7 @@ ps12exe .\source.ps1 .\target.exe
 - 支持自url编译脚本和url include文件、支持自url下载图标
 - 优化了`-noConsole`参数下的选项处理和窗口标题显示，你现在可以通过设置`$Host.UI.RawUI.WindowTitle`来自定义弹窗的标题
 - 移除了代码仓库中的exe文件
-- 删除了ps12exe-GUI的代码，考虑到其使用麻烦并需要额外的精力维护
+- 删除了PS2EXE-GUI的代码，考虑到其使用麻烦并需要额外的精力维护
 - 将cs文件从ps1文件中分离出来，阅读和维护更方便
 - 以及更多...
 
