@@ -5,14 +5,14 @@ Param(
 	[Parameter(ParameterSetName = 'ImportDefs', DontShow)]
 	[Switch]$ImportDefs,
 	[Parameter(ParameterSetName = 'InputFile', Position = 0)]
-	[ValidatePattern("^(https?|ftp)://.*|.*\.(ps1|psd1|tmp)|()$")]
+	[ValidatePattern("^(https?|ftp)://.*|.*\.(ps1|psd1|tmp)$")]
 	[String]$inputFile,
 	[Parameter(ParameterSetName = 'ContentArg', Position = 0, Mandatory)]
 	[Parameter(ParameterSetName = 'ContentPipe', ValueFromPipeline = $TRUE)]
 	[String]$Content,
 	[Parameter(ParameterSetName = 'InputFile', Position = 1)]
-	[Parameter(ParameterSetName = 'ContentArg', Position = 1, Mandatory)]
-	[Parameter(ParameterSetName = 'ContentPipe', Position = 0, Mandatory)]
+	[Parameter(ParameterSetName = 'ContentArg', Position = 1)]
+	[Parameter(ParameterSetName = 'ContentPipe', Position = 0)]
 	[ValidatePattern(".*\.(exe|com)$")]
 	[String]$outputFile = $NULL, [String]$CompilerOptions = '/o+ /debug-', [String]$TempDir = $NULL,
 	[scriptblock]$minifyer = $null, [Switch]$noConsole, [Switch]$SepcArgsHandling, [Switch]$prepareDebug,
@@ -180,14 +180,14 @@ function ps12exe {
 	[CmdletBinding(DefaultParameterSetName = 'InputFile')]
 	Param(
 		[Parameter(ParameterSetName = 'InputFile', Position = 0)]
-		[ValidatePattern("^(https?|ftp)://.*|.*\.(ps1|psd1|tmp)|()$")]
+		[ValidatePattern("^(https?|ftp)://.*|.*\.(ps1|psd1|tmp)$")]
 		[String]$inputFile,
 		[Parameter(ParameterSetName = 'ContentArg', Position = 0, Mandatory)]
 		[Parameter(ParameterSetName = 'ContentPipe', ValueFromPipeline = $TRUE)]
 		[String]$Content,
 		[Parameter(ParameterSetName = 'InputFile', Position = 1)]
-		[Parameter(ParameterSetName = 'ContentArg', Position = 1, Mandatory)]
-		[Parameter(ParameterSetName = 'ContentPipe', Position = 0, Mandatory)]
+		[Parameter(ParameterSetName = 'ContentArg', Position = 1)]
+		[Parameter(ParameterSetName = 'ContentPipe', Position = 0)]
 		[ValidatePattern(".*\.(exe|com)$")]
 		[String]$outputFile = $NULL, [String]$CompilerOptions = '/o+ /debug-', [String]$TempDir = $NULL,
 		[scriptblock]$minifyer = $null, [Switch]$noConsole, [Switch]$SepcArgsHandling, [Switch]$prepareDebug,
