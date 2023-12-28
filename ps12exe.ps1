@@ -505,7 +505,7 @@ function ps12exe {
 		$Params.Add("inputFile", $TempFile)
 		$resourceParamKeys | ForEach-Object {
 			if ($resourceParams.ContainsKey($_) -and $resourceParams[$_]) {
-				$Params.Add($_, $PSBoundParameters[$_])
+				$Params[$_] = $PSBoundParameters[$_]
 			}
 		}
 		if ($iconFile) {
@@ -679,7 +679,7 @@ function ps12exe {
 	if ($noError) { $Constants += "noError" }
 	if ($noConsole) { $Constants += "noConsole" }
 	if ($noOutput) { $Constants += "noOutput" }
-	if ($version) { $Constants += "version" }
+	if ($resourceParams.version) { $Constants += "version" }
 	if ($credentialGUI) { $Constants += "credentialGUI" }
 	if ($noVisualStyles) { $Constants += "noVisualStyles" }
 	if ($exitOnCancel) { $Constants += "exitOnCancel" }
@@ -696,7 +696,7 @@ function ps12exe {
 
 	$programFrame = $programFrame.Replace("`$lcid", $lcid)
 	$resourceParamKeys | ForEach-Object {
-		$programFrame = $programFrame.Replace("`$($_)", $resourceParams[$_])
+		$programFrame = $programFrame.Replace("`$$_", $resourceParams[$_])
 	}
 
 	if (-not $TempDir) {
