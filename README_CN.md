@@ -15,29 +15,56 @@ Install-Module ps12exe
 
 ## 使用方法
 
+### GUI 模式
+
+```powershell
+ps12exeGUI
+```
+
+### 控制台模式
+
 ```powershell
 ps12exe .\source.ps1 .\target.exe
 ```
 
 将`source.ps1`编译为`target.exe`（如果省略`.\target.exe`，输出将写入`.\source.exe`）。
 
-## 比较
+```powershell
+'"Hello World!"' | ps12exe
+```
 
-与[`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5)相比，该项目：
+将`"Hello World!"`编译为可执行文件输出到`.\a.exe`。
 
-- 追加了[强大的预处理功能](#预处理)，允许你在编译前对脚本进行预处理（而不是将所有内容复制粘贴嵌入到脚本中）
-- 生成的文件中特殊参数不再默认启用，如有需要可使用`-SepcArgsHandling`参数启用
-- 追加了`-CompilerOptions`参数，允许你进一步定制生成的可执行文件
-- 追加了[`-Minifyer`参数](#minifyer)，允许你在编译前对脚本进行预处理，以获得更小的生成可执行文件
-- 支持自url编译脚本和url include文件、支持自url下载图标
-- 优化了`-noConsole`参数下的选项处理和窗口标题显示，你现在可以通过设置`$Host.UI.RawUI.WindowTitle`来自定义弹窗的标题
-- 移除了代码仓库中的exe文件
-- 删除了PS2EXE-GUI的代码，考虑到其使用麻烦并需要额外的精力维护
-- 将cs文件从ps1文件中分离出来，阅读和维护更方便
-- 以及更多...
+## 优势对比
+
+相较于[`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5)，本项目带来了以下改进：
+
+- 引入了[强大的预处理功能](#预处理)，让你在编译前就能预处理脚本，无需再复制粘贴所有内容到脚本中。
+- 生成的文件中不再默认启用特殊参数，但如果需要，可以通过新的`-SepcArgsHandling`参数启用。
+- 新增`-CompilerOptions`参数，让你能进一步定制生成的可执行文件。
+- 新增[`-Minifyer`参数](#minifyer)，让你在编译前预处理脚本，生成更小的可执行文件。
+- 支持从URL编译脚本和包含文件，支持从URL下载图标。
+- 在`-noConsole`参数下，优化了选项处理和窗口标题显示，你现在可以通过设置`$Host.UI.RawUI.WindowTitle`自定义弹出窗口的标题。
+- 从代码仓库中移除了exe文件。
+- 更好的多语言支持、纯脚本GUI，支持深色模式。
+- 将cs文件从ps1文件中分离，更易于阅读和维护。
+- 还有更多...
 
 ## 参数
 
+### GUI参数
+
+```powershell
+ps12exeGUI [[-ConfingFile] '<filename>'] [-Localize '<languagecode>'] [-UIMode 'Dark'|'Light'|'Auto']
+```
+
+```text
+ConfingFile = 配置文件的路径（默认为 无）
+   Localize = 语言代码（默认为当前系统语言，没有对应的语言文件时尝试加载'en-UK'，如果仍然没有则遍历所有语言文件直到可用）
+     UIMode = 界面模式（默认为 Auto）
+```
+
+### 控制台参数
 
 ```powershell
 [input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>']

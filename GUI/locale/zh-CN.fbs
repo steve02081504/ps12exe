@@ -1,0 +1,92 @@
+<Data>
+  <Events Desc="Events associated with controls">
+  </Events>
+  <Form Name="MainForm" Size="928,651" Tag="VisualStyle,DPIAware" Text="ps12exe GUI">
+    <GroupBox Name="InputsGroupBox" Location="8,1" Size="766,573">
+      <GroupBox Name="BaseIOGroupBox" Location="5,13" Size="626,102">
+        <Label Name="CompileFileLabel" Location="5,15" Size="80,14" Text="编译文件" />
+        <TextBox Name="CompileFileTextBox" AllowDrop="True" Location="6,30" Size="551,22" />
+        <Button Name="CompileFileButton" Location="558,27" Size="59,26" Text="..." />
+        <Label Name="OutputFileLabel" Location="4,54" Size="80,14" Text="输出文件" />
+        <TextBox Name="OutputFileTextBox" AllowDrop="True" Location="6,70" Size="550,22" />
+        <Button Name="OutputFileButton" Location="559,68" Size="59,25" Text="..." />
+      </GroupBox>
+      <GroupBox Name="OtherInputsGroupBox" Location="6,118" Size="374,136">
+        <Label Name="CompileParamsLabel" Location="5,12" Size="80,14" Text="编译参数" />
+        <TextBox Name="CompileParamsTextBox" Location="5,30" Size="360,22" Text="/o+ /debug-" />
+        <Label Name="TempDirLabel" Location="6,54" Size="80,14" Text="临时目录" />
+        <TextBox Name="TempDirTextBox" Location="5,70" Size="360,22" />
+        <Label Name="MinifyScriptLabel" Location="3,93" Size="80,14" Text="最小化脚本" />
+        <TextBox Name="MinifyScriptTextBox" Location="5,110" Size="360,22" />
+      </GroupBox>
+      <GroupBox Name="ArchitectureGroupBox" Location="15,262" Size="95,89" Text="架构">
+        <CheckBox Name="x64CheckBox" Location="8,15" Size="82,23" Text="x64" />
+        <CheckBox Name="x86CheckBox" Location="9,36" Size="81,26" Text="x86" />
+        <CheckBox Name="AnyCPUCheckBox" AutoCheck="False" Checked="True" CheckState="Checked" Location="8,58" Size="86,27" Text="AnyCPU" />
+      </GroupBox>
+      <GroupBox Name="CommonOptionsGroupBox" Location="638,16" Size="117,113" Text="常用选项">
+        <CheckBox Name="ConsoleAppCheckBox" Checked="True" CheckState="Checked" Location="7,15" Size="103,26" Text="控制台应用" />
+        <CheckBox Name="RequestAdminCheckBox" Location="9,86" Size="102,20" Text="请求管理员" />
+        <CheckBox Name="DebugInfoCheckBox" Location="7,36" Size="108,28" Text="生成调试信息" />
+        <CheckBox Name="SpecialParamsCheckBox" Location="9,59" Size="105,28" Text="特殊参数处理" />
+      </GroupBox>
+      <GroupBox Name="DetailedOptionsGroupBox" Location="638,138" Size="118,157" Text="更多选项">
+        <CheckBox Name="ConfigFileCheckBox" Location="11,18" Size="102,24" Text="生成配置文件" />
+        <CheckBox Name="DisableOutputStreamCheckBox" Location="10,37" Size="100,26" Text="禁用输出流" />
+        <CheckBox Name="DisableErrorStreamCheckBox" Location="10,61" Size="102,22" Text="禁用错误流" />
+        <CheckBox Name="MoreOSFeaturesCheckBox" Location="10,122" Size="105,29" Text="更多OS特性" />
+        <CheckBox Name="EnableVirtualizationCheckBox" Location="11,102" Size="102,24" Text="启用虚拟化" />
+        <CheckBox Name="LongPathSupportCheckBox" Location="10,78" Size="102,27" Text="长路径支持" />
+      </GroupBox>
+      <GroupBox Name="RegionIDGroupBox" Location="219,262" Size="86,70">
+        <Label Name="RegionIDLabel" Location="7,15" Size="68,21" Text="区域id设置" />
+        <TextBox Name="RegionIDTextBox" Location="5,38" Size="73,22" />
+      </GroupBox>
+      <GroupBox Name="ThreadModelGroupBox" Location="116,264" Size="87,82" Text="线程模型">
+        <CheckBox Name="SingleThreadCheckBox" AutoCheck="False" Checked="True" CheckState="Checked" Location="10,27" Size="72,21" Text="单线程" />
+        <CheckBox Name="MultiThreadCheckBox" Location="10,54" Size="73,25" Text="多线程" />
+      </GroupBox>
+      <GroupBox Name="ResourceParamsGroupBox" Location="17,359" Size="710,206" Text="资源参数">
+        <Label Name="IconFileLabel" Location="17,20" Size="86,15" Text="图标文件" />
+        <TextBox Name="IconFileTextBox" AllowDrop="True" Location="18,36" Size="279,22" />
+        <Button Name="IconFileButton" Location="298,35" Size="38,23" Text="..." />
+        <Label Name="TitleLabel" Location="15,61" Size="85,15" Text="标题" />
+        <TextBox Name="TitleTextBox" Location="14,78" Size="314,22" />
+        <Label Name="DescriptionLabel" Location="14,104" Size="77,18" Text="描述" />
+        <TextBox Name="DescriptionTextBox" Location="14,124" Size="319,22" />
+        <Label Name="CompanyLabel" Location="16,145" Size="149,17" Text="公司" />
+        <TextBox Name="CompanyTextBox" Location="15,165" Size="313,22" />
+        <Label Name="ProductNameLabel" Location="342,18" Size="62,14" Text="产品名" />
+        <TextBox Name="ProductNameTextBox" Location="342,35" Size="359,22" />
+        <Label Name="CopyrightInfoLabel" Location="341,60" Size="78,15" Text="版权信息" />
+        <TextBox Name="CopyrightInfoTextBox" Location="342,78" Size="358,22" />
+        <Label Name="TrademarkInfoLabel" Location="341,104" Size="98,18" Text="商标信息" />
+        <TextBox Name="TrademarkInfoTextBox" Location="342,124" Size="357,22" />
+        <Label Name="VersionLabel" Location="343,147" Size="112,17" Text="版本" />
+        <TextBox Name="VersionTextBox" Location="343,166" Size="357,22" />
+      </GroupBox>
+      <GroupBox Name="OptionsSplitterPanel" Location="385,119" Size="230,228">
+        <GroupBox Name="ConsoleOptionsSplitterPanel" Location="8,14" Size="206,75" Text="控制台应用选项">
+          <CheckBox Name="UnicodeEncodingCheckBox" Location="11,19" Size="187,28" Text="强制输出流以Unicode编码" />
+          <CheckBox Name="CredentialGUICheckBox" Location="10,48" Size="178,20" Text="凭据GUI" />
+        </GroupBox>
+        <GroupBox Name="WindowsOptionsSplitterPanel" Location="8,102" Size="212,116" Text="窗口应用选项">
+          <CheckBox Name="IgnoreVisualStylesCheckBox" Location="10,18" Size="196,24" Text="无视觉样式" />
+          <CheckBox Name="ExitOnCancelCheckBox" Location="10,88" Size="190,22" Text="取消时退出" />
+          <CheckBox Name="DPIAwareCheckBox" Location="10,40" Size="189,23" Text="DPI感知" />
+          <CheckBox Name="WinFormsDPIAwareCheckBox" Location="10,64" Size="194,24" Text="WinForms DPI感知" />
+        </GroupBox>
+      </GroupBox>
+    </GroupBox>
+    <Button Name="LoadCfgButton" Location="797,11" Size="83,26" Text="加载配置" />
+    <Button Name="SaveCfgButton" Location="797,42" Size="85,27" Text="保存配置" />
+    <Button Name="SaveCfg2OtherFileButton" Location="798,86" Size="85,31" Text="配置另存为" />
+    <Button Name="CompileButton" Location="802,561" Size="81,27" Text="编译" />
+    <Label Name="CfgFileLabel" Location="7,582" Size="778,21" Text="未选中配置文件" />
+  </Form>
+  <OpenFileDialog Name="OpenCfgFileDialog" DefaultExt="xml" Filter="配置文件(*.xml)|*.xml" Title="选择配置文件" />
+  <SaveFileDialog Name="SaveCfgFileDialog" DefaultExt="xml" Filter="配置文件(*.xml)|*.xml" Title="保存配置文件" />
+  <OpenFileDialog Name="OpenCompileFileDialog" DefaultExt="ps1" Filter="powershell文件(*.ps1)|*.ps1|powershell数据文件(*.psd1)|*.psd1" Title="选择编译文件" />
+  <OpenFileDialog Name="OpenOutputFileDialog" DefaultExt="exe" Filter="可执行文件(*.exe)|*.exe" Title="选择输出文件" />
+  <OpenFileDialog Name="OpenIconFileDialog" DefaultExt="ico" Filter="图标文件(*.ico)|*.ico" Title="选择图标文件" />
+</Data>

@@ -17,28 +17,56 @@ Install-Module ps12exe
 
 ## Usage
 
+### GUI mode
+
+```powershell
+ps12exeGUI
+```
+
+### Console mode
+
 ```powershell
 ps12exe .\source.ps1 .\target.exe
 ```
 
 compiles `source.ps1` into the executable target.exe (if `.\target.exe` is omitted, output is written to `.\source.exe`).
 
-## Comparison
+```powershell
+'"Hello World!"' | ps12exe
+```
 
-Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5), this project:
+compiles `"Hello World!"` into the executable `.\a.exe`.
 
-- Adds [powerful preprocessing features](#prepossessing) that allow you to preprocess the script before compiling (instead of copy-pasting everything and embedding it into the script)
-- Special parameters are no longer enabled by default in the generated files, but can be enabled with the new `-SepcArgsHandling` parameter if needed.
-- The `-CompilerOptions` parameter has been added to allow you to further customise the generated executable.
-- Added [`-Minifyer` parameter](#minifyer) to allow you to pre-process scripts before compilation to get smaller generated executables
-- Support for compiling scripts and including files from urls, support for downloading icons from urls
-- Optimised option handling and window title display under the `-noConsole` parameter, you can now customise the title of popup windows by setting `$Host.UI.RawUI.WindowTitle`.
-- Removed exe files from code repository
-- Removed the code for PS2EXE-GUI, considering it's cumbersome to use and requires extra effort to maintain
-- Separated the cs file from the ps1 file, easier to read and maintain.
-- and more...
+## Project Comparison
+
+When compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5), this project introduces the following enhancements:
+
+- Incorporates [robust preprocessing capabilities](#prepossessing), enabling you to preprocess scripts prior to compilation, eliminating the need to embed everything into the script manually.
+- Special parameters are not enabled by default in the generated files anymore, but can be activated with the new `-SepcArgsHandling` parameter if required.
+- A new `-CompilerOptions` parameter has been introduced, providing additional customization options for the generated executable.
+- The [`-Minifyer` parameter](#minifyer) has been added, allowing for script preprocessing before compilation, resulting in smaller executables.
+- Supports compiling scripts and including files from URLs, as well as downloading icons from URLs.
+- Under the `-noConsole` parameter, option handling and window title display have been optimized. You can now personalize the title of popup windows by setting `$Host.UI.RawUI.WindowTitle`.
+- Executable files have been removed from the code repository.
+- Enhanced multi-language support, pure script GUI, and dark mode support.
+- The C# file has been separated from the PowerShell file, making it easier to read and maintain.
+- And much more...
 
 ## Parameter
+
+### GUI parameters
+
+```powershell
+ps12exeGUI [[-ConfingFile] '<filename>'] [-Localize '<languagecode>'] [-UIMode 'Dark'|'Light'|'Auto']
+```
+
+```text
+ConfingFile = path to config file (default is none)
+   Localize = language code (default is current system language, try to load 'en-UK' if no corresponding language file is available, if still not available, iterate through all language files until available)
+     UIMode = UI mode (default is Auto)
+```
+
+### Console parameters
 
 ```powershell
 [input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>']
