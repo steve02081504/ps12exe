@@ -620,6 +620,7 @@ if ($SepcArgsHandling) { $Constants += "SepcArgsHandling" }
 #_endif
 
 $programFrame = $programFrame.Replace("`$lcid", $lcid)
+$programFrame = $programFrame.Replace("`$threadingModel", $threadingModel)
 $resourceParamKeys | ForEach-Object {
 	$programFrame = $programFrame.Replace("`$$_", $resourceParams[$_])
 }
