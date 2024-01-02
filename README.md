@@ -45,6 +45,7 @@ compiles `"Hello World!"` into the executable `.\a.exe`.
 
 When compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5), this project introduces the following enhancements:
 
+- Syntax checking at compile time.
 - Incorporates [robust preprocessing capabilities](#prepossessing), enabling you to preprocess scripts prior to compilation, eliminating the need to embed everything into the script manually.
 - Special parameters are not enabled by default in the generated files anymore, but can be activated with the new `-SepcArgsHandling` parameter if required.
 - A new `-CompilerOptions` parameter has been introduced, providing additional customization options for the generated executable.

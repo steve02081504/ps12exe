@@ -256,114 +256,7 @@ if (!$nested) {
 		Write-Error "Input file and content cannot be used at the same time!"
 		return
 	}
-	function ReadScriptFile($File) {
-		$Content = if ($File -match "^(https?|ftp)://") {
-			(Invoke-WebRequest -Uri $File -ErrorAction SilentlyContinue).Content
-		}
-		else {
-			Get-Content -LiteralPath $File -Encoding UTF8 -ErrorAction SilentlyContinue -Raw
-		}
-		Write-Host "Reading file $([System.IO.Path]::GetFileName($File)) size $($Content.Length) bytes"
-		$Content = $Content -join "`n" -split '\r?\n'
-		if (-not $Content) {
-			Write-Error "No data found. May be read error or file protected."
-			return
-		}
-		Write-Verbose "Done reading file $([System.IO.Path]::GetFileName($File)), starting preprocess..."
-		Preprocessor $Content $File
-		Write-Verbose "Done preprocess file $([System.IO.Path]::GetFileName($File))"
-	}
-	function Preprocessor($Content, $FilePath) {
-		$Result = @()
-		# 处理#_if <PSEXE/PSScript>、#_else、#_endif
-		for ($index = 0; $index -lt $Content.Count; $index++) {
-			$Line = $Content[$index]
-			if ($Line -match "^\s*#_if\s+(?<condition>\S+)\s*(?!#.*)") {
-				$condition = $Matches["condition"]
-				$condition = switch ($condition) {
-					'PSEXE' { $TRUE }
-					'PSScript' { $False }
-					default { Write-Error "Unknown condition: $condition`nassuming false."; $False }
-				}
-				while ($index -lt $Content.Count) {
-					$index++
-					$Line = $Content[$index]
-					if ($Line -match "^\s*#_else\s*(?!#.*)") {
-						$condition = -not $condition
-					}
-					if ($Line -match "^\s*#_endif\s*(?!#.*)") {
-						break
-					}
-					if ($condition) {
-						$Result += $Line
-					}
-				}
-				if ($Line -notmatch "^\s*#_endif\s*(?!#.*)") {
-					Write-Error "Missing #_endif"
-					return
-				}
-			}
-			else {
-				$Result += $Line
-			}
-		}
-		$ScriptRoot = $FilePath.Substring(0, $FilePath.LastIndexOfAny(@('\', '/')))
-		function GetIncludeFilePath($rest) {
-			if ($rest -match "((\'[^\']*\')+)\s*(?!#.*)") {
-				$file = $Matches[1]
-				$file = $file.Substring(1, $file.Length - 2).Replace("''", "'")
-			}
-			elseif ($rest -match '((\"[^\"]*\")+)\s*(?!#.*)') {
-				$file = $Matches[1]
-				$file = $file.Substring(1, $file.Length - 2).Replace('""', '"')
-			}
-			else { $file = $rest }
-			$file = $file.Replace('$PSScriptRoot', $ScriptRoot)
-			# 若是相对路径，则转换为基于$FilePath的绝对路径
-			if ($file -notmatch "^[a-zA-Z]:") {
-				$file = "$ScriptRoot/$file"
-			}
-			if (!(Test-Path $file -PathType Leaf)) {
-				Write-Error "Include file $file not found!"
-				return
-			}
-			$file
-		}
-		$Content = $Result |
-		# 处理#_!!<line>
-		ForEach-Object {
-			if ($_ -match "^(\s*)#_!!(?<line>.*)") {
-				$Matches[1] + $Matches["line"]
-			}
-			else { $_ }
-		} |
-		# 处理#_include <file>、#_include_as_value <valuename> <file>
-		ForEach-Object {
-			if ($_ -match "^\s*#_include\s+(?<rest>.+)\s*") {
-				$file = GetIncludeFilePath $Matches["rest"]
-				if (!$file) { return }
-				ReadScriptFile $file
-			}
-			elseif ($_ -match "^\s*#_include_as_value\s+(?<valuename>[a-zA-Z_][a-zA-Z_0-9]+)\s+(?<rest>.+)\s*") {
-				$valuename = $Matches["valuename"]
-				$file = GetIncludeFilePath $Matches["rest"]
-				if (!$file) { return }
-				Write-Host "Reading file $([System.IO.Path]::GetFileName($File)) size $((Get-Item $File).Length) bytes"
-				$IncludeContent = Get-Content -LiteralPath $file -Encoding UTF8 -ErrorAction SilentlyContinue
-				if (-not $IncludeContent) {
-					Write-Error "No data found. May be read error or file protected."
-					return
-				}
-				$IncludeContent = $IncludeContent -join "`n"
-				$IncludeContent = $IncludeContent.Replace("'", "''")
-				"`$$valuename = '$IncludeContent'"
-			}
-			else {
-				$_
-			}
-		}
-		$Content -join "`n"
-	}
+	. $PSScriptRoot\src\ReadScriptFile.ps1
 	if ($inputFile) {
 		$Content = ReadScriptFile $inputFile
 		if (!$Content) { return }
@@ -395,10 +288,23 @@ else {
 		Write-Error "Temp file $inputfile not found!"
 		return
 	}
+	if(!$TempDir) {
+		Remove-Item $inputFile -ErrorAction SilentlyContinue
+	}
 }
 #_endif
-# retrieve absolute paths independent if path is given relative oder absolute
 
+# 语法检查
+$SyntaxErrors = $null
+$Tokens = $null
+$AST = [System.Management.Automation.Language.Parser]::ParseInput($Content, [ref]$Tokens, [ref]$SyntaxErrors)
+if ($SyntaxErrors) {
+	Write-Error "Syntax error in script: $SyntaxErrors"
+	return
+}
+$Content = $AST.ToString()
+
+# retrieve absolute paths independent if path is given relative oder absolute
 if (-not $inputFile) {
 	$inputFile = '.\a.ps1'
 }
@@ -430,7 +336,9 @@ if (!$nested -and ($PSVersionTable.PSEdition -eq "Core")) {
 	$Params.Remove("resourceParams") #使用旧版参数列表传递hashtable参数更为保险
 	$Params.Remove("x86"); $Params.Remove("x64")
 	$Params.Remove("STA"); $Params.Remove("MTA")
-	$TempFile = [System.IO.Path]::GetTempFileName()
+	$TempFile = if($TempDir) {
+		[System.IO.Path]::Combine($TempDir, 'main.ps1')
+	} else { [System.IO.Path]::GetTempFileName() }
 	$Content | Set-Content $TempFile -Encoding UTF8 -NoNewline
 	$Params.Add("outputFile", $outputFile)
 	$Params.Add("inputFile", $TempFile)
@@ -612,12 +520,27 @@ if ($UNICODEEncoding) { $Constants += "UNICODEEncoding" }
 if ($winFormsDPIAware) { $Constants += "winFormsDPIAware" }
 if ($SepcArgsHandling) { $Constants += "SepcArgsHandling" }
 
-# Read the program frame from the ps12exe.cs file
-#_if PSEXE #这是该脚本被ps12exe编译时使用的预处理代码
-	#_include_as_value programFrame "$PSScriptRoot/ps12exe.cs" #将ps12exe.cs中的内容内嵌到该脚本中
-#_else #否则正常读取cs文件
-	[string]$programFrame = Get-Content $PSScriptRoot/ps12exe.cs -Raw -Encoding UTF8
-#_endif
+. $PSScriptRoot\src\IsConstTokens.ps1
+$IsConstProgram = IsConstTokens $Tokens
+if(!$SepcArgsHandling -and $IsConstProgram) {
+	#_if PSEXE #这是该脚本被ps12exe编译时使用的预处理代码
+		#_include_as_value programFrame "$PSScriptRoot/src/programFrames/constexpr.cs" #将constexpr.cs中的内容内嵌到该脚本中
+	#_else #否则正常读取cs文件
+		[string]$programFrame = Get-Content $PSScriptRoot/src/programFrames/constexpr.cs -Raw -Encoding UTF8
+	#_endif
+	Write-Verbose "constant program, using constexpr program frame"
+	Write-Verbose "Evaluation of constants..."
+	$ConstResult = (Invoke-Expression $Content) -join "`n"
+	Write-Verbose "Done evaluation of constants -> $(bytesOfString $ConstResult) bytes"
+	$programFrame = $programFrame.Replace("`$ConstResult", $ConstResult.Replace('\', '\\').Replace('"', '\"').Replace("`n", "\n").Replace("`r", "\r"))
+}
+else{
+	#_if PSEXE #这是该脚本被ps12exe编译时使用的预处理代码
+		#_include_as_value programFrame "$PSScriptRoot/src/programFrames/default.cs" #将default.cs中的内容内嵌到该脚本中
+	#_else #否则正常读取cs文件
+		[string]$programFrame = Get-Content $PSScriptRoot/src/programFrames/default.cs -Raw -Encoding UTF8
+	#_endif
+}
 
 $programFrame = $programFrame.Replace("`$lcid", $lcid)
 $programFrame = $programFrame.Replace("`$threadingModel", $threadingModel)
@@ -658,7 +581,9 @@ $CompilerOptions += "/define:$($Constants -join ';')"
 $cp.CompilerOptions = $CompilerOptions -join ' '
 Write-Verbose "Using Compiler Options: $($cp.CompilerOptions)"
 
-[VOID]$cp.EmbeddedResources.Add("$TempDir\main.ps1")
+if(!$IsConstProgram -or $SepcArgsHandling) {
+	[VOID]$cp.EmbeddedResources.Add("$TempDir\main.ps1")
+}
 $cr = $cop.CompileAssemblyFromSource($cp, $programFrame)
 if ($TempTempDir) {
 	Remove-Item $TempTempDir -Recurse -Force -ErrorAction SilentlyContinue

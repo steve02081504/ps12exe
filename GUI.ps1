@@ -14,8 +14,8 @@ if (!$Localize) {
 }
 
 if (($PSVersionTable.PSEdition -eq "Core") -and (Get-Command powershell -ErrorAction Ignore)) {
-	powershell -NoProfile -ExecutionPolicy Bypass -File $PSScriptRoot\src\Main.ps1 @Prarms | Out-Null
+	powershell -NoProfile -ExecutionPolicy Bypass -File $PSScriptRoot\src\GUI\Main.ps1 @Prarms | Out-Null
 	return
 }
 
-.$PSScriptRoot\src\Main.ps1 @Prarms | Out-Null
+.$PSScriptRoot\src\GUI\Main.ps1 @Prarms | Out-Null

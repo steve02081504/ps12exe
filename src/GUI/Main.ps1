@@ -24,6 +24,13 @@ $sbGUI = {
 	#region Other Actions Before ShowDialog
 
 	try {
+		Import-Module "$BaseDir/../../ps12exe.psm1" -Force -ErrorAction Stop
+	}
+	catch {
+		Update-ErrorLog -ErrorRecord $_ -Message "Exception encountered when importing ps12exe."
+	}
+
+	try {
 		Remove-Variable -Name eventSB
 	}
 	catch { Update-ErrorLog -ErrorRecord $_ -Message "Exception encountered before ShowDialog." }

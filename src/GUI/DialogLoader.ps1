@@ -35,7 +35,6 @@ if(!(CheckLocaleData)) {
 
 try {
 	ConvertFrom-WinFormsXML -Reference refs -Suppress -Xml $Script:MainForm
-	Import-Module "$BaseDir/../../ps12exe.psm1" -Force -ErrorAction Stop
 
 	$OpenCfgFileDialog = ConvertFrom-WinFormsXML -Xml $Script:dialoginfo['OpenCfgFileDialog']
 	$SaveCfgFileDialog = ConvertFrom-WinFormsXML -Xml $Script:dialoginfo['SaveCfgFileDialog']

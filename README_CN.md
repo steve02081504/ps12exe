@@ -43,6 +43,7 @@ ps12exe .\source.ps1 .\target.exe
 
 相较于[`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5)，本项目带来了以下改进：
 
+- 编译时的语法检查
 - 引入了[强大的预处理功能](#预处理)，让你在编译前就能预处理脚本，无需再复制粘贴所有内容到脚本中。
 - 生成的文件中不再默认启用特殊参数，但如果需要，可以通过新的`-SepcArgsHandling`参数启用。
 - 新增`-CompilerOptions`参数，让你能进一步定制生成的可执行文件。

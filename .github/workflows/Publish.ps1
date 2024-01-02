@@ -49,23 +49,12 @@ try {
 	$packData.ModuleVersion = $version
 	# update psd1
 	Set-Content -Path "$repoPath/ps12exe.psd1" -Value $(PSObjectToString($packData)) -NoNewline -Encoding UTF8 -Force
-	# 遍历文件列表，移除不在$packData.FileList中的文件
-	New-Item -ItemType Directory -Path "$repoPath/ps12exe" -Force | Out-Null
-	$packData.FileList | ForEach-Object {
-		$filePath = "$repoPath/$_"
-		if (Test-Path -Path $filePath) {
-			$Dir = Split-Path -Path "$repoPath/ps12exe/$_" -Parent
-			New-Item -ItemType Directory -Path $Dir -Force | Out-Null
-			Copy-Item -Path $filePath -Destination $Dir -Force -Recurse -ErrorAction Stop
-		}
-		else {
-			Write-Warning "file not found: $filePath"
-		}
-	}
+	# 遍历文件列表，移除.开头的文件和文件夹
+	Get-ChildItem -Path $repoPath -Recurse | Where-Object { $_.Name -match '^\.' } | ForEach-Object { Remove-Item -Path $_.FullName -Force -Recurse }
 	# 打包发布
 	Install-Module -Name 'PowerShellGet' -Force -Scope CurrentUser | Out-Null
 	$errnum = $Error.Count
-	Publish-Module -Path "$repoPath/ps12exe" -NuGetApiKey $ApiKey -ErrorAction Stop
+	Publish-Module -Path $repoPath -NuGetApiKey $ApiKey -ErrorAction Stop
 	while ($Error.Count -gt $errnum) {
 		$Error.RemoveAt(0)
 	}

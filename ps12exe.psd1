@@ -57,7 +57,7 @@
 	# FormatsToProcess = @()
 
 	# Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-	# NestedModules = @()
+	NestedModules = @( "GUI.psm1" )
 
 	# Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
 	FunctionsToExport      = @('ps12exe','ps12exeGUI')
@@ -76,23 +76,6 @@
 
 	# List of all modules packaged with this module
 	# ModuleList = @()
-
-	# List of all files packaged with this module
-	FileList               = @(
-		# ps12exe base files
-		'ps12exe.ps1', 'ps12exe.psm1', 'ps12exe.psd1', 'ps12exe.cs',
-		# Info files
-		'README.md', 'README_CN.md', 'LICENSE',
-		# GUI base files
-		'GUI/GUI.ps1', 'GUI/GUI.psm1',
-		'GUI/Src/Main.ps1',
-		'GUI/Src/Events.ps1', 'GUI/Src/Functions.ps1', 'GUI/Src/UITools.ps1', 'GUI/Src/DialogLoader.ps1',
-		'GUI/Src/DarkMode.ps1',
-		# GUI locale files
-		'GUI/Locale/README.md',
-		'GUI/Locale/zh-CN.psd1', 'GUI/Locale/zh-CN.fbs',
-		'GUI/Locale/en-UK.psd1', 'GUI/Locale/en-UK.fbs'
-	)
 
 	# Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
 	PrivateData            = @{
