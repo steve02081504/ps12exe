@@ -9,20 +9,23 @@ else {
 if ($DarkMode) {
 	$Script:refs['MainForm'].BackColor = [System.Drawing.ColorTranslator]::FromHtml('#333333')
 	$Script:refs['MainForm'].ForeColor = [System.Drawing.ColorTranslator]::FromHtml('#FFFFFF')
-	$Script:refs.Values | Where-Object { $_.GetType().Name -eq 'TextBox' } | ForEach-Object {
+	function ForEachControl($Control, $RunScriptBlock) {
+		$Script:refs.Values | Where-Object { $_.GetType().Name -eq $Control } | ForEach-Object $RunScriptBlock
+	}
+	ForEachControl 'TextBox' {
 		$_.BackColor = 'WindowFrame'
 		$_.ForeColor = 'Window'
 		$_.BorderStyle = 'FixedSingle'
 	}
-	$Script:refs.Values | Where-Object { $_.GetType().Name -eq 'Button' } | ForEach-Object {
+	ForEachControl 'Button' {
 		$_.BackColor = 'WindowFrame'
 		$_.FlatStyle = 'Flat'
 	}
-	$Script:refs.Values | Where-Object { $_.GetType().Name -eq 'CheckBox' } | ForEach-Object {
+	ForEachControl 'CheckBox' {
 		$_.ForeColor = 'Window'
 		$_.FlatStyle = 'Flat'
 	}
-	$Script:refs.Values | Where-Object { $_.GetType().Name -eq 'GroupBox' } | ForEach-Object {
+	ForEachControl 'GroupBox' {
 		$_.ForeColor = [System.Drawing.ColorTranslator]::FromHtml('#FFFFFF')
 	}
 	# DWMWA_USE_IMMERSIVE_DARK_MODE

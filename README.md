@@ -1,5 +1,13 @@
 # ps12exe
 
+WARNING: Please avoid compiling scripts from unknown sources with this project for the following reasons:  
+
+1. ps12exe allows to include scripts indirectly from url, which means you can include scripts from any url in the script.  
+2. When ps12exe determines (through a not-so-rigorous set of rules) that all or some part of a script may be a constant program whose contents can be determined at compile time, it will automatically execute this script in an attempt to get the output.  
+
+This means that if you compile a script whose contents you don't even know, it's entirely possible that the script will cause ps12exe to download and execute a malicious script at compile time.  
+If you don't believe it, try `"while(1){}" | ps12exe -Verbose`  
+
 [![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml)
 [![PSGallery download num](https://img.shields.io/powershellgallery/dt/ps12exe)](https://www.powershellgallery.com/packages/ps12exe)
 [![GitHub issues by-label bug](https://img.shields.io/github/issues/steve02081504/ps12exe/bug?label=bugs)](https://github.com/steve02081504/ps12exe/issues?q=is%3Aissue+is%3Aopen+label%3Abug)

@@ -173,7 +173,21 @@ Param(
 	[Parameter(DontShow)]
 	[Switch]$nested
 )
+$Verbose = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent
 $SavePos = [char]27 + '[s'; $RestorePos = [char]27 + '[u'
+function RollUp {
+	param ($num=1,[switch]$InVerbose)
+	$CousorPos = $Host.UI.RawUI.CursorPosition
+	try{
+		if(-not $Verbose -or $InVerbose) {
+			$CousorPos.Y = $CousorPos.Y - $num
+			$Host.UI.RawUI.CursorPosition = $CousorPos
+		}
+	}
+	catch {
+		Write-Host $RestorePos -NoNewline
+	}
+}
 if (-not ($inputFile -or $Content)) {
 	Write-Host "Usage:`n"
 	Write-Host "[input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>']"
@@ -265,10 +279,11 @@ if (!$nested) {
 		}
 	}
 	if ($minifyer) {
-		Write-Host "${SavePos}Minifying script..." -NoNewline
+		Write-Host "${SavePos}Minifying script..." -NoNewline:$(-not$Verbose)
 		try {
-			$MinifyedContent = & { .$minifyer ($_ = $Content) }
-			Write-Host "${RestorePos}Minifyed script -> $(bytesOfString $MinifyedContent) bytes"
+			$MinifyedContent = $Content | ForEach-Object $minifyer
+			RollUp
+			Write-Host "Minifyed script -> $(bytesOfString $MinifyedContent) bytes"
 		}
 		catch {
 			Write-Error "Minifyer failed: $_"
@@ -520,21 +535,8 @@ if ($UNICODEEncoding) { $Constants += "UNICODEEncoding" }
 if ($winFormsDPIAware) { $Constants += "winFormsDPIAware" }
 if ($SepcArgsHandling) { $Constants += "SepcArgsHandling" }
 
-. $PSScriptRoot\src\IsConstTokens.ps1
-$IsConstProgram = IsConstTokens $Tokens
-if(!$SepcArgsHandling -and $IsConstProgram) {
-	#_if PSEXE #这是该脚本被ps12exe编译时使用的预处理代码
-		#_include_as_value programFrame "$PSScriptRoot/src/programFrames/constexpr.cs" #将constexpr.cs中的内容内嵌到该脚本中
-	#_else #否则正常读取cs文件
-		[string]$programFrame = Get-Content $PSScriptRoot/src/programFrames/constexpr.cs -Raw -Encoding UTF8
-	#_endif
-	Write-Verbose "constant program, using constexpr program frame"
-	Write-Verbose "Evaluation of constants..."
-	$ConstResult = (Invoke-Expression $Content) -join "`n"
-	Write-Verbose "Done evaluation of constants -> $(bytesOfString $ConstResult) bytes"
-	$programFrame = $programFrame.Replace("`$ConstResult", $ConstResult.Replace('\', '\\').Replace('"', '\"').Replace("`n", "\n").Replace("`r", "\r"))
-}
-else{
+. $PSScriptRoot\src\ConstProgramCheck.ps1
+if(!$programFrame) {
 	#_if PSEXE #这是该脚本被ps12exe编译时使用的预处理代码
 		#_include_as_value programFrame "$PSScriptRoot/src/programFrames/default.cs" #将default.cs中的内容内嵌到该脚本中
 	#_else #否则正常读取cs文件
@@ -575,10 +577,10 @@ if ($prepareDebug) {
 	$cp.TempFiles.KeepFiles = $TRUE
 }
 
-Write-Host "${SavePos}Compiling file..." -NoNewline
+Write-Host "${SavePos}Compiling file..." -NoNewline:$(-not$Verbose)
 
 $CompilerOptions += "/define:$($Constants -join ';')"
-$cp.CompilerOptions = $CompilerOptions -join ' '
+$cp.CompilerOptions = $CompilerOptions -ne '' -join ' '
 Write-Verbose "Using Compiler Options: $($cp.CompilerOptions)"
 
 if(!$IsConstProgram -or $SepcArgsHandling) {
@@ -592,13 +594,15 @@ if ($cr.Errors.Count -gt 0) {
 	if (Test-Path $outputFile) {
 		Remove-Item $outputFile -Verbose:$FALSE
 	}
-	Write-Host "${RestorePos}Compilation failed!" -ForegroundColor Red
+	RollUp
+	Write-Host "Compilation failed!" -ForegroundColor Red
 	Write-Error -ErrorAction Continue "Could not create the PowerShell .exe file because of compilation errors. Use -verbose parameter to see details."
 	$cr.Errors | ForEach-Object { Write-Verbose $_ }
 }
 else {
 	if (Test-Path $outputFile) {
-		Write-Host "${RestorePos}Compiled file written -> $((Get-Item $outputFile).Length) bytes"
+		RollUp
+		Write-Host "Compiled file written -> $((Get-Item $outputFile).Length) bytes"
 		Write-Verbose "Path: $outputFile"
 
 		if ($prepareDebug) {

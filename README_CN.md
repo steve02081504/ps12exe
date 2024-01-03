@@ -1,5 +1,13 @@
 # ps12exe
 
+警告：请避免用此项目编译来源不明的脚本，原因如下：  
+
+1. ps12exe允许自url间接include脚本，这意味着你可以在脚本中include任意url的脚本  
+2. 当ps12exe（通过一套不太严谨的规则）判断脚本的全部或某一部分可能是可以在编译时确定内容的常量程序时，会自动执行这段脚本以试图获取输出内容  
+
+这意味着如果你编译了一个你自己都不知道具体内容的脚本，那么脚本完全可能导致ps12exe在编译时下载和执行恶意脚本  
+如果你不信，试试`"while(1){}" | ps12exe -Verbose`  
+
 [![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml)
 [![PSGallery download num](https://img.shields.io/powershellgallery/dt/ps12exe)](https://www.powershellgallery.com/packages/ps12exe)
 [![GitHub issues by-label bug](https://img.shields.io/github/issues/steve02081504/ps12exe/bug?label=bugs)](https://github.com/steve02081504/ps12exe/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
