@@ -1,5 +1,4 @@
-. $PSScriptRoot\IsConstAst.ps1
-$IsConstProgram = IsConstAst $AST
+$IsConstProgram = & $PSScriptRoot\IsConstAst.ps1 $AST
 if (!$SepcArgsHandling -and $IsConstProgram) {
 	$timeoutSeconds = 7  # 设置超时限制（秒）
 

@@ -100,13 +100,13 @@ function Preprocessor($Content, $FilePath) {
 			"`$$valuename = '$IncludeContent'"
 		}
 		else {
-			if ($_ -match '^\s*.\s+(?<rest>(\"|)\$PSScriptRoot.+)\s*') {
+			if ($_ -match '^\s*.\s*(?<rest>(\"|)\$PSScriptRoot.+)\s*') {
 				$file = GetIncludeFilePath $Matches["rest"]
 				if ($file) {
 					return ReadScriptFile $file
 				}
 			}
-			elseif ($_ -match '^\s*&\s+(?<rest>(\"|)\$PSScriptRoot.+)\s*') {
+			elseif ($_ -match '^\s*&\s*(?<rest>(\"|)\$PSScriptRoot.+)\s*') {
 				$file = GetIncludeFilePath $Matches["rest"]
 				if ($file) {
 					return @('&{',$(ReadScriptFile $file),'}')

@@ -142,6 +142,7 @@ Param(
 	[Switch]$supportOS,
 	[Switch]$virtualize,
 	[Switch]$longPaths,
+	[Switch]$help,
 	# 兼容旧版参数列表，不进入文档
 	[Parameter(DontShow)]
 	[Switch]$noConfigFile,
@@ -188,43 +189,23 @@ function RollUp {
 		Write-Host $([char]27 + '[' + $num + 'A') -NoNewline
 	}
 }
+function Show-Help{
+	#_if PSScript
+		$LocalizeData = . $PSScriptRoot\src\LocaleLoader.ps1
+	#_else
+		#_include_as_value LocalizeDataStr "$PSScriptRoot/src/locale/en-UK.psd1"
+		#_!! $LocalizeData = Invoke-Expression $LocalizeDataStr
+	#_endif
+	$MyHelp = $LocalizeData.ConsoleHelpData
+	. $PSScriptRoot\src\HelpShower.ps1 -HelpData $MyHelp
+}
+if ($help) {
+	Show-Help | Out-Host
+	return
+}
 if (-not ($inputFile -or $Content)) {
-	Write-Host "Usage:`n"
-	Write-Host "[input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>']"
-	Write-Host "        [-CompilerOptions '<options>'] [-TempDir '<directory>'] [-minifyer '<scriptblock>'] [-noConsole]"
-	Write-Host "        [-SepcArgsHandling] [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug]"
-	Write-Host "        [-resourceParams @{iconFile='<filename|url>'; title='<title>'; description='<description>'; company='<company>';"
-	Write-Host "        product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}]"
-	Write-Host "        [-lcid <lcid>] [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]"
-	Write-Host "        [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]"
+	Show-Help | Out-Host
 	Write-Host
-	Write-Host "           input = String of the contents of the powershell script file, same as -Content."
-	Write-Host "       inputFile = Powershell script file path or url that you want to convert to executable (file has to be UTF8 or UTF16 encoded)"
-	Write-Host "         Content = Powershell script content that you want to convert to executable"
-	Write-Host "      outputFile = destination executable file name or folder, defaults to inputFile with extension '.exe'"
-	Write-Host " CompilerOptions = additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)"
-	Write-Host "         TempDir = directory for storing temporary files (default is random generated temp directory in %temp%)"
-	Write-Host "        minifyer = scriptblock to minify the script before compiling"
-	Write-Host "SepcArgsHandling = the resulting executable will handle special arguments -debug, -extract, -wait and -end"
-	Write-Host "    prepareDebug = create helpful information for debugging"
-	Write-Host "    architecture = compile for specific runtime only. Possible values are 'x64' and 'x86' and 'anycpu'"
-	Write-Host "            lcid = location ID for the compiled executable. Current user culture if not specified"
-	Write-Host "  threadingModel = 'Single Thread Apartment' or 'Multi Thread Apartment' mode"
-	Write-Host "       noConsole = the resulting executable will be a Windows Forms app without a console window"
-	Write-Host " UNICODEEncoding = encode output as UNICODE in console mode"
-	Write-Host "   credentialGUI = use GUI for prompting credentials in console mode"
-	Write-Host "  resourceParams = A hashtable that contains resource parameters for the compiled executable"
-	Write-Host "      configFile = write a config file (<outputfile>.exe.config)"
-	Write-Host "        noOutput = the resulting executable will generate no standard output (includes verbose and information channel)"
-	Write-Host "         noError = the resulting executable will generate no error output (includes warning and debug channel)"
-	Write-Host "  noVisualStyles = disable visual styles for a generated windows GUI application (only with -noConsole)"
-	Write-Host "    exitOnCancel = exits program when Cancel or ""X"" is selected in a Read-Host input box (only with -noConsole)"
-	Write-Host "        DPIAware = if display scaling is activated, GUI controls will be scaled if possible"
-	Write-Host "winFormsDPIAware = if display scaling is activated, WinForms use DPI scaling (requires Windows 10 and .Net 4.7 or up)"
-	Write-Host "    requireAdmin = if UAC is enabled, compiled executable run only in elevated context (UAC dialog appears if required)"
-	Write-Host "       supportOS = use functions of newest Windows versions (execute [Environment]::OSVersion to see the difference)"
-	Write-Host "      virtualize = application virtualization is activated (forcing x86 runtime)"
-	Write-Host "       longPaths = enable long paths ( > 260 characters) if enabled on OS (works only with Windows 10 or up)`n"
 	Write-Host "Input not specified!"
 	return
 }
