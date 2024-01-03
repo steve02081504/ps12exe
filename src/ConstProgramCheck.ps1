@@ -30,9 +30,9 @@ if (!$SepcArgsHandling -and $IsConstProgram) {
 		}
 		else {
 			#_if PSEXE #这是该脚本被ps12exe编译时使用的预处理代码
-			#_include_as_value programFrame "$PSScriptRoot/src/programFrames/constexpr.cs" #将constexpr.cs中的内容内嵌到该脚本中
+				#_include_as_value programFrame "$PSScriptRoot/programFrames/constexpr.cs" #将constexpr.cs中的内容内嵌到该脚本中
 			#_else #否则正常读取cs文件
-			[string]$programFrame = Get-Content $PSScriptRoot/src/programFrames/constexpr.cs -Raw -Encoding UTF8
+				[string]$programFrame = Get-Content $PSScriptRoot/programFrames/constexpr.cs -Raw -Encoding UTF8
 			#_endif
 			$programFrame = $programFrame.Replace("`$ConstResult", $ConstResult.Replace('\', '\\').Replace('"', '\"').Replace("`n", "\n").Replace("`r", "\r"))
 		}
