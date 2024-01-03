@@ -174,18 +174,18 @@ Param(
 	[Switch]$nested
 )
 $Verbose = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent
-$SavePos = [char]27 + '[s'; $RestorePos = [char]27 + '[u'
 function RollUp {
 	param ($num=1,[switch]$InVerbose)
 	$CousorPos = $Host.UI.RawUI.CursorPosition
 	try{
 		if(-not $Verbose -or $InVerbose) {
+			if($nested){ throw }
 			$CousorPos.Y = $CousorPos.Y - $num
 			$Host.UI.RawUI.CursorPosition = $CousorPos
 		}
 	}
 	catch {
-		Write-Host $RestorePos -NoNewline
+		Write-Host $([char]27 + '[' + $num + 'A') -NoNewline
 	}
 }
 if (-not ($inputFile -or $Content)) {
@@ -279,7 +279,7 @@ if (!$nested) {
 		}
 	}
 	if ($minifyer) {
-		Write-Host "${SavePos}Minifying script..." -NoNewline:$(-not$Verbose)
+		Write-Host "Minifying script..."
 		try {
 			$MinifyedContent = $Content | ForEach-Object $minifyer
 			RollUp
@@ -528,6 +528,7 @@ if ($noError) { $Constants += "noError" }
 if ($noConsole) { $Constants += "noConsole" }
 if ($noOutput) { $Constants += "noOutput" }
 if ($resourceParams.version) { $Constants += "version" }
+if ($resourceParams.Count) { $Constants += "Resources" }
 if ($credentialGUI) { $Constants += "credentialGUI" }
 if ($noVisualStyles) { $Constants += "noVisualStyles" }
 if ($exitOnCancel) { $Constants += "exitOnCancel" }
@@ -577,7 +578,7 @@ if ($prepareDebug) {
 	$cp.TempFiles.KeepFiles = $TRUE
 }
 
-Write-Host "${SavePos}Compiling file..." -NoNewline:$(-not$Verbose)
+Write-Host "Compiling file..."
 
 $CompilerOptions += "/define:$($Constants -join ';')"
 $cp.CompilerOptions = $CompilerOptions -ne '' -join ' '

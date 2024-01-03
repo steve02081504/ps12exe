@@ -14,17 +14,19 @@ using System.Reflection;
 	using System.Runtime.Versioning;
 #endif
 
-[assembly: AssemblyTitle("$title")]
-[assembly: AssemblyProduct("$product")]
-[assembly: AssemblyCopyright("$copyright")]
-[assembly: AssemblyTrademark("$trademark")]
+// not displayed in details tab of properties dialog, but embedded to file
+#if Resources
+	[assembly: AssemblyDescription("$description")]
+	[assembly: AssemblyCompany("$company")]
+	[assembly: AssemblyTitle("$title")]
+	[assembly: AssemblyProduct("$product")]
+	[assembly: AssemblyCopyright("$copyright")]
+	[assembly: AssemblyTrademark("$trademark")]
+#endif
 #if version
 	[assembly: AssemblyVersion("$version")]
 	[assembly: AssemblyFileVersion("$version")]
 #endif
-// not displayed in details tab of properties dialog, but embedded to file
-[assembly: AssemblyDescription("$description")]
-[assembly: AssemblyCompany("$company")]
 #if winFormsDPIAware
 	[assembly: TargetFrameworkAttribute(".NETFramework,Version=v4.7,Profile=Client", FrameworkDisplayName = ".NET Framework 4.7")]
 #endif

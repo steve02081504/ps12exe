@@ -4,7 +4,7 @@ if (!$SepcArgsHandling -and $IsConstProgram) {
 	$timeoutSeconds = 7  # 设置超时限制（秒）
 
 	Write-Verbose "constant program, using constexpr program frame"
-	Write-Verbose "${SavePos}Evaluation of constants..."
+	Write-Verbose "Evaluation of constants..."
 	$pwshBase = if (Get-Command powershell -ErrorAction SilentlyContinue) { 'powershell' }
 	elseif (Get-Command pwsh -ErrorAction SilentlyContinue) { 'pwsh' }
 	$pwshCommand = $Content.Replace('"', '""""')
