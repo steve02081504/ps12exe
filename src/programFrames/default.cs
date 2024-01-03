@@ -1891,7 +1891,7 @@ namespace PSRunnerNS {
 
 		[$threadingModelThread]
 		private static int Main(string[] args) {
-			#if!(UNICODEEncoding || noConsole)
+			#if UNICODEEncoding && !noConsole
 			System.Console.OutputEncoding = new System.Text.UnicodeEncoding();
 			#endif
 

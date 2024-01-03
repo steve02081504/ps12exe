@@ -34,7 +34,7 @@ using System.Reflection;
 namespace PSRunnerNS {
 	internal class PSRunner {
 		private static int Main() {
-			#if!(UNICODEEncoding || noConsole)
+			#if UNICODEEncoding && !noConsole
 			System.Console.OutputEncoding = new System.Text.UnicodeEncoding();
 			#endif
 
