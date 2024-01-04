@@ -18,9 +18,7 @@ ps12exe [[-inputFile] <String>] [[-outputFile] <String>] [-CompilerOptions <Stri
  [-minifyer <ScriptBlock>] [-noConsole] [-SepcArgsHandling] [-prepareDebug] [-architecture <String>]
  [-threadingModel <String>] [-resourceParams <Hashtable>] [-lcid <Int32>] [-UNICODEEncoding] [-credentialGUI]
  [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel] [-DPIAware] [-winFormsDPIAware]
- [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-noConfigFile] [-x86] [-x64] [-STA] [-MTA]
- [-iconFile <String>] [-title <String>] [-description <String>] [-company <String>] [-product <String>]
- [-copyright <String>] [-trademark <String>] [-version <String>] [-nested] [-ProgressAction <ActionPreference>]
+ [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-help] [-ProgressAction <ActionPreference>]
  [<CommonParameters>]
 ```
 
@@ -30,9 +28,7 @@ ps12exe [-Content <String>] [[-outputFile] <String>] [-CompilerOptions <String>]
  [-minifyer <ScriptBlock>] [-noConsole] [-SepcArgsHandling] [-prepareDebug] [-architecture <String>]
  [-threadingModel <String>] [-resourceParams <Hashtable>] [-lcid <Int32>] [-UNICODEEncoding] [-credentialGUI]
  [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel] [-DPIAware] [-winFormsDPIAware]
- [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-noConfigFile] [-x86] [-x64] [-STA] [-MTA]
- [-iconFile <String>] [-title <String>] [-description <String>] [-company <String>] [-product <String>]
- [-copyright <String>] [-trademark <String>] [-version <String>] [-nested] [-ProgressAction <ActionPreference>]
+ [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-help] [-ProgressAction <ActionPreference>]
  [<CommonParameters>]
 ```
 
@@ -42,9 +38,7 @@ ps12exe -Content <String> [[-outputFile] <String>] [-CompilerOptions <String>] [
  [-minifyer <ScriptBlock>] [-noConsole] [-SepcArgsHandling] [-prepareDebug] [-architecture <String>]
  [-threadingModel <String>] [-resourceParams <Hashtable>] [-lcid <Int32>] [-UNICODEEncoding] [-credentialGUI]
  [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel] [-DPIAware] [-winFormsDPIAware]
- [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-noConfigFile] [-x86] [-x64] [-STA] [-MTA]
- [-iconFile <String>] [-title <String>] [-description <String>] [-company <String>] [-product <String>]
- [-copyright <String>] [-trademark <String>] [-version <String>] [-nested] [-ProgressAction <ActionPreference>]
+ [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-help] [-ProgressAction <ActionPreference>]
  [<CommonParameters>]
 ```
 
@@ -486,6 +480,21 @@ Accept wildcard characters: False
 
 ### -longPaths
 enable long paths ( \> 260 characters) if enabled on OS (works only with Windows 10 or up)
+
+```yaml
+Type: SwitchParameter
+Parameter Sets: (All)
+Aliases:
+
+Required: False
+Position: Named
+Default value: False
+Accept pipeline input: False
+Accept wildcard characters: False
+```
+
+### -help
+{{ Fill help Description }}
 
 ```yaml
 Type: SwitchParameter

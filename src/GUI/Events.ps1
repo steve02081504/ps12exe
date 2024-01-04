@@ -1,3 +1,33 @@
+# enter和esc键绑定
+
+$Script:refs['CancelButton'] = New-Object Windows.Forms.Button
+$Script:refs['MainForm'].CancelButton = $Script:refs['CancelButton']
+$Script:refs['CancelButton'].add_Click({
+		$Script:refs['MainForm'].Close()
+	})
+$Script:refs['MainForm'].AcceptButton = $Script:refs['CompileButton']
+
+# 自动适应窗口大小
+
+$Script:refs['MainForm'].add_Load({
+		$Script:refs.MainFormResizeHeight = $Script:refs['MainForm'].Height
+		$Script:refs.MainFormResizeWidth = $Script:refs['MainForm'].Width
+	})
+$Script:refs['MainForm'].add_SizeChanged({
+		$widthRatio = $Script:refs['MainForm'].Width / $Script:refs.MainFormResizeWidth
+		$heightRatio = $Script:refs['MainForm'].Height / $Script:refs.MainFormResizeHeight
+		$Scale = New-Object System.Drawing.SizeF($widthRatio, $heightRatio)
+		$Script:refs.MainFormResizeHeight = $Script:refs['MainForm'].Height
+		$Script:refs.MainFormResizeWidth = $Script:refs['MainForm'].Width
+		foreach ($Control in $Script:refs['MainForm'].Controls) {
+			$Fsize = $Control.Font.Size
+			$Fscale = ($heightRatio + $widthRatio) / 2
+			$Control.Font = New-Object System.Drawing.Font($Control.Font.FontFamily, $Fsize * $Fscale, $Control.Font.Style)
+			$Control.Scale($Scale)
+		}
+	})
+
+
 $Script:refs['CompileFileButton'].add_Click({
 		$OpenCompileFileDialog.ShowDialog() | Out-Null
 		$Script:refs['CompileFileTextBox'].Text = $OpenCompileFileDialog.FileName
