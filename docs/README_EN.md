@@ -1,12 +1,12 @@
 # ps12exe
 
-WARNING: Please avoid compiling scripts from unknown sources with this project for the following reasons:  
+WARNING: It is strongly advised not to compile scripts from unverified sources using this project due to the following reasons:
 
-1. ps12exe allows to include scripts indirectly from url, which means you can include scripts from any url in the script.  
-2. When ps12exe determines (through a not-so-rigorous set of rules) that all or some part of a script may be a constant program whose contents can be determined at compile time, it will automatically execute this script in an attempt to get the output.  
+1. ps12exe has the capability to indirectly include scripts from URLs. This implies that scripts from any URL can be incorporated into your script.
+2. ps12exe, through a set of not-so-stringent rules, determines if all or a part of a script could be a constant program, the content of which can be determined at compile time. If such a determination is made, ps12exe will automatically execute this script in an attempt to obtain the output.
 
-This means that if you compile a script whose contents you don't even know, it's entirely possible that the script will cause ps12exe to download and execute a malicious script at compile time.  
-If you don't believe it, try `"while(1){}" | ps12exe -Verbose`  
+This implies that if you compile a script whose content is unknown to you, there's a high possibility that ps12exe might download and execute a malicious script during the compile time.  
+If you're skeptical, try executing `"while(1){}" | ps12exe -Verbose`.  
 
 [![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml)
 [![PSGallery download num](https://img.shields.io/powershellgallery/dt/ps12exe)](https://www.powershellgallery.com/packages/ps12exe)
@@ -48,22 +48,6 @@ compiles `source.ps1` into the executable target.exe (if `.\target.exe` is omitt
 ```
 
 compiles `"Hello World!"` into the executable `.\a.exe`.
-
-## Project Comparison
-
-When compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5), this project introduces the following enhancements:
-
-- Syntax checking at compile time.
-- Incorporates [robust preprocessing capabilities](#prepossessing), enabling you to preprocess scripts prior to compilation, eliminating the need to embed everything into the script manually.
-- Special parameters are not enabled by default in the generated files anymore, but can be activated with the new `-SepcArgsHandling` parameter if required.
-- A new `-CompilerOptions` parameter has been introduced, providing additional customization options for the generated executable.
-- The [`-Minifyer` parameter](#minifyer) has been added, allowing for script preprocessing before compilation, resulting in smaller executables.
-- Supports compiling scripts and including files from URLs, as well as downloading icons from URLs.
-- Under the `-noConsole` parameter, option handling and window title display have been optimized. You can now personalize the title of popup windows by setting `$Host.UI.RawUI.WindowTitle`.
-- Executable files have been removed from the code repository.
-- Enhanced multi-language support, pure script GUI, and dark mode support.
-- The C# file has been separated from the PowerShell file, making it easier to read and maintain.
-- And much more...
 
 ## Parameter
 
@@ -279,3 +263,36 @@ $Host.UI.RawUI.FlushInputBuffer()
 ipconfig | Out-String
 $Host.UI.RawUI.FlushInputBuffer()
 ```
+
+## Comparative Advantages 🏆
+
+### Quick Comparison 🏁
+
+| Comparison Content | ps12exe | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
+| --- | --- | --- |
+| Pure script repository 📦 | ✔️ All text files except images | ❌ Contains exe files with open source license |
+| Command to generate hello world 🌍 | 😎`'"Hello World!"' \| ps12exe` | 🤔`echo "Hello World!" *> a.ps1; ps2exe a.ps1; rm a.ps1` |
+| Size of the generated hello world executable file 💾 | 🥰3584 bytes | 😨25088 bytes |
+| GUI multilingual support 🌐 | ✔️ | ❌ |
+| Syntax check during compilation ✔️ | ✔️ | ❌ |
+| Preprocessing feature 🔄 | ✔️ | ❌ |
+| Ability to remove `-extract` and other special parameter parsing 🧹 | ❤️ Disabled by default | 🥲 Requires source code modification |
+| PR welcome level 🤝 | 🥰 Welcome! | 🤷 14 PRs, 13 of which were closed |
+
+### Detailed Comparison 🔍
+
+Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5), this project brings the following improvements:
+
+| Improvement Content | Description |
+| --- | --- |
+| ✔️ Syntax check during compilation | Syntax check during compilation to improve code quality |
+| 🔄 Powerful preprocessing feature | Preprocess the script before compilation, no need to copy and paste all content into the script |
+| ⚙️ `-SepcArgsHandling` parameter | Special parameters are no longer enabled by default, but can be enabled with a new parameter if needed |
+| 🛠️ `-CompilerOptions` parameter | New parameter, allowing you to further customize the generated executable file |
+| 📦️ `-Minifyer` parameter | Preprocess the script before compilation to generate a smaller executable file |
+| 🌐 Support for compiling scripts and included files from URL | Support for downloading icons from URL |
+| 🖥️ Optimization of `-noConsole` parameter | Optimized option handling and window title display, you can now set the title of the custom pop-up window |
+| 🧹 Removed exe files | Removed exe files from the code repository |
+| 🌍 Multilingual support, pure script GUI | Better multilingual support, pure script GUI, support for dark mode |
+| 📖 Separated cs files from ps1 files | Easier to read and maintain |
+| 🚀 More improvements | And more... |

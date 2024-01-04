@@ -49,22 +49,6 @@ ps12exe .\source.ps1 .\target.exe
 
 将`"Hello World!"`编译为可执行文件输出到`.\a.exe`。
 
-## 优势对比
-
-相较于[`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5)，本项目带来了以下改进：
-
-- 编译时的语法检查
-- 引入了[强大的预处理功能](#预处理)，让你在编译前就能预处理脚本，无需再复制粘贴所有内容到脚本中。
-- 生成的文件中不再默认启用特殊参数，但如果需要，可以通过新的`-SepcArgsHandling`参数启用。
-- 新增`-CompilerOptions`参数，让你能进一步定制生成的可执行文件。
-- 新增[`-Minifyer`参数](#minifyer)，让你在编译前预处理脚本，生成更小的可执行文件。
-- 支持从URL编译脚本和包含文件，支持从URL下载图标。
-- 在`-noConsole`参数下，优化了选项处理和窗口标题显示，你现在可以通过设置`$Host.UI.RawUI.WindowTitle`自定义弹出窗口的标题。
-- 从代码仓库中移除了exe文件。
-- 更好的多语言支持、纯脚本GUI，支持深色模式。
-- 将cs文件从ps1文件中分离，更易于阅读和维护。
-- 还有更多...
-
 ## 参数
 
 ### GUI参数
@@ -278,3 +262,36 @@ $Host.UI.RawUI.FlushInputBuffer()
 ipconfig | Out-String
 $Host.UI.RawUI.FlushInputBuffer()
 ```
+
+## 优势对比 🏆
+
+### 快速比对 🏁
+
+| 比对内容 | ps12exe | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
+| --- | --- | --- |
+| 纯脚本仓库 📦 | ✔️除了图片全是文本文件 | ❌含有有开源协议的exe文件 |
+| 生成hello world所需要的命令 🌍 | 😎`'"Hello World!"' \| ps12exe` | 🤔`echo "Hello World!" *> a.ps1; ps2exe a.ps1; rm a.ps1` |
+| 生成的hello world可执行文件大小 💾 | 🥰3584 bytes | 😨25088 bytes |
+| GUI多语言支持 🌐 | ✔️ | ❌ |
+| 编译时的语法检查 ✔️ | ✔️ | ❌ |
+| 预处理功能 🔄 | ✔️ | ❌ |
+| 能否移除`-extract`等特殊参数解析 🧹 | ❤️默认禁用 | 🥲需要修改源代码 |
+| PR欢迎程度 🤝 | 🥰欢迎！ | 🤷14个PR，其中13个被关闭 |
+
+### 详细比较 🔍
+
+相较于[`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5)，本项目带来了以下改进：
+
+| 改进内容 | 描述 |
+| --- | --- |
+| ✔️ 编译时的语法检查 | 在编译时进行语法检查，提高代码质量 |
+| 🔄 强大的预处理功能 | 在编译前预处理脚本，无需再复制粘贴所有内容到脚本中 |
+| ⚙️ `-SepcArgsHandling`参数 | 不再默认启用特殊参数，但如果需要，可以通过新的参数启用 |
+| 🛠️ `-CompilerOptions`参数 | 新增参数，让你能进一步定制生成的可执行文件 |
+| 📦️ `-Minifyer`参数 | 在编译前预处理脚本，生成更小的可执行文件 |
+| 🌐 支持从URL编译脚本和包含文件 | 支持从URL下载图标 |
+| 🖥️ `-noConsole`参数优化 | 优化了选项处理和窗口标题显示，你现在可以通过设置自定义弹出窗口的标题 |
+| 🧹 移除了exe文件 | 从代码仓库中移除了exe文件 |
+| 🌍 多语言支持、纯脚本GUI | 更好的多语言支持、纯脚本GUI，支持深色模式 |
+| 📖 将cs文件从ps1文件中分离 | 更易于阅读和维护 |
+| 🚀 更多改进 | 还有更多... |
