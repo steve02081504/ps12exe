@@ -1,6 +1,6 @@
 $Script:dialogInfo = @{}
 
-."$BaseDir/../LocaleLoader.ps1" -Localize $Localize -LoadLocaleData {
+."$PSScriptRoot/../LocaleLoader.ps1" -Localize $Localize -LoadLocaleData {
 	param (
 		[string]$Localize
 	)
@@ -17,7 +17,7 @@ $Script:dialogInfo = @{}
 		[string]$Localize
 	)
 	[System.Windows.Forms.MessageBox]::Show("Failed to load locale data locale/$Localize`nSee $LocalizeDir/README.md for how to add custom locale.", "ps12exe GUI locale Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
-}
+} | Out-Null
 
 try {
 	ConvertFrom-WinFormsXML -Reference refs -Suppress -Xml $Script:MainForm

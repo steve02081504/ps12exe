@@ -4,25 +4,22 @@ if (!$SepcArgsHandling -and $IsConstProgram) {
 
 	Write-Verbose "constant program, using constexpr program frame"
 	Write-Verbose "Evaluation of constants..."
-	$pwshBase = if (Get-Command powershell -ErrorAction SilentlyContinue) { 'powershell' }
-	elseif (Get-Command pwsh -ErrorAction SilentlyContinue) { 'pwsh' }
-	$pwshCommand = $Content.Replace('"', '""""')
 
-	$job = Start-Job -ScriptBlock {
-		param($pwshBase, $pwshCommand, $Content)
-		if ($pwshBase) {
-			&$pwshBase -NoProfile -NoLogo -NonInteractive -Command "`"$pwshCommand`""
-		}
-		else {
-			(Invoke-Expression $Content) -join "`n"
-		}
-	} -ArgumentList $pwshBase, $pwshCommand, $Content
+	$pwsh = [System.Management.Automation.PowerShell]::Create()
+	$null = $pwsh.AddScript($Content)
 
-	Wait-Job -Job $job -Timeout $timeoutSeconds | Out-Null
-	Stop-Job -Job $job | Out-Null
-	$ConstResult = Receive-Job -Job $job
-	if ($Verbose) { RollUp -InVerbose }
-	if ($job.State -eq "Completed") {
+	$asyncResult = $pwsh.BeginInvoke()
+
+	$timeoutSeconds *= 20
+	for ($i = 0; $i -lt $timeoutSeconds; $i++) {
+		if ($asyncResult.IsCompleted) {
+			break
+		}
+		Start-Sleep -Milliseconds 50
+	}
+
+	if ($asyncResult.IsCompleted) {
+		$ConstResult = $pwsh.EndInvoke($asyncResult) -join "`n"
 		Write-Verbose "Done evaluation of constants -> $(bytesOfString $ConstResult) bytes"
 		if ($ConstResult.Length -gt 19968) {
 			Write-Verbose "Const result is too long, fail back to normal program frame"
@@ -36,8 +33,10 @@ if (!$SepcArgsHandling -and $IsConstProgram) {
 			$programFrame = $programFrame.Replace("`$ConstResult", $ConstResult.Replace('\', '\\').Replace('"', '\"').Replace("`n", "\n").Replace("`r", "\r"))
 		}
 	}
- else {
+	else {
 		Write-Verbose "Evaluation timed out after $timeoutSeconds seconds, fail back to normal program frame"
+		$pwsh.Stop()
 	}
-	Remove-Job -Job $job
+
+	$pwsh.Dispose()
 }

@@ -4,19 +4,19 @@
   <Form Name="MainForm" Size="928,651" Tag="VisualStyle,DPIAware" Text="ps12exe GUI">
     <GroupBox Name="InputsGroupBox" Location="8,1" Size="766,573">
       <GroupBox Name="BaseIOGroupBox" Location="5,13" Size="626,102">
-        <Label Name="CompileFileLabel" Location="5,15" Size="80,14" Text="Input File" />
+        <Label Name="CompileFileLabel" Location="6,17" Size="554,13" Text="Input File" />
         <TextBox Name="CompileFileTextBox" AllowDrop="True" Location="6,30" Size="551,22" />
         <Button Name="CompileFileButton" Location="558,27" Size="59,26" Text="..." />
-        <Label Name="OutputFileLabel" Location="4,54" Size="80,14" Text="Output File" />
+        <Label Name="OutputFileLabel" Location="5,56" Size="554,14" Text="Output File" />
         <TextBox Name="OutputFileTextBox" AllowDrop="True" Location="6,70" Size="550,22" />
         <Button Name="OutputFileButton" Location="559,68" Size="59,25" Text="..." />
       </GroupBox>
       <GroupBox Name="OtherInputsGroupBox" Location="6,118" Size="374,136">
-        <Label Name="CompileParamsLabel" Location="5,12" Size="80,14" Text="Compile Params" />
+        <Label Name="CompileParamsLabel" Location="6,14" Size="359,14" Text="Compile Params" />
         <TextBox Name="CompileParamsTextBox" Location="5,30" Size="360,22" Text="/o+ /debug-" />
-        <Label Name="TempDirLabel" Location="6,54" Size="80,14" Text="Temp Dir" />
+        <Label Name="TempDirLabel" Location="7,56" Size="358,14" Text="Temp Dir" />
         <TextBox Name="TempDirTextBox" Location="5,70" Size="360,22" />
-        <Label Name="MinifyScriptLabel" Location="3,93" Size="80,14" Text="Minify Script" />
+        <Label Name="MinifyScriptLabel" Location="4,94" Size="359,17" Text="Minify Script" />
         <TextBox Name="MinifyScriptTextBox" Location="5,110" Size="360,22" />
       </GroupBox>
       <GroupBox Name="ArchitectureGroupBox" Location="15,262" Size="95,89" Text="Architecture">
@@ -47,22 +47,22 @@
         <CheckBox Name="MultiThreadCheckBox" Location="10,56" Size="73,30" Text="Multi" />
       </GroupBox>
       <GroupBox Name="ResourceParamsGroupBox" Location="18,359" Size="710,206" Text="Resource Params">
-        <Label Name="IconFileLabel" Location="13,17" Size="89,17" Text="Icon File" />
+        <Label Name="IconFileLabel" Location="14,18" Size="326,16" Text="Icon File" />
         <TextBox Name="IconFileTextBox" AllowDrop="True" Location="14,34" Size="284,22" />
         <Button Name="IconFileButton" Location="302,32" Size="40,25" Text="..." />
-        <Label Name="TitleLabel" Location="13,60" Size="85,18" Text="Title" />
+        <Label Name="TitleLabel" Location="14,62" Size="329,16" Text="Title" />
         <TextBox Name="TitleTextBox" Location="15,82" Size="325,22" />
-        <Label Name="DescriptionLabel" Location="11,109" Size="123,18" Text="Description" />
+        <Label Name="DescriptionLabel" Location="12,110" Size="330,17" Text="Description" />
         <TextBox Name="DescriptionTextBox" Location="17,126" Size="325,22" />
-        <Label Name="CompanyLabel" Location="15,152" Size="82,18" Text="Company" />
+        <Label Name="CompanyLabel" Location="16,154" Size="323,16" Text="Company" />
         <TextBox Name="CompanyTextBox" Location="13,170" Size="326,22" />
-        <Label Name="ProductNameLabel" Location="345,17" Size="129,15" Text="Product Name" />
+        <Label Name="ProductNameLabel" Location="346,18" Size="356,15" Text="Product Name" />
         <TextBox Name="ProductNameTextBox" Location="345,34" Size="359,22" />
-        <Label Name="CopyrightInfoLabel" Location="345,60" Size="141,20" Text="Copyright" />
+        <Label Name="CopyrightInfoLabel" Location="346,62" Size="355,17" Text="Copyright" />
         <TextBox Name="CopyrightInfoTextBox" Location="346,81" Size="356,22" />
-        <Label Name="TrademarkInfoLabel" Location="346,107" Size="127,16" Text="Trademark" />
+        <Label Name="TrademarkInfoLabel" Location="346,109" Size="354,15" Text="Trademark" />
         <TextBox Name="TrademarkInfoTextBox" Location="347,126" Size="357,22" />
-        <Label Name="VersionLabel" Location="344,152" Size="80,17" Text="Version" />
+        <Label Name="VersionLabel" Location="345,154" Size="358,15" Text="Version" />
         <TextBox Name="VersionTextBox" Location="348,170" Size="357,22" />
       </GroupBox>
       <GroupBox Name="OptionsSplitterPanel" Location="385,119" Size="230,228">

@@ -29,8 +29,6 @@ param(
 	[switch]$help
 )
 
-$Prarms = [hashtable]$PSBoundParameters
-
 if ($help) {
 	$LocalizeData = . $PSScriptRoot\src\LocaleLoader.ps1
 	$MyHelp = $LocalizeData.GUIHelpData
@@ -38,9 +36,4 @@ if ($help) {
 	return
 }
 
-if (($PSVersionTable.PSEdition -eq "Core") -and (Get-Command powershell -ErrorAction Ignore)) {
-	powershell -NoProfile -ExecutionPolicy Bypass -File $PSScriptRoot\src\GUI\Main.ps1 @Prarms | Out-Null
-	return
-}
-
-.$PSScriptRoot\src\GUI\Main.ps1 @Prarms | Out-Null
+. $PSScriptRoot\src\GUI\Main.ps1 @PSBoundParameters
