@@ -42,8 +42,16 @@ public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
 $consolePtr = [Console.Window]::GetConsoleWindow()
 [Console.Window]::ShowWindow($consolePtr, 0) | Out-Null
 
+$Icon = [System.Drawing.Icon]::ExtractAssociatedIcon("$PSScriptRoot\..\..\img\icon.ico")
+$Script:refs.MainForm.Icon = $Icon
+
 # Show the form
 try { [void]$Script:refs.MainForm.ShowDialog() } catch { Update-ErrorLog -ErrorRecord $_ -Message "Exception encountered unexpectedly at ShowDialog." }
+
+# Dispose all controls
+$Script:refs.MainForm.Controls | ForEach-Object { $_.Dispose() }
+$Script:refs.MainForm.Dispose()
+$Icon.Dispose()
 
 [Console.Window]::ShowWindow($consolePtr, 1) | Out-Null
 

@@ -15,52 +15,38 @@ Converts powershell scripts to standalone executables.
 ### InputFile (Default)
 ```
 ps12exe [[-inputFile] <String>] [[-outputFile] <String>] [-CompilerOptions <String>] [-TempDir <String>]
- [-minifyer <ScriptBlock>] [-noConsole] [-SepcArgsHandling] [-prepareDebug] [-architecture <String>]
- [-threadingModel <String>] [-resourceParams <Hashtable>] [-lcid <Int32>] [-UNICODEEncoding] [-credentialGUI]
- [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel] [-DPIAware] [-winFormsDPIAware]
- [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-help] [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+ [-minifyer <ScriptBlock>] [-noConsole] [-prepareDebug] [-lcid <Int32>] [-architecture <String>]
+ [-threadingModel <String>] [-resourceParams <Hashtable>] [-UNICODEEncoding] [-credentialGUI] [-configFile]
+ [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel] [-DPIAware] [-winFormsDPIAware] [-requireAdmin]
+ [-supportOS] [-virtualize] [-longPaths] [-help] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ### ContentPipe
 ```
 ps12exe [-Content <String>] [[-outputFile] <String>] [-CompilerOptions <String>] [-TempDir <String>]
- [-minifyer <ScriptBlock>] [-noConsole] [-SepcArgsHandling] [-prepareDebug] [-architecture <String>]
- [-threadingModel <String>] [-resourceParams <Hashtable>] [-lcid <Int32>] [-UNICODEEncoding] [-credentialGUI]
- [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel] [-DPIAware] [-winFormsDPIAware]
- [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-help] [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+ [-minifyer <ScriptBlock>] [-noConsole] [-prepareDebug] [-lcid <Int32>] [-architecture <String>]
+ [-threadingModel <String>] [-resourceParams <Hashtable>] [-UNICODEEncoding] [-credentialGUI] [-configFile]
+ [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel] [-DPIAware] [-winFormsDPIAware] [-requireAdmin]
+ [-supportOS] [-virtualize] [-longPaths] [-help] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ### ContentArg
 ```
 ps12exe -Content <String> [[-outputFile] <String>] [-CompilerOptions <String>] [-TempDir <String>]
- [-minifyer <ScriptBlock>] [-noConsole] [-SepcArgsHandling] [-prepareDebug] [-architecture <String>]
- [-threadingModel <String>] [-resourceParams <Hashtable>] [-lcid <Int32>] [-UNICODEEncoding] [-credentialGUI]
- [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel] [-DPIAware] [-winFormsDPIAware]
- [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-help] [-ProgressAction <ActionPreference>]
- [<CommonParameters>]
+ [-minifyer <ScriptBlock>] [-noConsole] [-prepareDebug] [-lcid <Int32>] [-architecture <String>]
+ [-threadingModel <String>] [-resourceParams <Hashtable>] [-UNICODEEncoding] [-credentialGUI] [-configFile]
+ [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel] [-DPIAware] [-winFormsDPIAware] [-requireAdmin]
+ [-supportOS] [-virtualize] [-longPaths] [-help] [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
 ## DESCRIPTION
 Converts powershell scripts to standalone executables.
 GUI output and input is activated with one switch,
 real windows executables are generated.
-You may use the graphical front end Win-ps12exe for convenience.
+You may use the graphical front end ps12exeGUI for convenience.
 
 Please see Remarks on project page for topics "GUI mode output formatting", "Config files", "Password security",
 "Script variables" and "Window in background in -noConsole mode".
-
-With \`SepcArgsHandling\`, generated executable has the following reserved parameters:
-
--debug              Forces the executable to be debugged.
-It calls "System.Diagnostics.Debugger.Launch()".
--extract:\<FILENAME\> Extracts the powerShell script inside the executable and saves it as FILENAME.
-										The script will not be executed.
--wait               At the end of the script execution it writes "Hit any key to exit..." and waits for a
-										key to be pressed.
--end                All following options will be passed to the script inside the executable.
-										All preceding options are used by the executable itself.
 
 ## EXAMPLES
 
@@ -197,8 +183,9 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -SepcArgsHandling
-the resulting executable will handle special arguments -debug, -extract, -wait and -end.
+### -prepareDebug
+create helpful information for debugging of generated executable.
+See parameter -debug there
 
 ```yaml
 Type: SwitchParameter
@@ -212,18 +199,18 @@ Accept pipeline input: False
 Accept wildcard characters: False
 ```
 
-### -prepareDebug
-create helpful information for debugging of generated executable.
-See parameter -debug there
+### -lcid
+location ID for the compiled executable.
+Current user culture if not specified
 
 ```yaml
-Type: SwitchParameter
+Type: Int32
 Parameter Sets: (All)
 Aliases:
 
 Required: False
 Position: Named
-Default value: False
+Default value: 0
 Accept pipeline input: False
 Accept wildcard characters: False
 ```
@@ -275,22 +262,6 @@ Aliases:
 Required: False
 Position: Named
 Default value: @{}
-Accept pipeline input: False
-Accept wildcard characters: False
-```
-
-### -lcid
-location ID for the compiled executable.
-Current user culture if not specified
-
-```yaml
-Type: Int32
-Parameter Sets: (All)
-Aliases:
-
-Required: False
-Position: Named
-Default value: 0
 Accept pipeline input: False
 Accept wildcard characters: False
 ```

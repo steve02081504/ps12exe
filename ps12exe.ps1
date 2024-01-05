@@ -5,7 +5,7 @@
 Converts powershell scripts to standalone executables.
 .DESCRIPTION
 Converts powershell scripts to standalone executables. GUI output and input is activated with one switch,
-real windows executables are generated. You may use the graphical front end Win-ps12exe for convenience.
+real windows executables are generated. You may use the graphical front end ps12exeGUI for convenience.
 
 Please see Remarks on project page for topics "GUI mode output formatting", "Config files", "Password security",
 "Script variables" and "Window in background in -noConsole mode".
