@@ -5,7 +5,6 @@ function Get-UIData {
 		CompilerOptions  = $Script:refs.CompileParamsTextBox.Text
 		TempDir          = $Script:refs.TempDirTextBox.Text
 		minifyer         = $Script:refs.MinifyScriptTextBox.Text
-		SepcArgsHandling = $Script:refs.SpecialParamsCheckBox.Checked
 		prepareDebug     = $Script:refs.DebugInfoCheckBox.Checked
 		architecture     = if ($Script:refs.x64CheckBox.Checked) { 'x64' } elseif ($Script:refs.x86CheckBox.Checked) { 'x86' } else { 'anycpu' }
 		lcid             = $Script:refs.RegionIDTextBox.Text
@@ -46,7 +45,6 @@ function Set-UIData {
 	$Script:refs.CompileParamsTextBox.Text = $UIData.CompilerOptions
 	$Script:refs.TempDirTextBox.Text = $UIData.TempDir
 	$Script:refs.MinifyScriptTextBox.Text = $UIData.minifyer
-	$Script:refs.SpecialParamsCheckBox.Checked = $UIData.SepcArgsHandling
 	$Script:refs.DebugInfoCheckBox.Checked = $UIData.prepareDebug
 	$Script:refs.x64CheckBox.Checked = $UIData.architecture -eq 'x64'
 	$Script:refs.x86CheckBox.Checked = $UIData.architecture -eq 'x86'

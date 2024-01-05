@@ -21,10 +21,10 @@ ps12exeGUI [[-ConfingFile] '<filename>'] [-Localize '<languagecode>'] [-UIMode '
 		title      = "Usage: 
 [input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>']
         [-CompilerOptions '<options>'] [-TempDir '<directory>'] [-minifyer '<scriptblock>'] [-noConsole]
-        [-SepcArgsHandling] [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug]
+        [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
         [-resourceParams @{iconFile='<filename|url>'; title='<title>'; description='<description>'; company='<company>';
         product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}]
-        [-lcid <lcid>] [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
+        [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]"
 		PrarmsData = [ordered]@{
 			input            = "String of the contents of the powershell script file, same as -Content."
@@ -34,10 +34,9 @@ ps12exeGUI [[-ConfingFile] '<filename>'] [-Localize '<languagecode>'] [-UIMode '
 			CompilerOptions  = "additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)"
 			TempDir          = "directory for storing temporary files (default is random generated temp directory in %temp%)"
 			minifyer         = "scriptblock to minify the script before compiling"
-			SepcArgsHandling = "the resulting executable will handle special arguments -debug, -extract, -wait and -end"
+			lcid             = "location ID for the compiled executable. Current user culture if not specified"
 			prepareDebug     = "create helpful information for debugging"
 			architecture     = "compile for specific runtime only. Possible values are 'x64' and 'x86' and 'anycpu'"
-			lcid             = "location ID for the compiled executable. Current user culture if not specified"
 			threadingModel   = "'Single Thread Apartment' or 'Multi Thread Apartment' mode"
 			noConsole        = "the resulting executable will be a Windows Forms app without a console window"
 			UNICODEEncoding  = "encode output as UNICODE in console mode"

@@ -68,10 +68,10 @@ ConfingFile = 配置文件的路径（默认为 无）
 ```powershell
 [input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>']
         [-CompilerOptions '<options>'] [-TempDir '<directory>'] [-minifyer '<scriptblock>'] [-noConsole]
-        [-SepcArgsHandling] [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug]
+        [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
         [-resourceParams @{iconFile='<filename|url>'; title='<title>'; description='<description>'; company='<company>';
         product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}]
-        [-lcid <lcid>] [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
+        [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
 ```
 
@@ -83,10 +83,9 @@ ConfingFile = 配置文件的路径（默认为 无）
  CompilerOptions = 附加的编译器选项（请参阅 https://msdn.microsoft.com/en-us/library/78f4aasd.aspx）
          TempDir = 用于存放临时文件的目录（默认为位于 %temp% 中的随机生成的临时目录）
         minifyer = 用于在编译前缩小脚本的脚本块
-SepcArgsHandling = 生成的可执行文件将处理以下特殊参数：-debug、-extract、-wait 和 -end
+            lcid = 编译后可执行文件的区域设置 ID。如果未指定，则为当前用户的区域设置
     prepareDebug = 为调试生成有用的信息
     architecture = 仅针对特定的运行时编译。可选的值有 "x64"、"x86" 和 "anycpu"
-            lcid = 编译后可执行文件的区域设置 ID。如果未指定，则为当前用户的区域设置
   threadingModel = "单线程公寓"或 "多线程公寓"模式
        noConsole = 生成的可执行文件将是没有控制台窗口的 Windows 窗体应用程序
  UNICODEEncoding = 在控制台模式下将输出以 UNICODE 编码
@@ -103,17 +102,6 @@ winFormsDPIAware = 如果启用了显示缩放，WinForms 将使用 DPI 缩放�
        supportOS = 使用最新 Windows 版本的特性（执行 [Environment]::OSVersion 查看区别）
       virtualize = 启用应用程序虚拟化（强制使用 x86 运行时）
        longPaths = 启用长路径（超过 260 个字符）如果操作系统支持（仅适用于 Windows 10 或更高版本）
-```
-
-使用 `SepcArgsHandling` 参数，生成的可执行文件具有以下保留参数：
-
-```text
--debug              强制调试可执行文件。它会调用 "System.Diagnostics.Debugger.Launch()"。
--extract:<FILENAME> 提取可执行文件中的 powerShell 脚本并将其保存为 FILENAME。
-                    脚本不会被执行。
--wait               在脚本执行结束时，它会写入 "按任意键退出... "并等待按键。
--end                以下所有选项都将传递给可执行文件中的脚本。
-                    前面的所有选项都由可执行文件本身使用，不会传递给脚本。
 ```
 
 ### 备注
@@ -210,15 +198,7 @@ ps12exe 可以创建配置文件，文件名为`生成的可执行文件 + ".con
 ### 密码安全
 
 切勿在编译后的脚本中存储密码！  
-如果使用了 `SepcArgsHandling` 参数，所有人都可以使用 `-extract` 参数简单地反编译脚本。  
-例如  
-
-```powershell
-Output.exe -extract:.\Output.ps1
-```
-
-将反编译存储在 Output.exe 中的脚本。
-即使你不使用它，整个脚本对任何 .net 反编译器来说仍然是轻松可见的。
+整个脚本对任何 .net 反编译器来说轻松可见。  
 ![图片](https://github.com/steve02081504/ps12exe/assets/31927825/92d96e53-ba52-406f-ae8b-538891f42779)
 
 ### 按脚本区分环境  
@@ -275,7 +255,7 @@ $Host.UI.RawUI.FlushInputBuffer()
 | GUI多语言支持 🌐 | ✔️ | ❌ |
 | 编译时的语法检查 ✔️ | ✔️ | ❌ |
 | 预处理功能 🔄 | ✔️ | ❌ |
-| 能否移除`-extract`等特殊参数解析 🧹 | ❤️默认禁用 | 🥲需要修改源代码 |
+| `-extract`等特殊参数解析 🧹 | 🗑️已删除 | 🥲需要修改源代码 |
 | PR欢迎程度 🤝 | 🥰欢迎！ | 🤷14个PR，其中13个被关闭 |
 
 ### 详细比较 🔍
@@ -286,7 +266,6 @@ $Host.UI.RawUI.FlushInputBuffer()
 | --- | --- |
 | ✔️ 编译时的语法检查 | 在编译时进行语法检查，提高代码质量 |
 | 🔄 强大的预处理功能 | 在编译前预处理脚本，无需再复制粘贴所有内容到脚本中 |
-| ⚙️ `-SepcArgsHandling`参数 | 不再默认启用特殊参数，但如果需要，可以通过新的参数启用 |
 | 🛠️ `-CompilerOptions`参数 | 新增参数，让你能进一步定制生成的可执行文件 |
 | 📦️ `-Minifyer`参数 | 在编译前预处理脚本，生成更小的可执行文件 |
 | 🌐 支持从URL编译脚本和包含文件 | 支持从URL下载图标 |

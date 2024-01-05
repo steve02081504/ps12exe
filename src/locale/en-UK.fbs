@@ -24,19 +24,18 @@
         <CheckBox Name="x86CheckBox" Location="9,36" Size="81,26" Text="x86" />
         <CheckBox Name="AnyCPUCheckBox" AutoCheck="False" Checked="True" CheckState="Checked" Location="8,58" Size="86,27" Text="AnyCPU" />
       </GroupBox>
-      <GroupBox Name="CommonOptionsGroupBox" Location="642,12" Size="117,130" Text="Common Options">
+      <GroupBox Name="CommonOptionsGroupBox" Location="642,14" Size="117,102" Text="Common Options">
         <CheckBox Name="ConsoleAppCheckBox" Checked="True" CheckState="Checked" Location="7,15" Size="103,26" Text="Console App" />
-        <CheckBox Name="RequestAdminCheckBox" Location="8,93" Size="106,30" Text="Request Admin" />
+        <CheckBox Name="RequestAdminCheckBox" Location="9,57" Size="106,41" Text="Request Admin" />
         <CheckBox Name="DebugInfoCheckBox" Location="7,36" Size="108,28" Text="Debug Info" />
-        <CheckBox Name="SpecialParamsCheckBox" Location="8,62" Size="106,30" Text="Special Params" />
       </GroupBox>
-      <GroupBox Name="DetailedOptionsGroupBox" Location="642,143" Size="118,214" Text="Detailed Options">
-        <CheckBox Name="ConfigFileCheckBox" Location="14,22" Size="102,32" Text="Generate Config" />
+      <GroupBox Name="DetailedOptionsGroupBox" Location="642,124" Size="118,235" Text="Detailed Options">
+        <CheckBox Name="ConfigFileCheckBox" Location="15,19" Size="102,37" Text="Generate Config" />
         <CheckBox Name="DisableOutputStreamCheckBox" Location="12,57" Size="100,30" Text="Disable Output" />
         <CheckBox Name="DisableErrorStreamCheckBox" Location="10,85" Size="102,29" Text="Disable Error" />
-        <CheckBox Name="MoreOSFeaturesCheckBox" Location="11,178" Size="105,34" Text="More OS Features" />
-        <CheckBox Name="EnableVirtualizationCheckBox" Location="10,142" Size="105,34" Text="Enable Virtualization" />
-        <CheckBox Name="LongPathSupportCheckBox" Location="11,110" Size="102,34" Text="Long Path Support" />
+        <CheckBox Name="MoreOSFeaturesCheckBox" Location="12,183" Size="105,40" Text="More OS Features" />
+        <CheckBox Name="EnableVirtualizationCheckBox" Location="10,146" Size="105,38" Text="Enable Virtualization" />
+        <CheckBox Name="LongPathSupportCheckBox" Location="12,109" Size="102,40" Text="Long Path Support" />
       </GroupBox>
       <GroupBox Name="RegionIDGroupBox" Location="219,262" Size="86,70">
         <Label Name="RegionIDLabel" Location="7,15" Size="68,21" Text="Region ID" />

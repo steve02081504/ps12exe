@@ -24,19 +24,18 @@
         <CheckBox Name="x86CheckBox" Location="9,36" Size="81,26" Text="x86" />
         <CheckBox Name="AnyCPUCheckBox" AutoCheck="False" Checked="True" CheckState="Checked" Location="8,58" Size="86,27" Text="AnyCPU" />
       </GroupBox>
-      <GroupBox Name="CommonOptionsGroupBox" Location="638,16" Size="117,113" Text="常用选项">
+      <GroupBox Name="CommonOptionsGroupBox" Location="639,18" Size="117,101" Text="常用选项">
         <CheckBox Name="ConsoleAppCheckBox" Checked="True" CheckState="Checked" Location="7,15" Size="103,26" Text="控制台应用" />
-        <CheckBox Name="RequestAdminCheckBox" Location="9,86" Size="102,20" Text="请求管理员" />
-        <CheckBox Name="DebugInfoCheckBox" Location="7,36" Size="108,28" Text="生成调试信息" />
-        <CheckBox Name="SpecialParamsCheckBox" Location="9,59" Size="105,28" Text="特殊参数处理" />
+        <CheckBox Name="RequestAdminCheckBox" Location="10,65" Size="102,30" Text="请求管理员" />
+        <CheckBox Name="DebugInfoCheckBox" Location="8,38" Size="108,31" Text="生成调试信息" />
       </GroupBox>
-      <GroupBox Name="DetailedOptionsGroupBox" Location="638,138" Size="118,157" Text="更多选项">
+      <GroupBox Name="DetailedOptionsGroupBox" Location="639,125" Size="118,167" Text="更多选项">
         <CheckBox Name="ConfigFileCheckBox" Location="11,18" Size="102,24" Text="生成配置文件" />
         <CheckBox Name="DisableOutputStreamCheckBox" Location="10,37" Size="100,26" Text="禁用输出流" />
-        <CheckBox Name="DisableErrorStreamCheckBox" Location="10,61" Size="102,22" Text="禁用错误流" />
-        <CheckBox Name="MoreOSFeaturesCheckBox" Location="10,122" Size="105,29" Text="更多OS特性" />
-        <CheckBox Name="EnableVirtualizationCheckBox" Location="11,102" Size="102,24" Text="启用虚拟化" />
-        <CheckBox Name="LongPathSupportCheckBox" Location="10,78" Size="102,27" Text="长路径支持" />
+        <CheckBox Name="DisableErrorStreamCheckBox" Location="10,60" Size="102,25" Text="禁用错误流" />
+        <CheckBox Name="MoreOSFeaturesCheckBox" Location="10,129" Size="105,29" Text="更多OS特性" />
+        <CheckBox Name="EnableVirtualizationCheckBox" Location="12,104" Size="102,28" Text="启用虚拟化" />
+        <CheckBox Name="LongPathSupportCheckBox" Location="10,80" Size="102,30" Text="长路径支持" />
       </GroupBox>
       <GroupBox Name="RegionIDGroupBox" Location="219,262" Size="86,70">
         <Label Name="RegionIDLabel" Location="7,15" Size="68,21" Text="区域id设置" />

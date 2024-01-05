@@ -68,10 +68,10 @@ ConfingFile = path to config file (default is none)
 ```powershell
 [input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>']
         [-CompilerOptions '<options>'] [-TempDir '<directory>'] [-minifyer '<scriptblock>'] [-noConsole]
-        [-SepcArgsHandling] [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug]
+        [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
         [-resourceParams @{iconFile='<filename|url>'; title='<title>'; description='<description>'; company='<company>';
         product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}]
-        [-lcid <lcid>] [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
+        [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
 ```
 
@@ -83,10 +83,9 @@ ConfingFile = path to config file (default is none)
  CompilerOptions = additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)
          TempDir = directory for storing temporary files (default is random generated temp directory in %temp%)
         minifyer = scriptblock to minify the script before compiling
-SepcArgsHandling = the resulting executable will handle special arguments -debug, -extract, -wait and -end
+            lcid = location ID for the compiled executable. Current user culture if not specified
     prepareDebug = create helpful information for debugging
     architecture = compile for specific runtime only. Possible values are 'x64' and 'x86' and 'anycpu'
-            lcid = location ID for the compiled executable. Current user culture if not specified
   threadingModel = 'Single Thread Apartment' or 'Multi Thread Apartment' mode
        noConsole = the resulting executable will be a Windows Forms app without a console window
  UNICODEEncoding = encode output as UNICODE in console mode
@@ -104,17 +103,6 @@ winFormsDPIAware = if display scaling is activated, WinForms use DPI scaling (re
       virtualize = application virtualization is activated (forcing x86 runtime)
        longPaths = enable long paths ( > 260 characters) if enabled on OS (works only with Windows 10 or up)
 
-```
-
-With `SepcArgsHandling` parameter, generated executable has the following reserved parameters:
-
-```text
--debug              Forces the executable to be debugged. It calls "System.Diagnostics.Debugger.Launch()".
--extract:<FILENAME> Extracts the powerShell script inside the executable and saves it as FILENAME.
-                    The script will not be executed.
--wait               At the end of the script execution it writes "Hit any key to exit..." and waits for a key to be pressed.
--end                All following options will be passed to the script inside the executable.
-                    All preceding options are used by the executable itself and will not be passed to the script.
 ```
 
 ## Remarks
@@ -211,15 +199,7 @@ Compiled scripts process parameters like the original script does. One restricti
 ### Password security
 
 Never store passwords in your compiled script!  
-if you use the `SepcArgsHandling` parameter, everyone can simply decompile the script with the parameter `-extract`.  
-For example  
-
-```powershell
-Output.exe -extract:.\Output.ps1
-```
-
-will decompile the script stored in Output.exe.
-Even if you don't use it, the entire script is still easily visible to any .net decompiler.
+The entire script is easily visible to any .net decompiler.  
 ![图片](https://github.com/steve02081504/ps12exe/assets/31927825/92d96e53-ba52-406f-ae8b-538891f42779)
 
 ### Distinguish environment by script  
@@ -276,7 +256,7 @@ $Host.UI.RawUI.FlushInputBuffer()
 | GUI multilingual support 🌐 | ✔️ | ❌ |
 | Syntax check during compilation ✔️ | ✔️ | ❌ |
 | Preprocessing feature 🔄 | ✔️ | ❌ |
-| Ability to remove `-extract` and other special parameter parsing 🧹 | ❤️ Disabled by default | 🥲 Requires source code modification |
+| `-extract` and other special parameter parsing 🧹 | 🗑️ Removed | 🥲 Requires source code modification |
 | PR welcome level 🤝 | 🥰 Welcome! | 🤷 14 PRs, 13 of which were closed |
 
 ### Detailed Comparison 🔍
@@ -287,7 +267,6 @@ Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tre
 | --- | --- |
 | ✔️ Syntax check during compilation | Syntax check during compilation to improve code quality |
 | 🔄 Powerful preprocessing feature | Preprocess the script before compilation, no need to copy and paste all content into the script |
-| ⚙️ `-SepcArgsHandling` parameter | Special parameters are no longer enabled by default, but can be enabled with a new parameter if needed |
 | 🛠️ `-CompilerOptions` parameter | New parameter, allowing you to further customize the generated executable file |
 | 📦️ `-Minifyer` parameter | Preprocess the script before compilation to generate a smaller executable file |
 | 🌐 Support for compiling scripts and included files from URL | Support for downloading icons from URL |

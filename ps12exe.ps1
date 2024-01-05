@@ -10,16 +10,6 @@ real windows executables are generated. You may use the graphical front end Win-
 Please see Remarks on project page for topics "GUI mode output formatting", "Config files", "Password security",
 "Script variables" and "Window in background in -noConsole mode".
 
-With `SepcArgsHandling`, generated executable has the following reserved parameters:
-
--debug              Forces the executable to be debugged. It calls "System.Diagnostics.Debugger.Launch()".
--extract:<FILENAME> Extracts the powerShell script inside the executable and saves it as FILENAME.
-										The script will not be executed.
--wait               At the end of the script execution it writes "Hit any key to exit..." and waits for a
-										key to be pressed.
--end                All following options will be passed to the script inside the executable.
-										All preceding options are used by the executable itself.
-
 .PARAMETER inputFile
 Powershell script file path or url to convert to executable (file has to be UTF8 or UTF16 encoded)
 
@@ -38,8 +28,8 @@ directory for storing temporary files (default is random generated temp director
 .PARAMETER minifyer
 scriptblock to minify the script before compiling
 
-.PARAMETER SepcArgsHandling
-the resulting executable will handle special arguments -debug, -extract, -wait and -end.
+.PARAMETER lcid
+location ID for the compiled executable. Current user culture if not specified
 
 .PARAMETER noConsole
 the resulting executable will be a Windows Forms app without a console window.
@@ -59,9 +49,6 @@ Threading model for the compiled executable. Possible values are 'STA' and 'MTA'
 A hashtable that contains resource parameters for the compiled executable. Possible keys are 'iconFile', 'title', 'description', 'company', 'product', 'copyright', 'trademark', 'version'
 iconFile can be a file path or url to an icon file. All other values are strings.
 see https://msdn.microsoft.com/en-us/library/system.reflection.assemblytitleattribute(v=vs.110).aspx for details
-
-.PARAMETER lcid
-location ID for the compiled executable. Current user culture if not specified
 
 .PARAMETER UNICODEEncoding
 encode output as UNICODE in console mode, useful to display special encoded chars
@@ -122,13 +109,12 @@ Param(
 	[Parameter(ParameterSetName = 'ContentPipe', Position = 0)]
 	[ValidatePattern(".*\.(exe|com)$")]
 	[String]$outputFile = $NULL, [String]$CompilerOptions = '/o+ /debug-', [String]$TempDir = $NULL,
-	[scriptblock]$minifyer = $null, [Switch]$noConsole, [Switch]$SepcArgsHandling, [Switch]$prepareDebug,
+	[scriptblock]$minifyer = $null, [Switch]$noConsole, [Switch]$prepareDebug, [int]$lcid,
 	[ValidateSet('x64', 'x86', 'anycpu')]
 	[String]$architecture = 'anycpu',
 	[ValidateSet('STA', 'MTA')]
 	[String]$threadingModel = 'STA',
 	[HashTable]$resourceParams = @{},
-	[int]$lcid,
 	[Switch]$UNICODEEncoding,
 	[Switch]$credentialGUI,
 	[Switch]$configFile,
@@ -515,7 +501,6 @@ if ($noVisualStyles) { $Constants += "noVisualStyles" }
 if ($exitOnCancel) { $Constants += "exitOnCancel" }
 if ($UNICODEEncoding) { $Constants += "UNICODEEncoding" }
 if ($winFormsDPIAware) { $Constants += "winFormsDPIAware" }
-if ($SepcArgsHandling) { $Constants += "SepcArgsHandling" }
 
 . $PSScriptRoot\src\ConstProgramCheck.ps1
 if(!$programFrame) {
@@ -565,7 +550,7 @@ $CompilerOptions += "/define:$($Constants -join ';')"
 $cp.CompilerOptions = $CompilerOptions -ne '' -join ' '
 Write-Verbose "Using Compiler Options: $($cp.CompilerOptions)"
 
-if(!$IsConstProgram -or $SepcArgsHandling) {
+if(!$IsConstProgram) {
 	[VOID]$cp.EmbeddedResources.Add("$TempDir\main.ps1")
 }
 $cr = $cop.CompileAssemblyFromSource($cp, $programFrame)

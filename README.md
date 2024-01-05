@@ -62,7 +62,7 @@ compiles `"Hello World!"` into the executable `.\a.exe`.
 | GUI multilingual support 🌐 | ✔️ | ❌ |
 | Syntax check during compilation ✔️ | ✔️ | ❌ |
 | Preprocessing feature 🔄 | ✔️ | ❌ |
-| Ability to remove `-extract` and other special parameter parsing 🧹 | ❤️ Disabled by default | 🥲 Requires source code modification |
+| `-extract` and other special parameter parsing 🧹 | 🗑️ Removed | 🥲 Requires source code modification |
 | PR welcome level 🤝 | 🥰 Welcome! | 🤷 14 PRs, 13 of which were closed |
 
 ### Detailed Comparison 🔍
@@ -73,7 +73,6 @@ Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tre
 | --- | --- |
 | ✔️ Syntax check during compilation | Syntax check during compilation to improve code quality |
 | 🔄 Powerful preprocessing feature | Preprocess the script before compilation, no need to copy and paste all content into the script |
-| ⚙️ `-SepcArgsHandling` parameter | Special parameters are no longer enabled by default, but can be enabled with a new parameter if needed |
 | 🛠️ `-CompilerOptions` parameter | New parameter, allowing you to further customize the generated executable file |
 | 📦️ `-Minifyer` parameter | Preprocess the script before compilation to generate a smaller executable file |
 | 🌐 Support for compiling scripts and included files from URL | Support for downloading icons from URL |

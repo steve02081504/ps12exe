@@ -1905,11 +1905,6 @@ namespace PSRunnerNS {
 			#endif
 			PSRunner me = new PSRunner();
 
-			#if SepcArgsHandling
-			bool paramWait = false;
-			string extractFN = string.Empty;
-			#endif
-
 			PSRunnerUI ui = new PSRunnerUI();
 			PSRunnerHost host = new PSRunnerHost(me, ui);
 			System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);
@@ -1952,49 +1947,10 @@ namespace PSRunnerNS {
 							ui.WriteLine(((PSDataCollection < PSObject > ) sender)[e.Index].ToString());
 						};
 
-						#if SepcArgsHandling
-						int separator = 0;
-						int idx = 0;
-						foreach(string s in args) {
-							if (string.Compare(s, "-wait", true) == 0)
-								paramWait = true;
-							else if (s.StartsWith("-extract", StringComparison.InvariantCultureIgnoreCase)) {
-								string[] s1 = s.Split(new [] {
-									":"
-								}, 2, StringSplitOptions.RemoveEmptyEntries);
-								if (s1.Length != 2) {
-									#if!noConsole
-									Console.WriteLine("If you specify the -extract option you need to add a file for extraction in this way\r\n   -extract:\"<filename>\"");
-									#else
-									MessageBox.Show("If you specify the -extract option you need to add a file for extraction in this way\r\n   -extract:\"<filename>\"", System.AppDomain.CurrentDomain.FriendlyName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-									#endif
-									return 1;
-								}
-								extractFN = s1[1].Trim(new [] {
-									'\"'
-								});
-							} else if (string.Compare(s, "-end", true) == 0) {
-								separator = idx + 1;
-								break;
-							} else if (string.Compare(s, "-debug", true) == 0) {
-								System.Diagnostics.Debugger.Launch();
-								break;
-							}
-							idx++;
-						}
-						#endif
-
 						Assembly executingAssembly = Assembly.GetExecutingAssembly();
 						using(System.IO.Stream scriptstream = executingAssembly.GetManifestResourceStream("main.ps1")) {
 							using(System.IO.StreamReader scriptreader = new System.IO.StreamReader(scriptstream, System.Text.Encoding.UTF8)) {
-								string script = scriptreader.ReadToEnd();
-								#if SepcArgsHandling
-								if (!string.IsNullOrEmpty(extractFN)) {
-									System.IO.File.WriteAllText(extractFN, script);
-									return 0;
-								}
-								#endif
-								pwsh.AddScript(script);
+								pwsh.AddScript(scriptreader.ReadToEnd());
 							}
 						}
 
@@ -2003,13 +1959,7 @@ namespace PSRunnerNS {
 						// regex for named parameters
 						System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex(@"^-([^: ]+)[ :]?([^:]*)$");
 
-						for (int i =
-							#if SepcArgsHandling
-								separator
-							#else
-								0
-							#endif
-						; i < args.Length; i++) {
+						for (int i = 0 ; i < args.Length; i++) {
 							System.Text.RegularExpressions.Match match = regex.Match(args[i]);
 							double dummy;
 
@@ -2080,16 +2030,6 @@ namespace PSRunnerNS {
 				me.ExitCode = 1;
 			}
 
-			#if SepcArgsHandling
-			if (paramWait) {
-				#if!noConsole
-					Console.WriteLine("Hit any key to exit...");
-					Console.ReadKey();
-				#else
-					MessageBox.Show("Click OK to exit...", System.AppDomain.CurrentDomain.FriendlyName);
-				#endif
-			}
-			#endif
 			return me.ExitCode;
 		}
 	}

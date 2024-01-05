@@ -21,10 +21,10 @@ ps12exeGUI [[-ConfingFile] '<配置文件>'] [-Localize '<语言代码>'] [-UIMo
 		title      = "用法：
 [input |] ps12exe [[-inputFile] '<文件名|url>' | -Content '<脚本>'] [-outputFile '<文件名>']
         [-CompilerOptions '<选项>'] [-TempDir '<文件夹>'] [-minifyer '<scriptblock>'] [-noConsole]
-        [-SepcArgsHandling] [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug]
+        [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
         [-resourceParams @{iconFile='<文件名|url>'; title='<标题>'; description='<简介>'; company='<公司>';
         product='<产品>'; copyright='<版权>'; trademark='<水印>'; version='<版本>'}]
-        [-lcid <lcid>] [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
+        [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]"
 		PrarmsData = [ordered]@{
 			input            = "PowerShell脚本文件内容的字符串，与-Content相同。"
@@ -34,10 +34,9 @@ ps12exeGUI [[-ConfingFile] '<配置文件>'] [-Localize '<语言代码>'] [-UIMo
 			CompilerOptions  = "额外的编译器选项（参见https://msdn.microsoft.com/en-us/library/78f4aasd.aspx）"
 			TempDir          = "存储临时文件的目录（默认为%temp%中随机生成的临时目录）"
 			minifyer         = "在编译之前缩小脚本的脚本块"
-			SepcArgsHandling = "生成的可执行文件将处理特殊参数-debug，-extract，-wait和-end"
+			lcid             = "编译的可执行文件的位置ID。如果未指定，则为当前用户文化"
 			prepareDebug     = "创建有助于调试的信息"
 			architecture     = "仅为特定运行时编译。可能的值为'x64'，'x86'和'anycpu'"
-			lcid             = "编译的可执行文件的位置ID。如果未指定，则为当前用户文化"
 			threadingModel   = "'单线程公寓'或'多线程公寓'模式"
 			noConsole        = "生成的可执行文件将是一个没有控制台窗口的Windows Forms应用程序"
 			UNICODEEncoding  = "在控制台模式下将输出编码为UNICODE"
