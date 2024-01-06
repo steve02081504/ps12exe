@@ -10,9 +10,7 @@ using System.Reflection;
 	using System.Windows.Forms;
 	using System.Drawing;
 #endif
-#if winFormsDPIAware
-	using System.Runtime.Versioning;
-#endif
+using System.Runtime.Versioning;
 
 // not displayed in details tab of properties dialog, but embedded to file
 #if Resources
@@ -28,7 +26,9 @@ using System.Reflection;
 	[assembly: AssemblyFileVersion("$version")]
 #endif
 #if winFormsDPIAware
-	[assembly: TargetFrameworkAttribute(".NETFramework,Version=v4.7,Profile=Client")]
+	[assembly: TargetFrameworkAttribute("$TargetFramework,Profile=Client")]
+#else
+	[assembly: TargetFrameworkAttribute("$TargetFramework")]
 #endif
 
 namespace PSRunnerNS {

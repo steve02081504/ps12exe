@@ -3,30 +3,6 @@ $type = $type.MakeGenericType( @( ("System.String" -as "Type"), ("system.string"
 $o = [Activator]::CreateInstance($type)
 $o.Add("CompilerVersion", "v4.0")
 
-$referenceAssembies = @("System.dll")
-function GetAssembie($name,$otherinfo) {
-	$n = New-Object System.Reflection.AssemblyName(@($name,$otherinfo)-ne$null-join",")
-	try {
-		[System.AppDomain]::CurrentDomain.Load($n).Location
-	}
-	catch {
-		$Error.Remove(0)
-	}
-}
-$referenceAssembies += GetAssembie "System.Core" "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-$referenceAssembies += GetAssembie "System.Management.Automation"
-
-# If noConsole is true, add System.Windows.Forms.dll and System.Drawing.dll to the reference assemblies
-if ($noConsole) {
-	$referenceAssembies += GetAssembie "System.Windows.Forms"
-	$referenceAssembies += GetAssembie "System.Drawing"
-}
-else{
-	$referenceAssembies += GetAssembie "mscorlib"
-	$referenceAssembies += GetAssembie "System.Console"
-	$referenceAssembies += GetAssembie "Microsoft.PowerShell.ConsoleHost"
-}
-
 $cop = (New-Object Microsoft.CSharp.CSharpCodeProvider($o))
 $cp = New-Object System.CodeDom.Compiler.CompilerParameters($referenceAssembies, $outputFile)
 $cp.GenerateInMemory = $FALSE
@@ -61,7 +37,7 @@ if ($requireAdmin -or $DPIAware -or $supportOS -or $longPaths) {
 if (!$virtualize) {
 	$CompilerOptions += "/platform:$architecture"
 	$CompilerOptions += "/target:$( if ($noConsole){'winexe'}else{'exe'})"
-	$CompilerOptions += $manifestParam 
+	$CompilerOptions += $manifestParam
 }
 else {
 	Write-Host "Application virtualization is activated, forcing x86 platfom."
@@ -80,31 +56,7 @@ $configFileForEXE3 = "<?xml version=""1.0"" encoding=""utf-8"" ?>`r`n<configurat
 		'<System.Windows.Forms.ApplicationConfigurationSection><add key="DpiAwareness" value="PerMonitorV2" /></System.Windows.Forms.ApplicationConfigurationSection>'
 	})</configuration>"
 
-[string[]]$Constants = @() 
-
-$Constants += $threadingModel
-if ($lcid) { $Constants += "culture" }
-if ($noError) { $Constants += "noError" }
-if ($noConsole) { $Constants += "noConsole" }
-if ($noOutput) { $Constants += "noOutput" }
-if ($resourceParams.version) { $Constants += "version" }
-if ($resourceParams.Count) { $Constants += "Resources" }
-if ($credentialGUI) { $Constants += "credentialGUI" }
-if ($noVisualStyles) { $Constants += "noVisualStyles" }
-if ($exitOnCancel) { $Constants += "exitOnCancel" }
-if ($UNICODEEncoding) { $Constants += "UNICODEEncoding" }
-if ($winFormsDPIAware) { $Constants += "winFormsDPIAware" }
-
-. $PSScriptRoot\BuildFrame.ps1
-
-if (-not $TempDir) {
-	$TempDir = $TempTempDir = [System.IO.Path]::GetTempPath() + [System.IO.Path]::GetRandomFileName()
-	New-Item -Path $TempTempDir -ItemType Directory | Out-Null
-}
-$TempDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($TempDir)
 $cp.TempFiles = New-Object System.CodeDom.Compiler.TempFileCollection($TempDir)
-
-. $PSScriptRoot\BuildTempFiles.ps1
 
 if ($iconFile) {
 	$CompilerOptions += "`"/win32icon:$iconFile`""
@@ -117,48 +69,16 @@ if ($prepareDebug) {
 }
 
 Write-Host "Compiling file..."
-
 $CompilerOptions += "/define:$($Constants -join ';')"
 $cp.CompilerOptions = $CompilerOptions -ne '' -join ' '
 Write-Verbose "Using Compiler Options: $($cp.CompilerOptions)"
 
-if(!$IsConstProgram) {
+if (!$IsConstProgram) {
 	[VOID]$cp.EmbeddedResources.Add("$TempDir\main.ps1")
 }
 $cr = $cop.CompileAssemblyFromSource($cp, $programFrame)
 if ($cr.Errors.Count -gt 0) {
-	if (Test-Path $outputFile) {
-		Remove-Item $outputFile -Verbose:$FALSE
-	}
-	RollUp
-	Write-Host "Compilation failed!" -ForegroundColor Red
-	$cr.Errors -join "`n" | Write-Error
-}
-else {
-	if (Test-Path $outputFile) {
-		RollUp
-		Write-Host "Compiled file written -> $((Get-Item $outputFile).Length) bytes"
-		Write-Verbose "Path: $outputFile"
-
-		if ($prepareDebug) {
-			$cr.TempFiles | Where-Object { $_ -ilike "*.cs" } | Select-Object -First 1 | ForEach-Object {
-				$dstSrc = ([System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($outputFile), [System.IO.Path]::GetFileNameWithoutExtension($outputFile) + ".cs"))
-				Write-Host "Source file name for debug copied: $dstSrc"
-				Copy-Item -Path $_ -Destination $dstSrc -Force
-			}
-			$cr.TempFiles | Remove-Item -Verbose:$FALSE -Force -ErrorAction SilentlyContinue
-		}
-		if ($CFGFILE) {
-			$configFileForEXE3 | Set-Content ($outputFile + ".config") -Encoding UTF8
-			Write-Host "Config file for EXE created"
-		}
-	}
-	else {
-		Write-Error -ErrorAction "Continue" "Output file $outputFile not written"
-	}
-}
-if ($TempTempDir) {
-	Remove-Item $TempTempDir -Recurse -Force -ErrorAction SilentlyContinue
+	throw $cr.Errors -join "`n"
 }
 
 if ($requireAdmin -or $DPIAware -or $supportOS -or $longPaths) {

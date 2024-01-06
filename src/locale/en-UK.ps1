@@ -8,7 +8,7 @@
 	CfgFileLabelHead = "Configuration file, my good sir:"
 	# Console
 	GUIHelpData      = @{
-		title      = "Usage: 
+		title      = "Usage:
 ps12exeGUI [[-ConfingFile] '<filename>'] [-Localize '<languagecode>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]"
 		PrarmsData = [ordered]@{
 			ConfingFile = "The configuration file to load."
@@ -18,7 +18,7 @@ ps12exeGUI [[-ConfingFile] '<filename>'] [-Localize '<languagecode>'] [-UIMode '
 		}
 	}
 	ConsoleHelpData  = @{
-		title      = "Usage: 
+		title      = "Usage:
 [input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>']
         [-CompilerOptions '<options>'] [-TempDir '<directory>'] [-minifyer '<scriptblock>'] [-noConsole]
         [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]

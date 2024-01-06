@@ -311,7 +311,7 @@ else {
 	}
 }
 #_if PSScript #在PSEXE中主机永远是winpwsh，可省略该部分
-if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerShell -and (Get-Command powershell -ErrorAction Ignore)) {
+function UsingWinPowershell {
 	# starting Windows Powershell
 	$Params = ([hashtable]$PSBoundparameters).Clone()
 	$Params.Remove("minifyer")
@@ -327,6 +327,7 @@ if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerSh
 	$Content | Set-Content $TempFile -Encoding UTF8 -NoNewline
 	$Params.Add("outputFile", $outputFile)
 	$Params.Add("inputFile", $TempFile)
+	if($TempDir) { $Params.TempDir = $TempDir }
 	$resourceParamKeys | ForEach-Object {
 		if ($resourceParams.ContainsKey($_) -and $resourceParams[$_]) {
 			$Params[$_] = $PSBoundParameters[$_]
@@ -350,6 +351,10 @@ if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerSh
 	Write-Verbose "Starting WinPowershell ps12exe with parameters: $CallParam"
 
 	powershell -noprofile -Command "&'$PSScriptRoot\ps12exe.ps1' $CallParam -nested" | Out-Host
+	return
+}
+if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerShell -and (Get-Command powershell -ErrorAction Ignore)) {
+	UsingWinPowershell
 	return
 }
 #_endif
@@ -399,19 +404,61 @@ $resourceParamKeys | ForEach-Object {
 	}
 }
 
-if ($PSVersionTable.PSEdition -eq "Core") {
-	# unfinished!
-	if(!$TargetFramework){
-		$Info=[System.Environment]::Version
-		$TargetFramework = ".NETFramework,Version=v$($Info.Major).$($Info.Minor)"
+try{
+	. $PSScriptRoot\src\InitCompileThings.ps1
+	if ($PSVersionTable.PSEdition -eq "Core") {
+		# unfinished!
+		if(!$TargetFramework){
+			$Info=[System.Environment]::Version
+			$TargetFramework = ".NETCore,Version=v$($Info.Major).$($Info.Minor)"
+		}
+		. $PSScriptRoot\src\CodeAnalysisCompiler.ps1
 	}
-	Add-Type -AssemblyName "Microsoft.CodeAnalysis"
-	Add-Type -AssemblyName "Microsoft.CodeAnalysis.CSharp"
-	. $PSScriptRoot\src\CodeAnalysisCompiler.ps1
+	else {
+		if(!$TargetFramework){
+			$TargetFramework = ".NETFramework,Version=v4.7"
+		}
+		. $PSScriptRoot\src\CodeDomCompiler.ps1
+	}
+	RollUp
+
+	if (!(Test-Path $outputFile)) {
+		Write-Error -ErrorAction "Continue" "Output file $outputFile not written"
+	}
+	else{
+		Write-Host "Compiled file written -> $((Get-Item $outputFile).Length) bytes"
+		Write-Verbose "Path: $outputFile"
+		if ($CFGFILE) {
+			$configFileForEXE3 | Set-Content ($outputFile + ".config") -Encoding UTF8
+			Write-Host "Config file for EXE created"
+		}
+		if ($prepareDebug) {
+			$cr.TempFiles | Where-Object { $_ -ilike "*.cs" } | Select-Object -First 1 | ForEach-Object {
+				$dstSrc = ([System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($outputFile), [System.IO.Path]::GetFileNameWithoutExtension($outputFile) + ".cs"))
+				Write-Host "Source file name for debug copied: $dstSrc"
+				Copy-Item -Path $_ -Destination $dstSrc -Force
+			}
+			$cr.TempFiles | Remove-Item -Verbose:$FALSE -Force -ErrorAction SilentlyContinue
+		}
+	}
 }
-else {
-	if(!$TargetFramework){
-		$TargetFramework = ".NETFramework,Version=v4.7"
+catch{
+	if (Test-Path $outputFile) {
+		Remove-Item $outputFile -Verbose:$FALSE
 	}
-	. $PSScriptRoot\src\CodeDomCompiler.ps1
+	if ($PSVersionTable.PSEdition -eq "Core" -and (Get-Command powershell -ErrorAction Ignore)){
+		$_ | Write-Error
+		Write-Host "Roslyn CodeAnalysis failed`nFalling back to Use Windows Powershell with CodeDom...`nYou may want to add -UseWindowsPowerShell to args to skip this fallback in future.`n...or submit a PR to ps12exe repo to fix this!" -ForegroundColor Yellow
+		UsingWinPowershell
+	}
+	else {
+		RollUp
+		Write-Host "Compilation failed!" -ForegroundColor Red
+		$_ | Write-Error
+	}
+}
+finally{
+	if ($TempTempDir) {
+		Remove-Item $TempTempDir -Recurse -Force -ErrorAction SilentlyContinue
+	}
 }

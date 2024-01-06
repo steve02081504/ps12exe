@@ -9,6 +9,7 @@ if(!$programFrame) {
 
 $programFrame = $programFrame.Replace("`$lcid", $lcid)
 $programFrame = $programFrame.Replace("`$threadingModel", $threadingModel)
+$programFrame = $programFrame.Replace("`$TargetFramework", $TargetFramework)
 $resourceParamKeys | ForEach-Object {
 	$programFrame = $programFrame.Replace("`$$_", $resourceParams[$_])
 }

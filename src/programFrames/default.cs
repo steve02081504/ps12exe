@@ -15,9 +15,7 @@ using System.Runtime.InteropServices;
 	using System.Windows.Forms;
 	using System.Drawing;
 #endif
-#if winFormsDPIAware
-	using System.Runtime.Versioning;
-#endif
+using System.Runtime.Versioning;
 
 // not displayed in details tab of properties dialog, but embedded to file
 #if Resources
@@ -33,7 +31,9 @@ using System.Runtime.InteropServices;
 	[assembly: AssemblyFileVersion("$version")]
 #endif
 #if winFormsDPIAware
-	[assembly: TargetFrameworkAttribute(".NETFramework,Version=v4.7,Profile=Client")]
+	[assembly: TargetFrameworkAttribute("$TargetFramework,Profile=Client")]
+#else
+	[assembly: TargetFrameworkAttribute("$TargetFramework")]
 #endif
 
 namespace PSRunnerNS {
@@ -266,7 +266,7 @@ namespace PSRunnerNS {
 
 		public override int CursorSize {
 			get {
-				return 
+				return
 					#if!noConsole
 						Console.CursorSize
 					#else
@@ -352,7 +352,7 @@ namespace PSRunnerNS {
 
 		public override bool KeyAvailable {
 			get {
-				return 
+				return
 					#if!noConsole
 						Console.KeyAvailable
 					#else
@@ -521,7 +521,7 @@ namespace PSRunnerNS {
 
 		public override string WindowTitle {
 			get {
-				return 
+				return
 				#if!noConsole
 				Console.Title
 				#else
@@ -989,7 +989,7 @@ namespace PSRunnerNS {
 			// Create ProgressBar
 			pd.objProgressBar = new ProgressBar();
 			pd.objProgressBar.Value = 0;
-			pd.objProgressBar.Style = 
+			pd.objProgressBar.Style =
 				#if noVisualStyles
 					ProgressBarStyle.Continuous
 				#else
@@ -1275,7 +1275,7 @@ namespace PSRunnerNS {
 		public ConsoleColor VerboseForegroundColor = ConsoleColor.Yellow;
 		public ConsoleColor VerboseBackgroundColor = ConsoleColor.Black;
 
-		public ConsoleColor ProgressForegroundColor = 
+		public ConsoleColor ProgressForegroundColor =
 		#if!noConsole
 			ConsoleColor.Yellow
 		#else
@@ -1329,7 +1329,7 @@ namespace PSRunnerNS {
 					int index = 0;
 					string data = "";
 					do {
-						if (!string.IsNullOrEmpty(cd.Name)) 
+						if (!string.IsNullOrEmpty(cd.Name))
 							#if!noConsole
 								Write(string.Format("{0}[{1}]: ", cd.Name, index));
 							#else
@@ -1379,7 +1379,7 @@ namespace PSRunnerNS {
 						} else
 							o = PromptForCredential("", "", "", "");
 					} else {
-						if (!string.IsNullOrEmpty(cd.Name)) 
+						if (!string.IsNullOrEmpty(cd.Name))
 							#if!noConsole
 								Write(string.Format("{0}: ", cd.Name));
 							#else
