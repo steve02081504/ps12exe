@@ -4,8 +4,8 @@ $o = [Activator]::CreateInstance($type)
 $o.Add("CompilerVersion", "v4.0")
 
 $referenceAssembies = @("System.dll")
-function GetAssembie($name,$otherinfo) {
-	$n = New-Object System.Reflection.AssemblyName(@($name,$otherinfo)-ne$null-join",")
+function GetAssembie($name, $otherinfo) {
+	$n = New-Object System.Reflection.AssemblyName(@($name, $otherinfo) -ne $null -join ",")
 	try {
 		[System.AppDomain]::CurrentDomain.Load($n).Location
 	}
@@ -13,6 +13,7 @@ function GetAssembie($name,$otherinfo) {
 		$Error.Remove(0)
 	}
 }
+$referenceAssembies += GetAssembie "mscorlib"
 $referenceAssembies += GetAssembie "System.Core" "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
 $referenceAssembies += GetAssembie "System.Management.Automation"
 
@@ -21,8 +22,7 @@ if ($noConsole) {
 	$referenceAssembies += GetAssembie "System.Windows.Forms"
 	$referenceAssembies += GetAssembie "System.Drawing"
 }
-else{
-	$referenceAssembies += GetAssembie "mscorlib"
+else {
 	$referenceAssembies += GetAssembie "System.Console"
 	$referenceAssembies += GetAssembie "Microsoft.PowerShell.ConsoleHost"
 }
@@ -61,7 +61,7 @@ if ($requireAdmin -or $DPIAware -or $supportOS -or $longPaths) {
 if (!$virtualize) {
 	$CompilerOptions += "/platform:$architecture"
 	$CompilerOptions += "/target:$( if ($noConsole){'winexe'}else{'exe'})"
-	$CompilerOptions += $manifestParam 
+	$CompilerOptions += $manifestParam
 }
 else {
 	Write-Host "Application virtualization is activated, forcing x86 platfom."
@@ -80,7 +80,7 @@ $configFileForEXE3 = "<?xml version=""1.0"" encoding=""utf-8"" ?>`r`n<configurat
 		'<System.Windows.Forms.ApplicationConfigurationSection><add key="DpiAwareness" value="PerMonitorV2" /></System.Windows.Forms.ApplicationConfigurationSection>'
 	})</configuration>"
 
-[string[]]$Constants = @() 
+[string[]]$Constants = @()
 
 $Constants += $threadingModel
 if ($lcid) { $Constants += "culture" }
@@ -117,22 +117,16 @@ if ($prepareDebug) {
 }
 
 Write-Host "Compiling file..."
-
 $CompilerOptions += "/define:$($Constants -join ';')"
 $cp.CompilerOptions = $CompilerOptions -ne '' -join ' '
 Write-Verbose "Using Compiler Options: $($cp.CompilerOptions)"
 
-if(!$IsConstProgram) {
+if (!$IsConstProgram) {
 	[VOID]$cp.EmbeddedResources.Add("$TempDir\main.ps1")
 }
 $cr = $cop.CompileAssemblyFromSource($cp, $programFrame)
 if ($cr.Errors.Count -gt 0) {
-	if (Test-Path $outputFile) {
-		Remove-Item $outputFile -Verbose:$FALSE
-	}
-	RollUp
-	Write-Host "Compilation failed!" -ForegroundColor Red
-	$cr.Errors -join "`n" | Write-Error
+	throw $cr.Errors -join "`n"
 }
 else {
 	if (Test-Path $outputFile) {

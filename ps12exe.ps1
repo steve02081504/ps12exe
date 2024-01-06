@@ -311,7 +311,7 @@ else {
 	}
 }
 #_if PSScript #在PSEXE中主机永远是winpwsh，可省略该部分
-if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerShell -and (Get-Command powershell -ErrorAction Ignore)) {
+function UsingWinPowershell {
 	# starting Windows Powershell
 	$Params = ([hashtable]$PSBoundparameters).Clone()
 	$Params.Remove("minifyer")
@@ -350,6 +350,10 @@ if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerSh
 	Write-Verbose "Starting WinPowershell ps12exe with parameters: $CallParam"
 
 	powershell -noprofile -Command "&'$PSScriptRoot\ps12exe.ps1' $CallParam -nested" | Out-Host
+	return
+}
+if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerShell -and (Get-Command powershell -ErrorAction Ignore)) {
+	UsingWinPowershell
 	return
 }
 #_endif
@@ -399,19 +403,42 @@ $resourceParamKeys | ForEach-Object {
 	}
 }
 
-if ($PSVersionTable.PSEdition -eq "Core") {
-	# unfinished!
-	if(!$TargetFramework){
-		$Info=[System.Environment]::Version
-		$TargetFramework = ".NETFramework,Version=v$($Info.Major).$($Info.Minor)"
+try{
+	if ($PSVersionTable.PSEdition -eq "Core") {
+		# unfinished!
+		try{
+			if(!$TargetFramework){
+				$Info=[System.Environment]::Version
+				$TargetFramework = ".NETFramework,Version=v$($Info.Major).$($Info.Minor)"
+			}
+			Add-Type -AssemblyName "Microsoft.CodeAnalysis"
+			Add-Type -AssemblyName "Microsoft.CodeAnalysis.CSharp"
+			. $PSScriptRoot\src\CodeAnalysisCompiler.ps1
+		}
+		catch{
+			if (Test-Path $outputFile) {
+				Remove-Item $outputFile -Verbose:$FALSE
+			}
+			$_ | Write-Error
+			if(Get-Command powershell -ErrorAction Ignore){
+				$Fallback = $TRUE
+				Write-Host "Falling back to Use Windows Powershell"
+				UsingWinPowershell
+			}
+		}
 	}
-	Add-Type -AssemblyName "Microsoft.CodeAnalysis"
-	Add-Type -AssemblyName "Microsoft.CodeAnalysis.CSharp"
-	. $PSScriptRoot\src\CodeAnalysisCompiler.ps1
+	else {
+		if(!$TargetFramework){
+			$TargetFramework = ".NETFramework,Version=v4.7"
+		}
+		. $PSScriptRoot\src\CodeDomCompiler.ps1
+	}
 }
-else {
-	if(!$TargetFramework){
-		$TargetFramework = ".NETFramework,Version=v4.7"
+catch{
+	if (Test-Path $outputFile) {
+		Remove-Item $outputFile -Verbose:$FALSE
 	}
-	. $PSScriptRoot\src\CodeDomCompiler.ps1
+	if($Fallback){ RollUp }
+	Write-Host "Compilation failed!" -ForegroundColor Red
+	$_ | Write-Error
 }

@@ -10,7 +10,7 @@ public class Dwm {
 	}
 }
 "@	-ReferencedAssemblies System.Windows.Forms, System.Drawing, System.Drawing.Primitives, System.Net.Primitives, System.ComponentModel.Primitives, Microsoft.Win32.Primitives
-[void][System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") 
+[void][System.Reflection.Assembly]::LoadWithPartialName("System.Drawing")
 [void][System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
 
 function Update-ErrorLog {

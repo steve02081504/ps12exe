@@ -1,6 +1,5 @@
-$referenceAssembies = @([int].Assembly.Location)
-function GetAssembie($name,$otherinfo) {
-	$n = New-Object System.Reflection.AssemblyName(@($name,$otherinfo)-ne$null-join",")
+function GetAssembie($name, $otherinfo) {
+	$n = New-Object System.Reflection.AssemblyName(@($name, $otherinfo) -ne $null -join ",")
 	try {
 		[System.AppDomain]::CurrentDomain.Load($n).Location
 	}
@@ -8,7 +7,11 @@ function GetAssembie($name,$otherinfo) {
 		$Error.Remove(0)
 	}
 }
-$referenceAssembies += GetAssembie "System.Runtime"
+$referenceAssembies = @()
+# 绝不要直接使用 System.Private.CoreLib.dll，因为它是netlib的内部实现，而不是公共API
+# [int].Assembly.Location 等基础类型的程序集也是它。
+$referenceAssembies += GetAssembie "mscorlib"
+$referenceAssembies += GetAssembie "System.Runtime" "PublicKeyToken=b03f5f7f11d50a3a"
 $referenceAssembies += GetAssembie "System.Management.Automation"
 
 # If noConsole is true, add System.Windows.Forms.dll and System.Drawing.dll to the reference assemblies
@@ -17,22 +20,21 @@ $OutputKind = if ($noConsole) {
 	$referenceAssembies += GetAssembie "System.Drawing"
 	[Microsoft.CodeAnalysis.OutputKind]::WindowsApplication
 }
-else{
-	$referenceAssembies += GetAssembie "mscorlib"
+else {
 	$referenceAssembies += GetAssembie "System.Console"
 	$referenceAssembies += GetAssembie "Microsoft.PowerShell.ConsoleHost"
 	[Microsoft.CodeAnalysis.OutputKind]::ConsoleApplication
 }
 
-$references = $referenceAssembies | ForEach-Object { 
+$references = $referenceAssembies | ForEach-Object {
 	if ([System.IO.File]::Exists($_)) {
-		[Microsoft.CodeAnalysis.MetadataReference]::CreateFromFile($_) 
+		[Microsoft.CodeAnalysis.MetadataReference]::CreateFromFile($_)
 	}
 }
 
 . $PSScriptRoot\BuildFrame.ps1
 
-[string[]]$Constants = @() 
+[string[]]$Constants = @()
 
 $Constants += $threadingModel
 if ($lcid) { $Constants += "culture" }
@@ -70,30 +72,29 @@ if ($iconFile) {
 }
 if (!$virtualize) {
 	$compilationOptions = $compilationOptions.WithPlatform($(
-		switch ($architecture) {
-			"x86" { [Microsoft.CodeAnalysis.Platform]::X86 }
-			"x64" { [Microsoft.CodeAnalysis.Platform]::X64 }
-			"anycpu" { [Microsoft.CodeAnalysis.Platform]::AnyCpu }
-			default {
-				Write-Warning "Invalid platform $architecture, using AnyCpu"
-				[Microsoft.CodeAnalysis.Platform]::AnyCpu
-			}
-		})
+			switch ($architecture) {
+				"x86" { [Microsoft.CodeAnalysis.Platform]::X86 }
+				"x64" { [Microsoft.CodeAnalysis.Platform]::X64 }
+				"anycpu" { [Microsoft.CodeAnalysis.Platform]::AnyCpu }
+				default {
+					Write-Warning "Invalid platform $architecture, using AnyCpu"
+					[Microsoft.CodeAnalysis.Platform]::AnyCpu
+				}
+			})
 	)
 }
 else {
 	Write-Host "Application virtualization is activated, forcing x86 platfom."
 	$compilationOptions = $compilationOptions.WithPlatform([Microsoft.CodeAnalysis.Platform.X86])
 }
-
-if(!$IsConstProgram) {
-	$resourceDescription = New-Object Microsoft.CodeAnalysis.Emit.EmbeddedResource("$TempDir\main.ps1", [Microsoft.CodeAnalysis.ResourceDescriptionKind]::Embedded)
-	$compilation = $compilation.AddReferences($resourceDescription)
-}
-
-if ($prepareDebug) {
-	$compilationOptions = $compilationOptions.WithOptimizationLevel([Microsoft.CodeAnalysis.OptimizationLevel]::Debug)
-}
+$compilationOptions = $compilationOptions.WithOptimizationLevel($(
+		if ($prepareDebug) {
+			[Microsoft.CodeAnalysis.OptimizationLevel]::Debug
+		}
+		else {
+			[Microsoft.CodeAnalysis.OptimizationLevel]::Release
+		}
+	))
 
 $treeArray = New-Object System.Collections.Generic.List[Microsoft.CodeAnalysis.SyntaxTree]
 $treeArray.Add($tree)
@@ -106,6 +107,11 @@ $compilation = [Microsoft.CodeAnalysis.CSharp.CSharpCompilation]::Create(
 	$referencesArray.ToArray(),
 	$compilationOptions
 )
+
+if (!$IsConstProgram) {
+	$resourceDescription = New-Object Microsoft.CodeAnalysis.Emit.EmbeddedResource("$TempDir\main.ps1", [Microsoft.CodeAnalysis.ResourceDescriptionKind]::Embedded)
+	$compilation = $compilation.AddReferences($resourceDescription)
+}
 
 # Create a new EmitOptions instance
 $emitOptions = New-Object Microsoft.CodeAnalysis.Emit.EmitOptions -ArgumentList @([Microsoft.CodeAnalysis.Emit.DebugInformationFormat]::PortablePdb)
@@ -146,13 +152,9 @@ if ($emitResult.Success) {
 	else {
 		Write-Error -ErrorAction "Continue" "Output file $outputFile not written"
 	}
-} else {
-	if (Test-Path $outputFile) {
-		Remove-Item $outputFile -Verbose:$FALSE
-	}
-	RollUp
-	Write-Host "Compilation failed!" -ForegroundColor Red
-	$emitResult.Diagnostics -join "`n" | Write-Error
+}
+else {
+	throw $emitResult.Diagnostics -join "`n"
 }
 if ($TempTempDir) {
 	Remove-Item $TempTempDir -Recurse -Force -ErrorAction SilentlyContinue
