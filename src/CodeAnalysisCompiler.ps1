@@ -1,7 +1,13 @@
 $referenceAssembies = @()
 
-$Mscorlib = [Microsoft.CodeAnalysis.MetadataReference]::CreateFromFile(([type] 'object').Assembly.Location)
+$Mscorlib = [Microsoft.CodeAnalysis.MetadataReference]::CreateFromFile("$PSHOME\mscorlib.dll")
 $referenceAssembies += $Mscorlib
+
+$Runtime = [Microsoft.CodeAnalysis.MetadataReference]::CreateFromFile("$PSHOME\System.Runtime.dll")
+$referenceAssembies += $Runtime
+
+$netstandard = [Microsoft.CodeAnalysis.MetadataReference]::CreateFromFile("$PSHOME\netstandard.dll")
+$referenceAssembies += $netstandard
 
 # Add System.dll to the reference assemblies
 $systemDllPath = [System.IO.Path]::Combine([System.Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory(), "System.dll")
@@ -130,6 +136,7 @@ $compilation = [Microsoft.CodeAnalysis.CSharp.CSharpCompilation]::Create(
 
 # Create a new EmitOptions instance
 $emitOptions = New-Object Microsoft.CodeAnalysis.Emit.EmitOptions -ArgumentList @([Microsoft.CodeAnalysis.Emit.DebugInformationFormat]::PortablePdb)
+$emitOptions = $emitOptions.WithRuntimeMetadataVersion("$($PSVersionTable.PSVersion.Major).0")
 
 $peStream = New-Object System.IO.FileStream($outputFile, [System.IO.FileMode]::Create)
 $emitResult = $compilation.Emit($peStream, $null, $null, $null, $null, $emitOptions)
