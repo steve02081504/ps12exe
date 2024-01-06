@@ -1,54 +1,27 @@
-$referenceAssembies = @()
-
-$Mscorlib = [Microsoft.CodeAnalysis.MetadataReference]::CreateFromFile("$PSHOME\mscorlib.dll")
-$referenceAssembies += $Mscorlib
-
-$Runtime = [Microsoft.CodeAnalysis.MetadataReference]::CreateFromFile("$PSHOME\System.Runtime.dll")
-$referenceAssembies += $Runtime
-
-$netstandard = [Microsoft.CodeAnalysis.MetadataReference]::CreateFromFile("$PSHOME\netstandard.dll")
-$referenceAssembies += $netstandard
-
-# Add System.dll to the reference assemblies
-$systemDllPath = [System.IO.Path]::Combine([System.Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory(), "System.dll")
-$referenceAssembies += $systemDllPath
-
-# Add System.Globalization.dll to the reference assemblies
-$globalizationDllPath = [System.IO.Path]::Combine([System.Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory(), "System.Globalization.dll")
-if ([System.IO.File]::Exists($globalizationDllPath)) {
-	$referenceAssembies += $globalizationDllPath
+$referenceAssembies = @([int].Assembly.Location)
+function GetAssembie($name) {
+	$n = New-Object System.Reflection.AssemblyName($name)
+	try {
+		[System.AppDomain]::CurrentDomain.Load($n).Location
+	}
+	catch {
+		$Error.Remove(0)
+	}
 }
-
-# Check if Microsoft.PowerShell.ConsoleHost.dll exists and add it to the reference assemblies
-$consoleHostDllPath = [System.Reflection.Assembly]::GetAssembly([System.Management.Automation.Runspaces.Runspace]).Location
-if ([System.IO.File]::Exists($consoleHostDllPath) -and !$noConsole) {
-	$referenceAssembies += $consoleHostDllPath
-}
-
-# Add System.Management.Automation.dll to the reference assemblies
-$automationDllPath = [System.Reflection.Assembly]::GetAssembly([System.Management.Automation.PSObject]).Location
-if ([System.IO.File]::Exists($automationDllPath)) {
-	$referenceAssembies += $automationDllPath
-}
-
-# Add System.Core.dll to the reference assemblies
-$coreDllPath = [System.IO.Path]::Combine([System.Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory(), "System.Core.dll")
-if ([System.IO.File]::Exists($coreDllPath)) {
-	$referenceAssembies += $coreDllPath
-}
+$referenceAssembies += GetAssembie "System.Management.Automation"
+$referenceAssembies += GetAssembie "System.Runtime"
 
 # If noConsole is true, add System.Windows.Forms.dll and System.Drawing.dll to the reference assemblies
-$OutputKind = [Microsoft.CodeAnalysis.OutputKind]::ConsoleApplication
-if ($noConsole) {
-	$formsDllPath = [System.IO.Path]::Combine([System.Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory(), "System.Windows.Forms.dll")
-	$drawingDllPath = [System.IO.Path]::Combine([System.Runtime.InteropServices.RuntimeEnvironment]::GetRuntimeDirectory(), "System.Drawing.dll")
-	if ([System.IO.File]::Exists($formsDllPath)) {
-		$referenceAssembies += $formsDllPath
-	}
-	if ([System.IO.File]::Exists($drawingDllPath)) {
-		$referenceAssembies += $drawingDllPath
-	}
-	$OutputKind = [Microsoft.CodeAnalysis.OutputKind]::WindowsApplication
+$OutputKind = if ($noConsole) {
+	$referenceAssembies += GetAssembie "System.Windows.Forms"
+	$referenceAssembies += GetAssembie "System.Drawing"
+	[Microsoft.CodeAnalysis.OutputKind]::WindowsApplication
+}
+else{
+	$referenceAssembies += GetAssembie "mscorlib"
+	$referenceAssembies += GetAssembie "System.Console"
+	$referenceAssembies += GetAssembie "Microsoft.PowerShell.ConsoleHost"
+	[Microsoft.CodeAnalysis.OutputKind]::ConsoleApplication
 }
 
 $references = $referenceAssembies | ForEach-Object { 
@@ -119,7 +92,7 @@ if(!$IsConstProgram) {
 }
 
 if ($prepareDebug) {
-	$compilationOptions = $compilationOptions.WithOptions($compilation.Options.WithOptimizationLevel([Microsoft.CodeAnalysis.OptimizationLevel]::Debug)).WithDebugPlusMode($TRUE)
+	$compilationOptions = $compilationOptions.WithOptimizationLevel([Microsoft.CodeAnalysis.OptimizationLevel]::Debug)
 }
 
 $treeArray = New-Object System.Collections.Generic.List[Microsoft.CodeAnalysis.SyntaxTree]
@@ -137,10 +110,17 @@ $compilation = [Microsoft.CodeAnalysis.CSharp.CSharpCompilation]::Create(
 # Create a new EmitOptions instance
 $emitOptions = New-Object Microsoft.CodeAnalysis.Emit.EmitOptions -ArgumentList @([Microsoft.CodeAnalysis.Emit.DebugInformationFormat]::PortablePdb)
 $emitOptions = $emitOptions.WithRuntimeMetadataVersion("$($PSVersionTable.PSVersion.Major).0")
+$emitOptions = $emitOptions.WithEmitMetadataOnly($false)
 
 $peStream = New-Object System.IO.FileStream($outputFile, [System.IO.FileMode]::Create)
-$emitResult = $compilation.Emit($peStream, $null, $null, $null, $null, $emitOptions)
+$pdbStream = if ($prepareDebug) {
+	New-Object System.IO.FileStream(($outputFile -replace '\.exe$', '.pdb'), [System.IO.FileMode]::Create)
+}
+$emitResult = $compilation.Emit($peStream, $pdbStream, $null, $null, $null, $emitOptions)
 $peStream.Close()
+if ($prepareDebug) {
+	$pdbStream.Close()
+}
 
 Write-Host "Compiling file..."
 

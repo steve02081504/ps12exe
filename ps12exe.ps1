@@ -311,7 +311,7 @@ else {
 	}
 }
 #_if PSScript #在PSEXE中主机永远是winpwsh，可省略该部分
-if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerShell) {
+if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerShell -and (Get-Command powershell -ErrorAction Ignore)) {
 	# starting Windows Powershell
 	$Params = ([hashtable]$PSBoundparameters).Clone()
 	$Params.Remove("minifyer")

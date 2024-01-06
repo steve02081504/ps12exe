@@ -4,26 +4,25 @@ $o = [Activator]::CreateInstance($type)
 $o.Add("CompilerVersion", "v4.0")
 
 $referenceAssembies = @("System.dll")
-if (!$noConsole) {
-	if ([System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.ManifestModule.Name -ieq "Microsoft.PowerShell.ConsoleHost.dll" }) {
-		$referenceAssembies += ([System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.ManifestModule.Name -ieq "Microsoft.PowerShell.ConsoleHost.dll" } | Select-Object -First 1).Location
+function GetAssembie($name) {
+	$n = New-Object System.Reflection.AssemblyName($name)
+	try {
+		[System.AppDomain]::CurrentDomain.Load($n).Location
+	}
+	catch {
+		$Error.Remove(0)
 	}
 }
-$referenceAssembies += ([System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.ManifestModule.Name -ieq "System.Management.Automation.dll" } | Select-Object -First 1).Location
+$referenceAssembies += GetAssembie "System.Management.Automation"
 
-$n = New-Object System.Reflection.AssemblyName("System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")
-[System.AppDomain]::CurrentDomain.Load($n) | Out-Null
-$referenceAssembies += ([System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.ManifestModule.Name -ieq "System.Core.dll" } | Select-Object -First 1).Location
-
+# If noConsole is true, add System.Windows.Forms.dll and System.Drawing.dll to the reference assemblies
 if ($noConsole) {
-	$n = New-Object System.Reflection.AssemblyName("System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")
-	[System.AppDomain]::CurrentDomain.Load($n) | Out-Null
-
-	$n = New-Object System.Reflection.AssemblyName("System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
-	[System.AppDomain]::CurrentDomain.Load($n) | Out-Null
-
-	$referenceAssembies += ([System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.ManifestModule.Name -ieq "System.Windows.Forms.dll" } | Select-Object -First 1).Location
-	$referenceAssembies += ([System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.ManifestModule.Name -ieq "System.Drawing.dll" } | Select-Object -First 1).Location
+	$referenceAssembies += GetAssembie "System.Windows.Forms"
+	$referenceAssembies += GetAssembie "System.Drawing"
+}
+else{
+	$referenceAssembies += GetAssembie "System.Console"
+	$referenceAssembies += GetAssembie "Microsoft.PowerShell.ConsoleHost"
 }
 
 $cop = (New-Object Microsoft.CSharp.CSharpCodeProvider($o))
