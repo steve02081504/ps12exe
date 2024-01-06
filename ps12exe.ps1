@@ -129,6 +129,9 @@ Param(
 	[Switch]$virtualize,
 	[Switch]$longPaths,
 	[Switch]$help,
+	# TODO，不进入文档
+	[Parameter(DontShow)]
+	[switch]$UseWindowsPowerShell=$true,
 	# 兼容旧版参数列表，不进入文档
 	[Parameter(DontShow)]
 	[Switch]$noConfigFile,
@@ -308,7 +311,7 @@ else {
 	}
 }
 #_if PSScript #在PSEXE中主机永远是winpwsh，可省略该部分
-if (!$nested -and ($PSVersionTable.PSEdition -eq "Core")) {
+if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerShell -and (Get-Command powershell -ErrorAction Ignore)) {
 	# starting Windows Powershell
 	$Params = ([hashtable]$PSBoundparameters).Clone()
 	$Params.Remove("minifyer")
@@ -356,16 +359,6 @@ if ($inputFile -eq $outputFile) {
 	return
 }
 
-if ($iconFile) {
-	# retrieve absolute path independent if path is given relative oder absolute
-	$iconFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($iconFile)
-
-	if (!(Test-Path $iconFile -PathType Leaf)) {
-		Write-Error "Icon file $iconFile not found!"
-		return
-	}
-}
-
 if ($winFormsDPIAware) {
 	$supportOS = $TRUE
 }
@@ -406,192 +399,19 @@ $resourceParamKeys | ForEach-Object {
 	}
 }
 
-$type = ('System.Collections.Generic.Dictionary`2') -as "Type"
-$type = $type.MakeGenericType( @( ("System.String" -as "Type"), ("system.string" -as "Type") ) )
-$o = [Activator]::CreateInstance($type)
-$o.Add("CompilerVersion", "v4.0")
-
-$referenceAssembies = @("System.dll")
-if (!$noConsole) {
-	if ([System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.ManifestModule.Name -ieq "Microsoft.PowerShell.ConsoleHost.dll" }) {
-		$referenceAssembies += ([System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.ManifestModule.Name -ieq "Microsoft.PowerShell.ConsoleHost.dll" } | Select-Object -First 1).Location
+if ($PSVersionTable.PSEdition -eq "Core") {
+	# unfinished!
+	if(!$TargetFramework){
+		$Info=[System.Environment]::Version
+		$TargetFramework = ".NETFramework,Version=v$($Info.Major).$($Info.Minor)"
 	}
-}
-$referenceAssembies += ([System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.ManifestModule.Name -ieq "System.Management.Automation.dll" } | Select-Object -First 1).Location
-
-$n = New-Object System.Reflection.AssemblyName("System.Core, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")
-[System.AppDomain]::CurrentDomain.Load($n) | Out-Null
-$referenceAssembies += ([System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.ManifestModule.Name -ieq "System.Core.dll" } | Select-Object -First 1).Location
-
-if ($noConsole) {
-	$n = New-Object System.Reflection.AssemblyName("System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089")
-	[System.AppDomain]::CurrentDomain.Load($n) | Out-Null
-
-	$n = New-Object System.Reflection.AssemblyName("System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
-	[System.AppDomain]::CurrentDomain.Load($n) | Out-Null
-
-	$referenceAssembies += ([System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.ManifestModule.Name -ieq "System.Windows.Forms.dll" } | Select-Object -First 1).Location
-	$referenceAssembies += ([System.AppDomain]::CurrentDomain.GetAssemblies() | Where-Object { $_.ManifestModule.Name -ieq "System.Drawing.dll" } | Select-Object -First 1).Location
-}
-
-$cop = (New-Object Microsoft.CSharp.CSharpCodeProvider($o))
-$cp = New-Object System.CodeDom.Compiler.CompilerParameters($referenceAssembies, $outputFile)
-$cp.GenerateInMemory = $FALSE
-$cp.GenerateExecutable = $TRUE
-
-$manifestParam = ""
-if ($requireAdmin -or $DPIAware -or $supportOS -or $longPaths) {
-	$manifestParam = "`"/win32manifest:$($outputFile+".win32manifest")`""
-	$win32manifest = "<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>`r`n<assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0"">`r`n"
-	if ($DPIAware -or $longPaths) {
-		$win32manifest += "<application xmlns=""urn:schemas-microsoft-com:asm.v3"">`r`n<windowsSettings>`r`n"
-		if ($DPIAware) {
-			$win32manifest += "<dpiAware xmlns=""http://schemas.microsoft.com/SMI/2005/WindowsSettings"">true</dpiAware>`r`n<dpiAwareness xmlns=""http://schemas.microsoft.com/SMI/2016/WindowsSettings"">PerMonitorV2</dpiAwareness>`r`n"
-		}
-		if ($longPaths) {
-			$win32manifest += "<longPathAware xmlns=""http://schemas.microsoft.com/SMI/2016/WindowsSettings"">true</longPathAware>`r`n"
-		}
-		$win32manifest += "</windowsSettings>`r`n</application>`r`n"
-	}
-	if ($requireAdmin) {
-		$win32manifest += "<trustInfo xmlns=""urn:schemas-microsoft-com:asm.v2"">`r`n<security>`r`n<requestedPrivileges xmlns=""urn:schemas-microsoft-com:asm.v3"">`r`n<requestedExecutionLevel level=""requireAdministrator"" uiAccess=""false""/>`r`n</requestedPrivileges>`r`n</security>`r`n</trustInfo>`r`n"
-	}
-	if ($supportOS) {
-		$win32manifest += "<compatibility xmlns=""urn:schemas-microsoft-com:compatibility.v1"">`r`n<application>`r`n<supportedOS Id=""{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}""/>`r`n<supportedOS Id=""{1f676c76-80e1-4239-95bb-83d0f6d0da78}""/>`r`n<supportedOS Id=""{4a2f28e3-53b9-4441-ba9c-d69d4a4a6e38}""/>`r`n<supportedOS Id=""{35138b9a-5d96-4fbd-8e2d-a2440225f93a}""/>`r`n<supportedOS Id=""{e2011457-1546-43c5-a5fe-008deee3d3f0}""/>`r`n</application>`r`n</compatibility>`r`n"
-	}
-	$win32manifest += "</assembly>"
-	$win32manifest | Set-Content ($outputFile + ".win32manifest") -Encoding UTF8
-}
-
-[string[]]$CompilerOptions = @($CompilerOptions)
-
-if (!$virtualize) {
-	$CompilerOptions += "/platform:$architecture"
-	$CompilerOptions += "/target:$( if ($noConsole){'winexe'}else{'exe'})"
-	$CompilerOptions += $manifestParam 
+	Add-Type -AssemblyName "Microsoft.CodeAnalysis"
+	Add-Type -AssemblyName "Microsoft.CodeAnalysis.CSharp"
+	. $PSScriptRoot\src\CodeAnalysisCompiler.ps1
 }
 else {
-	Write-Host "Application virtualization is activated, forcing x86 platfom."
-	$CompilerOptions += "/platform:x86"
-	$CompilerOptions += "/target:$( if ($noConsole){'winexe'}else{'exe'})"
-	$CompilerOptions += "/nowin32manifest"
-}
-
-$configFileForEXE3 = "<?xml version=""1.0"" encoding=""utf-8"" ?>`r`n<configuration><startup>$(
-	if ($winFormsDPIAware) {'<supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.7" /></startup>'}
-	else {'<supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.0" /></startup>'})$(
-	if ($longPaths) {
-		'<runtime><AppContextSwitchOverrides value="Switch.System.IO.UseLegacyPathHandling=false;Switch.System.IO.BlockLongPaths=false" /></runtime>'
-	})$(
-	if ($winFormsDPIAware) {
-		'<System.Windows.Forms.ApplicationConfigurationSection><add key="DpiAwareness" value="PerMonitorV2" /></System.Windows.Forms.ApplicationConfigurationSection>'
-	})</configuration>"
-
-[string[]]$Constants = @() 
-
-$Constants += $threadingModel
-if ($lcid) { $Constants += "culture" }
-if ($noError) { $Constants += "noError" }
-if ($noConsole) { $Constants += "noConsole" }
-if ($noOutput) { $Constants += "noOutput" }
-if ($resourceParams.version) { $Constants += "version" }
-if ($resourceParams.Count) { $Constants += "Resources" }
-if ($credentialGUI) { $Constants += "credentialGUI" }
-if ($noVisualStyles) { $Constants += "noVisualStyles" }
-if ($exitOnCancel) { $Constants += "exitOnCancel" }
-if ($UNICODEEncoding) { $Constants += "UNICODEEncoding" }
-if ($winFormsDPIAware) { $Constants += "winFormsDPIAware" }
-
-. $PSScriptRoot\src\ConstProgramCheck.ps1
-if(!$programFrame) {
-	#_if PSEXE #这是该脚本被ps12exe编译时使用的预处理代码
-		#_include_as_value programFrame "$PSScriptRoot/src/programFrames/default.cs" #将default.cs中的内容内嵌到该脚本中
-	#_else #否则正常读取cs文件
-		[string]$programFrame = Get-Content $PSScriptRoot/src/programFrames/default.cs -Raw -Encoding UTF8
-	#_endif
-}
-
-$programFrame = $programFrame.Replace("`$lcid", $lcid)
-$programFrame = $programFrame.Replace("`$threadingModel", $threadingModel)
-$resourceParamKeys | ForEach-Object {
-	$programFrame = $programFrame.Replace("`$$_", $resourceParams[$_])
-}
-
-if (-not $TempDir) {
-	$TempDir = $TempTempDir = [System.IO.Path]::GetTempPath() + [System.IO.Path]::GetRandomFileName()
-	New-Item -Path $TempTempDir -ItemType Directory | Out-Null
-}
-$TempDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($TempDir)
-$cp.TempFiles = New-Object System.CodeDom.Compiler.TempFileCollection($TempDir)
-
-$Content | Set-Content $TempDir\main.ps1 -Encoding UTF8 -NoNewline
-if ($iconFile -match "^(https?|ftp)://") {
-	Invoke-WebRequest -Uri $iconFile -OutFile $TempDir\icon.ico
-	if (!(Test-Path $TempDir\icon.ico -PathType Leaf)) {
-		Write-Error "Icon file $iconFile failed to download!"
-		return
+	if(!$TargetFramework){
+		$TargetFramework = ".NETFramework,Version=v4.7"
 	}
-	$iconFile = "$TempDir\icon.ico"
-}
-
-if ($iconFile) {
-	$CompilerOptions += "`"/win32icon:$iconFile`""
-}
-
-$cp.IncludeDebugInformation = $prepareDebug
-
-if ($prepareDebug) {
-	$cp.TempFiles.KeepFiles = $TRUE
-}
-
-Write-Host "Compiling file..."
-
-$CompilerOptions += "/define:$($Constants -join ';')"
-$cp.CompilerOptions = $CompilerOptions -ne '' -join ' '
-Write-Verbose "Using Compiler Options: $($cp.CompilerOptions)"
-
-if(!$IsConstProgram) {
-	[VOID]$cp.EmbeddedResources.Add("$TempDir\main.ps1")
-}
-$cr = $cop.CompileAssemblyFromSource($cp, $programFrame)
-if ($TempTempDir) {
-	Remove-Item $TempTempDir -Recurse -Force -ErrorAction SilentlyContinue
-}
-if ($cr.Errors.Count -gt 0) {
-	if (Test-Path $outputFile) {
-		Remove-Item $outputFile -Verbose:$FALSE
-	}
-	RollUp
-	Write-Host "Compilation failed!" -ForegroundColor Red
-	Write-Error -ErrorAction Continue "Could not create the PowerShell .exe file because of compilation errors. Use -verbose parameter to see details."
-	$cr.Errors | ForEach-Object { Write-Verbose $_ }
-}
-else {
-	if (Test-Path $outputFile) {
-		RollUp
-		Write-Host "Compiled file written -> $((Get-Item $outputFile).Length) bytes"
-		Write-Verbose "Path: $outputFile"
-
-		if ($prepareDebug) {
-			$cr.TempFiles | Where-Object { $_ -ilike "*.cs" } | Select-Object -First 1 | ForEach-Object {
-				$dstSrc = ([System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($outputFile), [System.IO.Path]::GetFileNameWithoutExtension($outputFile) + ".cs"))
-				Write-Host "Source file name for debug copied: $dstSrc"
-				Copy-Item -Path $_ -Destination $dstSrc -Force
-			}
-			$cr.TempFiles | Remove-Item -Verbose:$FALSE -Force -ErrorAction SilentlyContinue
-		}
-		if ($CFGFILE) {
-			$configFileForEXE3 | Set-Content ($outputFile + ".config") -Encoding UTF8
-			Write-Host "Config file for EXE created"
-		}
-	}
-	else {
-		Write-Error -ErrorAction "Continue" "Output file $outputFile not written"
-	}
-}
-
-if ($requireAdmin -or $DPIAware -or $supportOS -or $longPaths) {
-	if (Test-Path $($outputFile + ".win32manifest")) {
-		Remove-Item $($outputFile + ".win32manifest") -Verbose:$FALSE
-	}
+	. $PSScriptRoot\src\CodeDomCompiler.ps1
 }

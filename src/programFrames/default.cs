@@ -33,7 +33,7 @@ using System.Runtime.InteropServices;
 	[assembly: AssemblyFileVersion("$version")]
 #endif
 #if winFormsDPIAware
-	[assembly: TargetFrameworkAttribute(".NETFramework,Version=v4.7,Profile=Client", FrameworkDisplayName = ".NET Framework 4.7")]
+	[assembly: TargetFrameworkAttribute(".NETFramework,Version=v4.7,Profile=Client")]
 #endif
 
 namespace PSRunnerNS {
