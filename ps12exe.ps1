@@ -327,6 +327,7 @@ function UsingWinPowershell {
 	$Content | Set-Content $TempFile -Encoding UTF8 -NoNewline
 	$Params.Add("outputFile", $outputFile)
 	$Params.Add("inputFile", $TempFile)
+	if($TempDir) { $Params.TempDir = $TempDir }
 	$resourceParamKeys | ForEach-Object {
 		if ($resourceParams.ContainsKey($_) -and $resourceParams[$_]) {
 			$Params[$_] = $PSBoundParameters[$_]
@@ -404,28 +405,14 @@ $resourceParamKeys | ForEach-Object {
 }
 
 try{
+	. $PSScriptRoot\src\InitCompileThings.ps1
 	if ($PSVersionTable.PSEdition -eq "Core") {
 		# unfinished!
-		try{
-			if(!$TargetFramework){
-				$Info=[System.Environment]::Version
-				$TargetFramework = ".NETFramework,Version=v$($Info.Major).$($Info.Minor)"
-			}
-			Add-Type -AssemblyName "Microsoft.CodeAnalysis"
-			Add-Type -AssemblyName "Microsoft.CodeAnalysis.CSharp"
-			. $PSScriptRoot\src\CodeAnalysisCompiler.ps1
+		if(!$TargetFramework){
+			$Info=[System.Environment]::Version
+			$TargetFramework = ".NETCore,Version=v$($Info.Major).$($Info.Minor)"
 		}
-		catch{
-			if (Test-Path $outputFile) {
-				Remove-Item $outputFile -Verbose:$FALSE
-			}
-			$_ | Write-Error
-			if(Get-Command powershell -ErrorAction Ignore){
-				$Fallback = $TRUE
-				Write-Host "Falling back to Use Windows Powershell"
-				UsingWinPowershell
-			}
-		}
+		. $PSScriptRoot\src\CodeAnalysisCompiler.ps1
 	}
 	else {
 		if(!$TargetFramework){
@@ -433,12 +420,45 @@ try{
 		}
 		. $PSScriptRoot\src\CodeDomCompiler.ps1
 	}
+	RollUp
+
+	if (!(Test-Path $outputFile)) {
+		Write-Error -ErrorAction "Continue" "Output file $outputFile not written"
+	}
+	else{
+		Write-Host "Compiled file written -> $((Get-Item $outputFile).Length) bytes"
+		Write-Verbose "Path: $outputFile"
+		if ($CFGFILE) {
+			$configFileForEXE3 | Set-Content ($outputFile + ".config") -Encoding UTF8
+			Write-Host "Config file for EXE created"
+		}
+		if ($prepareDebug) {
+			$cr.TempFiles | Where-Object { $_ -ilike "*.cs" } | Select-Object -First 1 | ForEach-Object {
+				$dstSrc = ([System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($outputFile), [System.IO.Path]::GetFileNameWithoutExtension($outputFile) + ".cs"))
+				Write-Host "Source file name for debug copied: $dstSrc"
+				Copy-Item -Path $_ -Destination $dstSrc -Force
+			}
+			$cr.TempFiles | Remove-Item -Verbose:$FALSE -Force -ErrorAction SilentlyContinue
+		}
+	}
 }
 catch{
 	if (Test-Path $outputFile) {
 		Remove-Item $outputFile -Verbose:$FALSE
 	}
-	if($Fallback){ RollUp }
-	Write-Host "Compilation failed!" -ForegroundColor Red
-	$_ | Write-Error
+	if ($PSVersionTable.PSEdition -eq "Core" -and (Get-Command powershell -ErrorAction Ignore)){
+		$_ | Write-Error
+		Write-Host "Roslyn CodeAnalysis failed`nFalling back to Use Windows Powershell with CodeDom...`nYou may want to add -UseWindowsPowerShell to args to skip this fallback in future.`n...or submit a PR to ps12exe repo to fix this!" -ForegroundColor Yellow
+		UsingWinPowershell
+	}
+	else {
+		RollUp
+		Write-Host "Compilation failed!" -ForegroundColor Red
+		$_ | Write-Error
+	}
+}
+finally{
+	if ($TempTempDir) {
+		Remove-Item $TempTempDir -Recurse -Force -ErrorAction SilentlyContinue
+	}
 }
