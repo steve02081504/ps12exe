@@ -21,7 +21,7 @@ $parseOptions = $parseOptions.WithPreprocessorSymbols($Constants)
 $tree = [Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree]::ParseText($programFrame, $parseOptions)
 
 if ($iconFile) {
-	$compilationOptions = $compilationOptions.WithWin32Icon($iconFilePath)
+	$compilationOptions = $compilationOptions.WithWin32Icon($iconFile)
 }
 if (!$virtualize) {
 	$compilationOptions = $compilationOptions.WithPlatform($(
