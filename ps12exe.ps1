@@ -311,9 +311,9 @@ else {
 	}
 }
 #_if PSScript #在PSEXE中主机永远是winpwsh，可省略该部分
-function UsingWinPowershell {
+function UsingWinPowershell($Boundparameters) {
 	# starting Windows Powershell
-	$Params = ([hashtable]$PSBoundparameters).Clone()
+	$Params = ([hashtable]$Boundparameters).Clone()
 	$Params.Remove("minifyer")
 	$Params.Remove("Content")
 	$Params.Remove("inputFile")
@@ -330,7 +330,7 @@ function UsingWinPowershell {
 	if($TempDir) { $Params.TempDir = $TempDir }
 	$resourceParamKeys | ForEach-Object {
 		if ($resourceParams.ContainsKey($_) -and $resourceParams[$_]) {
-			$Params[$_] = $PSBoundParameters[$_]
+			$Params[$_] = $BoundParameters[$_]
 		}
 	}
 	if ($iconFile) {
@@ -354,7 +354,7 @@ function UsingWinPowershell {
 	return
 }
 if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerShell -and (Get-Command powershell -ErrorAction Ignore)) {
-	UsingWinPowershell
+	UsingWinPowershell $PSBoundParameters
 	return
 }
 #_endif
@@ -449,7 +449,7 @@ catch{
 	if ($PSVersionTable.PSEdition -eq "Core" -and (Get-Command powershell -ErrorAction Ignore)){
 		$_ | Write-Error
 		Write-Host "Roslyn CodeAnalysis failed`nFalling back to Use Windows Powershell with CodeDom...`nYou may want to add -UseWindowsPowerShell to args to skip this fallback in future.`n...or submit a PR to ps12exe repo to fix this!" -ForegroundColor Yellow
-		UsingWinPowershell
+		UsingWinPowershell $PSBoundParameters
 	}
 	else {
 		RollUp
