@@ -1,4 +1,4 @@
-commits after (not included) sha `dcad7f494e17d71877c568438ef05c5e9b3127fb` are licensed under the following license:
+commits after and not include sha `dcad7f494e17d71877c568438ef05c5e9b3127fb` are licensed under the following license:
 
 # GNU LESSER GENERAL PUBLIC LICENSE
 
@@ -158,7 +158,7 @@ apply, that proxy's public statement of acceptance of any version is
 permanent authorization for you to choose that version for the
 Library.
 
-commits before sha `dcad7f494e17d71877c568438ef05c5e9b3127fb` are licensed under the following license:
+commits before and include sha `dcad7f494e17d71877c568438ef05c5e9b3127fb` are licensed under the following license:
 
 ```text
 MICROSOFT LIMITED PUBLIC LICENSE version 1.1
