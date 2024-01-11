@@ -211,11 +211,9 @@ if ($Host.Name -eq "PSEXE") { Write-Output "ps12exe" } else { Write-Output "Some
 
 ### 脚本变量
 
-由于 ps12exe 会将脚本转换为可执行文件，因此与脚本相关的变量将不再可用。特别是变量`$PSScriptRoot`是空的。
+由于ps12exe将脚本转换为可执行文件，变量`$MyInvocation`的值与脚本中的不同。
 
-变量`$MyInvocation`被设置为脚本以外的值。
-
-你可以使用`$PSEXERoot`变量来获取 exe 文件所在的文件夹，使用`$PSEXEpath`变量来获取 exe 文件的路径。
+你仍然可以使用`$PSScriptRoot`来获取可执行文件所在的目录路径，并使用新的`$PSEXEpath`来获取可执行文件本身的路径。
 
 ### 在 -noConsole 模式下的后台窗口
 

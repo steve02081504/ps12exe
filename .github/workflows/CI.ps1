@@ -2,13 +2,13 @@ $error.clear()
 
 $repoPath = "$PSScriptRoot/../.."
 try{
-	mkdir $repoPath/build | Out-Null
+	mkdir $repoPath/build -ErrorAction Ignore | Out-Null
 	Import-Module $repoPath -Force | Out-Host
 	& $repoPath/ps12exe.ps1 $repoPath/ps12exe.ps1 $repoPath/build/ps12exe.exe -verbose | Out-Host
-	& $repoPath/build/ps12exe.exe $repoPath/ps12exe.ps1 -verbose | Out-Host
-	& $repoPath/build/ps12exe.exe $repoPath/ps12exe.ps1 $repoPath/build/ps12exe2.exe -verbose -noConsole | Out-Host
+	& $repoPath/build/ps12exe.exe $repoPath/ps12exe.ps1 -verbose -noConsole | Out-Host
+	& $repoPath/build/ps12exe.exe $repoPath/ps12exe.ps1 $repoPath/build/ps12exe2.exe -verbose | Out-Host
 	"'Hello World!'" | ps12exe -outputFile $repoPath/build/hello.exe -verbose | Out-Host
-	&$repoPath/build/ps12exe2.exe -Content '$PSEXEpath;$PSEXERoot' -outputFile $repoPath/build/pathtest.exe -verbose | Out-Host
+	& $repoPath/build/ps12exe2.exe -Content '$PSEXEpath;$PSScriptRoot' -outputFile $repoPath/build/pathtest.exe | Out-Host
 	$pathresult=. $repoPath/build/pathtest.exe
 	$pathresultshouldbe=@("$repoPath/build/pathtest.exe","$repoPath/build")
 	# 在路径层面比较 $pathresult 和 $pathresultshouldbe

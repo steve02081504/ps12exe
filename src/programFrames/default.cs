@@ -10,6 +10,7 @@ using System.Globalization;
 using System.Management.Automation.Host;
 using System.Security;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Runtime.InteropServices;
 #if noConsole
 	using System.Windows.Forms;
@@ -1932,10 +1933,8 @@ namespace PSRunnerNS {
 						};
 						//将exepath作为常量传入runspace
 						//PSEXEpath: exe文件路径
-						//PSEXERoot: exe文件所在目录
 						string exepath = System.Reflection.Assembly.GetExecutingAssembly().Location;
 						pwsh.Runspace.SessionStateProxy.SetVariable("PSEXEpath", exepath);
-						pwsh.Runspace.SessionStateProxy.SetVariable("PSEXERoot", System.IO.Path.GetDirectoryName(exepath));
 
 						PSDataCollection < string > colInput = new PSDataCollection < string > ();
 						if (Console_Info.IsInputRedirected()) { // read standard input
@@ -1954,57 +1953,16 @@ namespace PSRunnerNS {
 						Assembly executingAssembly = Assembly.GetExecutingAssembly();
 						using(System.IO.Stream scriptstream = executingAssembly.GetManifestResourceStream("main.ps1")) {
 							using(System.IO.StreamReader scriptreader = new System.IO.StreamReader(scriptstream, System.Text.Encoding.UTF8)) {
-								pwsh.AddScript(scriptreader.ReadToEnd());
+								PSRunSpace.SessionStateProxy.SetVariable("PSEXEscript", scriptreader.ReadToEnd());
 							}
 						}
 
-						// parse parameters
-						string argbuffer = null;
-						// regex for named parameters
-						System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex(@"^-([^: ]+)[ :]?([^:]*)$");
-
-						for (int i = 0 ; i < args.Length; i++) {
-							System.Text.RegularExpressions.Match match = regex.Match(args[i]);
-							double dummy;
-
-							if ((match.Success && match.Groups.Count == 3) && (!Double.TryParse(args[i], out dummy))) { // parameter in powershell style, means named parameter found
-								if (argbuffer != null) // already a named parameter in buffer, then flush it
-									pwsh.AddParameter(argbuffer);
-
-								if (match.Groups[2].Value.Trim() == "") { // store named parameter in buffer
-									argbuffer = match.Groups[1].Value;
-								} else
-									// caution: when called in powershell $TRUE gets converted, when called in cmd.exe not
-									if ((match.Groups[2].Value == "$TRUE") || (match.Groups[2].Value.ToUpper() == "\x24TRUE")) { // switch found
-										pwsh.AddParameter(match.Groups[1].Value, true);
-										argbuffer = null;
-									}
-								else
-									// caution: when called in powershell $FALSE gets converted, when called in cmd.exe not
-									if ((match.Groups[2].Value == "$FALSE") || (match.Groups[2].Value.ToUpper() == "\x24FALSE")) { // switch found
-										pwsh.AddParameter(match.Groups[1].Value, false);
-										argbuffer = null;
-									}
-								else { // named parameter with value found
-									pwsh.AddParameter(match.Groups[1].Value, match.Groups[2].Value);
-									argbuffer = null;
-								}
-							} else { // unnamed parameter found
-								if (argbuffer != null) { // already a named parameter in buffer, so this is the value
-									pwsh.AddParameter(argbuffer, args[i]);
-									argbuffer = null;
-								} else { // position parameter found
-									pwsh.AddArgument(args[i]);
-								}
+						for(int i = 0; i < args.Length; i++) {
+							if (!Regex.IsMatch(args[i], @"^(-|\$)\w*$")) {
+								args[i] = string.Format("\'{0}\'", args[i].Replace("'", "''"));
 							}
 						}
-
-						if (argbuffer != null) pwsh.AddParameter(argbuffer); // flush parameter buffer...
-
-						// convert output to strings
-						pwsh.AddCommand("Out-String");
-						// with a single string per line
-						pwsh.AddParameter("Stream");
+						pwsh.AddScript(string.Format(".([System.Management.Automation.Language.Parser]::ParseInput($PSEXEscript,$PSEXEpath,[ref]$null,[ref]$null).GetScriptBlock()){0}|Out-String -Stream", String.Join(" ", args)));
 
 						pwsh.BeginInvoke < string, PSObject > (colInput, colOutput, null, (IAsyncResult ar) => {
 							if (ar.IsCompleted)
@@ -2024,12 +1982,7 @@ namespace PSRunnerNS {
 				}
 			} catch (Exception ex) {
 				#if!noError
-					#if!noConsole
-						Console.Write("An exception occured: ");
-						Console.WriteLine(ex.Message);
-					#else
-						MessageBox.Show("An exception occured: " + ex.Message, System.AppDomain.CurrentDomain.FriendlyName, MessageBoxButtons.OK, MessageBoxIcon.Error);
-					#endif
+					ui.WriteErrorLine(ex.Message);
 				#endif
 				me.ExitCode = 1;
 			}

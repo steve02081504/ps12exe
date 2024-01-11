@@ -101,12 +101,10 @@ Param(
 	[Parameter(ParameterSetName = 'InputFile', Position = 0)]
 	[ValidatePattern("^(https?|ftp)://.*|.*\.(ps1|psd1|tmp)$")]
 	[String]$inputFile,
-	[Parameter(ParameterSetName = 'ContentArg', Position = 0, Mandatory)]
-	[Parameter(ParameterSetName = 'ContentPipe', ValueFromPipeline = $TRUE)]
+	[Parameter(ParameterSetName = 'Content', ValueFromPipeline = $TRUE)]
 	[String]$Content,
 	[Parameter(ParameterSetName = 'InputFile', Position = 1)]
-	[Parameter(ParameterSetName = 'ContentArg', Position = 1)]
-	[Parameter(ParameterSetName = 'ContentPipe', Position = 0)]
+	[Parameter(ParameterSetName = 'Content', Position = 0)]
 	[ValidatePattern(".*\.(exe|com)$")]
 	[String]$outputFile = $NULL, [String]$CompilerOptions = '/o+ /debug-', [String]$TempDir = $NULL,
 	[scriptblock]$minifyer = $null, [Switch]$noConsole, [Switch]$prepareDebug, [int]$lcid,
