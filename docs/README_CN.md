@@ -215,17 +215,7 @@ if ($Host.Name -eq "PSEXE") { Write-Output "ps12exe" } else { Write-Output "Some
 
 变量`$MyInvocation`被设置为脚本以外的值。
 
-你可以使用下面的代码（感谢 JacquesFS）获取脚本/可执行文件的路径，而与编译/未编译无关：
-
-```powershell
-if ($MyInvocation.MyCommand.CommandType -eq "ExternalScript"){
-	$ScriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
-}
-else{
-	$ScriptPath = Split-Path -Parent -Path ([Environment]::GetCommandLineArgs()[0]) 
-	if(!$ScriptPath){ $ScriptPath = "." }
-}
-```
+你可以使用`$PSEXERoot`变量来获取 exe 文件所在的文件夹，使用`$PSEXEpath`变量来获取 exe 文件的路径。
 
 ### 在 -noConsole 模式下的后台窗口
 

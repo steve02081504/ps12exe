@@ -27,8 +27,6 @@ using System.Runtime.Versioning;
 #endif
 #if winFormsDPIAware
 	[assembly: TargetFrameworkAttribute("$TargetFramework,Profile=Client")]
-#else
-	[assembly: TargetFrameworkAttribute("$TargetFramework")]
 #endif
 
 namespace PSRunnerNS {

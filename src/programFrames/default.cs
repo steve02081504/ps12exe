@@ -32,8 +32,6 @@ using System.Runtime.Versioning;
 #endif
 #if winFormsDPIAware
 	[assembly: TargetFrameworkAttribute("$TargetFramework,Profile=Client")]
-#else
-	[assembly: TargetFrameworkAttribute("$TargetFramework")]
 #endif
 
 namespace PSRunnerNS {
@@ -1932,6 +1930,12 @@ namespace PSRunnerNS {
 						pwsh.Streams.Error.DataAdded += (object sender, DataAddedEventArgs e) => {
 							ui.WriteErrorLine(((PSDataCollection < ErrorRecord > ) sender)[e.Index].Exception.Message);
 						};
+						//将exepath作为常量传入runspace
+						//PSEXEpath: exe文件路径
+						//PSEXERoot: exe文件所在目录
+						string exepath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+						pwsh.Runspace.SessionStateProxy.SetVariable("PSEXEpath", exepath);
+						pwsh.Runspace.SessionStateProxy.SetVariable("PSEXERoot", System.IO.Path.GetDirectoryName(exepath));
 
 						PSDataCollection < string > colInput = new PSDataCollection < string > ();
 						if (Console_Info.IsInputRedirected()) { // read standard input

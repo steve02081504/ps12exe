@@ -216,17 +216,7 @@ Since ps12exe converts a script to an executable, script related variables are n
 
 The variable `$MyInvocation` is set to other values than in a script.
 
-You can retrieve the script/executable path independant of compiled/not compiled with the following code (thanks to JacquesFS):
-
-```powershell
-if ($MyInvocation.MyCommand.CommandType -eq "ExternalScript"){
-	$ScriptPath = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
-}
-else{
-	$ScriptPath = Split-Path -Parent -Path ([Environment]::GetCommandLineArgs()[0]) 
-	if(!$ScriptPath){ $ScriptPath = "." }
-}
-```
+You can use `$PSEXERoot` to retrieve the directory path where the executable is located, and `$PSEXEpath` to obtain the path of the executable itself.
 
 ### Window in background in -noConsole mode
 
