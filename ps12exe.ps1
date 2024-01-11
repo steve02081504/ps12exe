@@ -455,6 +455,29 @@ catch{
 		RollUp
 		Write-Host "Compilation failed!" -ForegroundColor Red
 		$_ | Write-Error
+		$githubfeedback = "https://github.com/steve02081504/ps12exe/issues/new?assignees=steve02081504&labels=bug&projects=&template=bug-report.yaml"
+		$urlParams = @{
+			title = "$_"
+			"latest-release" = if (Get-Module -ListAvailable ps12exe) { "true" } else { "false" }
+			"bug-description" = 'Compilation failed'
+			"expected-behavior" = 'Compilation should succeed'
+			"additional-context" = @"
+Version infos:
+``````
+$($PSVersionTable | Format-List | Out-String)
+``````
+Error message:
+``````
+$($_ | Format-List | Out-String)
+``````
+"@
+		}
+		foreach ($key in $urlParams.Keys) {
+			$githubfeedback += "&$key=$([system.uri]::EscapeDataString($urlParams[$key]))"
+		}
+		Write-Host "Opps, something went wrong. For help, please submit an issue by pressing Enter." -ForegroundColor Yellow
+		Read-Host | Out-Null
+		Start-Process $githubfeedback
 	}
 }
 finally{
