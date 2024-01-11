@@ -6,7 +6,11 @@ if ($IsConstProgram) {
 	Write-Verbose "constant program, using constexpr program frame"
 	Write-Verbose "Evaluation of constants..."
 
+	$runspace = [runspacefactory]::CreateRunspace()
+	$runspace.Open()
 	$pwsh = [System.Management.Automation.PowerShell]::Create()
+	$pwsh.Runspace = $runspace
+	$runspace.SessionStateProxy.SetVariable("PSEXEScript", $Content)
 	$null = $pwsh.AddScript($Content)
 
 	$asyncResult = $pwsh.BeginInvoke()
@@ -40,5 +44,7 @@ if ($IsConstProgram) {
 		$pwsh.Stop()
 	}
 
+	$runspace.Close()
 	$pwsh.Dispose()
+	$runspace.Dispose()
 }
