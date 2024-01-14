@@ -558,11 +558,11 @@ namespace PSRunnerNS {
 			// This control has to be finished first
 			if (string.IsNullOrEmpty(strPrompt)) {
 				if (blSecure)
-					label.Text = "Secure input:   ";
+					strPrompt = "Secure input:";
 				else
-					label.Text = "Input:          ";
-			} else
-				label.Text = strPrompt;
+					strPrompt = "Input:";
+			}
+			label.Text = strPrompt.PadRight(16);
 			label.Location = new Point(9, 19);
 			label.MaximumSize = new System.Drawing.Size(System.Windows.Forms.Screen.FromControl(form).Bounds.Width * 5 / 8 - 18, 0);
 			label.AutoSize = true;
@@ -717,16 +717,15 @@ namespace PSRunnerNS {
 			form.AcceptButton = buttonOk;
 
 			// show and compute form
-			if (form.ShowDialog() == DialogResult.OK) {
-				int iRueck = -1;
-				for (Counter = 0; Counter < arrChoice.Count; Counter++) {
-					if (aradioButton[Counter].Checked == true) {
-						iRueck = Counter;
-					}
-				}
-				return iRueck;
-			} else
+			if (form.ShowDialog() != DialogResult.OK)
 				return -1;
+			int iRueck = -1;
+			for (Counter = 0; Counter < arrChoice.Count; Counter++) {
+				if (aradioButton[Counter].Checked == true) {
+					iRueck = Counter;
+				}
+			}
+			return iRueck;
 		}
 	}
 
@@ -1198,7 +1197,7 @@ namespace PSRunnerNS {
 
 			if (objRecord.SecondsRemaining >= 0) {
 				System.TimeSpan objTimeSpan = new System.TimeSpan(0, 0, objRecord.SecondsRemaining);
-				progressDataList[currentProgress].lbRemainingTime.Text = "Remaining time: " + string.Format("{0:00}:{1:00}:{2:00}", (int) objTimeSpan.TotalHours, objTimeSpan.Minutes, objTimeSpan.Seconds);
+				progressDataList[currentProgress].lbRemainingTime.Text = string.Format("Remaining time: {0:00}:{1:00}:{2:00}", (int) objTimeSpan.TotalHours, objTimeSpan.Minutes, objTimeSpan.Seconds);
 			} else
 				progressDataList[currentProgress].lbRemainingTime.Text = "";
 
@@ -1216,16 +1215,16 @@ namespace PSRunnerNS {
 	public class Console_Info {
 		private enum FileType: uint {
 			FILE_TYPE_UNKNOWN = 0x0000,
-				FILE_TYPE_DISK = 0x0001,
-				FILE_TYPE_CHAR = 0x0002,
-				FILE_TYPE_PIPE = 0x0003,
-				FILE_TYPE_REMOTE = 0x8000
+			FILE_TYPE_DISK = 0x0001,
+			FILE_TYPE_CHAR = 0x0002,
+			FILE_TYPE_PIPE = 0x0003,
+			FILE_TYPE_REMOTE = 0x8000
 		}
 
 		private enum STDHandle: uint {
 			STD_INPUT_HANDLE = unchecked((uint) - 10),
-				STD_OUTPUT_HANDLE = unchecked((uint) - 11),
-				STD_ERROR_HANDLE = unchecked((uint) - 12)
+			STD_OUTPUT_HANDLE = unchecked((uint) - 11),
+			STD_ERROR_HANDLE = unchecked((uint) - 12)
 		}
 
 		[DllImport("Kernel32.dll")]
@@ -1286,8 +1285,8 @@ namespace PSRunnerNS {
 		public PSRunnerUI() {
 			rawUI = new PSRunnerRawUI();
 			#if!noConsole
-			rawUI.ForegroundColor = Console.ForegroundColor;
-			rawUI.BackgroundColor = Console.BackgroundColor;
+				rawUI.ForegroundColor = Console.ForegroundColor;
+				rawUI.BackgroundColor = Console.BackgroundColor;
 			#endif
 		}
 
@@ -1318,7 +1317,7 @@ namespace PSRunnerNS {
 
 				if (t.IsArray) {
 					Type elementType = t.GetElementType();
-					Type genericListType = Type.GetType("System.Collections.Generic.List" + ((char) 0x60).ToString() + "1");
+					Type genericListType = Type.GetType("System.Collections.Generic.List\x60\x31");
 					genericListType = genericListType.MakeGenericType(new [] {
 						elementType
 					});
@@ -1402,9 +1401,8 @@ namespace PSRunnerNS {
 		public override int PromptForChoice(string caption, string message, System.Collections.ObjectModel.Collection < ChoiceDescription > choices, int defaultChoice) {
 			#if noConsole
 			int iReturn = Choice_Box.Show(choices, defaultChoice, caption, message);
-			if (iReturn == -1) {
+			if (iReturn == -1)
 				iReturn = defaultChoice;
-			}
 			return iReturn;
 			#else
 			if (!string.IsNullOrEmpty(caption)) WriteLine(caption);
@@ -1426,11 +1424,12 @@ namespace PSRunnerNS {
 					res.Add(lkey.ToLower(), idx);
 
 					if (idx > 0) Write("  ");
+					ConsoleColor fg = rawUI.ForegroundColor, bg = rawUI.BackgroundColor;
 					if (idx == defaultChoice) {
-						Write(VerboseForegroundColor, rawUI.BackgroundColor, string.Format("[{0}] {1}", lkey, ltext));
+						fg = VerboseForegroundColor;
 						defkey = lkey;
-					} else
-						Write(rawUI.ForegroundColor, rawUI.BackgroundColor, string.Format("[{0}] {1}", lkey, ltext));
+					}
+					Write(fg, bg, string.Format("[{0}] {1}", lkey, ltext));
 					idx++;
 				}
 				Write(rawUI.ForegroundColor, rawUI.BackgroundColor, string.Format("  [?] Help (default is \"{0}\"): ", defkey));
@@ -1462,11 +1461,10 @@ namespace PSRunnerNS {
 			WriteLine(message);
 
 			string un;
+			Write("User name: ");
 			if ((string.IsNullOrEmpty(userName)) || ((options & PSCredentialUIOptions.ReadOnlyUserName) == 0)) {
-				Write("User name: ");
 				un = ReadLine();
 			} else {
-				Write("User name: ");
 				if (!string.IsNullOrEmpty(targetName)) Write(targetName + "\\");
 				WriteLine(userName);
 				un = userName;
@@ -1488,7 +1486,7 @@ namespace PSRunnerNS {
 			if (cred != null) {
 				System.Security.SecureString x = new System.Security.SecureString();
 				foreach(char c in cred.Password.ToCharArray())
-				x.AppendChar(c);
+					x.AppendChar(c);
 
 				return new PSCredential(cred.User, x);
 			}
@@ -1502,11 +1500,10 @@ namespace PSRunnerNS {
 				WriteLine(message);
 
 				string un;
-				if (string.IsNullOrEmpty(userName)) {
-					Write("User name: ");
+				Write("User name: ");
+				if (string.IsNullOrEmpty(userName))
 					un = ReadLine();
-				} else {
-					Write("User name: ");
+				else {
 					if (!string.IsNullOrEmpty(targetName)) Write(targetName + "\\");
 					WriteLine(userName);
 					un = userName;
