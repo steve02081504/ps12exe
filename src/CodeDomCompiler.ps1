@@ -73,7 +73,7 @@ $CompilerOptions += "/define:$($Constants -join ';')"
 $cp.CompilerOptions = $CompilerOptions -ne '' -join ' '
 Write-Verbose "Using Compiler Options: $($cp.CompilerOptions)"
 
-if (!$IsConstProgram) {
+if (!$AstAnalyzeResult.IsConst) {
 	[VOID]$cp.EmbeddedResources.Add("$TempDir\main.ps1")
 }
 $cr = $cop.CompileAssemblyFromSource($cp, $programFrame)

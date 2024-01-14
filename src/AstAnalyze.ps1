@@ -62,6 +62,8 @@ function AstAnalyze($Ast) {
 		return $false
 	}
 	[void]$Ast.Find($function:AstMapper, $true)
+	$script:AnalyzeResult.UsedNonConstVariables = $script:AnalyzeResult.UsedNonConstVariables | Sort-Object -Unique | Where-Object { $_ }
+	$script:AnalyzeResult.UsedNonConstFunctions = $script:AnalyzeResult.UsedNonConstFunctions | Sort-Object -Unique | Where-Object { $_ }
 	$local:AnalyzeResult = $script:AnalyzeResult
 	Remove-Variable -Name @('ConstCommands', 'ConstVariables', 'EffectVariables', 'AnalyzeResult') -Scope Script
 	return $local:AnalyzeResult

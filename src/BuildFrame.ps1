@@ -1,6 +1,3 @@
-. $PSScriptRoot\AstAnalyze.ps1
-$AstAnalyzeResult = AstAnalyze $Ast
-$IsConstProgram = $AstAnalyzeResult.IsConst
 . $PSScriptRoot\ConstProgramCheck.ps1
 if(!$programFrame) {
 	#_if PSEXE #这是该脚本被ps12exe编译时使用的预处理代码

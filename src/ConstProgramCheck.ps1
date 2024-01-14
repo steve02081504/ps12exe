@@ -1,4 +1,4 @@
-if ($IsConstProgram) {
+if ($AstAnalyzeResult.IsConst) {
 	$timeoutSeconds = 7  # 设置超时限制（秒）
 
 	Write-Verbose "constant program, using constexpr program frame"

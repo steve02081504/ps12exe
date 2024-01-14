@@ -402,6 +402,29 @@ $resourceParamKeys | ForEach-Object {
 	}
 }
 
+. $PSScriptRoot\src\AstAnalyze.ps1
+$AstAnalyzeResult = AstAnalyze $Ast
+Write-Verbose "AstAnalyzeResult: $($AstAnalyzeResult|Format-List|Out-String)"
+$CommandNames = (Get-Command).Name + (Get-Alias).Name
+$FindedCmdlets = @()
+$NotFindedCmdlets = @()
+$AstAnalyzeResult.UsedNonConstFunctions | ForEach-Object {
+	if ($_ -match '\$' -or -not $_) { return }
+	if($CommandNames -notcontains $_) {
+		if(Get-Command $_ -ErrorAction Ignore) {
+			$FindedCmdlets += $_
+		}
+		else {
+			$NotFindedCmdlets += $_
+		}
+	}
+}
+if ($FindedCmdlets) {
+	Write-Warning "Cmdlets $($FindedCmdlets -join '、') used but may not available in runtime, make sure you've checked it!"
+}
+if ($NotFindedCmdlets) {
+	Write-Warning "Unknown functions $($NotFindedCmdlets -join '、') used"
+}
 try{
 	. $PSScriptRoot\src\InitCompileThings.ps1
 	if ($PSVersionTable.PSEdition -eq "Core") {
