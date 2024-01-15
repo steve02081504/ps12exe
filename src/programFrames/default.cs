@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.Management.Automation.Language;
 using System.Globalization;
 using System.Management.Automation.Host;
 using System.Security;
@@ -1948,18 +1949,29 @@ namespace PSRunnerNS {
 						};
 
 						Assembly executingAssembly = Assembly.GetExecutingAssembly();
+						string script;
 						using(System.IO.Stream scriptstream = executingAssembly.GetManifestResourceStream("main.ps1")) {
 							using(System.IO.StreamReader scriptreader = new System.IO.StreamReader(scriptstream, System.Text.Encoding.UTF8)) {
-								PSRunSpace.SessionStateProxy.SetVariable("PSEXEscript", scriptreader.ReadToEnd());
+								script = scriptreader.ReadToEnd();
+								PSRunSpace.SessionStateProxy.SetVariable("PSEXEscript", script);
 							}
+						}
+						{
+							Token[] tokens;
+							ParseError[] errors;
+							ScriptBlockAst AST = Parser.ParseInput(script, exepath, out tokens, out errors);
+							PSRunSpace.SessionStateProxy.SetVariable("PSEXECodeBlock", AST.GetScriptBlock());
+							if(errors.Length > 0)
+								throw new System.Exception(errors[0].Message);
 						}
 
 						for(int i = 0; i < args.Length; i++) {
-							if (!Regex.IsMatch(args[i], @"^(-|\$)\w*$")) {
-								args[i] = string.Format("\'{0}\'", args[i].Replace("'", "''"));
-							}
+							if (Regex.IsMatch(args[i], @"^(-|\$)\w*$"));
+							else
+								args[i] = "\'"+args[i].Replace("'", "''")+"\'";
 						}
-						pwsh.AddScript(string.Format(".([System.Management.Automation.Language.Parser]::ParseInput($PSEXEscript,$PSEXEpath,[ref]$null,[ref]$null).GetScriptBlock()){0}|Out-String -Stream", String.Join(" ", args)));
+
+						pwsh.AddScript(".$PSEXECodeBlock "+String.Join(" ", args)+"|Out-String -Stream");
 
 						pwsh.BeginInvoke < string, PSObject > (colInput, colOutput, null, (IAsyncResult ar) => {
 							if (ar.IsCompleted)
