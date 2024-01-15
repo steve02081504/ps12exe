@@ -16,7 +16,7 @@ $Script:dialogInfo = @{}
 	param (
 		[string]$Localize
 	)
-	[System.Windows.Forms.MessageBox]::Show("Failed to load locale data locale/$Localize`nSee $LocalizeDir/README.md for how to add custom locale.", "ps12exe GUI locale Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
+	[System.Windows.Forms.MessageBox]::Show("Failed to load locale data $Localize`nSee $LocalizeDir/README.md for how to add custom locale.", "ps12exe GUI locale Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
 } | Out-Null
 
 try {
