@@ -17,6 +17,9 @@ using System.Runtime.InteropServices;
 	using System.Windows.Forms;
 	using System.Drawing;
 #endif
+#if DllExport
+	using RGiesecke.DllExport;
+#endif
 using System.Runtime.Versioning;
 
 // not displayed in details tab of properties dialog, but embedded to file
@@ -1875,6 +1878,7 @@ namespace PSRunnerNS {
 		private bool shouldExit;
 
 		private int exitCode;
+		public bool Inited;
 
 		public bool ShouldExit {
 			get { return this.shouldExit; }
@@ -1886,8 +1890,50 @@ namespace PSRunnerNS {
 			set { this.exitCode = value; }
 		}
 
-		[$threadingModelThread]
-		private static int Main(string[] args) {
+		public PSRunnerUI ui;
+		public PSRunnerHost host;
+		public Runspace PSRunSpace;
+		public PowerShell pwsh;
+
+		public PSRunner() {
+			this.shouldExit = false;
+			this.exitCode = 0;
+			this.ui = new PSRunnerUI();
+			this.host = new PSRunnerHost(this, ui);
+			this.PSRunSpace = RunspaceFactory.CreateRunspace(host);
+			this.PSRunSpace.ApartmentState = System.Threading.ApartmentState.$threadingModel;
+			this.PSRunSpace.Open();
+			this.pwsh = PowerShell.Create();
+			this.pwsh.Runspace = PSRunSpace;
+			string exepath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+			this.pwsh.Runspace.SessionStateProxy.SetVariable("PSEXEpath", exepath);
+			Assembly executingAssembly = Assembly.GetExecutingAssembly();
+			string script;
+			using(System.IO.Stream scriptstream = executingAssembly.GetManifestResourceStream("main.ps1")) {
+				using(System.IO.StreamReader scriptreader = new System.IO.StreamReader(scriptstream, System.Text.Encoding.UTF8)) {
+					script = scriptreader.ReadToEnd();
+					this.PSRunSpace.SessionStateProxy.SetVariable("PSEXEscript", script);
+				}
+			}
+			{
+				Token[] tokens;
+				ParseError[] errors;
+				ScriptBlockAst AST = Parser.ParseInput(script, exepath, out tokens, out errors);
+				this.PSRunSpace.SessionStateProxy.SetVariable("PSEXECodeBlock", AST.GetScriptBlock());
+				if(errors.Length > 0)
+					throw new System.Exception(errors[0].Message);
+			}
+		}
+		~PSRunner() {
+			this.pwsh.Dispose();
+			this.PSRunSpace.Close();
+			this.PSRunSpace.Dispose();
+			this.host = null;
+			this.ui = null;
+		}
+
+		//base init
+		public static void BaseInit() {
 			#if UNICODEEncoding && !noConsole
 			System.Console.OutputEncoding = new System.Text.UnicodeEncoding();
 			#endif
@@ -1900,103 +1946,156 @@ namespace PSRunnerNS {
 			#if!noVisualStyles && noConsole
 			Application.EnableVisualStyles();
 			#endif
-			PSRunner me = new PSRunner();
+		}
+	}
+	class PSRunnerEntry {
+		static PSRunner me;
 
-			PSRunnerUI ui = new PSRunnerUI();
-			PSRunnerHost host = new PSRunnerHost(me, ui);
+		// EXEMain
+		[$threadingModelThread]
+		private static int Main(string[] args) {
+			PSRunner.BaseInit();
+			me = new PSRunner();
 			System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);
 
 			try {
-				using(Runspace PSRunSpace = RunspaceFactory.CreateRunspace(host)) {
-					PSRunSpace.ApartmentState = System.Threading.ApartmentState.$threadingModel;
-					PSRunSpace.Open();
-
-					using(PowerShell pwsh = PowerShell.Create()) {
-						#if!noConsole
-						Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs e) => {
-							try {
-								pwsh.BeginStop((_) => {
-									mre.Set();
-									e.Cancel = true;
-								}, null);
-							} catch {
-								// ignore because we are shutting down
-							}
-						};
-						#endif
-
-						pwsh.Runspace = PSRunSpace;
-						pwsh.Streams.Error.DataAdded += (object sender, DataAddedEventArgs e) => {
-							ui.WriteErrorLine(((PSDataCollection < ErrorRecord > ) sender)[e.Index].Exception.Message);
-						};
-						//将exepath作为常量传入runspace
-						//PSEXEpath: exe文件路径
-						string exepath = System.Reflection.Assembly.GetExecutingAssembly().Location;
-						pwsh.Runspace.SessionStateProxy.SetVariable("PSEXEpath", exepath);
-
-						PSDataCollection < string > colInput = new PSDataCollection < string > ();
-						if (Console_Info.IsInputRedirected()) { // read standard input
-							string sItem = "";
-							while ((sItem = Console.ReadLine()) != null) { // add to powershell pipeline
-								colInput.Add(sItem);
-							}
-						}
-						colInput.Complete();
-
-						PSDataCollection < PSObject > colOutput = new PSDataCollection < PSObject > ();
-						colOutput.DataAdded += (object sender, DataAddedEventArgs e) => {
-							ui.WriteLine(((PSDataCollection < PSObject > ) sender)[e.Index].ToString());
-						};
-
-						Assembly executingAssembly = Assembly.GetExecutingAssembly();
-						string script;
-						using(System.IO.Stream scriptstream = executingAssembly.GetManifestResourceStream("main.ps1")) {
-							using(System.IO.StreamReader scriptreader = new System.IO.StreamReader(scriptstream, System.Text.Encoding.UTF8)) {
-								script = scriptreader.ReadToEnd();
-								PSRunSpace.SessionStateProxy.SetVariable("PSEXEscript", script);
-							}
-						}
-						{
-							Token[] tokens;
-							ParseError[] errors;
-							ScriptBlockAst AST = Parser.ParseInput(script, exepath, out tokens, out errors);
-							PSRunSpace.SessionStateProxy.SetVariable("PSEXECodeBlock", AST.GetScriptBlock());
-							if(errors.Length > 0)
-								throw new System.Exception(errors[0].Message);
-						}
-
-						for(int i = 0; i < args.Length; i++) {
-							if (Regex.IsMatch(args[i], @"^(-|\$)\w*$"));
-							else
-								args[i] = "\'"+args[i].Replace("'", "''")+"\'";
-						}
-
-						pwsh.AddScript(".$PSEXECodeBlock "+String.Join(" ", args)+"|Out-String -Stream");
-
-						pwsh.BeginInvoke < string, PSObject > (colInput, colOutput, null, (IAsyncResult ar) => {
-							if (ar.IsCompleted)
-								mre.Set();
+				#if!noConsole
+				Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs e) => {
+					try {
+						me.pwsh.BeginStop((_) => {
+							mre.Set();
+							e.Cancel = true;
 						}, null);
-
-						while (!mre.WaitOne(100))
-							if (me.ShouldExit) break;
-
-						pwsh.Stop();
-
-						if (pwsh.InvocationStateInfo.State == PSInvocationState.Failed)
-							ui.WriteErrorLine(pwsh.InvocationStateInfo.Reason.Message);
+					} catch {
+						// ignore because we are shutting down
 					}
+				};
+				#endif
 
-					PSRunSpace.Close();
+				me.pwsh.Streams.Error.DataAdded += (object sender, DataAddedEventArgs e) => {
+					me.ui.WriteErrorLine(((PSDataCollection < ErrorRecord > ) sender)[e.Index].Exception.Message);
+				};
+
+				PSDataCollection < string > colInput = new PSDataCollection < string > ();
+				if (Console_Info.IsInputRedirected()) { // read standard input
+					string sItem = "";
+					while ((sItem = Console.ReadLine()) != null) { // add to powershell pipeline
+						colInput.Add(sItem);
+					}
 				}
-			} catch (Exception ex) {
+				colInput.Complete();
+
+				PSDataCollection < PSObject > colOutput = new PSDataCollection < PSObject > ();
+				colOutput.DataAdded += (object sender, DataAddedEventArgs e) => {
+					me.ui.WriteLine(((PSDataCollection < PSObject > ) sender)[e.Index].ToString());
+				};
+
+				for(int i = 0; i < args.Length; i++) {
+					if (Regex.IsMatch(args[i], @"^(-|\$)\w*$"));
+					else
+						args[i] = "\'"+args[i].Replace("'", "''")+"\'";
+				}
+
+				me.pwsh.AddScript(".$PSEXECodeBlock "+String.Join(" ", args)+"|Out-String -Stream");
+
+				me.pwsh.BeginInvoke < string, PSObject > (colInput, colOutput, null, (IAsyncResult ar) => {
+					if (ar.IsCompleted)
+						mre.Set();
+				}, null);
+
+				while (!mre.WaitOne(100))
+					if (me.ShouldExit) break;
+
+				me.Inited = true;
+				me.pwsh.Stop();
+
+				if (me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed)
+					me.ui.WriteErrorLine(me.pwsh.InvocationStateInfo.Reason.Message);
+			}
+			catch (Exception ex) {
 				#if!noError
-					ui.WriteErrorLine(ex.Message);
+					me.ui.WriteErrorLine(ex.Message);
 				#endif
 				me.ExitCode = 1;
+			}
+			finally {
+				mre.Dispose();
 			}
 
 			return me.ExitCode;
 		}
+
+		#if DllExport
+		// DllInitChecker
+		[$threadingModelThread]
+		public static void DllInitChecker() {
+			if(!Inited) {
+				PSRunner.BaseInit();
+				// run pwsh code
+				System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);
+
+				PSDataCollection < string > colInput = new PSDataCollection < string > ();
+				colInput.Complete();
+
+				PSDataCollection < PSObject > colOutput = new PSDataCollection < PSObject > ();
+				colOutput.DataAdded += (object sender, DataAddedEventArgs e) => {
+					me.ui.WriteLine(((PSDataCollection < PSObject > ) sender)[e.Index].ToString());
+				};
+
+				me.pwsh.AddScript(".$PSEXECodeBlock|Out-String -Stream");
+
+				me.pwsh.BeginInvoke < string, PSObject > (colInput, colOutput, null, (IAsyncResult ar) => {
+					if (ar.IsCompleted)
+						mre.Set();
+				}, null);
+
+				while (!mre.WaitOne(100))
+					if (me.ShouldExit) break;
+
+				Inited = true;
+
+				if(me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed)
+					me.ui.WriteErrorLine(me.pwsh.InvocationStateInfo.Reason.Message);
+
+				mre.Dispose();
+			}
+		}
+		[DllExport("DllExportExample", CallingConvention = CallingConvention.StdCall)]
+		public static int DllExportExample(int a, int b) {
+			DllInitChecker();
+			if(me.ShouldExit)
+				throw new System.Exception(me.pwsh.InvocationStateInfo.Reason.Message);
+			//set parameters as variables in psrunspace
+			me.PSRunSpace.SessionStateProxy.SetVariable("PSEXEDLLCallIngParameters", new int[] {a, b});
+			me.pwsh.AddScript("DllExportExample @PSEXEDLLCallIngParameters");
+			System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);
+
+			PSDataCollection < string > colInput = new PSDataCollection < string > ();
+			colInput.Complete();
+
+			PSDataCollection < PSObject > colOutput = new PSDataCollection < PSObject > ();
+			//output as return value
+			colOutput.Complete();
+
+			me.pwsh.BeginInvoke < string, PSObject > (colInput, colOutput, null, (IAsyncResult ar) => {
+				if (ar.IsCompleted)
+					mre.Set();
+			}, null);
+
+			while (!mre.WaitOne(100))
+				if (me.ShouldExit) break;
+
+			if(me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed)
+				throw new System.Exception(me.pwsh.InvocationStateInfo.Reason.Message);
+			if(me.ShouldExit)
+				throw new System.Exception(me.pwsh.InvocationStateInfo.Reason.Message);
+
+			//if only one object is in colOutput, return it
+			if(colOutput.Count == 1)
+				return colOutput[0];
+			//else return the whole collection
+			return colOutput;
+		}
+		#endif
 	}
 }
