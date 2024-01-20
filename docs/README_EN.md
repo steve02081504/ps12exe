@@ -1,12 +1,21 @@
 # ps12exe
 
-WARNING: It is strongly advised not to compile scripts from unverified sources using this project due to the following reasons:
+## WARNING
 
-1. ps12exe has the capability to indirectly include scripts from URLs. This implies that scripts from any URL can be incorporated into your script.
-2. ps12exe, through a set of not-so-stringent rules, determines if all or a part of a script could be a constant program, the content of which can be determined at compile time. If such a determination is made, ps12exe will automatically execute this script in an attempt to obtain the output.
+Do not to compile scripts from unverified sources, there's possibility that ps12exe might download and execute malicious script during the compile time.
 
-This implies that if you compile a script whose content is unknown to you, there's a high possibility that ps12exe might download and execute a malicious script during the compile time.  
-If you're skeptical, try executing `"while(1){}" | ps12exe -Verbose`.  
+## ToDos
+
+The following is what I don't have the time/energy/ability to complete at the moment. Feel free to submit a PR if you're interested!
+
+| Task                                                       | Difficulty | Category | Challenges                                      | Progress  |
+| ---------------------------------------------------------- | ---------- | -------- | ------------------------------------------------ | --------- |
+| More optional compile-time optimizations                   | ⭐⭐⭐       | Optimization | Detailed AST processing functions               | Not started |
+| Support exporting specific PowerShell functions in exe or dll files for use in C/C++ and other languages | ⭐⭐⭐⭐ | Functionality | DllExport project currently does not support single-file C# programs | DllMain function and export examples completed, wrapped in inactive preprocessor if in `programFarms/default.cs` |
+| Support compiling code in PowerShell Core, eliminating dependency on Windows PowerShell | ⭐⭐⭐⭐ | Functionality | CodeAnalysis usage: Various libraries not found | Relevant functionality defined in `CodeAnalysisCompiler.ps1`, `-UseWindowsPowerShell` parameter added (currently set to `true` by default), unable to successfully compile executable file |
+| More i18ns!  | ⭐⭐ | i18n     | | Done in EN/CN, welcome to add more! |
+
+## Introduction
 
 [![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml)
 [![PSGallery download num](https://img.shields.io/powershellgallery/dt/ps12exe)](https://www.powershellgallery.com/packages/ps12exe)

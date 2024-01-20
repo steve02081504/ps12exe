@@ -1,12 +1,21 @@
 # ps12exe
 
-警告：请避免用此项目编译来源不明的脚本，原因如下：  
+## 警告
 
-1. ps12exe允许自url间接include脚本，这意味着你可以在脚本中include任意url的脚本  
-2. 当ps12exe（通过一套不太严谨的规则）判断脚本的全部或某一部分可能是可以在编译时确定内容的常量程序时，会自动执行这段脚本以试图获取输出内容  
+请不要编译来自未经验证的来源的脚本，因为在编译过程中ps12exe可能会下载并执行恶意脚本。
 
-这意味着如果你编译了一个你自己都不知道具体内容的脚本，那么脚本完全可能导致ps12exe在编译时下载和执行恶意脚本  
-如果你不信，试试`"while(1){}" | ps12exe -Verbose`  
+## 待办事项
+
+以下是我目前没有时间、精力或能力完成的任务。随时提交PR如果你有兴趣！
+
+| 任务                                                       | 难度       | 类别       | 挑战                                             | 进度       |
+| ---------------------------------------------------------- | ---------- | ---------- | ------------------------------------------------ | ---------- |
+| 更多可选的编译时优化                                       | ⭐⭐⭐       | 优化       | 详细的 AST 处理函数                              | 未开始     |
+| 支持将特定的 PowerShell 函数导出在 exe 或 dll 文件中，供 C/C++ 和其他语言使用 | ⭐⭐⭐⭐ | 功能       | DllExport 项目当前不支持单文件 C# 程序           | 已完成 DllMain 函数和导出示例，包含在 `programFarms/default.cs` 中，但处于非活动预处理器中 |
+| 支持在 PowerShell Core 中编译代码，消除对 Windows PowerShell 的依赖 | ⭐⭐⭐⭐ | 功能       | CodeAnalysis 使用：找不到各种库                 | 在 `CodeAnalysisCompiler.ps1` 中定义了相关功能，添加了 `-UseWindowsPowerShell` 参数（当前默认设置为 `true`），无法成功编译可执行文件 |
+| 更多的翻译！  | ⭐⭐ | 翻译 | | EN/CN 已完成，欢迎添加更多！ |
+
+## 简介
 
 [![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml)
 [![PSGallery download num](https://img.shields.io/powershellgallery/dt/ps12exe)](https://www.powershellgallery.com/packages/ps12exe)
