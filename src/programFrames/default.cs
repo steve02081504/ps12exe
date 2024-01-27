@@ -631,7 +631,7 @@ namespace PSRunnerNS {
 	}
 
 	public class Choice_Box {
-		public static int Show(System.Collections.ObjectModel.Collection < ChoiceDescription > arrChoice, int intDefault, string strTitle, string strPrompt) {
+		public static int Show(System.Collections.ObjectModel.Collection<ChoiceDescription> arrChoice, int intDefault, string strTitle, string strPrompt) {
 			// cancel if array is empty
 			if (arrChoice == null) return -1;
 			if (arrChoice.Count < 1) return -1;
@@ -886,7 +886,7 @@ namespace PSRunnerNS {
 			internal int Depth;
 		};
 
-		private List < Progress_Data > progressDataList = new List < Progress_Data > ();
+		private List<Progress_Data> progressDataList = new List<Progress_Data> ();
 
 		private Color DrawingColor(ConsoleColor color) { // convert ConsoleColor to System.Drawing.Color
 			switch (color) {
@@ -1294,7 +1294,7 @@ namespace PSRunnerNS {
 			#endif
 		}
 
-		public override Dictionary < string, PSObject > Prompt(string caption, string message, System.Collections.ObjectModel.Collection < FieldDescription > descriptions) {
+		public override Dictionary<string, PSObject> Prompt(string caption, string message, System.Collections.ObjectModel.Collection<FieldDescription> descriptions) {
 			#if!noConsole
 				if (!string.IsNullOrEmpty(caption)) WriteLine(caption);
 				if (!string.IsNullOrEmpty(message)) WriteLine(message);
@@ -1311,7 +1311,7 @@ namespace PSRunnerNS {
 				ib_caption = "";
 				ib_message = "";
 			#endif
-			Dictionary < string, PSObject > ret = new Dictionary < string, PSObject > ();
+			Dictionary<string, PSObject> ret = new Dictionary<string, PSObject> ();
 			foreach(FieldDescription cd in descriptions) {
 				Type t;
 				if (string.IsNullOrEmpty(cd.ParameterAssemblyFullName))
@@ -1402,7 +1402,7 @@ namespace PSRunnerNS {
 			return ret;
 		}
 
-		public override int PromptForChoice(string caption, string message, System.Collections.ObjectModel.Collection < ChoiceDescription > choices, int defaultChoice) {
+		public override int PromptForChoice(string caption, string message, System.Collections.ObjectModel.Collection<ChoiceDescription> choices, int defaultChoice) {
 			#if noConsole
 			int iReturn = Choice_Box.Show(choices, defaultChoice, caption, message);
 			if (iReturn == -1)
@@ -1413,7 +1413,7 @@ namespace PSRunnerNS {
 			WriteLine(message);
 			do {
 				int idx = 0;
-				SortedList < string, int > res = new SortedList < string, int > ();
+				SortedList<string, int> res = new SortedList<string, int> ();
 				string defkey = "";
 				foreach(ChoiceDescription cd in choices) {
 					string lkey = cd.Label.Substring(0, 1), ltext = cd.Label;
@@ -1973,10 +1973,10 @@ namespace PSRunnerNS {
 				#endif
 
 				me.pwsh.Streams.Error.DataAdded += (object sender, DataAddedEventArgs e) => {
-					me.ui.WriteErrorLine(((PSDataCollection < ErrorRecord > ) sender)[e.Index].Exception.Message);
+					me.ui.WriteErrorLine(((PSDataCollection<ErrorRecord> ) sender)[e.Index].Exception.Message);
 				};
 
-				PSDataCollection < string > colInput = new PSDataCollection < string > ();
+				PSDataCollection<string> colInput = new PSDataCollection<string> ();
 				if (Console_Info.IsInputRedirected()) { // read standard input
 					string sItem = "";
 					while ((sItem = Console.ReadLine()) != null) { // add to powershell pipeline
@@ -1985,9 +1985,9 @@ namespace PSRunnerNS {
 				}
 				colInput.Complete();
 
-				PSDataCollection < PSObject > colOutput = new PSDataCollection < PSObject > ();
+				PSDataCollection<PSObject> colOutput = new PSDataCollection<PSObject> ();
 				colOutput.DataAdded += (object sender, DataAddedEventArgs e) => {
-					me.ui.WriteLine(((PSDataCollection < PSObject > ) sender)[e.Index].ToString());
+					me.ui.WriteLine(((PSDataCollection<PSObject> ) sender)[e.Index].ToString());
 				};
 
 				for(int i = 0; i < args.Length; i++) {
@@ -1998,7 +1998,7 @@ namespace PSRunnerNS {
 
 				me.pwsh.AddScript(".$PSEXECodeBlock "+String.Join(" ", args)+"|Out-String -Stream");
 
-				me.pwsh.BeginInvoke < string, PSObject > (colInput, colOutput, null, (IAsyncResult ar) => {
+				me.pwsh.BeginInvoke<string, PSObject> (colInput, colOutput, null, (IAsyncResult ar) => {
 					if (ar.IsCompleted)
 						mre.Set();
 				}, null);
@@ -2034,17 +2034,17 @@ namespace PSRunnerNS {
 				// run pwsh code
 				System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);
 
-				PSDataCollection < string > colInput = new PSDataCollection < string > ();
+				PSDataCollection<string> colInput = new PSDataCollection<string> ();
 				colInput.Complete();
 
-				PSDataCollection < PSObject > colOutput = new PSDataCollection < PSObject > ();
+				PSDataCollection<PSObject> colOutput = new PSDataCollection<PSObject> ();
 				colOutput.DataAdded += (object sender, DataAddedEventArgs e) => {
-					me.ui.WriteLine(((PSDataCollection < PSObject > ) sender)[e.Index].ToString());
+					me.ui.WriteLine(((PSDataCollection<PSObject> ) sender)[e.Index].ToString());
 				};
 
 				me.pwsh.AddScript(".$PSEXECodeBlock|Out-String -Stream");
 
-				me.pwsh.BeginInvoke < string, PSObject > (colInput, colOutput, null, (IAsyncResult ar) => {
+				me.pwsh.BeginInvoke<string, PSObject> (colInput, colOutput, null, (IAsyncResult ar) => {
 					if (ar.IsCompleted)
 						mre.Set();
 				}, null);
@@ -2066,18 +2066,18 @@ namespace PSRunnerNS {
 			if(me.ShouldExit)
 				throw new System.Exception(me.pwsh.InvocationStateInfo.Reason.Message);
 			//set parameters as variables in psrunspace
-			me.PSRunSpace.SessionStateProxy.SetVariable("PSEXEDLLCallIngParameters", new int[] {a, b});
+			me.PSRunSpace.SessionStateProxy.SetVariable("PSEXEDLLCallIngParameters", new System.Collections.ArrayList{a, b});
 			me.pwsh.AddScript("DllExportExample @PSEXEDLLCallIngParameters");
 			System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);
 
-			PSDataCollection < string > colInput = new PSDataCollection < string > ();
+			PSDataCollection<string> colInput = new PSDataCollection<string> ();
 			colInput.Complete();
 
-			PSDataCollection < PSObject > colOutput = new PSDataCollection < PSObject > ();
+			PSDataCollection<PSObject> colOutput = new PSDataCollection<PSObject> ();
 			//output as return value
 			colOutput.Complete();
 
-			me.pwsh.BeginInvoke < string, PSObject > (colInput, colOutput, null, (IAsyncResult ar) => {
+			me.pwsh.BeginInvoke<string, PSObject> (colInput, colOutput, null, (IAsyncResult ar) => {
 				if (ar.IsCompleted)
 					mre.Set();
 			}, null);
