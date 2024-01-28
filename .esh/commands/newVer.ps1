@@ -8,11 +8,9 @@ if($gitStatus) {
 	Write-Host "commit your changes first before creating a new version!"
 	return
 }
-# git tag!
-$ver = $args[0]
 #如果没ver前缀，自动加上
 if($ver -notmatch "^v") {
 	$ver = "v" + $ver
 }
 git tag $ver
-git push
+git push --tags
