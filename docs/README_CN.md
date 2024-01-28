@@ -11,7 +11,7 @@
 | 任务                                                       | 难度       | 类别       | 挑战                                             | 进度       |
 | ---------------------------------------------------------- | ---------- | ---------- | ------------------------------------------------ | ---------- |
 | 更多可选的编译时优化                                       | ⭐⭐⭐       | 优化       | 详细的 AST 处理函数                              | 未开始     |
-| 支持将特定的 PowerShell 函数导出在 exe 或 dll 文件中，供 C/C++ 和其他语言使用 | ⭐⭐⭐⭐ | 功能       | DllExport 项目当前不支持单文件 C# 程序           | 已完成 DllMain 函数和导出示例，包含在 `programFarms/default.cs` 中，但处于非活动预处理器中 |
+| 支持将特定的 PowerShell 函数导出在 exe 或 dll 文件中，供 C/C++ 和其他语言使用 | ⭐⭐⭐⭐ | 功能       | DllExport 项目当前不支持单文件 C# 程序           | 已完成 DllMain 函数和导出示例，包含在 `programFarms/DllExport.cs` 中 |
 | 支持在 PowerShell Core 中编译代码，消除对 Windows PowerShell 的依赖 | ⭐⭐⭐⭐ | 功能       | CodeAnalysis 使用：找不到各种库                 | 在 `CodeAnalysisCompiler.ps1` 中定义了相关功能，添加了 `-UseWindowsPowerShell` 参数（当前默认设置为 `true`），无法成功编译可执行文件 |
 | 更多的翻译！  | ⭐⭐ | 翻译 | | EN/CN 已完成，欢迎添加更多！ |
 
