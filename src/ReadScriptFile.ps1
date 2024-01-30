@@ -109,7 +109,7 @@ function Preprocessor($Content, $FilePath) {
 			elseif ($_ -match '^\s*&\s*(?<rest>(\"|)\$PSScriptRoot.+)\s*') {
 				$file = GetIncludeFilePath $Matches["rest"]
 				if ($file) {
-					return @('&{',$(ReadScriptFile $file),'}')
+					return @('&{', $(ReadScriptFile $file), '}')
 				}
 			}
 			$_

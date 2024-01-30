@@ -17,14 +17,14 @@ function AstAnalyze($Ast) {
 	$script:ConstVariables = @('?', '^', '$', 'Error', 'false', 'IsCoreCLR', 'IsLinux', 'IsMacOS', 'IsWindows', 'null', 'true', 'PSEXEScript')
 	$script:EffectVariables = @('ConfirmPreference', 'DebugPreference', 'EnabledExperimentalFeatures', 'ErrorActionPreference', 'ErrorView', 'ExecutionContext', 'FormatEnumerationLimit', 'HOME', 'Host', 'InformationPreference', 'input', 'MaximumHistoryCount', 'MyInvocation', 'NestedPromptLevel', 'OutputEncoding', 'PID', 'PROFILE', 'ProgressPreference', 'PSBoundParameters', 'PSCommandPath', 'PSCulture', 'PSDefaultParameterValues', 'PSEdition', 'PSEmailServer', 'PSGetAPI', 'PSHOME', 'PSNativeCommandArgumentPassing', 'PSNativeCommandUseErrorActionPreference', 'PSScriptRoot', 'PSSessionApplicationName', 'PSSessionConfigurationName', 'PSSessionOption', 'PSStyle', 'PSUICulture', 'PSVersionTable', 'PWD', 'ShellId', 'StackTrace', 'VerbosePreference', 'WarningPreference', 'WhatIfPreference', 'WhatIfPreference')
 	$script:AnalyzeResult = @{
-		IsConst = $true
+		IsConst                  = $true
 		ImporttedExternalScripts = $false
-		UsedNonConstVariables = @()
-		UsedNonConstFunctions = @()
+		UsedNonConstVariables    = @()
+		UsedNonConstFunctions    = @()
 	}
 	function AstMapper($Ast) {
-		if($Ast -is [System.Management.Automation.Language.CommandAst]) {
-			if($script:ConstCommands -notcontains $Ast.CommandElements[0].Value) {
+		if ($Ast -is [System.Management.Automation.Language.CommandAst]) {
+			if ($script:ConstCommands -notcontains $Ast.CommandElements[0].Value) {
 				$script:AnalyzeResult.IsConst = $false
 				$script:AnalyzeResult.UsedNonConstFunctions += $Ast.CommandElements[0].Value
 			}
@@ -33,7 +33,7 @@ function AstAnalyze($Ast) {
 			}
 		}
 		elseif ($Ast -is [System.Management.Automation.Language.VariableExpressionAst]) {
-			if($script:ConstVariables -notcontains $Ast.VariablePath.UserPath) {
+			if ($script:ConstVariables -notcontains $Ast.VariablePath.UserPath) {
 				$script:AnalyzeResult.IsConst = $false
 				$script:AnalyzeResult.UsedNonConstVariables += $Ast.VariablePath.UserPath
 			}
@@ -43,7 +43,7 @@ function AstAnalyze($Ast) {
 			$script:ConstVariables += "function:$($Ast.Name)"
 		}
 		elseif ($Ast -is [System.Management.Automation.Language.AssignmentStatementAst]) {
-			if($script:EffectVariables -notcontains $Ast.Left.VariablePath) {
+			if ($script:EffectVariables -notcontains $Ast.Left.VariablePath) {
 				$script:ConstVariables += $Ast.Left.VariablePath.UserPath
 			}
 		}
@@ -52,7 +52,7 @@ function AstAnalyze($Ast) {
 			$ConstVariablesBackup = $script:ConstVariables
 			$script:ConstVariables += 'args'
 			foreach ($Statement in $Ast.Statements) {
-				if($null -ne $Statement.Find($function:AstMapper, $true)) {
+				if ($null -ne $Statement.Find($function:AstMapper, $true)) {
 					$script:AnalyzeResult.IsConst = $false
 				}
 			}

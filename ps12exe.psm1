@@ -6,4 +6,4 @@
 ", "$PSScriptRoot\ps12exe.ps1", [ref]$null, [ref]$null)).GetScriptBlock()
 
 # Export functions
-Export-ModuleMember -Function @('ps12exe','ps12exeGUI')
+Export-ModuleMember -Function @('ps12exe', 'ps12exeGUI')

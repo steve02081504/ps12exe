@@ -129,7 +129,7 @@ Param(
 	[Switch]$help,
 	# TODO，不进入文档
 	[Parameter(DontShow)]
-	[switch]$UseWindowsPowerShell=$true,
+	[switch]$UseWindowsPowerShell = $true,
 	# 兼容旧版参数列表，不进入文档
 	[Parameter(DontShow)]
 	[Switch]$noConfigFile,
@@ -163,11 +163,11 @@ Param(
 )
 $Verbose = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent
 function RollUp {
-	param ($num=1,[switch]$InVerbose)
+	param ($num = 1, [switch]$InVerbose)
 	$CousorPos = $Host.UI.RawUI.CursorPosition
-	try{
-		if(-not $Verbose -or $InVerbose) {
-			if($nested){ throw }
+	try {
+		if (-not $Verbose -or $InVerbose) {
+			if ($nested) { throw }
 			$CousorPos.Y = $CousorPos.Y - $num
 			$Host.UI.RawUI.CursorPosition = $CousorPos
 		}
@@ -176,7 +176,7 @@ function RollUp {
 		Write-Host $([char]27 + '[' + $num + 'A') -NoNewline
 	}
 }
-function Show-Help{
+function Show-Help {
 	#_if PSScript
 		$LocalizeData = . $PSScriptRoot\src\LocaleLoader.ps1
 	#_else
@@ -271,7 +271,7 @@ else {
 		Write-Error "Temp file $inputfile not found!"
 		return
 	}
-	if(!$TempDir) {
+	if (!$TempDir) {
 		Remove-Item $inputFile -ErrorAction SilentlyContinue
 	}
 }
@@ -319,13 +319,13 @@ function UsingWinPowershell($Boundparameters) {
 	$Params.Remove("resourceParams") #使用旧版参数列表传递hashtable参数更为保险
 	$Params.Remove("x86"); $Params.Remove("x64")
 	$Params.Remove("STA"); $Params.Remove("MTA")
-	$TempFile = if($TempDir) {
+	$TempFile = if ($TempDir) {
 		[System.IO.Path]::Combine($TempDir, 'main.ps1')
 	} else { [System.IO.Path]::GetTempFileName() }
 	$Content | Set-Content $TempFile -Encoding UTF8 -NoNewline
 	$Params.Add("outputFile", $outputFile)
 	$Params.Add("inputFile", $TempFile)
-	if($TempDir) { $Params.TempDir = $TempDir }
+	if ($TempDir) { $Params.TempDir = $TempDir }
 	$resourceParamKeys | ForEach-Object {
 		if ($resourceParams.ContainsKey($_) -and $resourceParams[$_]) {
 			$Params[$_] = $BoundParameters[$_]
@@ -410,8 +410,8 @@ $FindedCmdlets = @()
 $NotFindedCmdlets = @()
 $AstAnalyzeResult.UsedNonConstFunctions | ForEach-Object {
 	if ($_ -match '\$' -or -not $_) { return }
-	if($CommandNames -notcontains $_) {
-		if(Get-Command $_ -ErrorAction Ignore) {
+	if ($CommandNames -notcontains $_) {
+		if (Get-Command $_ -ErrorAction Ignore) {
 			$FindedCmdlets += $_
 		}
 		else {
@@ -425,18 +425,18 @@ if ($FindedCmdlets) {
 if ($NotFindedCmdlets) {
 	Write-Warning "Unknown functions $($NotFindedCmdlets -join '、') used"
 }
-try{
+try {
 	. $PSScriptRoot\src\InitCompileThings.ps1
 	if ($PSVersionTable.PSEdition -eq "Core") {
 		# unfinished!
-		if(!$TargetFramework){
-			$Info=[System.Environment]::Version
+		if (!$TargetFramework) {
+			$Info = [System.Environment]::Version
 			$TargetFramework = ".NETCore,Version=v$($Info.Major).$($Info.Minor)"
 		}
 		. $PSScriptRoot\src\CodeAnalysisCompiler.ps1
 	}
 	else {
-		if(!$TargetFramework){
+		if (!$TargetFramework) {
 			$TargetFramework = ".NETFramework,Version=v4.7"
 		}
 		. $PSScriptRoot\src\CodeDomCompiler.ps1
@@ -446,7 +446,7 @@ try{
 	if (!(Test-Path $outputFile)) {
 		Write-Error -ErrorAction "Continue" "Output file $outputFile not written"
 	}
-	else{
+	else {
 		Write-Host "Compiled file written -> $((Get-Item $outputFile).Length) bytes"
 		Write-Verbose "Path: $outputFile"
 		if ($CFGFILE) {
@@ -463,11 +463,11 @@ try{
 		}
 	}
 }
-catch{
+catch {
 	if (Test-Path $outputFile) {
 		Remove-Item $outputFile -Verbose:$FALSE
 	}
-	if ($PSVersionTable.PSEdition -eq "Core" -and (Get-Command powershell -ErrorAction Ignore)){
+	if ($PSVersionTable.PSEdition -eq "Core" -and (Get-Command powershell -ErrorAction Ignore)) {
 		$_ | Write-Error
 		Write-Host "Roslyn CodeAnalysis failed`nFalling back to Use Windows Powershell with CodeDom...`nYou may want to add -UseWindowsPowerShell to args to skip this fallback in future.`n...or submit a PR to ps12exe repo to fix this!" -ForegroundColor Yellow
 		UsingWinPowershell $PSBoundParameters
@@ -478,10 +478,10 @@ catch{
 		$_ | Write-Error
 		$githubfeedback = "https://github.com/steve02081504/ps12exe/issues/new?assignees=steve02081504&labels=bug&projects=&template=bug-report.yaml"
 		$urlParams = @{
-			title = "$_"
-			"latest-release" = if (Get-Module -ListAvailable ps12exe) { "true" } else { "false" }
-			"bug-description" = 'Compilation failed'
-			"expected-behavior" = 'Compilation should succeed'
+			title                = "$_"
+			"latest-release"     = if (Get-Module -ListAvailable ps12exe) { "true" } else { "false" }
+			"bug-description"    = 'Compilation failed'
+			"expected-behavior"  = 'Compilation should succeed'
 			"additional-context" = @"
 Version infos:
 ``````
@@ -501,7 +501,7 @@ $($_ | Format-List | Out-String)
 		Start-Process $githubfeedback
 	}
 }
-finally{
+finally {
 	if ($TempTempDir) {
 		Remove-Item $TempTempDir -Recurse -Force -ErrorAction SilentlyContinue
 	}

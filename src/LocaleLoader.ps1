@@ -1,18 +1,18 @@
 param(
-	[scriptblock]$CheckLocaleData= {
+	[scriptblock]$CheckLocaleData = {
 		$null -ne $Script:LocalizeData
 	},
-	[scriptblock]$FaildLoadLocaleData= {
+	[scriptblock]$FaildLoadLocaleData = {
 		param (
 			[string]$Localize
 		)
 		Write-Warning "Failed to load locale data $Localize`nSee $LocalizeDir/README.md for how to add custom locale."
 	},
-	[scriptblock]$LoadLocaleData= {
+	[scriptblock]$LoadLocaleData = {
 		param (
 			[string]$Localize
 		)
-		$Script:LocalizeData = try{ &"$LocalizeDir\$Localize.ps1" } catch {}
+		$Script:LocalizeData = try { &"$LocalizeDir\$Localize.ps1" } catch {}
 	},
 	[string]$Localize
 )
@@ -25,23 +25,23 @@ if (!$Localize) {
 $LocalizeDir = "$PSScriptRoot/locale"
 
 &$LoadLocaleData $Localize
-if(!(&$CheckLocaleData)) {
+if (!(&$CheckLocaleData)) {
 	$LocalizeList = Get-ChildItem $LocalizeDir | Where-Object { $_.Name -like '*.fbs' } | ForEach-Object { $_.BaseName }
 	&$FaildLoadLocaleData $Localize
 	$LocalizeHead = $Localize.Split('-')[0]
 	$SimilarLocalize = $LocalizeList | Where-Object { $_.StartsWith($LocalizeHead) }
 	foreach ($Localize in $SimilarLocalize) {
 		&$LoadLocaleData $Localize
-		if(&$CheckLocaleData) {
+		if (&$CheckLocaleData) {
 			break
 		}
 	}
-	if(!(&$CheckLocaleData)) { &$LoadLocaleData 'en-UK' }
+	if (!(&$CheckLocaleData)) { &$LoadLocaleData 'en-UK' }
 }
-if(!(&$CheckLocaleData)) {
+if (!(&$CheckLocaleData)) {
 	foreach ($Localize in $LocalizeList) {
 		&$LoadLocaleData $Localize
-		if(&$CheckLocaleData) {
+		if (&$CheckLocaleData) {
 			break
 		}
 	}

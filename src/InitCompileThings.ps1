@@ -16,8 +16,8 @@ $referenceAssembies += GetAssembly "System.Management.Automation"
 
 # If noConsole is true, add System.Windows.Forms.dll and System.Drawing.dll to the reference assemblies
 if ($noConsole) {
-	$referenceAssembies += GetAssembly "System.Windows.Forms" $(if ($PSVersionTable.PSEdition -ne "Core") {"Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"})
-	$referenceAssembies += GetAssembly "System.Drawing" $(if ($PSVersionTable.PSEdition -ne "Core") {"Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"})
+	$referenceAssembies += GetAssembly "System.Windows.Forms" $(if ($PSVersionTable.PSEdition -ne "Core") { "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" })
+	$referenceAssembies += GetAssembly "System.Drawing" $(if ($PSVersionTable.PSEdition -ne "Core") { "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" })
 }
 else {
 	$referenceAssembies += GetAssembly "System.Console" 
