@@ -28,7 +28,7 @@ namespace PSRunnerNS {
 
 				PSDataCollection<PSObject> colOutput = new PSDataCollection<PSObject> ();
 				colOutput.DataAdded += (object sender, DataAddedEventArgs e) => {
-					me.ui.WriteLine(((PSDataCollection<PSObject> ) sender)[e.Index].ToString());
+					me.ui.WriteLine(((PSDataCollection<PSObject>) sender)[e.Index].ToString());
 				};
 
 				me.pwsh.AddScript(".$PSEXECodeBlock|Out-String -Stream");

@@ -42,7 +42,7 @@ namespace PSRunnerNS {
 
 			#if noConsole
 				// load assembly:AssemblyTitle
-				AssemblyTitleAttribute titleAttribute = (AssemblyTitleAttribute) Attribute.GetCustomAttribute(Assembly.GetExecutingAssembly(), typeof (AssemblyTitleAttribute));
+				AssemblyTitleAttribute titleAttribute = (AssemblyTitleAttribute) Attribute.GetCustomAttribute(Assembly.GetExecutingAssembly(), typeof(AssemblyTitleAttribute));
 				string title;
 				if (titleAttribute != null)
 					title = titleAttribute.Title;
