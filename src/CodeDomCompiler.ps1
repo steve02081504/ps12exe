@@ -1,4 +1,4 @@
-$type = ('System.Collections.Generic.Dictionary`2') -as "Type"
+﻿$type = ('System.Collections.Generic.Dictionary`2') -as "Type"
 $type = $type.MakeGenericType( @( ("System.String" -as "Type"), ("system.string" -as "Type") ) )
 $o = [Activator]::CreateInstance($type)
 $o.Add("CompilerVersion", "v4.0")

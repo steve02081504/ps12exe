@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param (
 	[string]$ConfingFile,
 	#本地化信息

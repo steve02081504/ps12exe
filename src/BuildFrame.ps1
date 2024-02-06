@@ -1,4 +1,4 @@
-. $PSScriptRoot\ConstProgramCheck.ps1
+﻿. $PSScriptRoot\ConstProgramCheck.ps1
 if (!$programFrame) {
 	#_if PSEXE #这是该脚本被ps12exe编译时使用的预处理代码
 		#_include_as_value programFrame "$PSScriptRoot/programFrames/default.cs" #将default.cs中的内容内嵌到该脚本中

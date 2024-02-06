@@ -1,4 +1,4 @@
-param (
+﻿param (
 	[hashtable]$HelpData
 )
 function ShowParamsHelp($ParamsHelpData) {

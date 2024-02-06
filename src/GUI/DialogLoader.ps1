@@ -1,4 +1,4 @@
-$Script:dialogInfo = @{}
+﻿$Script:dialogInfo = @{}
 
 ."$PSScriptRoot/../LocaleLoader.ps1" -Localize $Localize -LoadLocaleData {
 	param (

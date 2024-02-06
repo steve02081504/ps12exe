@@ -1,4 +1,4 @@
-function ReadScriptFile($File) {
+﻿function ReadScriptFile($File) {
 	$Content = if ($File -match "^(https?|ftp)://") {
 		(Invoke-WebRequest -Uri $File -ErrorAction SilentlyContinue).Content
 	}

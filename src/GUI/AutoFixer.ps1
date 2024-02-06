@@ -1,4 +1,4 @@
-# 该脚本可以自动对齐相差较小的控件的位置和大小
+﻿# 该脚本可以自动对齐相差较小的控件的位置和大小
 function AutoFixer($Controls, $FixLimit = 4) {
 	$SizesX = @()
 	$SizesY = @()

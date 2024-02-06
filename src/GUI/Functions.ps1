@@ -1,4 +1,4 @@
-function Get-UIData {
+﻿function Get-UIData {
 	@{
 		inputFile        = $Script:refs.CompileFileTextBox.Text
 		outputFile       = $Script:refs.OutputFileTextBox.Text

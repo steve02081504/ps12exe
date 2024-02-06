@@ -1,4 +1,4 @@
-Add-Type -AssemblyName "Microsoft.CodeAnalysis"
+﻿Add-Type -AssemblyName "Microsoft.CodeAnalysis"
 Add-Type -AssemblyName "Microsoft.CodeAnalysis.CSharp"
 
 $references = $referenceAssembies | ForEach-Object {

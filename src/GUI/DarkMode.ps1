@@ -1,4 +1,4 @@
-if ($UIMode -eq 'Auto' -or -not $UIMode) {
+﻿if ($UIMode -eq 'Auto' -or -not $UIMode) {
 	$DarkMode = Get-ItemPropertyValue -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -ErrorAction SilentlyContinue
 	$DarkMode = $DarkMode -eq 0
 }

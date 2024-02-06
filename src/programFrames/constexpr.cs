@@ -1,4 +1,4 @@
-// Simple PowerShell host created by Ingo Karstein (http://blog.karstein-consulting.com)
+﻿// Simple PowerShell host created by Ingo Karstein (http://blog.karstein-consulting.com)
 // Reworked and GUI support by Markus Scholtes
 
 using System;

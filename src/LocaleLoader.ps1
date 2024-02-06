@@ -1,4 +1,4 @@
-param(
+﻿param(
 	[scriptblock]$CheckLocaleData = {
 		$null -ne $Script:LocalizeData
 	},

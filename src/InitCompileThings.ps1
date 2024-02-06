@@ -1,4 +1,4 @@
-function GetAssembly($name, $otherinfo) {
+﻿function GetAssembly($name, $otherinfo) {
 	$n = New-Object System.Reflection.AssemblyName(@($name, $otherinfo) -ne $null -join ",")
 	try {
 		[System.AppDomain]::CurrentDomain.Load($n).Location

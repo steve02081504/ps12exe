@@ -1,4 +1,4 @@
-@{
+﻿@{
 	# UI
 	ErrorHead        = "错误："
 	CompileResult    = "编译结果"

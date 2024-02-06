@@ -1,4 +1,4 @@
-# enter和esc键绑定
+﻿# enter和esc键绑定
 
 $Script:refs.CancelButton = New-Object Windows.Forms.Button
 $Script:refs.MainForm.CancelButton = $Script:refs.CancelButton

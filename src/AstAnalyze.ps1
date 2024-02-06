@@ -1,4 +1,4 @@
-<#
+﻿<#
 function ShowAst($Ast) {
 	function Mapper($Ast) {
 		$Ast.GetType().Name | Out-Host

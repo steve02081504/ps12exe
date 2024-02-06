@@ -1,4 +1,4 @@
-@{
+﻿@{
 	# UI
 	ErrorHead        = "Oh dear, an error has occurred:"
 	CompileResult    = "The result of the compilation, old chap:"
