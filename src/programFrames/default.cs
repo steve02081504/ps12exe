@@ -1729,11 +1729,23 @@ namespace PSRunnerNS {
 				if (pf.GetCount() == 0) pf = null;
 			}
 			#else
-			if (record.RecordType == ProgressRecordType.Completed) {
-				Console.WriteLine();
-				return;
+			if (!Console_Info.IsOutputRedirected())// Do not write progress bar when the stdout is redirected.
+			{
+				// OSC sequence to turn on progress indicator
+				// https://github.com/microsoft/terminal/issues/6700
+				if(Console_Info.IsVirtualTerminalSupported()){
+					if (record.RecordType == ProgressRecordType.Completed)//End progress indicator
+						Console.Write("\x1b]9;4;0\x1b\\");
+					else {
+						int percentComplete = record.PercentComplete;
+						// Write-Progress allows for negative percent complete, but not greater than 100
+						// but OSC sequence is limited from 0 to 100.
+						if (percentComplete < 0)
+							percentComplete = 0;
+						Console.Write(string.Format("\x1b]9;4;1;{0}\x1b\\", percentComplete));
+					}
+				}
 			}
-			throw new NotImplementedException();
 			#endif
 		}
 
