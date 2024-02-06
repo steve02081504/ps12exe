@@ -1216,12 +1216,32 @@ namespace PSRunnerNS {
 			STD_OUTPUT_HANDLE = unchecked((uint) - 11),
 			STD_ERROR_HANDLE = unchecked((uint) - 12)
 		}
+		private enum ConsoleMode: uint {
+			ENABLE_ECHO_INPUT = 0x0004,
+			ENABLE_INSERT_MODE = 0x0020,
+			ENABLE_LINE_INPUT = 0x0002,
+			ENABLE_MOUSE_INPUT = 0x0010,
+			ENABLE_PROCESSED_INPUT = 0x0001,
+			ENABLE_QUICK_EDIT_MODE = 0x0040,
+			ENABLE_WINDOW_INPUT = 0x0008,
+			ENABLE_VIRTUAL_TERMINAL_INPUT = 0x0200,
+
+			ENABLE_PROCESSED_OUTPUT = 0x0001,
+			ENABLE_WRAP_AT_EOL_OUTPUT = 0x0002,
+			ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004,
+			DISABLE_NEWLINE_AUTO_RETURN = 0x0008,
+			ENABLE_LVB_GRID_WORLDWIDE = 0x0010
+		}
 
 		[DllImport("Kernel32.dll")]
 		static private extern UIntPtr GetStdHandle(STDHandle stdHandle);
 
 		[DllImport("Kernel32.dll")]
 		static private extern FileType GetFileType(UIntPtr hFile);
+		[DllImport("Kernel32.dll")]
+		static private extern bool GetConsoleMode(UIntPtr hConsoleHandle, out ConsoleMode lpConsoleMode);
+		[DllImport("Kernel32.dll")]
+		static private extern bool SetConsoleMode(UIntPtr hConsoleHandle, ConsoleMode dwMode);
 
 		static public bool IsInputRedirected() {
 			UIntPtr hInput = GetStdHandle(STDHandle.STD_INPUT_HANDLE);
@@ -1245,6 +1265,13 @@ namespace PSRunnerNS {
 			if ((fileType == FileType.FILE_TYPE_CHAR) || (fileType == FileType.FILE_TYPE_UNKNOWN))
 				return false;
 			return true;
+		}
+		static public bool IsVirtualTerminalSupported() {
+			UIntPtr hOutput = GetStdHandle(STDHandle.STD_OUTPUT_HANDLE);
+			ConsoleMode consoleMode;
+			if(!GetConsoleMode(hOutput, out consoleMode))
+				return false;
+			return (consoleMode & ConsoleMode.ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0;
 		}
 	}
 
@@ -1279,6 +1306,8 @@ namespace PSRunnerNS {
 				rawUI.BackgroundColor = Console.BackgroundColor;
 			#endif
 		}
+
+		public override bool SupportsVirtualTerminal { get { return Console_Info.IsVirtualTerminalSupported(); } }
 
 		public override Dictionary<string, PSObject> Prompt(string caption, string message, System.Collections.ObjectModel.Collection<FieldDescription> descriptions) {
 			#if!noConsole
