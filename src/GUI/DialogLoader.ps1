@@ -4,7 +4,7 @@
 	param (
 		[string]$Localize
 	)
-	$Xml = [xml](Get-Content "$LocalizeDir\$Localize.fbs")
+	$Xml = [xml](Get-Content "$LocalizeDir\$Localize.fbs" -Encoding utf8)
 	$Script:MainForm = $Xml.Data.Form.OuterXml
 	$Xml.Data.ChildNodes | Select-Object -Skip 2 | ForEach-Object {
 		$Script:dialogInfo.Add($_.Name, $_.OuterXml)
