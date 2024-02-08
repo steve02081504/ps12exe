@@ -1,10 +1,13 @@
 ﻿[CmdletBinding()]
 param (
+	[ValidatePattern('.(psccfg|xml)$')]
 	[string]$ConfingFile,
 	#本地化信息
 	[string]$Localize,
 	[ValidateSet('Light', 'Dark', 'Auto')]
-	[string]$UIMode = 'Auto'
+	[string]$UIMode = 'Auto',
+	[ValidatePattern('.ps1$')]
+	[string]$PS1File
 )
 
 . "$PSScriptRoot\UITools.ps1"
@@ -21,6 +24,23 @@ param (
 
 #region Other Actions Before ShowDialog
 
+if ($ConfingFile) {
+	# if file not exists or empty
+	if (!(Test-Path $ConfingFile) -or (Get-Item $ConfingFile).Length -eq 0) {
+		SetCfgFile $ConfingFile
+	}
+	else {
+		LoadCfgFile $ConfingFile
+	}
+}
+
+if ($PS1File) {
+	if (-not $ConfingFile) {
+		SetCfgFile "$($PS1File.Substring(0, $PS1File.LastIndexOf('.'))).psccfg"
+	}
+	$Script:refs.CompileFileTextBox.Text = "./$(Split-Path $PS1File -Leaf)" #以相对路径存储
+}
+
 try {
 	Import-Module "$PSScriptRoot/../../ps12exe.psm1" -Force -ErrorAction Stop
 }
@@ -30,17 +50,14 @@ catch {
 
 #endregion Other Actions Before ShowDialog
 
-# Hide Console Window
-Add-Type -Name Window -Namespace Console -MemberDefinition '
-[DllImport("Kernel32.dll")]
-public static extern IntPtr GetConsoleWindow();
+# Set Console Window Title
+$BackUpTitle = $Host.UI.RawUI.WindowTitle
+$Host.UI.RawUI.WindowTitle = "ps12exe GUI Console Host"
 
-[DllImport("user32.dll")]
-public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
-'
-
-$consolePtr = [Console.Window]::GetConsoleWindow()
-[Console.Window]::ShowWindow($consolePtr, 0) | Out-Null
+# Set Console Icon
+$consolePtr = [ps12exeGUI.Win32]::GetConsoleWindow()
+Set-WindowIcon $consolePtr "$PSScriptRoot\..\..\img\icon.ico"
+[ps12exeGUI.Win32]::ShowWindow($consolePtr, 0) | Out-Null
 
 $Icon = [System.Drawing.Icon]::ExtractAssociatedIcon("$PSScriptRoot\..\..\img\icon.ico")
 $Script:refs.MainForm.Icon = $Icon
@@ -53,7 +70,10 @@ $Script:refs.MainForm.Controls | ForEach-Object { $_.Dispose() }
 $Script:refs.MainForm.Dispose()
 $Icon.Dispose()
 
-[Console.Window]::ShowWindow($consolePtr, 1) | Out-Null
+[ps12exeGUI.Win32]::ShowWindow($consolePtr, 1) | Out-Null
+
+# Restore Console Window Title
+$Host.UI.RawUI.WindowTitle = $BackUpTitle
 
 # Remove all variables in the script scope
 Get-Variable -Scope Script | Remove-Variable -Scope Script -Force -ErrorAction Ignore

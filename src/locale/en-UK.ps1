@@ -1,4 +1,8 @@
 ﻿@{
+	# Right click Menu
+	CompileTitle     = "Compile To EXE"
+	OpenInGUI        = "Open in ps12exeGUI"
+	GUICfgFileDesc   = "ps12exeGUI configuration file"
 	# UI
 	ErrorHead        = "Oh dear, an error has occurred:"
 	CompileResult    = "The result of the compilation, old chap:"

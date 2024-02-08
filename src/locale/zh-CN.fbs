@@ -83,8 +83,8 @@
     <Button Name="CompileButton" Location="802,561" Size="81,27" Text="编译" />
     <Label Name="CfgFileLabel" Location="7,582" Size="778,21" Text="未选中配置文件" />
   </Form>
-  <OpenFileDialog Name="OpenCfgFileDialog" DefaultExt="xml" Filter="配置文件(*.xml)|*.xml" Title="选择配置文件" />
-  <SaveFileDialog Name="SaveCfgFileDialog" DefaultExt="xml" Filter="配置文件(*.xml)|*.xml" Title="保存配置文件" />
+  <OpenFileDialog Name="OpenCfgFileDialog" DefaultExt="psccfg" Filter="配置文件(*.psccfg)|*.psccfg" Title="选择配置文件" />
+  <SaveFileDialog Name="SaveCfgFileDialog" DefaultExt="psccfg" Filter="配置文件(*.psccfg)|*.psccfg" Title="保存配置文件" />
   <OpenFileDialog Name="OpenCompileFileDialog" DefaultExt="ps1" Filter="powershell文件(*.ps1)|*.ps1|powershell数据文件(*.psd1)|*.psd1" Title="选择编译文件" />
   <OpenFileDialog Name="OpenOutputFileDialog" DefaultExt="exe" Filter="可执行文件(*.exe)|*.exe" Title="选择输出文件" />
   <OpenFileDialog Name="OpenIconFileDialog" DefaultExt="ico" Filter="图标文件(*.ico)|*.ico" Title="选择图标文件" />

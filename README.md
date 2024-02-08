@@ -32,12 +32,18 @@ The following is what I don't have the time/energy/ability to complete at the mo
 ## Install
 
 ```powershell
-Install-Module ps12exe
+Install-Module ps12exe #Install ps12exe module
+Set-ps12exeContextMenu #Set right-click menu
 ```
 
 (you can also clone this repository and run `./ps12exe.ps1` directly)
 
 ## Usage
+
+### Right-click menu
+
+Once you have set `Set-ps12exeContextMenu`, you can quickly compile any ps1 file into an exe or open ps12exeGUI on this file by right-clicking on it.  
+![image](https://github.com/steve02081504/ps12exe/assets/31927825/24e7caf7-2bd8-46aa-8e1d-ee6da44c2dcc)
 
 ### GUI mode
 

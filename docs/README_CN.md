@@ -31,12 +31,18 @@
 ## 安装
 
 ```powershell
-Install-Module ps12exe
+Install-Module ps12exe #安装ps12exe模块
+Set-ps12exeContextMenu #设置右键菜单
 ```
 
 （你也可以clone本仓库，然后直接运行`.\ps12exe.ps1`）
 
 ## 使用方法
+
+### 右键菜单
+
+一旦你设置了`Set-ps12exeContextMenu`，你可以通过右键任何ps1文件来快速将其编译为exe或者就此文件打开ps12exeGUI。  
+![图片](https://github.com/steve02081504/ps12exe/assets/31927825/24e7caf7-2bd8-46aa-8e1d-ee6da44c2dcc)
 
 ### GUI 模式
 
@@ -131,11 +137,12 @@ ps12exe 会在编译前对脚本进行预处理。
 #### `#_if <condition>`/`#_else`/`#_endif`
 
 ```powershell
-#_if <condition>
-	<code>
-#_else
-	<code>
-#_endif
+$LocalizeData =
+	#_if PSScript
+		. $PSScriptRoot\src\LocaleLoader.ps1
+	#_else
+		#_include "$PSScriptRoot/src/locale/en-UK.psd1"
+	#_endif
 ```
 
 现在只支持以下条件： `PSEXE` 和 `PSScript`。  
@@ -161,6 +168,14 @@ ps12exe 会在编译前对脚本进行预处理。
 
 `#_include_as_value` 会将文件内容作为字符串值插入脚本。文件内容不会被预处理。  
 
+在大多数情况下你不需要使用 `#_if` 和 `#_include` 预处理命令来使得脚本在转换为exe后子脚本被正确包含，ps12exe会自动处理类似以下这些情况并认为目标脚本应当被包含处理：
+
+```powershell
+. $PSScriptRoot/another.ps1
+& $PSScriptRoot/another.ps1
+$result = & "$PSScriptRoot/another.ps1" -args
+```
+
 #### `#_!!`
 
 ```powershell
@@ -176,6 +191,34 @@ elseif
 ```
 
 任何以`#_!!`开头的行，其开头的`#_!!`会被去除。
+
+#### `#_pragma`
+
+pragma预处理指令对脚本内容没有任何影响，但会修改编译所使用的参数。  
+以下是一个例子：
+
+```powershell
+PS C:\Users\steve02081504> '12' | ps12exe
+Compiled file written -> 3584 bytes
+PS C:\Users\steve02081504> ./a.exe
+12
+PS C:\Users\steve02081504> '#_pragma Console no
+>> 12' | ps12exe
+Preprocessed script -> 2 bytes
+Compiled file written -> 4096 bytes
+```
+
+可以看到，`#_pragma Console no` 使得生成的exe文件以窗口模式运行，即使我们在编译时没有指定`-noConsole`。
+pragma命令可以设置任何编译参数：
+
+```powershell
+#_pragma noConsole #窗口模式
+#_pragma Console #窗口模式
+#_pragma Console no #窗口模式
+#_pragma Console true #控制台模式
+#_pragma icon $PSScriptRoot/icon.ico #设置图标
+#_pragma title "title" #设置exe标题
+```
 
 ### Minifyer
 

@@ -22,10 +22,13 @@ ps12exeGUI -help
 #>
 [CmdletBinding()]
 param(
+	[ValidatePattern('.(psccfg|xml)$')]
 	[string]$ConfingFile,
 	[string]$Localize,
 	[ValidateSet('Light', 'Dark', 'Auto')]
 	[string]$UIMode = 'Auto',
+	[ValidatePattern('.ps1$')]
+	[string]$PS1File,
 	[switch]$help
 )
 

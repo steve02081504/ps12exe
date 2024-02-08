@@ -177,11 +177,11 @@ function RollUp {
 	}
 }
 function Show-Help {
+	$LocalizeData =
 	#_if PSScript
-		$LocalizeData = . $PSScriptRoot\src\LocaleLoader.ps1
+		. $PSScriptRoot\src\LocaleLoader.ps1
 	#_else
-		#_include_as_value LocalizeDataStr "$PSScriptRoot/src/locale/en-UK.psd1"
-		#_!! $LocalizeData = Invoke-Expression $LocalizeDataStr
+		#_include "$PSScriptRoot/src/locale/en-UK.psd1"
 	#_endif
 	$MyHelp = $LocalizeData.ConsoleHelpData
 	. $PSScriptRoot\src\HelpShower.ps1 -HelpData $MyHelp
@@ -196,38 +196,10 @@ if (-not ($inputFile -or $Content)) {
 	Write-Host "Input not specified!"
 	return
 }
-# 处理兼容旧版参数列表
-if ($x86 -and $x64) {
-	Write-Error "-x86 cannot be combined with -x64"
-	return
-}
-if ($x86) { $architecture = 'x86' }
-if ($x64) { $architecture = 'x64' }
-if ($STA -and $MTA) {
-	Write-Error "-STA cannot be combined with -MTA"
-	return
-}
-if ($STA) { $threadingModel = 'STA' }
-if ($MTA) { $threadingModel = 'MTA' }
-$resourceParamKeys = @('iconFile', 'title', 'description', 'company', 'product', 'copyright', 'trademark', 'version')
-$resourceParamKeys | ForEach-Object {
-	if ($PSBoundParameters.ContainsKey($_)) {
-		$resourceParams[$_] = $PSBoundParameters[$_]
-	}
-}
-$resourceParams.GetEnumerator() | ForEach-Object {
-	if (-not $resourceParamKeys.Contains($_.Key)) {
-		Write-Warning "Parameter -resourceParams has an invalid key: $($_.Key)"
-	}
-}
-if ($configFile -and $noConfigFile) {
-	Write-Error "-configFile cannot be combined with -noConfigFile"
-	return
-}
-if ($noConfigFile) { $configFile = $FALSE }
-# 由于其他的resourceParams参数需要转义，iconFile参数不需要转义，所以提取出来单独处理
-$iconFile = $resourceParams['iconFile']
-$resourceParams.Remove('iconFile')
+
+$Params = $PSBoundParameters
+$ParamList = $MyInvocation.MyCommand.Parameters
+
 function bytesOfString($str) {
 	[system.Text.Encoding]::UTF8.GetBytes($str).Count
 }
@@ -245,6 +217,14 @@ if (!$nested) {
 		if ((bytesOfString $Content) -ne (Get-Item $inputFile -ErrorAction Ignore).Length) {
 			Write-Host "Preprocessed script -> $(bytesOfString $Content) bytes"
 		}
+	}
+	else {
+		$NewContent = Preprocessor ($Content -split '\r?\n') "$PWD\a.ps1"
+		Write-Verbose "Done preprocess input script"
+		if ((bytesOfString $NewContent) -ne (bytesOfString $Content)) {
+			Write-Host "Preprocessed script -> $(bytesOfString $NewContent) bytes"
+		}
+		$Content = $NewContent
 	}
 	if ($minifyer) {
 		Write-Host "Minifying script..."
@@ -276,6 +256,49 @@ else {
 	}
 }
 #_endif
+
+# pragma预处理命令可能会修改参数，所以现在开始参数更新
+$Params.GetEnumerator() | ForEach-Object {
+	Set-Variable -Name $_.Key -Value $_.Value
+}
+
+# 处理兼容旧版参数列表
+if ($x86 -and $x64) {
+	Write-Error "-x86 cannot be combined with -x64"
+	return
+}
+if ($x86) { $architecture = 'x86' }
+if ($x64) { $architecture = 'x64' }
+$Params.architecture = $architecture
+[void]$Params.Remove("x86"); [void]$Params.Remove("x64")
+if ($STA -and $MTA) {
+	Write-Error "-STA cannot be combined with -MTA"
+	return
+}
+if ($STA) { $threadingModel = 'STA' }
+if ($MTA) { $threadingModel = 'MTA' }
+$Params.threadingModel = $threadingModel
+[void]$Params.Remove("STA"); [void]$Params.Remove("MTA")
+$resourceParamKeys = @('iconFile', 'title', 'description', 'company', 'product', 'copyright', 'trademark', 'version')
+$resourceParamKeys | ForEach-Object {
+	if ($Params.ContainsKey($_)) {
+		$resourceParams[$_] = $Params[$_]
+	}
+	[void]$Params.Remove($_)
+}
+$resourceParams.GetEnumerator() | ForEach-Object {
+	if (-not $resourceParamKeys.Contains($_.Key)) {
+		Write-Warning "Parameter -resourceParams has an invalid key: $($_.Key)"
+	}
+}
+if ($configFile -and $noConfigFile) {
+	Write-Error "-configFile cannot be combined with -noConfigFile"
+	return
+}
+if ($noConfigFile) { $configFile = $FALSE }
+# 由于其他的resourceParams参数需要转义，iconFile参数不需要转义，所以提取出来单独处理
+$iconFile = $resourceParams['iconFile']
+$resourceParams.Remove('iconFile')
 
 # 语法检查
 $SyntaxErrors = $null
@@ -317,8 +340,6 @@ function UsingWinPowershell($Boundparameters) {
 	$Params.Remove("inputFile")
 	$Params.Remove("outputFile")
 	$Params.Remove("resourceParams") #使用旧版参数列表传递hashtable参数更为保险
-	$Params.Remove("x86"); $Params.Remove("x64")
-	$Params.Remove("STA"); $Params.Remove("MTA")
 	$TempFile = if ($TempDir) {
 		[System.IO.Path]::Combine($TempDir, 'main.ps1')
 	} else { [System.IO.Path]::GetTempFileName() }
@@ -352,7 +373,7 @@ function UsingWinPowershell($Boundparameters) {
 	return
 }
 if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerShell -and (Get-Command powershell -ErrorAction Ignore)) {
-	UsingWinPowershell $PSBoundParameters
+	UsingWinPowershell $Params
 	return
 }
 #_endif
@@ -369,7 +390,7 @@ if ($winFormsDPIAware) {
 if ($virtualize) {
 	$checkList = @("requireAdmin", "supportOS", "longPaths")
 	foreach ($_ in $checkList) {
-		if ($PSBoundParameters[$_]) {
+		if ($Params[$_]) {
 			Write-Error "-virtualize cannot be combined with -$_"
 			return
 		}
@@ -470,7 +491,7 @@ catch {
 	if ($PSVersionTable.PSEdition -eq "Core" -and (Get-Command powershell -ErrorAction Ignore)) {
 		$_ | Write-Error
 		Write-Host "Roslyn CodeAnalysis failed`nFalling back to Use Windows Powershell with CodeDom...`nYou may want to add -UseWindowsPowerShell to args to skip this fallback in future.`n...or submit a PR to ps12exe repo to fix this!" -ForegroundColor Yellow
-		UsingWinPowershell $PSBoundParameters
+		UsingWinPowershell $Params
 	}
 	else {
 		RollUp

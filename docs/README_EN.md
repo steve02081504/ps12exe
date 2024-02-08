@@ -31,12 +31,18 @@ The following is what I don't have the time/energy/ability to complete at the mo
 ## Install
 
 ```powershell
-Install-Module ps12exe
+Install-Module ps12exe #Install ps12exe module
+Set-ps12exeContextMenu #Set right-click menu
 ```
 
 (you can also clone this repository and run `./ps12exe.ps1` directly)
 
 ## Usage
+
+### Right-click menu
+
+Once you have set `Set-ps12exeContextMenu`, you can quickly compile any ps1 file into an exe or open ps12exeGUI on this file by right-clicking on it.  
+![image](https://github.com/steve02081504/ps12exe/assets/31927825/24e7caf7-2bd8-46aa-8e1d-ee6da44c2dcc)
 
 ### GUI mode
 
@@ -132,11 +138,12 @@ ps12exe preprocesses the script before compiling.
 #### `#_if <condition>`/`#_else`/`#_endif`
 
 ```powershell
-#_if PSEXE
-	#_include ../src/opt/opt_init.ps1
-#_else
-	. $PSScriptRoot/../src/opt/opt_init.ps1
-#_endif
+$LocalizeData =
+	#_if PSScript
+		. $PSScriptRoot\src\LocaleLoader.ps1
+	#_else
+		#_include "$PSScriptRoot/src/locale/en-UK.psd1"
+	#_endif
 ```
 
 Only the following conditions are now supported: `PSEXE` and `PSScript`.  
@@ -162,6 +169,14 @@ The content of the file is preprocessed when `#_include` is used, which allows y
 
 `#_include_as_value` inserts the content of the file as a string value into the script. The content of the file is not preprocessed.  
 
+In most cases you don't need to use the `#_if` and `#_include` preprocessing commands to make the scripts include sub-scripts correctly after conversion to exe. ps12exe automatically handles cases like the following and assumes that the target script should be included:
+
+```powershell
+. $PSScriptRoot/another.ps1
+& $PSScriptRoot/another.ps1
+$result = & "$PSScriptRoot/another.ps1" -args
+```
+
 #### `#_!!`
 
 ```powershell
@@ -177,6 +192,34 @@ elseif
 ```
 
 Any line beginning with `#_!!` line that `#_!!` will be removed.
+
+#### `#_pragma`
+
+The pragma preprocessor directive has no effect on the content of the script, but modifies the parameters used for compilation.  
+The following is an example:
+
+```powershell
+PS C:\Users\steve02081504> '12' | ps12exe
+Compiled file written -> 3584 bytes
+PS C:\Users\steve02081504> ./a.exe
+12
+PS C:\Users\steve02081504> '#_pragma Console no
+>> 12' | ps12exe
+Preprocessed script -> 2 bytes
+Compiled file written -> 4096 bytes
+```
+
+As you can see, `#_pragma Console no` makes the generated exe file run in windowed mode, even if we didn't specify `-noConsole` at compile time.
+The pragma command can set any compilation parameter:
+
+```powershell
+#_pragma noConsole #windowed
+#_pragma Console #windowed
+#_pragma Console no #windowed
+#_pragma Console true #console
+#_pragma icon $PSScriptRoot/icon.ico #set icon
+#_pragma title "title" #set title
+```
 
 ### Minifyer
 

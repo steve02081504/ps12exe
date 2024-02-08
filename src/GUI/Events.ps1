@@ -180,11 +180,15 @@ $Script:refs.SaveCfg2OtherFileButton.add_Click({
 	})
 $Script:refs.MainForm.add_FormClosing({
 		if ($script:ConfingFile) {
-			LoadCfgFile $script:ConfingFile
+			if (!(Test-Path $script:ConfingFile)) {
+				if (-not (AskSaveCfg)) {
+					return
+				}
+			}
+			SaveCfgFile $script:ConfingFile
 		}
 		elseif ($Script:refs.CompileFileTextBox.Text) {
-			[System.Windows.Forms.MessageBox]::Show($Script:LocalizeData.AskSaveCfg, $Script:LocalizeData.AskSaveCfgTitle, [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question) | Out-Null
-			if ($_.Result -eq 'Yes') {
+			if (AskSaveCfg) {
 				SaveCfgFileAs
 			}
 		}

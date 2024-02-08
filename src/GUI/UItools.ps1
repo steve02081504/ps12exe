@@ -1,17 +1,39 @@
 ﻿Add-Type @"
 using System;
 using System.Runtime.InteropServices;
-public class Dwm {
-	[DllImport("dwmapi.dll")]
-	public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
-	public static void SetWindowAttribute(IntPtr hwnd, int attr, int attrValue)
-	{
-		DwmSetWindowAttribute(hwnd, attr, ref attrValue, sizeof(int));
+namespace ps12exeGUI {
+	public class Dwm {
+		[DllImport("dwmapi.dll")]
+		public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+		public static void SetWindowAttribute(IntPtr hwnd, int attr, int attrValue)
+		{
+			DwmSetWindowAttribute(hwnd, attr, ref attrValue, sizeof(int));
+		}
+	}
+	public class Win32 {
+		[DllImport("user32.dll", CharSet = CharSet.Auto)]
+		public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+		// GetConsoleWindow
+		[DllImport("kernel32.dll", ExactSpelling = true)]
+		public static extern IntPtr GetConsoleWindow();
+		[DllImport("user32.dll")]
+		public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
 	}
 }
 "@	-ReferencedAssemblies System.Windows.Forms, System.Drawing, System.Drawing.Primitives, System.Net.Primitives, System.ComponentModel.Primitives, Microsoft.Win32.Primitives
 [void][System.Reflection.Assembly]::LoadWithPartialName("System.Drawing")
 [void][System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
+
+function Set-WindowIcon ($hWnd, $iconPath) {
+	$icon = [System.Drawing.Icon]::ExtractAssociatedIcon($iconPath)
+	$hIcon = $icon.Handle
+	$WM_SETICON = 0x0080
+	$ICON_SMALL = 0
+	$ICON_BIG = 1
+	[ps12exeGUI.Win32]::SendMessage($hWnd, $WM_SETICON, $ICON_SMALL, $hIcon) | Out-Null
+	[ps12exeGUI.Win32]::SendMessage($hWnd, $WM_SETICON, $ICON_BIG, $hIcon) | Out-Null
+	$icon.Dispose()
+}
 
 function Update-ErrorLog {
 	param(

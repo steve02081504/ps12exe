@@ -29,11 +29,11 @@ if ($DarkMode) {
 		$_.ForeColor = [System.Drawing.ColorTranslator]::FromHtml('#FFFFFF')
 	}
 	# DWMWA_USE_IMMERSIVE_DARK_MODE
-	[Dwm]::SetWindowAttribute($Script:refs.MainForm.Handle, 20, 1)
+	[ps12exeGUI.Dwm]::SetWindowAttribute($Script:refs.MainForm.Handle, 20, 1)
 	# DWMWA_MICA_EFFECT
-	[Dwm]::SetWindowAttribute($Script:refs.MainForm.Handle, 1029 , 1)
+	[ps12exeGUI.Dwm]::SetWindowAttribute($Script:refs.MainForm.Handle, 1029 , 1)
 	# DWMWA_BORDER_COLOR
 	$color = 0x181818
 	$color = (($color -band 0xff) -shl 16) + ($color -band 0xff00) + (($color -shr 16) -band 0xff)
-	[Dwm]::SetWindowAttribute($Script:refs.MainForm.Handle, 34, $color)
+	[ps12exeGUI.Dwm]::SetWindowAttribute($Script:refs.MainForm.Handle, 34, $color)
 }

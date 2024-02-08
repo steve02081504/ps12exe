@@ -1,4 +1,8 @@
 ﻿@{
+	# Right click Menu
+	CompileTitle     = "编译到 EXE"
+	OpenInGUI        = "在 ps12exeGUI 中打开"
+	GUICfgFileDesc   = "ps12exe GUI 配置文件"
 	# UI
 	ErrorHead        = "错误："
 	CompileResult    = "编译结果"

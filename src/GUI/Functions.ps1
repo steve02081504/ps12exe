@@ -75,10 +75,37 @@ function Set-UIData {
 	$Script:refs.EnableVirtualizationCheckBox.Checked = $UIData.virtualize
 	$Script:refs.LongPathSupportCheckBox.Checked = $UIData.longPaths
 }
+
+. $PSScriptRoot/../PSObjectToString.ps1
+
+function Get-ps12exeArgsString {
+	param(
+		[hashtable]$Params
+	)
+	$result = 'ps12exe'
+	$Params.GetEnumerator() | ForEach-Object { $result += " -$($_.Key):$(PSObjectToString $_.Value -OneLine)" }
+	$result
+}
+
 function Get-ps12exeArgs {
 	$UIData = Get-UIData
 	$result = $UIData.Clone()
 	$result.minifyer = [System.Management.Automation.Language.Parser]::ParseInput($UIData.minifyer, [ref]$null, [ref]$null).GetScriptBlock()
+	if ($ConfingFile) {
+		# 若icon、inputFile、outputFile、TempDir为相对路径，转换为绝对路径
+		if ($UIData.resourceParams.iconFile -and -not [System.IO.Path]::IsPathRooted($UIData.resourceParams.iconFile)) {
+			$UIData.resourceParams.iconFile = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfingFile -ChildPath $UIData.resourceParams.iconFile))
+		}
+		if ($UIData.inputFile -and -not [System.IO.Path]::IsPathRooted($UIData.inputFile)) {
+			$UIData.inputFile = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfingFile -ChildPath $UIData.inputFile))
+		}
+		if ($UIData.outputFile -and -not [System.IO.Path]::IsPathRooted($UIData.outputFile)) {
+			$UIData.outputFile = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfingFile -ChildPath $UIData.outputFile))
+		}
+		if ($UIData.TempDir -and -not [System.IO.Path]::IsPathRooted($UIData.TempDir)) {
+			$UIData.TempDir = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfingFile -ChildPath $UIData.TempDir))
+		}
+	}
 	$UIData.GetEnumerator() | Where-Object { $_.Value -eq '' } | ForEach-Object { $result.Remove($_.Key) }
 	$result
 }
@@ -128,6 +155,7 @@ function SaveCfgFile {
 	SaveCfgFileAs $ConfingFile
 }
 
-if ($ConfingFile) {
-	LoadCfgFile $ConfingFile
+function AskSaveCfg {
+	[System.Windows.Forms.MessageBox]::Show($Script:LocalizeData.AskSaveCfg, $Script:LocalizeData.AskSaveCfgTitle, [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question) | Out-Null
+	$_.Result -eq 'Yes'
 }
