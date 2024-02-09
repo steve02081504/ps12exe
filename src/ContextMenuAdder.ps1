@@ -59,7 +59,7 @@ function AddFileType {
 	)
 	$key = "Registry::HKEY_CURRENT_USER\Software\Classes\$fileType"
 	New-Item -Path $key -Force | Out-Null
-	if ($DefaultProgram){
+	if ($DefaultProgram) {
 		New-Item -Path "$key\OpenWithProgids" -Force | Out-Null
 		New-ItemProperty -LiteralPath "$key\OpenWithProgids" -Name $DefaultProgram -Value "" -PropertyType String -Force | Out-Null
 	}

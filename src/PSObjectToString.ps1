@@ -1,5 +1,5 @@
 ﻿$script:tabnum = 0
-function PSObjectToString($obj, [Switch]$OneLine=$false) {
+function PSObjectToString($obj, [Switch]$OneLine = $false) {
 	if ($obj -is [System.Collections.IDictionary]) {
 		$script:tabnum += 1
 		$str = ''

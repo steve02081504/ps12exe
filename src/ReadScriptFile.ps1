@@ -74,6 +74,7 @@ function Preprocessor($Content, $FilePath) {
 	$Content = $Result |
 	# 处理#_pragma
 	ForEach-Object {
+		$_ # 对于#_pragma，我们不在预处理时移除它：考虑到它可能被用于$PSEXEscript中
 		if ($_ -match "^\s*#_pragma\s+(?<pragmaname>[a-zA-Z_][a-zA-Z_0-9]+)\s*(?!#.*)$") {
 			$pragmaname = $Matches["pragmaname"]
 			$value = $true
@@ -120,7 +121,7 @@ function Preprocessor($Content, $FilePath) {
 					$Params["no$pragmaname"] = [Switch]-not $value
 				}
 			}
-			elseif($Params[$pragmaname] -is [string]) {
+			elseif ($Params[$pragmaname] -is [string]) {
 				if ($value -match '^\"(?<value>[^\"]*)\"\s*(?!#.*)') {
 					$value = $Matches["value"]
 					$value.Replace('$PSScriptRoot', $ScriptRoot)
@@ -131,7 +132,6 @@ function Preprocessor($Content, $FilePath) {
 				$Params[$pragmaname] = $value
 			}
 		}
-		else { $_ }
 	} |
 	# 处理#_!!<line>
 	ForEach-Object {
