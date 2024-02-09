@@ -12,7 +12,8 @@
 		param (
 			[string]$Localize
 		)
-		$Script:LocalizeData = try { &"$LocalizeDir\$Localize.ps1" } catch {}
+		$file = "$LocalizeDir\$Localize.ps1"
+		if (Test-Path $file) { $Script:LocalizeData = try { &$file } catch {} }
 	},
 	[string]$Localize
 )
