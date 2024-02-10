@@ -56,7 +56,7 @@ $Host.UI.RawUI.WindowTitle = "ps12exe GUI Console Host"
 
 # Set Console Icon
 $consolePtr = [ps12exeGUI.Win32]::GetConsoleWindow()
-Set-WindowIcon $consolePtr "$PSScriptRoot\..\..\img\icon.ico"
+
 [ps12exeGUI.Win32]::ShowWindow($consolePtr, 0) | Out-Null
 
 $Icon = [System.Drawing.Icon]::ExtractAssociatedIcon("$PSScriptRoot\..\..\img\icon.ico")

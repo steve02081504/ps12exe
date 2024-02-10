@@ -20,7 +20,11 @@ public class ExplorerRefresher {
 }
 '@
 
-function AddCommandsToContextMenu {
+function PwshCodeAsCommand($command) {
+	"powershell.exe -Command `"if(-Not (Get-Module -ListAvailable -Name ps12exe)){ Install-Module ps12exe -Force -Scope CurrentUser -ErrorAction Ignore }; Import-Module ps12exe -ErrorAction Stop; $command`""
+}
+
+function AddCommandToContextMenu {
 	param (
 		$className,
 		$fileType,
@@ -42,21 +46,14 @@ function AddCommandsToContextMenu {
 	}
 
 	New-Item -Path "$key\Command" -Force | Out-Null
-	Set-ItemProperty -LiteralPath "$key\Command" -Name "(Default)" -Value "powershell.exe -Command `"if(-Not (Get-Module -ListAvailable -Name ps12exe)){ Install-Module ps12exe -Force -Scope CurrentUser -ErrorAction Ignore }; Import-Module ps12exe -ErrorAction Stop; $command`""
+	Set-ItemProperty -LiteralPath "$key\Command" -Name "(Default)" -Value $command
 }
 
-function RemoveCommandsFromContextMenu {
-	param (
-		$className
-	)
+function RemoveCommandsFromContextMenu($className) {
 	Remove-Item -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\*\shell\$className" -Recurse
 }
 
-function AddFileType {
-	param (
-		$fileType,
-		$DefaultProgram
-	)
+function AddFileType($fileType, $DefaultProgram) {
 	$key = "Registry::HKEY_CURRENT_USER\Software\Classes\$fileType"
 	New-Item -Path $key -Force | Out-Null
 	if ($DefaultProgram) {
@@ -65,10 +62,7 @@ function AddFileType {
 	}
 }
 
-function RemoveFileType {
-	param (
-		$fileType
-	)
+function RemoveFileType($fileType) {
 	Remove-Item -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\$fileType" -Recurse
 }
 
@@ -92,23 +86,19 @@ function AddFileHandlerProgram {
 	New-ItemProperty -LiteralPath $key -Name "FriendlyTypeName" -Value $FileDescription -PropertyType String -Force | Out-Null
 
 	New-Item -Path "$key\shell\open\command" -Force | Out-Null
-	Set-ItemProperty -LiteralPath "$key\shell\open\command" -Name "(Default)" -Value "powershell.exe -Command `"if(-Not (Get-Module -ListAvailable -Name ps12exe)){ Install-Module ps12exe -Force -Scope CurrentUser -ErrorAction Ignore }; Import-Module ps12exe -ErrorAction Stop; $command`""
+	Set-ItemProperty -LiteralPath "$key\shell\open\command" -Name "(Default)" -Value $command
 }
 
-function RemoveFileHandlerProgram {
-	param (
-		$className
-	)
+function RemoveFileHandlerProgram($className) {
 	Remove-Item -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\$className" -Recurse
 }
 
 $LocalizeData = . $PSScriptRoot\LocaleLoader.ps1
 function Enable-ps12exeContextMenu {
-	AddCommandsToContextMenu "ps12exeCompile" "ps1" $LocalizeData.CompileTitle "ps12exe '%1'"
-	AddCommandsToContextMenu "ps12exeGUIOpen" "ps1" $LocalizeData.OpenInGUI "ps12exeGUI -PS1File '%1'"
-	AddFileHandlerProgram "ps12exeGUI.psccfg" "ps12exeGUI '%1'" $LocalizeData.GUICfgFileDesc 
+	AddCommandToContextMenu "ps12exeCompile" "ps1" $LocalizeData.CompileTitle (PwshCodeAsCommand "ps12exe '%1';pause")
+	AddCommandToContextMenu "ps12exeGUIOpen" "ps1" $LocalizeData.OpenInGUI (PwshCodeAsCommand "ps12exeGUI -PS1File '%1'")
+	AddFileHandlerProgram "ps12exeGUI.psccfg" (PwshCodeAsCommand "ps12exeGUI '%1'") $LocalizeData.GUICfgFileDesc 
 	AddFileType ".psccfg" "ps12exeGUI.psccfg"
-	# restart explorer to apply the changes
 	[ExplorerRefresher]::RefreshSettings()
 	[ExplorerRefresher]::RefreshDesktop()
 }
@@ -117,7 +107,6 @@ function Disable-ps12exeContextMenu {
 	RemoveCommandsFromContextMenu "ps12exeGUIOpen"
 	RemoveFileHandlerProgram "ps12exeGUI.psccfg"
 	RemoveFileType ".psccfg"
-	# restart explorer to apply the changes
 	[ExplorerRefresher]::RefreshSettings()
 	[ExplorerRefresher]::RefreshDesktop()
 }

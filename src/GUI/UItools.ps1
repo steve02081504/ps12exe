@@ -11,9 +11,6 @@ namespace ps12exeGUI {
 		}
 	}
 	public class Win32 {
-		[DllImport("user32.dll", CharSet = CharSet.Auto)]
-		public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
-		// GetConsoleWindow
 		[DllImport("kernel32.dll", ExactSpelling = true)]
 		public static extern IntPtr GetConsoleWindow();
 		[DllImport("user32.dll")]
@@ -23,17 +20,6 @@ namespace ps12exeGUI {
 "@	-ReferencedAssemblies System.Windows.Forms, System.Drawing, System.Drawing.Primitives, System.Net.Primitives, System.ComponentModel.Primitives, Microsoft.Win32.Primitives
 [void][System.Reflection.Assembly]::LoadWithPartialName("System.Drawing")
 [void][System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms")
-
-function Set-WindowIcon ($hWnd, $iconPath) {
-	$icon = [System.Drawing.Icon]::ExtractAssociatedIcon($iconPath)
-	$hIcon = $icon.Handle
-	$WM_SETICON = 0x0080
-	$ICON_SMALL = 0
-	$ICON_BIG = 1
-	[ps12exeGUI.Win32]::SendMessage($hWnd, $WM_SETICON, $ICON_SMALL, $hIcon) | Out-Null
-	[ps12exeGUI.Win32]::SendMessage($hWnd, $WM_SETICON, $ICON_BIG, $hIcon) | Out-Null
-	$icon.Dispose()
-}
 
 function Update-ErrorLog {
 	param(
@@ -63,9 +49,11 @@ function ConvertFrom-WinFormsXML {
 		if ( $Xml.ToString() -ne 'SplitterPanel' ) { $newControl = New-Object System.Windows.Forms.$($Xml.ToString()) }
 
 		if ( $ParentControl ) {
-			if ( $Xml.ToString() -eq 'ContextMenuStrip' ) { $ParentControl.ContextMenuStrip = $newControl }
-			elseif ( $Xml.ToString() -eq 'SplitterPanel' ) { $newControl = $ParentControl.$($Xml.Name.Split('_')[-1]) }
-			else { $ParentControl.Controls.Add($newControl) }
+			switch ($Xml.ToString()) {
+				'ContextMenuStrip' { $ParentControl.ContextMenuStrip = $newControl }
+				'SplitterPanel' { $newControl = $ParentControl.$($Xml.Name.Split('_')[-1]) }
+				default { $ParentControl.Controls.Add($newControl) }
+			}
 		}
 
 		$Xml.Attributes | ForEach-Object {
@@ -86,17 +74,16 @@ function ConvertFrom-WinFormsXML {
 			elseif ( $null -ne $newControl.$attribName ) {
 				$value = $attrib.Value
 				if ( $newControl.$attribName.GetType().Name -eq 'Boolean' ) {
-					if ( $attrib.Value -eq 'True' ) { $value = $true } else { $value = $false }
+					$value = $attrib.Value -eq 'True'
 				}
 				$newControl.$attribName = $value
 			}
 
 			if (( $attrib.ToString() -eq 'Name' ) -and ( $Reference -ne '' )) {
-				try { $refHashTable = Get-Variable -Name $Reference -Scope Script -ErrorAction Stop }
-				catch {
+				if (-not (Test-Path variable:Script:$Reference)) {
 					New-Variable -Name $Reference -Scope Script -Value @{} | Out-Null
-					$refHashTable = Get-Variable -Name $Reference -Scope Script -ErrorAction SilentlyContinue
 				}
+				$refHashTable = Get-Variable -Name $Reference -Scope Script
 
 				$refHashTable.Value.Add($attrib.Value, $newControl)
 			}
