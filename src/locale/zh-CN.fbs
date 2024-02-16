@@ -82,6 +82,7 @@
     <Button Name="SaveCfg2OtherFileButton" Location="798,86" Size="85,31" Text="配置另存为" />
     <Button Name="CompileButton" Location="802,561" Size="81,27" Text="编译" />
     <Label Name="CfgFileLabel" Location="7,582" Size="778,21" Text="未选中配置文件" />
+    <Button Name="DarkModeSetButton" BackgroundImageLayout="Stretch" Location="802,472" Size="51,51" />
   </Form>
   <OpenFileDialog Name="OpenCfgFileDialog" DefaultExt="psccfg" Filter="配置文件(*.psccfg)|*.psccfg" Title="选择配置文件" />
   <SaveFileDialog Name="SaveCfgFileDialog" DefaultExt="psccfg" Filter="配置文件(*.psccfg)|*.psccfg" Title="保存配置文件" />

@@ -18,9 +18,9 @@ param (
 
 . "$PSScriptRoot\AutoFixer.ps1"
 
-. "$PSScriptRoot\Events.ps1"
-
 . "$PSScriptRoot\DarkMode.ps1"
+
+. "$PSScriptRoot\Events.ps1"
 
 #region Other Actions Before ShowDialog
 

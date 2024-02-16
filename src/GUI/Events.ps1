@@ -178,6 +178,12 @@ $Script:refs.SaveCfgButton.add_Click({
 $Script:refs.SaveCfg2OtherFileButton.add_Click({
 		SaveCfgFileAs
 	})
+$Script:DarkMode = $DarkMode
+$Script:refs.DarkModeSetButton.BackGroundImage = [System.Drawing.Image]::FromFile("$PSScriptRoot\..\..\img\darklight.png")
+$Script:refs.DarkModeSetButton.add_Click({
+		$Script:DarkMode = !$Script:DarkMode
+		Set-DarkMode $Script:DarkMode
+	})
 $Script:refs.MainForm.add_FormClosing({
 		if ($script:ConfingFile) {
 			if (!(Test-Path $script:ConfingFile)) {

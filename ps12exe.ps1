@@ -181,7 +181,7 @@ function Show-Help {
 	#_if PSScript
 		. $PSScriptRoot\src\LocaleLoader.ps1
 	#_else
-		#_include "$PSScriptRoot/src/locale/en-UK.psd1"
+		#_include "$PSScriptRoot/src/locale/en-UK.ps1"
 	#_endif
 	$MyHelp = $LocalizeData.ConsoleHelpData
 	. $PSScriptRoot\src\HelpShower.ps1 -HelpData $MyHelp

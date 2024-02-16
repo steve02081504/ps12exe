@@ -82,6 +82,7 @@
     <Button Name="SaveCfg2OtherFileButton" Location="801,94" Size="77,42" Text="Save Config As" />
     <Button Name="CompileButton" Location="807,558" Size="75,30" Text="Compile" />
     <Label Name="CfgFileLabel" Location="8,582" Size="778,22" Text="No configuration file has been selected, old chap." />
+    <Button Name="DarkModeSetButton" BackgroundImageLayout="Stretch" Location="807,474" Size="51,51" />
   </Form>
   <OpenFileDialog Name="OpenCfgFileDialog" DefaultExt="psccfg" Filter="Configuration Files (*.psccfg)|*.psccfg" Title="Select a configuration file, if you'd be so kind" />
   <SaveFileDialog Name="SaveCfgFileDialog" DefaultExt="psccfg" Filter="Configuration Files (*.psccfg)|*.psccfg" Title="Save the configuration file, old chap" />
