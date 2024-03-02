@@ -44,7 +44,7 @@ function AstAnalyze($Ast) {
 		}
 		elseif ($Ast -is [System.Management.Automation.Language.InvokeMemberExpressionAst]) {
 			if ($script:ConstTypes -notcontains $Ast.Expression.TypeName) {
-				if($Ast.Expression.TypeName) {
+				if ($Ast.Expression.TypeName) {
 					$script:AnalyzeResult.IsConst = $false
 					$script:AnalyzeResult.UsedNonConstFunctions += "[$($Ast.Expression.TypeName)]::$($Ast.Member.Value)"
 				}

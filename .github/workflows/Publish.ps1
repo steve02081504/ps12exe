@@ -27,6 +27,18 @@ try {
 	Set-Content -Path "$repoPath/ps12exe.psd1" -Value $(PSObjectToString($packData)) -NoNewline -Encoding UTF8 -Force
 	# 遍历文件列表，移除.开头的文件和文件夹
 	Get-ChildItem -Path $repoPath -Recurse | Where-Object { $_.Name -match '^\.' } | ForEach-Object { Remove-Item -Path $_.FullName -Force -Recurse }
+	# 对于每个fbs文件，以xml格式读取，再用linux换行符+tab缩进写回源文件
+	$XmlWriterSettings = New-Object System.Xml.XmlWriterSettings
+	$XmlWriterSettings.Indent = $true
+	$XmlWriterSettings.IndentChars = "`t"
+	$XmlWriterSettings.NewLineChars = "`n"
+	Get-ChildItem -Path $repoPath -Recurse -Filter '*.fbs' | ForEach-Object {
+		$XmlDoc = [xml](Get-Content -Path $_.FullName)
+		$XmlWriter = [System.XML.XmlWriter]::Create($_.FullName, $XmlWriterSettings)
+		$XmlDoc.Save($XmlWriter)
+		$XmlWriter.Flush()
+		$XmlWriter.Close()
+	}
 	# 打包发布
 	Install-Module -Name 'PowerShellGet' -Force -Scope CurrentUser | Out-Null
 	$errnum = $Error.Count

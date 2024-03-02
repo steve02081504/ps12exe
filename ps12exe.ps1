@@ -435,7 +435,8 @@ $AstAnalyzeResult.UsedNonConstFunctions | ForEach-Object {
 		if (Get-Command $_ -ErrorAction Ignore) {
 			$FindedCmdlets += $_
 		}
-		elseif(-not $_.Contains(']::')) { # 跳过成员函数，因为解析Add-Type太过复杂
+		# 跳过成员函数，因为解析Add-Type太过复杂
+		elseif (-not $_.Contains(']::')) {
 			$NotFindedCmdlets += $_
 		}
 	}
