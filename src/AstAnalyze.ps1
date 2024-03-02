@@ -13,9 +13,10 @@ function ShowAstOfExpr($Expr) {
 }
 #>
 function AstAnalyze($Ast) {
-	$script:ConstCommands = @('Write-Host', 'echo', 'Write-Output', 'Write-Debug', 'Write-Information', 'ConvertFrom-Json', 'ConvertTo-Json')
-	$script:ConstVariables = @('?', '^', '$', 'Error', 'false', 'IsCoreCLR', 'IsLinux', 'IsMacOS', 'IsWindows', 'null', 'true', 'PSEXEScript')
-	$script:EffectVariables = @('ConfirmPreference', 'DebugPreference', 'EnabledExperimentalFeatures', 'ErrorActionPreference', 'ErrorView', 'ExecutionContext', 'FormatEnumerationLimit', 'HOME', 'Host', 'InformationPreference', 'input', 'MaximumHistoryCount', 'MyInvocation', 'NestedPromptLevel', 'OutputEncoding', 'PID', 'PROFILE', 'ProgressPreference', 'PSBoundParameters', 'PSCommandPath', 'PSCulture', 'PSDefaultParameterValues', 'PSEdition', 'PSEmailServer', 'PSGetAPI', 'PSHOME', 'PSNativeCommandArgumentPassing', 'PSNativeCommandUseErrorActionPreference', 'PSScriptRoot', 'PSSessionApplicationName', 'PSSessionConfigurationName', 'PSSessionOption', 'PSStyle', 'PSUICulture', 'PSVersionTable', 'PWD', 'ShellId', 'StackTrace', 'VerbosePreference', 'WarningPreference', 'WhatIfPreference', 'WhatIfPreference')
+	$script:ConstCommands = @('Write-Host', 'echo', 'Write-Output', 'Write-Debug', 'Write-Information', 'ConvertFrom-Json', 'ConvertTo-Json', 'Out-Host')
+	$script:ConstVariables = @('?', '^', '$', 'Error', 'false', 'IsCoreCLR', 'IsLinux', 'IsMacOS', 'IsWindows', 'null', 'true', 'PSEXEScript', 'Out-Host')
+	$script:ConstTypes = @('Boolean', 'Char', 'DateTime', 'Decimal', 'Double', 'Int16', 'Int32', 'Int64', 'Int8', 'Single', 'String', 'UInt16', 'UInt32', 'UInt64', 'UInt8', 'Void', 'Regex', 'System.Text.RegularExpressions.RegexOptions')
+	$script:EffectVariables = @('ConfirmPreference', 'DebugPreference', 'EnabledExperimentalFeatures', 'ErrorActionPreference', 'ErrorView', 'ExecutionContext', 'FormatEnumerationLimit', 'HOME', 'Host', 'InformationPreference', 'input', 'MaximumHistoryCount', 'MyInvocation', 'NestedPromptLevel', 'OutputEncoding', 'PID', 'PROFILE', 'ProgressPreference', 'PSBoundParameters', 'PSCommandPath', 'PSCulture', 'PSDefaultParameterValues', 'PSEdition', 'PSEmailServer', 'PSGetAPI', 'PSHOME', 'PSNativeCommandArgumentPassing', 'PSNativeCommandUseErrorActionPreference', 'PSScriptRoot', 'PSSessionApplicationName', 'PSSessionConfigurationName', 'PSSessionOption', 'PSStyle', 'PSUICulture', 'PSVersionTable', 'PWD', 'ShellId', 'StackTrace', 'VerbosePreference', 'WarningPreference', 'WhatIfPreference')
 	$script:AnalyzeResult = @{
 		IsConst                  = $true
 		ImporttedExternalScripts = $false
@@ -33,9 +34,26 @@ function AstAnalyze($Ast) {
 			}
 		}
 		elseif ($Ast -is [System.Management.Automation.Language.VariableExpressionAst]) {
-			if ($script:ConstVariables -notcontains $Ast.VariablePath.UserPath) {
+			if ($script:EffectVariables -contains $Ast.VariablePath.UserPath) {
 				$script:AnalyzeResult.IsConst = $false
 				$script:AnalyzeResult.UsedNonConstVariables += $Ast.VariablePath.UserPath
+			}
+		}
+		elseif ($Ast -is [System.Management.Automation.Language.TypeDefinitionAst]) {
+			$script:ConstTypes += $Ast.Name
+		}
+		elseif ($Ast -is [System.Management.Automation.Language.InvokeMemberExpressionAst]) {
+			if ($script:ConstTypes -notcontains $Ast.Expression.TypeName) {
+				if($Ast.Expression.TypeName) {
+					$script:AnalyzeResult.IsConst = $false
+					$script:AnalyzeResult.UsedNonConstFunctions += "[$($Ast.Expression.TypeName)]::$($Ast.Member.Value)"
+				}
+			}
+		}
+		elseif ($Ast -is [System.Management.Automation.Language.TypeExpressionAst]) {
+			if ($script:ConstTypes -notcontains $Ast.TypeName) {
+				$script:AnalyzeResult.IsConst = $false
+				$script:AnalyzeResult.UsedNonConstVariables += "[$($Ast.TypeName)]"
 			}
 		}
 		elseif ($Ast -is [System.Management.Automation.Language.FunctionDefinitionAst]) {
@@ -52,9 +70,7 @@ function AstAnalyze($Ast) {
 			$ConstVariablesBackup = $script:ConstVariables
 			$script:ConstVariables += 'args'
 			foreach ($Statement in $Ast.Statements) {
-				if ($null -ne $Statement.Find($function:AstMapper, $true)) {
-					$script:AnalyzeResult.IsConst = $false
-				}
+				$Statement.Find($function:AstMapper, $true)
 			}
 			$script:ConstCommands = $ConstCommandsBackup
 			$script:ConstVariables = $ConstVariablesBackup
@@ -65,6 +81,6 @@ function AstAnalyze($Ast) {
 	$script:AnalyzeResult.UsedNonConstVariables = $script:AnalyzeResult.UsedNonConstVariables | Sort-Object -Unique | Where-Object { $_ }
 	$script:AnalyzeResult.UsedNonConstFunctions = $script:AnalyzeResult.UsedNonConstFunctions | Sort-Object -Unique | Where-Object { $_ }
 	$local:AnalyzeResult = $script:AnalyzeResult
-	Remove-Variable -Name @('ConstCommands', 'ConstVariables', 'EffectVariables', 'AnalyzeResult') -Scope Script
+	Remove-Variable -Name @('ConstCommands', 'ConstVariables', 'ConstTypes', 'EffectVariables', 'AnalyzeResult') -Scope Script
 	return $local:AnalyzeResult
 }
