@@ -12,16 +12,31 @@ function ShowAstOfExpr($Expr) {
 	ShowAst $Ast
 }
 #>
+<#
+AI prompt: 用你所知的最刁钻的方式和最花哨的技术写一段powershell5能用的、没有副作用、运行结果是常量的ps程序，以```pwsh包裹起来发送给我。
+我需要测试一段评估程序是不是常量程序的程序
+#>
 function AstAnalyze($Ast) {
 	$script:ConstCommands = @('Write-Host', 'echo', 'Write-Output', 'Write-Debug', 'Write-Information', 'ConvertFrom-Json', 'ConvertTo-Json', 'Out-Host')
 	$script:ConstVariables = @('?', '^', '$', 'Error', 'false', 'IsCoreCLR', 'IsLinux', 'IsMacOS', 'IsWindows', 'null', 'true', 'PSEXEScript', 'Out-Host')
-	$script:ConstTypes = @('Boolean', 'Char', 'DateTime', 'Decimal', 'Double', 'Int16', 'Int32', 'Int64', 'Int8', 'Single', 'String', 'UInt16', 'UInt32', 'UInt64', 'UInt8', 'Void', 'Regex', 'System.Text.RegularExpressions.RegexOptions')
+	$script:ConstTypes = @('Boolean', 'Char', 'DateTime', 'Decimal', 'Double', 'Int16', 'Int32', 'Int64', 'Int8', 'Int', 'Single', 'String', 'UInt16', 'UInt32', 'UInt64', 'UInt8', 'Void', 'Regex', 'System.Text.RegularExpressions.RegexOptions', 'HashTable', 'OrderedDictionary', 'PSObject', 'PSVariable', 'PSNoteProperty', 'PSMemberInfo', 'PSCustomObject', 'Math')
 	$script:EffectVariables = @('ConfirmPreference', 'DebugPreference', 'EnabledExperimentalFeatures', 'ErrorActionPreference', 'ErrorView', 'ExecutionContext', 'FormatEnumerationLimit', 'HOME', 'Host', 'InformationPreference', 'input', 'MaximumHistoryCount', 'MyInvocation', 'NestedPromptLevel', 'OutputEncoding', 'PID', 'PROFILE', 'ProgressPreference', 'PSBoundParameters', 'PSCommandPath', 'PSCulture', 'PSDefaultParameterValues', 'PSEdition', 'PSEmailServer', 'PSGetAPI', 'PSHOME', 'PSNativeCommandArgumentPassing', 'PSNativeCommandUseErrorActionPreference', 'PSScriptRoot', 'PSSessionApplicationName', 'PSSessionConfigurationName', 'PSSessionOption', 'PSStyle', 'PSUICulture', 'PSVersionTable', 'PWD', 'ShellId', 'StackTrace', 'VerbosePreference', 'WarningPreference', 'WhatIfPreference')
 	$script:AnalyzeResult = @{
 		IsConst                  = $true
 		ImporttedExternalScripts = $false
 		UsedNonConstVariables    = @()
 		UsedNonConstFunctions    = @()
+	}
+	$script:ConstTypes = $script:ConstTypes | ForEach-Object { ($_ -as [Type]).FullName } | Where-Object { $_ -ne $null }
+	function IsConstType([string]$typename) {
+		$typename = $typename.TrimEnd('[]')
+		if ($script:ConstTypes -contains ($typename -as [Type]).FullName) {
+			return $true
+		}
+		if ($script:ConstTypes -contains $typename) {
+			return $true
+		}
+		return $false
 	}
 	function AstMapper($Ast) {
 		if ($Ast -is [System.Management.Automation.Language.CommandAst]) {
@@ -51,7 +66,7 @@ function AstAnalyze($Ast) {
 			}
 		}
 		elseif ($Ast -is [System.Management.Automation.Language.TypeExpressionAst]) {
-			if ($script:ConstTypes -notcontains $Ast.TypeName) {
+			if (-not (IsConstType $Ast.TypeName)) {
 				$script:AnalyzeResult.IsConst = $false
 				$script:AnalyzeResult.UsedNonConstVariables += "[$($Ast.TypeName)]"
 			}
