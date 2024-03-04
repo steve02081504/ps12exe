@@ -159,7 +159,10 @@ Param(
 	[String]$version,
 	# 内部参数，不进入文档
 	[Parameter(DontShow)]
-	[Switch]$nested
+	[Switch]$nested,
+	# 兼容参数，不进入文档
+	[Parameter(DontShow)]
+	[string]$Localize
 )
 $Verbose = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent
 function RollUp {
@@ -179,7 +182,7 @@ function RollUp {
 function Show-Help {
 	$LocalizeData =
 	#_if PSScript
-		. $PSScriptRoot\src\LocaleLoader.ps1
+		. $PSScriptRoot\src\LocaleLoader.ps1 -Localize $Localize
 	#_else
 		#_include "$PSScriptRoot/src/locale/en-UK.ps1"
 	#_endif
