@@ -93,8 +93,8 @@ function RemoveFileHandlerProgram($className) {
 	Remove-Item -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\$className" -Recurse
 }
 
-$LocalizeData = . $PSScriptRoot\LocaleLoader.ps1
-function Enable-ps12exeContextMenu {
+function Enable-ps12exeContextMenu($Localize) {
+	$LocalizeData = . $PSScriptRoot\LocaleLoader.ps1 -Localize $Localize
 	AddCommandToContextMenu "ps12exeCompile" "ps1" $LocalizeData.CompileTitle (PwshCodeAsCommand "ps12exe '%1';pause")
 	AddCommandToContextMenu "ps12exeGUIOpen" "ps1" $LocalizeData.OpenInGUI (PwshCodeAsCommand "ps12exeGUI -PS1File '%1'")
 	AddFileHandlerProgram "ps12exeGUI.psccfg" (PwshCodeAsCommand "ps12exeGUI '%1'") $LocalizeData.GUICfgFileDesc 
@@ -102,7 +102,7 @@ function Enable-ps12exeContextMenu {
 	[ExplorerRefresher]::RefreshSettings()
 	[ExplorerRefresher]::RefreshDesktop()
 }
-function Disable-ps12exeContextMenu {
+function Disable-ps12exeContextMenu($Localize) {
 	RemoveCommandsFromContextMenu "ps12exeCompile"
 	RemoveCommandsFromContextMenu "ps12exeGUIOpen"
 	RemoveFileHandlerProgram "ps12exeGUI.psccfg"
