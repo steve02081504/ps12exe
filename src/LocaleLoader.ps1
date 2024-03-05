@@ -20,7 +20,20 @@
 
 if (!$Localize) {
 	# 本机语言
-	$Localize = (Get-Culture).Name
+	$Localize = $env:LANG
+	if (!$Localize) { $Localize = $env:LANGUAGE }
+	if (!$Localize) { $Localize = $env:LC_ALL }
+	if (!$Localize -and (Get-Command locale -ErrorAction Ignore)) {
+		$Localize = try {
+			&locale -uU
+		} catch {}
+	}
+	if ($Localize) {
+		$Localize = $Localize.Split('.')[0].Replace('_', '-')
+	}
+	else{
+		$Localize = (Get-Culture).Name
+	}
 }
 
 $LocalizeDir = "$PSScriptRoot/locale"
