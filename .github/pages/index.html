@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>ps12exe Online</title>
+</head>
+
+<body>
+	<textarea style="width: 98%; height:95vh;"></textarea>
+	<br>
+	<button id="compileButton" onclick="compileCode()">编译</button>
+	<script type="text/javascript">
+		var language = navigator.language || navigator.userLanguage;
+		var compileMessage = "已将编译用的Powershell代码复制到剪切板！\n现在你只需要在Powershell里粘贴并运行代码就可以得到编译结果了！";
+		switch (language) {
+			case 'zh':
+			case 'zh-CN':
+			case 'zh-TW':
+			case 'zh-HK':
+				break;
+			default:
+				document.getElementById('compileButton').textContent = 'Compile';
+				compileMessage = "Copied the compile code to clipboard! \nNow you can just paste and run the code in Powershell to get the compiled result!";
+				break;
+		}
+		function compileCode() {
+			var code = document.getElementsByTagName('textarea')[0].value;
+			var compileCodebase = code.replace("\'", "''");
+			var compileCode = "if (-not (Get-Module -ListAvailable ps12exe)) { Install-Module ps12exe -Force -Scope CurrentUser };" +
+			"'"+compileCodebase+"' | ps12exe";
+			navigator.clipboard.writeText(compileCode);
+			alert(compileMessage);
+		}
+	</script>
+</body>
+
+</html>
