@@ -18,6 +18,31 @@
 			case 'zh-TW':
 			case 'zh-HK':
 				break;
+			case 'ru':
+			case 'ru-RU':
+				document.getElementById('compileButton').textContent = 'Скомпилировать';
+				compileMessage = "Скопирован код для компиляции в буфер обмена! \nТеперь вы можете просто вставить и выполнить код в Powershell, чтобы получить скомпилированный результат!";
+				break;
+			case 'ja':
+			case 'ja-JP':
+				document.getElementById('compileButton').textContent = 'コンパイル';
+				compileMessage = "コンパイル用のPowershellコードがクリップボードにコピーされました！\nPowershellでコードを貼り付けて実行するだけで、コンパイル結果が得られます！";
+				break;
+			case 'ko':
+			case 'ko-KR':
+				document.getElementById('compileButton').textContent = '컴파일';
+				compileMessage = "컴파일에 사용되는 Powershell 코드가 클립보드에 복사되었습니다! \n이제 Powershell에서 코드를 붙여넣고 실행하면 컴파일된 결과를 얻을 수 있습니다!";
+				break;
+			case 'es':
+			case 'es-ES':
+				document.getElementById('compileButton').textContent = 'Compilar';
+				compileMessage = "Se ha copiado el código de compilación al portapapeles. \nAhora solo tienes que pegar y ejecutar el código en Powershell para obtener el resultado compilado.";
+				break;
+			case 'pt':
+			case 'pt-PT':
+				document.getElementById('compileButton').textContent = 'Compilar';
+				compileMessage = "O código de compilação foi copiado para o clipboard. \nAgora você pode colar e executar o código em Powershell para obter o resultado compilado.";
+				break;
 			default:
 				document.getElementById('compileButton').textContent = 'Compile';
 				compileMessage = "Copied the compile code to clipboard! \nNow you can just paste and run the code in Powershell to get the compiled result!";
