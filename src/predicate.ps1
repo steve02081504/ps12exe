@@ -1,7 +1,9 @@
-﻿function IsDisable($value) {
-	@('off', 'false', 'N', 'No', 'unset', 0, 'disable', '$false') -contains "$value"
+﻿$DisablePredicates = @('off', 'false', 'N', 'No', 'unset', 0, 'disable', '$false')
+function IsDisable($value) {
+	$DisablePredicates -contains "$value"
 }
 
+$EnablePredicates = @('on', 'true', 'Y', 'Yes', 'set', 1, 'enable', '$true')
 function IsEnable($value) {
-	@('on', 'true', 'Y', 'Yes', 'set', 1, 'enable', '$true') -contains "$value"
+	$EnablePredicates -contains "$value"
 }

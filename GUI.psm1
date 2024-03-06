@@ -9,6 +9,16 @@
 . $PSScriptRoot\src\predicate.ps1
 function Set-ps12exeContextMenu(
 	[ValidateScript({ IsEnable $_ -or IsDisable $_ -or $_ -eq 'reset' })]
+	[ArgumentCompleter({
+		param($Command, $Parameter, $WordToComplete, $CommandAst, $FakeBoundParams)
+		. $PSScriptRoot\src\predicate.ps1 # 重新导入变量
+		if (-not $WordToComplete) {
+			@('enable', 'disable', 'reset')
+		}
+		else {
+			@($DisablePredicates; $EnablePredicates; 'reset') | Where-Object { $_ -like "$WordToComplete*" }
+		}
+	})]
 	$action = 'on',
 	[string]$Localize
 ) {
