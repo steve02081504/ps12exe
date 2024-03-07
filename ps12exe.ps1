@@ -314,7 +314,7 @@ $SyntaxErrors = $null
 $Tokens = $null
 $AST = [System.Management.Automation.Language.Parser]::ParseInput($Content, [ref]$Tokens, [ref]$SyntaxErrors)
 if ($SyntaxErrors) {
-	Write-Error "Syntax error in script: $SyntaxErrors"
+	Write-Error "Syntax error in script: $SyntaxErrors" -Category 'ParserError' -ErrorId 'ParseError' -TargetObject $SyntaxErrors
 	return
 }
 $Content = $AST.ToString()

@@ -17,6 +17,10 @@
 		const userInput = document.getElementById("inputText");
 		const a = document.getElementById("downloadLink");
 		function compileCode() {
+			if (!userInput.value) {
+				alert("No code to compile");
+				return;
+			}
 			fetch("./compile", {
 				method: "POST",
 				body: userInput.value

@@ -69,9 +69,17 @@ function HandleRequest($context) {
 		$userInput = $Reader.ReadToEnd()
 		$Reader.Close()
 		$Reader.Dispose()
+		if (!$userInput) {
+			$context.Response.ContentType = "text/plain"
+			$context.Response.ContentLength64 = 0
+			$context.Response.Close()
+			return
+		}
 		# new uuid
 		$uuid = [Guid]::NewGuid().ToString()
 		$compiledExePath = "$PSScriptRoot/outputs/$uuid.exe"
+
+		New-Item -Path $PSScriptRoot/outputs -ItemType Directory -Force | Out-Null
 
 		# 编译代码
 		try {
@@ -81,7 +89,10 @@ function HandleRequest($context) {
 			Remove-Item $compiledExePath -Force
 		}
 		catch {
-			Write-Host "$_" -ForegroundColor Red
+			# 若ErrorId不是ParseError则写入日志
+			if ($_.ErrorId -ine "ParseError") {
+				Write-Host $_ -ForegroundColor Red
+			}
 			$context.Response.ContentType = "text/plain"
 			$buffer = [System.Text.Encoding]::UTF8.GetBytes("$_")
 		}
@@ -109,4 +120,6 @@ finally {
 	Write-Host $LocalizeData.ServerStopped -ForegroundColor Yellow
 	# Restore Console Window Title
 	$Host.UI.RawUI.WindowTitle = $BackUpTitle
+	# 清空缓存
+	Remove-Item $PSScriptRoot/outputs/* -Recurse -Force
 }

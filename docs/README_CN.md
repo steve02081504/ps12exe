@@ -63,6 +63,14 @@ ps12exe .\source.ps1 .\target.exe
 
 将`"Hello World!"`编译为可执行文件输出到`.\a.exe`。
 
+### 自托管Web服务
+
+```powershell
+Start-ps12exeWebServer
+```
+
+启动一个允许用户在线编译powershell代码的Web服务。
+
 ## 参数
 
 ### GUI参数

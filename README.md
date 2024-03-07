@@ -61,6 +61,14 @@ compiles `source.ps1` into the executable target.exe (if `.\target.exe` is omitt
 
 compiles `"Hello World!"` into the executable `.\a.exe`.
 
+### Self-Host WebServer
+
+```powershell
+Start-ps12exeWebServer
+```
+
+Starts a web server that can be used to compile powerShell scripts online.
+
 ## Comparative Advantages 🏆
 
 ### Quick Comparison 🏁
