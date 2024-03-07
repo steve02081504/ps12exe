@@ -1,4 +1,51 @@
-﻿Add-Type -TypeDefinition @'
+<#
+.SYNOPSIS
+enable/disable/reset ps12exe's context menu
+.DESCRIPTION
+enable/disable/reset ps12exe's context menu
+.PARAMETER action
+enable or disable or reset
+.PARAMETER Localize
+The language code to be used for server-side logging
+.EXAMPLE
+Set-ps12exeContextMenu
+.EXAMPLE
+Set-ps12exeContextMenu -action 'enable' -Localize 'en-UK'
+#>
+[CmdletBinding()]
+param (
+	[ValidateScript({
+		. $PSScriptRoot\..\predicate.ps1
+		IsEnable $_ -or IsDisable $_ -or $_ -eq 'reset'
+	})]
+	[ArgumentCompleter({
+		param($Command, $Parameter, $WordToComplete, $CommandAst, $FakeBoundParams)
+		. $PSScriptRoot\..\predicate.ps1
+		if (-not $WordToComplete) {
+			@('enable', 'disable', 'reset')
+		}
+		else {
+			@($DisablePredicates; $EnablePredicates; 'reset') | Where-Object { $_ -like "$WordToComplete*" }
+		}
+	})]
+	$action = 'on',
+	[ArgumentCompleter({
+		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+		. "$PSScriptRoot\..\LocaleArgCompleter.ps1" @PSBoundParameters
+	})]
+	[string]$Localize,
+	[switch]$help
+)
+
+$LocalizeData = . $PSScriptRoot\..\LocaleLoader.ps1 -Localize $Localize
+
+if ($help) {
+	$MyHelp = $LocalizeData.SetContextMenuHelpData
+	. $PSScriptRoot\..\HelpShower.ps1 -HelpData $MyHelp | Out-Host
+	return
+}
+
+Add-Type -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 
@@ -30,7 +77,7 @@ function AddCommandToContextMenu {
 		$fileType,
 		$title,
 		$command,
-		$Icon = "$PSScriptRoot\..\img\icon.ico"
+		$Icon = "$PSScriptRoot\..\..\img\icon.ico"
 	)
 	$key = "Registry::HKEY_CURRENT_USER\Software\Classes\*\shell\$className"
 
@@ -71,7 +118,7 @@ function AddFileHandlerProgram {
 		$className,
 		$command,
 		$FileDescription,
-		$Icon = "$PSScriptRoot\..\img\icon.ico"
+		$Icon = "$PSScriptRoot\..\..\img\icon.ico"
 	)
 	$key = "Registry::HKEY_CURRENT_USER\Software\Classes\$className"
 
@@ -93,20 +140,17 @@ function RemoveFileHandlerProgram($className) {
 	Remove-Item -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\$className" -Recurse
 }
 
-function Enable-ps12exeContextMenu($Localize) {
-	$LocalizeData = . $PSScriptRoot\LocaleLoader.ps1 -Localize $Localize
+if ('reset' -eq $action -or (IsDisable $action)) {
 	AddCommandToContextMenu "ps12exeCompile" "ps1" $LocalizeData.CompileTitle (PwshCodeAsCommand "ps12exe '%1';pause")
 	AddCommandToContextMenu "ps12exeGUIOpen" "ps1" $LocalizeData.OpenInGUI (PwshCodeAsCommand "ps12exeGUI -PS1File '%1'")
 	AddFileHandlerProgram "ps12exeGUI.psccfg" (PwshCodeAsCommand "ps12exeGUI '%1'") $LocalizeData.GUICfgFileDesc 
 	AddFileType ".psccfg" "ps12exeGUI.psccfg"
-	[ExplorerRefresher]::RefreshSettings()
-	[ExplorerRefresher]::RefreshDesktop()
 }
-function Disable-ps12exeContextMenu($Localize) {
+if ('reset' -eq $action -or (IsEnable $action)) {
 	RemoveCommandsFromContextMenu "ps12exeCompile"
 	RemoveCommandsFromContextMenu "ps12exeGUIOpen"
 	RemoveFileHandlerProgram "ps12exeGUI.psccfg"
 	RemoveFileType ".psccfg"
-	[ExplorerRefresher]::RefreshSettings()
-	[ExplorerRefresher]::RefreshDesktop()
 }
+[ExplorerRefresher]::RefreshSettings()
+[ExplorerRefresher]::RefreshDesktop()

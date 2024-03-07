@@ -6,7 +6,9 @@
 </head>
 
 <body>
-	<textarea style="width: 98%; height:95vh;"></textarea>
+	<textarea style="width: 98%; height:95vh;" placeholder="#_pragma noConsole
+'Hello World!'
+" id="inputText"></textarea>
 	<br>
 	<button id="compileButton" onclick="compileCode()">编译</button>
 	<script type="text/javascript">
@@ -49,7 +51,7 @@
 				break;
 		}
 		function compileCode() {
-			var code = document.getElementsByTagName('textarea')[0].value;
+			var code = document.getElementById("inputText").value;
 			var compileCodebase = code.replace("\'", "''");
 			var compileCode = "if (-not (Get-Module -ListAvailable ps12exe)) { Install-Module ps12exe -Force -Scope CurrentUser };" +
 			"'"+compileCodebase+"' | ps12exe";

@@ -31,7 +31,7 @@ if (!$Localize) {
 	if ($Localize) {
 		$Localize = $Localize.Split('.')[0].Replace('_', '-')
 	}
-	else{
+	else {
 		$Localize = (Get-Culture).Name
 	}
 }

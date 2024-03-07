@@ -1,25 +1,74 @@
-﻿# 创建 HttpListener 对象
-$http = [System.Net.HttpListener]::new()
-$http.Prefixes.Add("http://localhost:8080/")
-$http.Start()
+﻿#Requires -Version 5.0
 
-if ($http.IsListening) {
-	Write-Host "HTTP 服务器已启动！" -ForegroundColor Black -BackgroundColor Green
-	Write-Host "访问地址: $($http.Prefixes)" -ForegroundColor Yellow
+<#
+.SYNOPSIS
+run a web server to allow users to compile powershell scripts
+.DESCRIPTION
+run a web server to allow users to compile powershell scripts
+.PARAMETER HostUrl
+The url of the web server
+.PARAMETER Localize
+The language code to be used for server-side logging
+.PARAMETER help
+Display help message
+.EXAMPLE
+Start-ps12exeWebServer
+.EXAMPLE
+Start-ps12exeWebServer -HostUrl 'http://localhost:8080/'
+#>
+[CmdletBinding()]
+param (
+	$HostUrl = 'http://localhost:8080/',
+	[ArgumentCompleter({
+		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+		. "$PSScriptRoot\..\LocaleArgCompleter.ps1" @PSBoundParameters
+	})]
+	[string]$Localize,
+	[switch]$help
+)
+
+$LocalizeData = . $PSScriptRoot\..\LocaleLoader.ps1 -Localize $Localize
+
+if ($help) {
+	$MyHelp = $LocalizeData.WebServerHelpData
+	. $PSScriptRoot\..\HelpShower.ps1 -HelpData $MyHelp | Out-Host
+	return
 }
 
 # 加载ps12exe用于处理编译请求
-Import-Module $PSScriptRoot/../../ps12exe.psm1
+Import-Module $PSScriptRoot/../../ps12exe.psm1 -ErrorAction Stop
 
-# 无限循环，用于监听请求
-while ($http.IsListening) {
-	$context = $http.GetContext()
+# 创建 HttpListener 对象
+$http = [System.Net.HttpListener]::new()
+$http.Prefixes.Add($HostUrl)
+$http.Start()
+
+if ($http.IsListening) {
+	Write-Host $LocalizeData.ServerStarted -ForegroundColor Black -BackgroundColor Green
+	Write-Host "$($LocalizeData.ServerListening) $($http.Prefixes)" -ForegroundColor Yellow
+}
+else {
+	Write-Host $LocalizeData.ServerFailed -ForegroundColor Black -BackgroundColor Red
+	return
+}
+
+# Set Console Window Title
+$BackUpTitle = $Host.UI.RawUI.WindowTitle
+$Host.UI.RawUI.WindowTitle = "ps12exe Web Server"
+
+Write-Host $LocalizeData.UnsafeWarning -ForegroundColor Yellow
+Write-Host $LocalizeData.ExitServerTip -ForegroundColor Yellow
+
+function HandleRequest($context) {
 	if ($context.Request.RawUrl -eq '/compile') {
 		# 处理编译请求
 		$context = $http.GetContext()
 
 		# 获取用户提交的代码
-		$userInput = (New-Object System.IO.StreamReader($context.Request.InputStream)).ReadToEnd()
+		$Reader = New-Object System.IO.StreamReader($context.Request.InputStream)
+		$userInput = $Reader.ReadToEnd()
+		$Reader.Close()
+		$Reader.Dispose()
 		# new uuid
 		$uuid = [Guid]::NewGuid().ToString()
 		$compiledExePath = "$PSScriptRoot/outputs/$uuid.exe"
@@ -27,14 +76,12 @@ while ($http.IsListening) {
 		# 编译代码
 		try {
 			$userInput | ps12exe -outputFile $compiledExePath -ErrorAction Stop
-			# 返回编译好的 EXE 文件
 			$context.Response.ContentType = "application/octet-stream"
 			$buffer = [System.IO.File]::ReadAllBytes($compiledExePath)
+			Remove-Item $compiledExePath -Force
 		}
 		catch {
-			Write-Host "编译失败！" -ForegroundColor Red
-			Write-Host $_
-			# 给网页返回错误信息
+			Write-Host "$_" -ForegroundColor Red
 			$context.Response.ContentType = "text/plain"
 			$buffer = [System.Text.Encoding]::UTF8.GetBytes("$_")
 		}
@@ -46,4 +93,20 @@ while ($http.IsListening) {
 	$context.Response.ContentLength64 = $buffer.Length
 	$context.Response.OutputStream.Write($buffer, 0, $buffer.Length)
 	$context.Response.Close()
+}
+
+try {
+	# 无限循环，用于监听请求 直到用户按下 Ctrl+C
+	while ($http.IsListening) {
+		$Async = $http.BeginGetContext($null, $null)
+		while (-not $Async.AsyncWaitHandle.WaitOne(100)) { }
+		HandleRequest($http.EndGetContext($Async))
+	}
+}
+finally {
+	# 关闭 HttpListener
+	$http.Stop()
+	Write-Host $LocalizeData.ServerStopped -ForegroundColor Yellow
+	# Restore Console Window Title
+	$Host.UI.RawUI.WindowTitle = $BackUpTitle
 }

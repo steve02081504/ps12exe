@@ -14,22 +14,20 @@
 	<button id="compileButton" onclick="compileCode()">编译</button>
 	<a id="downloadLink" download="a.exe"></a>
 	<script type="text/javascript">
+		const userInput = document.getElementById("inputText");
+		const a = document.getElementById("downloadLink");
 		function compileCode() {
-			const userInput = document.getElementById("inputText").value;
 			fetch("./compile", {
 				method: "POST",
-				body: userInput
+				body: userInput.value
 			})
 			.then(response => response.blob())
 			.then(blob => {
-				// ContentType?
 				if (blob.type == "text/plain") {
 					blob.text().then(alert);
 					return;
 				}
 				if (blob.type == "application/octet-stream") {
-					// Create a download mission
-					const a = document.getElementById("downloadLink");
 					a.href = window.URL.createObjectURL(blob);
 					a.click();
 				}

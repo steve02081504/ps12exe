@@ -3,7 +3,7 @@
 )
 . $PSScriptRoot/VirtualTerminal.ps1
 function Showuseage($Usage) {
-	$Usage -replace '\-(\w+)', "$($VirtualTerminal.Colors.BrightYellow)-`$1$($VirtualTerminal.Colors.Reset)"`
+	$Usage -replace '(?<!\w)\-(\w+)', "$($VirtualTerminal.Colors.BrightYellow)-`$1$($VirtualTerminal.Colors.Reset)"`
 	-replace "'([^']+)'", "$($VirtualTerminal.Colors.BrightMagenta)'`$1'$($VirtualTerminal.Colors.Reset)"`
 	-replace '(\w+)=', "$($VirtualTerminal.Colors.BrightGreen)`$1$($VirtualTerminal.Colors.Reset)="`
 	-replace '\[([a-zA-Z]+)', "[$($VirtualTerminal.Colors.BrightGreen)`$1$($VirtualTerminal.Colors.Reset)"`
@@ -21,7 +21,7 @@ function ShowParamsHelp($ParamsHelpData) {
 			$str = $Matches['coloringstr']
 			$newstr = $str
 			$color = $VirtualTerminal.Colors.BrightBlue
-			if(($str.StartsWith('"') -and $str.EndsWith('"')) -or ($str.StartsWith("'") -and $str.EndsWith("'"))) {
+			if (($str.StartsWith('"') -and $str.EndsWith('"')) -or ($str.StartsWith("'") -and $str.EndsWith("'"))) {
 				# 字符串，淡紫色渲染
 				$color = $VirtualTerminal.Colors.BrightMagenta
 			}
@@ -36,11 +36,11 @@ function ShowParamsHelp($ParamsHelpData) {
 				# URL，淡蓝色渲染+下划线
 				$color += $VirtualTerminal.Styles.Underline
 			}
-			elseif($str -match '^%\w+%$') {
+			elseif ($str -match '^%\w+%$') {
 				# 环境变量，绿色渲染
 				$color = $VirtualTerminal.Colors.BrightGreen
 			}
-			elseif(Get-Command $str -ErrorAction Ignore) {
+			elseif (Get-Command $str -ErrorAction Ignore) {
 				# 命令，黄色渲染
 				$color = $VirtualTerminal.Colors.BrightYellow
 			}
