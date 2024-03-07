@@ -162,6 +162,12 @@ Param(
 	[Switch]$nested,
 	# 兼容参数，不进入文档
 	[Parameter(DontShow)]
+	#_if PSScript
+		[ArgumentCompleter({
+			Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+			. "$PSScriptRoot\src\LocaleArgCompleter.ps1" @PSBoundParameters
+		})]
+	#_endif
 	[string]$Localize
 )
 $Verbose = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent

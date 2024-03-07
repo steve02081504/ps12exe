@@ -24,6 +24,10 @@ ps12exeGUI -help
 param(
 	[ValidatePattern('.(psccfg|xml)$')]
 	[string]$ConfingFile,
+	[ArgumentCompleter({
+		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+		. "$PSScriptRoot\src\LocaleArgCompleter.ps1" @PSBoundParameters
+	})]
 	[string]$Localize,
 	[ValidateSet('Light', 'Dark', 'Auto')]
 	[string]$UIMode = 'Auto',

@@ -20,6 +20,10 @@ function Set-ps12exeContextMenu(
 		}
 	})]
 	$action = 'on',
+	[ArgumentCompleter({
+		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+		. "$PSScriptRoot\src\LocaleArgCompleter.ps1" @PSBoundParameters
+	})]
 	[string]$Localize
 ) {
 	if ('reset' -eq $action -or (IsDisable $action)) {
