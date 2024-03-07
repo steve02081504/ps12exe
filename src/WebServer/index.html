@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+
+<head>
+	<title>ps12exe Online</title>
+</head>
+
+<body>
+	<textarea style="width: 98%; height:95vh;" placeholder="#_pragma noConsole
+'Hello World!'
+" id="inputText"></textarea>
+	<br>
+	<button id="compileButton" onclick="compileCode()">编译</button>
+	<a id="downloadLink" download="a.exe"></a>
+	<script type="text/javascript">
+		function compileCode() {
+			const userInput = document.getElementById("inputText").value;
+
+			// Send the user input to the server (replace with your server endpoint)
+			fetch("http://localhost:8080/compile", {
+				method: "POST",
+				body: userInput
+			})
+				.then(response => response.blob())
+				.then(blob => {
+					// ContentType?
+					if (blob.type == "text/plain") {
+						// show error info and popup
+						alert(blob.text());
+						return;
+					}
+					if (blob.type == "application/octet-stream") {
+						// Create a download mission
+						const a = document.getElementById("downloadLink");
+						a.href = window.URL.createObjectURL(blob);
+						a.click();
+					}
+				})
+				.catch(error => console.error("Error:", error));
+		}
+
+		var language = navigator.language || navigator.userLanguage;
+		switch (language) {
+			case 'zh':
+			case 'zh-CN':
+			case 'zh-TW':
+			case 'zh-HK':
+				break;
+			case 'ru':
+			case 'ru-RU':
+				document.getElementById('compileButton').textContent = 'Скомпилировать';
+				break;
+			case 'ja':
+			case 'ja-JP':
+				document.getElementById('compileButton').textContent = 'コンパイル';
+				break;
+			case 'ko':
+			case 'ko-KR':
+				document.getElementById('compileButton').textContent = '컴파일';
+				break;
+			case 'es':
+			case 'es-ES':
+				document.getElementById('compileButton').textContent = 'Compilar';
+				break;
+			case 'pt':
+			case 'pt-PT':
+				document.getElementById('compileButton').textContent = 'Compilar';
+				break;
+			default:
+				document.getElementById('compileButton').textContent = 'Compile';
+				break;
+		}
+	</script>
+</body>
+
+</html>
