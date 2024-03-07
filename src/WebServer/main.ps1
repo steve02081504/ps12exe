@@ -26,7 +26,10 @@ while ($http.IsListening) {
 
 		# 编译代码
 		try {
-			$userInput | ps12exe -outputFile $compiledExePath
+			$userInput | ps12exe -outputFile $compiledExePath -ErrorAction Stop
+			# 返回编译好的 EXE 文件
+			$context.Response.ContentType = "application/octet-stream"
+			$buffer = [System.IO.File]::ReadAllBytes($compiledExePath)
 		}
 		catch {
 			Write-Host "编译失败！" -ForegroundColor Red
@@ -35,10 +38,6 @@ while ($http.IsListening) {
 			$context.Response.ContentType = "text/plain"
 			$buffer = [System.Text.Encoding]::UTF8.GetBytes("$_")
 		}
-
-		# 返回编译好的 EXE 文件
-		$context.Response.ContentType = "application/octet-stream"
-		$buffer = [System.IO.File]::ReadAllBytes($compiledExePath)
 	}
 	elseif ($context.Request.RawUrl -eq '/') {
 		$body = Get-Content -LiteralPath "$PSScriptRoot/index.html" -Encoding utf8 -Raw

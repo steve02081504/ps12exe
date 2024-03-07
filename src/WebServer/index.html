@@ -16,28 +16,25 @@
 	<script type="text/javascript">
 		function compileCode() {
 			const userInput = document.getElementById("inputText").value;
-
-			// Send the user input to the server (replace with your server endpoint)
-			fetch("http://localhost:8080/compile", {
+			fetch("./compile", {
 				method: "POST",
 				body: userInput
 			})
-				.then(response => response.blob())
-				.then(blob => {
-					// ContentType?
-					if (blob.type == "text/plain") {
-						// show error info and popup
-						alert(blob.text());
-						return;
-					}
-					if (blob.type == "application/octet-stream") {
-						// Create a download mission
-						const a = document.getElementById("downloadLink");
-						a.href = window.URL.createObjectURL(blob);
-						a.click();
-					}
-				})
-				.catch(error => console.error("Error:", error));
+			.then(response => response.blob())
+			.then(blob => {
+				// ContentType?
+				if (blob.type == "text/plain") {
+					blob.text().then(alert);
+					return;
+				}
+				if (blob.type == "application/octet-stream") {
+					// Create a download mission
+					const a = document.getElementById("downloadLink");
+					a.href = window.URL.createObjectURL(blob);
+					a.click();
+				}
+			})
+			.catch(error => console.error("Error:", error));
 		}
 
 		var language = navigator.language || navigator.userLanguage;
