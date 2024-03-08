@@ -60,46 +60,46 @@ Write-Host $LocalizeData.UnsafeWarning -ForegroundColor Yellow
 Write-Host $LocalizeData.ExitServerTip -ForegroundColor Yellow
 
 function HandleRequest($context) {
-	if ($context.Request.RawUrl -eq '/compile') {
-		# 处理编译请求
-		$context = $http.GetContext()
-
-		# 获取用户提交的代码
-		$Reader = New-Object System.IO.StreamReader($context.Request.InputStream)
-		$userInput = $Reader.ReadToEnd()
-		$Reader.Close()
-		$Reader.Dispose()
-		if (!$userInput) {
-			$context.Response.ContentType = "text/plain"
-			$context.Response.ContentLength64 = 0
-			$context.Response.Close()
-			return
-		}
-		# new uuid
-		$uuid = [Guid]::NewGuid().ToString()
-		$compiledExePath = "$PSScriptRoot/outputs/$uuid.exe"
-
-		New-Item -Path $PSScriptRoot/outputs -ItemType Directory -Force | Out-Null
-
-		# 编译代码
-		try {
-			$userInput | ps12exe -outputFile $compiledExePath -ErrorAction Stop
-			$context.Response.ContentType = "application/octet-stream"
-			$buffer = [System.IO.File]::ReadAllBytes($compiledExePath)
-			Remove-Item $compiledExePath -Force
-		}
-		catch {
-			# 若ErrorId不是ParseError则写入日志
-			if ($_.ErrorId -ine "ParseError") {
-				Write-Host $_ -ForegroundColor Red
+	switch ($context.Request.RawUrl) {
+		'/compile' {
+			$Reader = New-Object System.IO.StreamReader($context.Request.InputStream)
+			$userInput = $Reader.ReadToEnd()
+			$Reader.Close()
+			$Reader.Dispose()
+			Write-Verbose "Compiling User Input: $userInput"
+			if (!$userInput) {
+				Write-Verbose "No data found when Handling Request, returning empty response"
+				$context.Response.ContentType = "text/plain"
+				$context.Response.ContentLength64 = 0
+				$context.Response.Close()
+				return
 			}
-			$context.Response.ContentType = "text/plain"
-			$buffer = [System.Text.Encoding]::UTF8.GetBytes("$_")
+			# new uuid
+			$uuid = [Guid]::NewGuid().ToString()
+			$compiledExePath = "$PSScriptRoot/outputs/$uuid.exe"
+
+			New-Item -Path $PSScriptRoot/outputs -ItemType Directory -Force | Out-Null
+
+			# 编译代码
+			try {
+				$userInput | ps12exe -outputFile $compiledExePath -ErrorAction Stop
+				$context.Response.ContentType = "application/octet-stream"
+				$buffer = [System.IO.File]::ReadAllBytes($compiledExePath)
+				Remove-Item $compiledExePath -Force
+			}
+			catch {
+				# 若ErrorId不是ParseError则写入日志
+				if ($_.ErrorId -ine "ParseError") {
+					Write-Host $_ -ForegroundColor Red
+				}
+				$context.Response.ContentType = "text/plain"
+				$buffer = [System.Text.Encoding]::UTF8.GetBytes("$_")
+			}
 		}
-	}
-	elseif ($context.Request.RawUrl -eq '/') {
-		$body = Get-Content -LiteralPath "$PSScriptRoot/index.html" -Encoding utf8 -Raw
-		$buffer = [System.Text.Encoding]::UTF8.GetBytes($body)
+		'/' {
+			$body = Get-Content -LiteralPath "$PSScriptRoot/index.html" -Encoding utf8 -Raw
+			$buffer = [System.Text.Encoding]::UTF8.GetBytes($body)
+		}
 	}
 	$context.Response.ContentLength64 = $buffer.Length
 	if ($buffer) {
