@@ -4,14 +4,21 @@
 
 <head>
 	<title>ps12exe Online</title>
+	<script type="module">
+		(async ({ chrome, netscape }) => {
+			if (!chrome && !netscape) await import('https://unpkg.com/@ungap/custom-elements');
+			const { default: HighlightedCode } = await import('https://unpkg.com/highlighted-code');
+			HighlightedCode.useTheme('github-dark');
+		})(self);
+	</script>
 </head>
 
 <body>
-	<textarea style="width: 98%; height:95vh;" placeholder="#_pragma noConsole
+	<textarea style="width: 98%; height:95vh;" is="highlighted-code" language="powershell" tabSize="4" placeholder="#_pragma noConsole
 'Hello World!'
 " id="inputText"></textarea>
 	<br>
-	<button id="compileButton" onclick="compileCode()">编译</button>
+	<button id="compileButton" onclick="compileCode()">cum out</button>
 	<a id="downloadLink" download="a.exe"></a>
 	<script type="text/javascript">
 		const userInput = document.getElementById("inputText");
@@ -38,38 +45,26 @@
 			})
 			.catch(error => console.error("Error:", error));
 		}
-
-		var language = navigator.language || navigator.userLanguage;
-		switch (language) {
-			case 'zh':
-			case 'zh-CN':
-			case 'zh-TW':
-			case 'zh-HK':
-				break;
-			case 'ru':
-			case 'ru-RU':
-				document.getElementById('compileButton').textContent = 'Скомпилировать';
-				break;
-			case 'ja':
-			case 'ja-JP':
-				document.getElementById('compileButton').textContent = 'コンパイル';
-				break;
-			case 'ko':
-			case 'ko-KR':
-				document.getElementById('compileButton').textContent = '컴파일';
-				break;
-			case 'es':
-			case 'es-ES':
-				document.getElementById('compileButton').textContent = 'Compilar';
-				break;
-			case 'pt':
-			case 'pt-PT':
-				document.getElementById('compileButton').textContent = 'Compilar';
-				break;
-			default:
-				document.getElementById('compileButton').textContent = 'Compile';
-				break;
-		}
+		const language = navigator.language || navigator.userLanguage || 'en';
+		const languageTextMap = {
+			'zh': '编译',
+			'zh-CN': '编译',
+			'zh-TW': '編譯',
+			'zh-HK': '編譯',
+			'ru': 'Скомпилировать',
+			'ru-RU': 'Скомпилировать',
+			'ja': 'コンパイル',
+			'ja-JP': 'コンパイル',
+			'ko': '컴파일',
+			'ko-KR': '컴파일',
+			'es': 'Compilar',
+			'es-ES': 'Compilar',
+			'pt': 'Compilar',
+			'pt-PT': 'Compilar',
+			'en': 'Compile',
+			'en-UK': 'Compile'
+		};
+		document.getElementById("compileButton").textContent = languageTextMap[language];
 	</script>
 </body>
 
