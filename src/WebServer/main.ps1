@@ -102,7 +102,9 @@ function HandleRequest($context) {
 		$buffer = [System.Text.Encoding]::UTF8.GetBytes($body)
 	}
 	$context.Response.ContentLength64 = $buffer.Length
-	$context.Response.OutputStream.Write($buffer, 0, $buffer.Length)
+	if ($buffer) {
+		$context.Response.OutputStream.Write($buffer, 0, $buffer.Length)
+	}
 	$context.Response.Close()
 }
 
