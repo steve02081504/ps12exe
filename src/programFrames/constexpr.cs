@@ -32,29 +32,31 @@ using System.Runtime.Versioning;
 namespace PSRunnerNS {
 	internal class PSRunnerEntry {
 		private static int Main() {
-			#if UNICODEEncoding && !noConsole
-			System.Console.OutputEncoding = new System.Text.UnicodeEncoding();
-			#endif
+			#if !noOutput
+				#if UNICODEEncoding && !noConsole
+				System.Console.OutputEncoding = new System.Text.UnicodeEncoding();
+				#endif
 
-			#if!noVisualStyles && noConsole
-			Application.EnableVisualStyles();
-			#endif
+				#if!noVisualStyles && noConsole
+				Application.EnableVisualStyles();
+				#endif
 
-			#if noConsole
-				// load assembly:AssemblyTitle
-				AssemblyTitleAttribute titleAttribute = (AssemblyTitleAttribute) Attribute.GetCustomAttribute(Assembly.GetExecutingAssembly(), typeof(AssemblyTitleAttribute));
-				string title;
-				if (titleAttribute != null)
-					title = titleAttribute.Title;
-				else
-					title = System.AppDomain.CurrentDomain.FriendlyName;
-				// 弹窗输出$ConstResult
-				MessageBox.Show("$ConstResult", title, MessageBoxButtons.OK);
-			#else
-				// 控制台输出$ConstResult
-				System.Console.WriteLine("$ConstResult");
+				#if noConsole
+					// load assembly:AssemblyTitle
+					AssemblyTitleAttribute titleAttribute = (AssemblyTitleAttribute) Attribute.GetCustomAttribute(Assembly.GetExecutingAssembly(), typeof(AssemblyTitleAttribute));
+					string title;
+					if (titleAttribute != null)
+						title = titleAttribute.Title;
+					else
+						title = System.AppDomain.CurrentDomain.FriendlyName;
+					// 弹窗输出$ConstResult
+					MessageBox.Show("$ConstResult", title, MessageBoxButtons.OK);
+				#else
+					// 控制台输出$ConstResult
+					System.Console.WriteLine("$ConstResult");
+				#endif
 			#endif
-			return 0;
+			return $ConstExitCodeResult;
 		}
 	}
 }

@@ -30,6 +30,8 @@ if ($PSVersionTable.PSEdition -ne "Core") {
 	$referenceAssembies += "System.dll" # some furking magic
 }
 
+. $PSScriptRoot\BuildFrame.ps1
+
 [string[]]$Constants = @()
 
 $Constants += $threadingModel
@@ -44,8 +46,6 @@ if ($noVisualStyles) { $Constants += "noVisualStyles" }
 if ($exitOnCancel) { $Constants += "exitOnCancel" }
 if ($UNICODEEncoding) { $Constants += "UNICODEEncoding" }
 if ($winFormsDPIAware) { $Constants += "winFormsDPIAware" }
-
-. $PSScriptRoot\BuildFrame.ps1
 
 if (-not $TempDir) {
 	$TempDir = $TempTempDir = [System.IO.Path]::GetTempPath() + [System.IO.Path]::GetRandomFileName()
