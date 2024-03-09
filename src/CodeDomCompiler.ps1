@@ -10,7 +10,9 @@ $cp.GenerateExecutable = $TRUE
 
 $manifestParam = ""
 if ($AstAnalyzeResult.IsConst) {
-	$manifestParam = "`"/win32manifest:$PSScriptRoot\bin\void.res`""
+	#_if PSScript
+		$manifestParam = "`"/win32manifest:$PSScriptRoot\bin\void.res`""
+	#_endif
 }
 elseif ($requireAdmin -or $DPIAware -or $supportOS -or $longPaths) {
 	$manifestParam = "`"/win32manifest:$($outputFile+".win32manifest")`""

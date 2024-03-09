@@ -478,7 +478,9 @@ try {
 		Write-Error -ErrorAction "Continue" "Output file $outputFile not written"
 	}
 	else {
-		& $PSScriptRoot\src\ExeSinker.ps1 $outputFile -removeResources:$($resourceParams.Count -eq 0 -and -not $iconFile)
+		#_if PSScript
+			& $PSScriptRoot\src\ExeSinker.ps1 $outputFile -removeResources:$($resourceParams.Count -eq 0 -and -not $iconFile)
+		#_endif
 		Write-Host "Compiled file written -> $((Get-Item $outputFile).Length) bytes"
 		Write-Verbose "Path: $outputFile"
 		if ($CFGFILE) {
