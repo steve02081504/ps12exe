@@ -207,7 +207,7 @@ The following is an example:
 
 ```powershell
 PS C:\Users\steve02081504> '12' | ps12exe
-Compiled file written -> 3072 bytes
+Compiled file written -> 2048 bytes
 PS C:\Users\steve02081504> ./a.exe
 12
 PS C:\Users\steve02081504> '#_pragma Console no
@@ -297,9 +297,9 @@ $Host.UI.RawUI.FlushInputBuffer()
 
 | Comparison Content | ps12exe | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
 | --- | --- | --- |
-| Pure script repository 📦 | ✔️ All text files except images | ❌ Contains exe files with open source license |
+| Pure script repository 📦 | ✔️ All text files except images & dependencies | ❌ Contains exe files with open source license |
 | Command to generate hello world 🌍 | 😎`'"Hello World!"' \| ps12exe` | 🤔`echo "Hello World!" *> a.ps1; ps2exe a.ps1; rm a.ps1` |
-| Size of the generated hello world executable file 💾 | 🥰3072 bytes | 😨25088 bytes |
+| Size of the generated hello world executable file 💾 | 🥰2048 bytes | 😨25088 bytes |
 | GUI multilingual support 🌐 | ✔️ | ❌ |
 | Syntax check during compilation ✔️ | ✔️ | ❌ |
 | Preprocessing feature 🔄 | ✔️ | ❌ |
