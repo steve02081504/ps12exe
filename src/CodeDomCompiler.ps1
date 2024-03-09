@@ -9,7 +9,10 @@ $cp.GenerateInMemory = $FALSE
 $cp.GenerateExecutable = $TRUE
 
 $manifestParam = ""
-if ($requireAdmin -or $DPIAware -or $supportOS -or $longPaths) {
+if ($AstAnalyzeResult.IsConst) {
+	$manifestParam = "`"/win32manifest:$PSScriptRoot\bin\void.res`""
+}
+elseif ($requireAdmin -or $DPIAware -or $supportOS -or $longPaths) {
 	$manifestParam = "`"/win32manifest:$($outputFile+".win32manifest")`""
 	$win32manifest = "<?xml version=""1.0"" encoding=""UTF-8"" standalone=""yes""?>`r`n<assembly xmlns=""urn:schemas-microsoft-com:asm.v1"" manifestVersion=""1.0"">`r`n"
 	if ($DPIAware -or $longPaths) {
