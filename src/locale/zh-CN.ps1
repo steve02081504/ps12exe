@@ -20,11 +20,16 @@
 	# Console
 	WebServerHelpData	   = @{
 		title	   = "用法："
-		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-Localize '<语言代码>'] [-help]"
+		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-ReqLimitPerMin '<uint>']
+	[-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-Localize '<语言代码>'] [-help]"
 		PrarmsData = [ordered]@{
-			HostUrl	 = "要注册的 HTTP 服务器地址。"
-			Localize = "服务器端记录要使用的语言代码。"
-			help	 = "显示此帮助信息。"
+			HostUrl			  = "要注册的 HTTP 服务器地址。"
+			MaxCompileThreads = "最大编译线程数。"
+			ReqLimitPerMin	  = "每个IP每分钟的请求限制。"
+			MaxCachedFileSize = "最大缓存文件大小。"
+			MaxScriptFileSize = "最大脚本文件大小。"
+			Localize		  = "服务器端记录要使用的语言代码。"
+			help			  = "显示此帮助信息。"
 		}
 	}
 	GUIHelpData			   = @{

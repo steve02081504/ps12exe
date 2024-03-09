@@ -20,11 +20,16 @@
 	# Console
 	WebServerHelpData	   = @{
 		title	   = "Usage:"
-		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-Localize '<language code>'] [-help]"
+		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-ReqLimitPerMin '<uint>']
+	[-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-Localize '<language code>'] [-help]"
 		PrarmsData = [ordered]@{
-			HostUrl	 = "The HTTP server address to register."
-			Localize = "The language code to be used for server-side logging."
-			help	 = "Display this help information."
+			HostUrl			  = "The HTTP server address to register."
+			MaxCompileThreads = "The maximum number of compile threads."
+			ReqLimitPerMin	  = "The maximum number of requests per minute per IP."
+			MaxCachedFileSize = "The maximum size of the cached file."
+			MaxScriptFileSize = "The maximum size of the script file."
+			Localize		  = "The language code to be used for server-side logging."
+			help			  = "Display this help information."
 		}
 	}
 	GUIHelpData			   = @{
