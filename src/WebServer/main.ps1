@@ -22,7 +22,7 @@ Display help message
 .EXAMPLE
 Start-ps12exeWebServer
 .EXAMPLE
-Start-ps12exeWebServer -HostUrl 'http://localhost:8080/'
+Start-ps12exeWebServer -HostUrl 'http://localhost:80/'
 #>
 [CmdletBinding()]
 param (
@@ -70,6 +70,9 @@ Write-Host $LocalizeData.ExitServerTip -ForegroundColor Yellow
 
 # Define a hashtable to track request counts per IP
 $ipRequestCount = @{}
+# 两个队列用于装载$AsyncResult和$Runspace，直到$AsyncResult结束我们才能对$Runspace进行Dispose。。。
+$AsyncResultArray = New-Object System.Collections.ArrayList
+$RunspaceArray = New-Object System.Collections.ArrayList
 # Create a runspace pool
 $runspacePool = [runspacefactory]::CreateRunspacePool(1, $MaxCompileThreads)
 $runspacePool.Open()
@@ -110,16 +113,16 @@ function HandleRequest($context) {
 			foreach ($byte in $userInputHash) {
 				$userInputHashStr += $byte.ToString('x2')
 			}
-			$compiledExePath = "$PSScriptRoot/outputs/$userInputHashStr.exe"
+			$compiledExePath = "$PSScriptRoot/outputs/$userInputHashStr.bin"
 			#if match cached file
 			if (Test-Path -Path $compiledExePath -ErrorAction Ignore) {
-				$Response.ContentType = "application/octet-stream"
+				$context.Response.ContentType = "application/octet-stream"
 				$buffer = [System.IO.File]::ReadAllBytes($compiledExePath)
 				break
 			}
 			$runspace = [powershell]::Create()
 			$runspace.RunspacePool = $runspacePool
-			$runspace.AddScript({
+			$AsyncResult =$runspace.AddScript({
 					param ($userInput, $Response, $ScriptRoot, $compiledExePath)
 					
 					# 加载ps12exe用于处理编译请求
@@ -150,7 +153,9 @@ function HandleRequest($context) {
 				}).
 			AddArgument($userInput).AddArgument($context.Response).
 			AddArgument($PSScriptRoot).AddArgument($compiledExePath).
-			BeginInvoke() | Out-Null
+			BeginInvoke()
+			$AsyncResultArray.Add($AsyncResult) | Out-Null
+			$RunspaceArray.Add($runspace) | Out-Null
 			return
 		}
 		'/' {
@@ -182,15 +187,25 @@ try {
 					Remove-Item -Force -ErrorAction Ignore
 				}
 			}
+			while ($AsyncResultArray[0].IsCompleted) {
+				$RunspaceArray[0].Dispose()
+				$AsyncResultArray.RemoveAt(0)
+				$RunspaceArray.RemoveAt(0)
+			}
 		}
 		HandleRequest($http.EndGetContext($Async))
 	}
 }
 finally {
-	$runspacePool.Close()
-	$runspacePool.Dispose()
 	# 关闭 HttpListener
 	$http.Stop()
+	while ($RunspaceArray.Count) {
+		$RunspaceArray[0].Stop()
+		$RunspaceArray[0].Dispose()
+		$RunspaceArray.RemoveAt(0)
+	}
+	$runspacePool.Close()
+	$runspacePool.Dispose()
 	Write-Host $LocalizeData.ServerStopped -ForegroundColor Yellow
 	# Restore Console Window Title
 	$Host.UI.RawUI.WindowTitle = $BackUpTitle

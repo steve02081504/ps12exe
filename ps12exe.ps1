@@ -105,7 +105,7 @@ Param(
 	[String]$Content,
 	[Parameter(ParameterSetName = 'InputFile', Position = 1)]
 	[Parameter(ParameterSetName = 'Content', Position = 0)]
-	[ValidatePattern(".*\.(exe|com)$")]
+	[ValidatePattern(".*\.(exe|com|bin)$")]
 	[String]$outputFile = $NULL, [String]$CompilerOptions = '/o+ /debug-', [String]$TempDir = $NULL,
 	[scriptblock]$minifyer = $null, [Switch]$noConsole, [Switch]$prepareDebug, [int]$lcid,
 	[ValidateSet('x64', 'x86', 'anycpu')]
