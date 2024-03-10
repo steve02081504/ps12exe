@@ -2,8 +2,7 @@
 	$n = New-Object System.Reflection.AssemblyName(@($name, $otherinfo) -ne $null -join ",")
 	try {
 		[System.AppDomain]::CurrentDomain.Load($n).Location
-	}
-	catch {
+	} catch {
 		$Error.Remove(0)
 	}
 }
@@ -11,7 +10,9 @@ $referenceAssembies = @()
 # 绝不要直接使用 System.Private.CoreLib.dll，因为它是netlib的内部实现，而不是公共API
 # [int].Assembly.Location 等基础类型的程序集也是它。
 $referenceAssembies += GetAssembly "mscorlib"
-$referenceAssembies += GetAssembly "System.Runtime"
+if ($PSVersionTable.PSEdition -eq "Core") {
+	$referenceAssembies += GetAssembly "System.Runtime"
+}
 $referenceAssembies += GetAssembly "System.Management.Automation"
 
 # If noConsole is true, add System.Windows.Forms.dll and System.Drawing.dll to the reference assemblies
@@ -19,7 +20,7 @@ if ($noConsole) {
 	$referenceAssembies += GetAssembly "System.Windows.Forms" $(if ($PSVersionTable.PSEdition -ne "Core") { "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" })
 	$referenceAssembies += GetAssembly "System.Drawing" $(if ($PSVersionTable.PSEdition -ne "Core") { "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" })
 }
-else {
+elseif ($PSVersionTable.PSEdition -eq "Core") {
 	$referenceAssembies += GetAssembly "System.Console" 
 	$referenceAssembies += GetAssembly "Microsoft.PowerShell.ConsoleHost"
 }

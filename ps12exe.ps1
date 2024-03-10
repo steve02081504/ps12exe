@@ -305,6 +305,7 @@ if ($configFile -and $noConfigFile) {
 	return
 }
 if ($noConfigFile) { $configFile = $FALSE }
+$NoResource = -not $resourceParams.Count
 # 由于其他的resourceParams参数需要转义，iconFile参数不需要转义，所以提取出来单独处理
 $iconFile = $resourceParams['iconFile']
 $resourceParams.Remove('iconFile')
@@ -458,7 +459,27 @@ if ($NotFindedCmdlets) {
 }
 try {
 	. $PSScriptRoot\src\InitCompileThings.ps1
-	if ($PSVersionTable.PSEdition -eq "Core") {
+	if (
+		-not $noConsole -and $NoResource -and
+		$AstAnalyzeResult.IsConst -and $ConstResult.IndexOf("`0") -eq -1 -and
+		$ConstResult -notmatch '[^\x00-\x7F]' -and -not $ConstExitCodeResult
+	) {
+		# TODO: GUI（MassageBoxW）、Non-Ascii string、Resources、exit code
+		Write-Verbose "Const result is not contains any null bytes, trying TinySharp Compiler..."
+		Write-Host "Compiling file..."
+
+		try {
+			. $PSScriptRoot\src\TinySharpCompiler.ps1
+			$TinySharpSuccess = $TRUE
+		}
+		catch {
+			RollUp
+			Write-Verbose "TinySharp Compiler error, fail back to normal program frame"
+			Write-Error $_
+		}
+	}
+	if ($TinySharpSuccess) {}
+	elseif ($PSVersionTable.PSEdition -eq "Core") {
 		# unfinished!
 		if (!$TargetFramework) {
 			$Info = [System.Environment]::Version
@@ -479,7 +500,9 @@ try {
 	}
 	else {
 		#_if PSScript
-			& $PSScriptRoot\src\ExeSinker.ps1 $outputFile -removeResources:$($resourceParams.Count -eq 0 -and -not $iconFile)
+		if (-not $TinySharpSuccess) {
+			& $PSScriptRoot\src\ExeSinker.ps1 $outputFile -removeResources:$NoResource
+		}
 		#_endif
 		Write-Host "Compiled file written -> $((Get-Item $outputFile).Length) bytes"
 		Write-Verbose "Path: $outputFile"

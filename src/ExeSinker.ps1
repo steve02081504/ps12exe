@@ -4,13 +4,12 @@ param (
 	[switch]$removeResources
 )
 
-Get-ChildItem $PSScriptRoot\bin\AsmResolver -Recurse -Filter *.dll | ForEach-Object {
-	Write-Verbose "Load $($_.FullName)"
+Get-ChildItem $PSScriptRoot\bin\AsmResolver -Recurse -Filter AsmResolver.PE*.dll | ForEach-Object {
 	try{
-		Add-Type -Path $_.FullName -ErrorAction Stop
-	}
-	catch {
-		Write-Error $_.InnerException.LoaderExceptions -ErrorAction Ignore
+		Add-Type -LiteralPath $_.FullName -ErrorVariable $null
+	} catch {
+		$_.Exception.LoaderExceptions | Out-String | Write-Verbose
+		$Error.Remove($_)
 	}
 }
 
@@ -18,6 +17,7 @@ $file = [AsmResolver.PE.PEImage]::FromFile($inputFile)
 if ($removeResources) {
 	$file.Resources = $null
 }
+$file.DllCharacteristics = $file.DllCharacteristics -band -not [AsmResolver.PE.File.Headers.DllCharacteristics]::DynamicBase;
 $Builder = New-Object AsmResolver.PE.DotNet.Builder.ManagedPEFileBuilder
 $file = $builder.CreateFile($file)
 $file.Write($inputFile)
