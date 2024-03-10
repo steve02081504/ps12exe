@@ -19,7 +19,7 @@ $TinySharpCode = Get-Content $PSScriptRoot/programFrames/TinySharp.cs -Raw -Enco
 Add-Type $TinySharpCode -ReferencedAssemblies $Refs
 
 # 编译
-$file = [TinySharp.Program]::Compile($ConstResult,$architecture)
+$file = [TinySharp.Program]::Compile($ConstResult,$architecture,[ps12exeConstEvalHost]::LastExitCode)
 if ($iconFile) {
 	[TinySharp.Program]::SetWin32Icon($file, $iconFile)
 }

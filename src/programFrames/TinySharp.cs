@@ -25,7 +25,7 @@ using AsmResolver.PE.File.Headers;
 namespace TinySharp {
 	public class Program {
 		public static PEFile Compile(
-			string outputValue, string architecture = "x64"
+			string outputValue, string architecture = "x64", int ExitCode = 0
 		) {
 			string baseFunction = "_putws";
 			var module = new ModuleDefinition("Dummy");
@@ -81,11 +81,17 @@ namespace TinySharp {
 				var assembler = new CilAssembler(new BinaryStreamWriter(codeStream), new CilOperandBuilder(new OriginalMetadataTokenProvider(null), ThrowErrorListener.Instance));
 				assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, 0x00000000)); // To be replaced with the address to the string to print (applied with a patch below).
 				assembler.WriteInstruction(new CilInstruction(CilOpCodes.Call, new MetadataToken(TableIndex.Method, 1)));
+				if(ExitCode!=0)
+					assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, ExitCode));
 				assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ret));
 
 				var body = new CilRawTinyMethodBody(codeStream.ToArray())
 					.AsPatchedSegment()
 					.Patch(2, AddressFixupType.Absolute32BitAddress, new Symbol(segment.ToReference()));
+
+				var retype=module.CorLibTypeFactory.Void;
+				if(ExitCode!=0)
+					retype=module.CorLibTypeFactory.Int32;
 
 				methodTable.Add(new MethodDefinitionRow(
 					body.ToReference(),
@@ -93,7 +99,7 @@ namespace TinySharp {
 					MethodAttributes.Static,
 					0,
 					blobStreamBuffer.GetBlobIndex(new DummyProvider(),
-						MethodSignature.CreateStatic(module.CorLibTypeFactory.Void), ThrowErrorListener.Instance),
+						MethodSignature.CreateStatic(retype), ThrowErrorListener.Instance),
 					1
 				));
 			}
