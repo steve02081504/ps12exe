@@ -460,13 +460,9 @@ if ($NotFindedCmdlets) {
 try {
 	. $PSScriptRoot\src\InitCompileThings.ps1
 	#_if PSScript
-	if (
-		-not $noConsole -and $NoResource -and
-		$AstAnalyzeResult.IsConst -and $ConstResult.IndexOf("`0") -eq -1 -and
-		$ConstResult -notmatch '[^\x00-\x7F]' -and -not $ConstExitCodeResult
-	) {
-		# TODO: GUI（MassageBoxW）、Non-Ascii string、Resources、exit code
-		Write-Verbose "Const result is not contains any null bytes, trying TinySharp Compiler..."
+	if (-not $noConsole -and $NoResource -and $AstAnalyzeResult.IsConst) {
+		# TODO: GUI（MassageBoxW）、Resources
+		Write-Verbose "Const result, trying TinySharp Compiler..."
 		Write-Host "Compiling file..."
 
 		try {
