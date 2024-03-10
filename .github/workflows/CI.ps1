@@ -5,7 +5,7 @@ try{
 	mkdir $repoPath/build -ErrorAction Ignore | Out-Null
 	Import-Module $repoPath -Force | Out-Host
 	& $repoPath/ps12exe.ps1 $repoPath/ps12exe.ps1 $repoPath/build/ps12exe.exe -verbose | Out-Host
-	& $repoPath/build/ps12exe.exe $repoPath/ps12exe.ps1 -verbose -noConsole | Out-Host
+	& $repoPath/build/ps12exe.exe $repoPath/ps12exe.ps1 -verbose -noConsole -title 'lol' | Out-Host
 	& $repoPath/build/ps12exe.exe $repoPath/ps12exe.ps1 $repoPath/build/ps12exe2.exe -verbose | Out-Host
 	"'Hello World!'" | ps12exe -outputFile $repoPath/build/hello.exe -verbose | Out-Host
 	& $repoPath/build/ps12exe2.exe -Content '$PSEXEpath;$PSScriptRoot' -outputFile $repoPath/build/pathtest.exe | Out-Host

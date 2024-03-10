@@ -359,7 +359,7 @@ function UsingWinPowershell($Boundparameters) {
 	if ($TempDir) { $Params.TempDir = $TempDir }
 	$resourceParamKeys | ForEach-Object {
 		if ($resourceParams.ContainsKey($_) -and $resourceParams[$_]) {
-			$Params[$_] = $BoundParameters[$_]
+			$Params[$_] = $resourceParams[$_]
 		}
 	}
 	if ($iconFile) {
@@ -503,7 +503,9 @@ try {
 	else {
 		#_if PSScript
 		if (-not $TinySharpSuccess) {
-			& $PSScriptRoot\src\ExeSinker.ps1 $outputFile -removeResources:$NoResource
+			& $PSScriptRoot\src\ExeSinker.ps1 $outputFile -removeResources:$(
+				$NoResource -and $AstAnalyzeResult.IsConst
+			) -removeVersionInfo:$($resourceParams.Count -eq 0)
 		}
 		#_endif
 		Write-Host "Compiled file written -> $((Get-Item $outputFile).Length) bytes"
