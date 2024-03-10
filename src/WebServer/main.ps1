@@ -122,7 +122,7 @@ function HandleRequest($context) {
 			}
 			$runspace = [powershell]::Create()
 			$runspace.RunspacePool = $runspacePool
-			$AsyncResult =$runspace.AddScript({
+			$AsyncResult = $runspace.AddScript({
 					param ($userInput, $Response, $ScriptRoot, $compiledExePath)
 					
 					# 加载ps12exe用于处理编译请求

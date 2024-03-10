@@ -25,10 +25,10 @@ using AsmResolver.PE.File.Headers;
 namespace TinySharp {
 	public class Program {
 		public static PEFile Compile(
-			string outputValue, string architecture = "x64", int ExitCode = 0,bool hasOutput = true
+			string outputValue, string architecture = "x64", int ExitCode = 0, bool hasOutput = true
 		) {
 			string baseFunction = "7";
-			if(hasOutput)
+			if (hasOutput)
 				baseFunction = "_putws";
 			var module = new ModuleDefinition("Dummy");
 
@@ -45,8 +45,8 @@ namespace TinySharp {
 			// Initialize a new PE image and set up some default values.
 			var image = new PEImage {
 				ImageBase = 0x00000000004e0000,
-				PEKind = PEKind,
-				MachineType = ArchType
+					PEKind = PEKind,
+					MachineType = ArchType
 			};
 
 			// Ensure PE is loaded at the provided image base.
@@ -68,35 +68,35 @@ namespace TinySharp {
 			var methodTable = tablesStream.GetTable<MethodDefinitionRow>();
 
 			// Add puts method.
-			if(hasOutput)
-			methodTable.Add(new MethodDefinitionRow(
-				SegmentReference.Null,
-				MethodImplAttributes.PreserveSig,
-				MethodAttributes.Static | MethodAttributes.PInvokeImpl,
-				stringsStreamBuffer.GetStringIndex(baseFunction),
-				blobStreamBuffer.GetBlobIndex(new DummyProvider(),
-					MethodSignature.CreateStatic(module.CorLibTypeFactory.Void, module.CorLibTypeFactory.IntPtr), ThrowErrorListener.Instance),
-				1
-			));
+			if (hasOutput)
+				methodTable.Add(new MethodDefinitionRow(
+					SegmentReference.Null,
+					MethodImplAttributes.PreserveSig,
+					MethodAttributes.Static | MethodAttributes.PInvokeImpl,
+					stringsStreamBuffer.GetStringIndex(baseFunction),
+					blobStreamBuffer.GetBlobIndex(new DummyProvider(),
+						MethodSignature.CreateStatic(module.CorLibTypeFactory.Void, module.CorLibTypeFactory.IntPtr), ThrowErrorListener.Instance),
+					1
+				));
 
 			// Add main method calling puts.
 			using(var codeStream = new MemoryStream()) {
 				var assembler = new CilAssembler(new BinaryStreamWriter(codeStream), new CilOperandBuilder(new OriginalMetadataTokenProvider(null), ThrowErrorListener.Instance));
-				if(hasOutput) {
+				if (hasOutput) {
 					assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, 0x00000000)); // To be replaced with the address to the string to print (applied with a patch below).
 					assembler.WriteInstruction(new CilInstruction(CilOpCodes.Call, new MetadataToken(TableIndex.Method, 1)));
 				}
-				if(ExitCode!=0)
+				if (ExitCode != 0)
 					assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, ExitCode));
 				assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ret));
 
 				var body = new CilRawTinyMethodBody(codeStream.ToArray()).AsPatchedSegment();
-				if(hasOutput)
-					body=body.Patch(2, AddressFixupType.Absolute32BitAddress, new Symbol(segment.ToReference()));
+				if (hasOutput)
+					body = body.Patch(2, AddressFixupType.Absolute32BitAddress, new Symbol(segment.ToReference()));
 
-				var retype=module.CorLibTypeFactory.Void;
-				if(ExitCode!=0)
-					retype=module.CorLibTypeFactory.Int32;
+				var retype = module.CorLibTypeFactory.Void;
+				if (ExitCode != 0)
+					retype = module.CorLibTypeFactory.Int32;
 
 				methodTable.Add(new MethodDefinitionRow(
 					body.ToReference(),
@@ -111,17 +111,17 @@ namespace TinySharp {
 
 			// Add urctbase module reference
 			var baseLibrary = "ucrtbase";
-			if(hasOutput)
-			tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex(baseLibrary)));
+			if (hasOutput)
+				tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex(baseLibrary)));
 
 			// Add P/Invoke metadata to the puts method.
-			if(hasOutput)
-			tablesStream.GetTable<ImplementationMapRow>().Add(new ImplementationMapRow(
-				ImplementationMapAttributes.CallConvCdecl,
-				tablesStream.GetIndexEncoder(CodedIndex.MemberForwarded).EncodeToken(new MetadataToken(TableIndex.Method, 1)),
-				stringsStreamBuffer.GetStringIndex(baseFunction),
-				1
-			));
+			if (hasOutput)
+				tablesStream.GetTable<ImplementationMapRow>().Add(new ImplementationMapRow(
+					ImplementationMapAttributes.CallConvCdecl,
+					tablesStream.GetIndexEncoder(CodedIndex.MemberForwarded).EncodeToken(new MetadataToken(TableIndex.Method, 1)),
+					stringsStreamBuffer.GetStringIndex(baseFunction),
+					1
+				));
 
 			// Define assembly manifest.
 			tablesStream.GetTable<AssemblyDefinitionRow>().Add(new AssemblyDefinitionRow(
@@ -136,14 +136,14 @@ namespace TinySharp {
 			// Add all .NET metadata to the PE image.
 			image.DotNetDirectory = new DotNetDirectory {
 				EntryPoint = new MetadataToken(TableIndex.Method, 2),
-				Metadata = new Metadata {
-					VersionString = "v4.0.", // Needs the "." at the end. (original: v4.0.30319)
-					Streams = {
-						tablesStream,
-						blobStreamBuffer.CreateStream(),
-						stringsStreamBuffer.CreateStream()
+					Metadata = new Metadata {
+						VersionString = "v4.0.", // Needs the "." at the end. (original: v4.0.30319)
+							Streams = {
+								tablesStream,
+								blobStreamBuffer.CreateStream(),
+								stringsStreamBuffer.CreateStream()
+							}
 					}
-				}
 			};
 			if (architecture == "anycpu")
 				image.DotNetDirectory.Flags &= ~DotNetDirectoryFlags.Bit32Required;
@@ -152,18 +152,20 @@ namespace TinySharp {
 			var file = new MyBuilder().CreateFile(image);
 
 			// Put string to print in the padding data.
-			if(hasOutput)
-			file.ExtraSectionData = segment;
+			if (hasOutput)
+				file.ExtraSectionData = segment;
 
 			return file;
 		}
 	}
 
-	internal class DummyProvider : ITypeCodedIndexProvider {
-		public uint GetTypeDefOrRefIndex(ITypeDefOrRef type) { throw new NotImplementedException(); }
+	internal class DummyProvider: ITypeCodedIndexProvider {
+		public uint GetTypeDefOrRefIndex(ITypeDefOrRef type) {
+			throw new NotImplementedException();
+		}
 	}
 
-	public class MyBuilder : ManagedPEFileBuilder {
+	public class MyBuilder: ManagedPEFileBuilder {
 		protected override PESection CreateTextSection(IPEImage image, ManagedPEBuilderContext context) {
 			// We override this method to only have it emit the bare minimum .text section.
 
