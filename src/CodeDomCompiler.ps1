@@ -12,6 +12,9 @@ $manifestParam = ""
 if ($AstAnalyzeResult.IsConst) {
 	#_if PSScript
 		$manifestParam = "`"/win32manifest:$PSScriptRoot\bin\void.res`""
+	#_else
+		#_!! $manifestParam = "`"/win32manifest:$($outputFile+".win32manifest")`""
+		#_!! ' ' | Set-Content ($outputFile + ".win32manifest") -Encoding UTF8
 	#_endif
 }
 elseif ($requireAdmin -or $DPIAware -or $supportOS -or $longPaths) {
@@ -86,7 +89,11 @@ if ($cr.Errors.Count -gt 0) {
 	throw $cr.Errors -join "`n"
 }
 
-if ($requireAdmin -or $DPIAware -or $supportOS -or $longPaths) {
+if (
+#_if PSEXE
+	#_!! $AstAnalyzeResult.IsConst -or
+#_endif
+$requireAdmin -or $DPIAware -or $supportOS -or $longPaths) {
 	if (Test-Path $($outputFile + ".win32manifest")) {
 		Remove-Item $($outputFile + ".win32manifest") -Verbose:$FALSE
 	}
