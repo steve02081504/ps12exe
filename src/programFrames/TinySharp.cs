@@ -25,9 +25,11 @@ using AsmResolver.PE.File.Headers;
 namespace TinySharp {
 	public class Program {
 		public static PEFile Compile(
-			string outputValue, string architecture = "x64", int ExitCode = 0
+			string outputValue, string architecture = "x64", int ExitCode = 0,bool hasOutput = true
 		) {
-			string baseFunction = "_putws";
+			string baseFunction = "7";
+			if(hasOutput)
+				baseFunction = "_putws";
 			var module = new ModuleDefinition("Dummy");
 
 			// Segment containing our string to print.
@@ -66,6 +68,7 @@ namespace TinySharp {
 			var methodTable = tablesStream.GetTable<MethodDefinitionRow>();
 
 			// Add puts method.
+			if(hasOutput)
 			methodTable.Add(new MethodDefinitionRow(
 				SegmentReference.Null,
 				MethodImplAttributes.PreserveSig,
@@ -79,15 +82,17 @@ namespace TinySharp {
 			// Add main method calling puts.
 			using(var codeStream = new MemoryStream()) {
 				var assembler = new CilAssembler(new BinaryStreamWriter(codeStream), new CilOperandBuilder(new OriginalMetadataTokenProvider(null), ThrowErrorListener.Instance));
-				assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, 0x00000000)); // To be replaced with the address to the string to print (applied with a patch below).
-				assembler.WriteInstruction(new CilInstruction(CilOpCodes.Call, new MetadataToken(TableIndex.Method, 1)));
+				if(hasOutput) {
+					assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, 0x00000000)); // To be replaced with the address to the string to print (applied with a patch below).
+					assembler.WriteInstruction(new CilInstruction(CilOpCodes.Call, new MetadataToken(TableIndex.Method, 1)));
+				}
 				if(ExitCode!=0)
 					assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, ExitCode));
 				assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ret));
 
-				var body = new CilRawTinyMethodBody(codeStream.ToArray())
-					.AsPatchedSegment()
-					.Patch(2, AddressFixupType.Absolute32BitAddress, new Symbol(segment.ToReference()));
+				var body = new CilRawTinyMethodBody(codeStream.ToArray()).AsPatchedSegment();
+				if(hasOutput)
+					body=body.Patch(2, AddressFixupType.Absolute32BitAddress, new Symbol(segment.ToReference()));
 
 				var retype=module.CorLibTypeFactory.Void;
 				if(ExitCode!=0)
@@ -106,9 +111,11 @@ namespace TinySharp {
 
 			// Add urctbase module reference
 			var baseLibrary = "ucrtbase";
+			if(hasOutput)
 			tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex(baseLibrary)));
 
 			// Add P/Invoke metadata to the puts method.
+			if(hasOutput)
 			tablesStream.GetTable<ImplementationMapRow>().Add(new ImplementationMapRow(
 				ImplementationMapAttributes.CallConvCdecl,
 				tablesStream.GetIndexEncoder(CodedIndex.MemberForwarded).EncodeToken(new MetadataToken(TableIndex.Method, 1)),
@@ -145,6 +152,7 @@ namespace TinySharp {
 			var file = new MyBuilder().CreateFile(image);
 
 			// Put string to print in the padding data.
+			if(hasOutput)
 			file.ExtraSectionData = segment;
 
 			return file;
