@@ -459,6 +459,7 @@ if ($NotFindedCmdlets) {
 }
 try {
 	. $PSScriptRoot\src\InitCompileThings.ps1
+	#_if PSScript
 	if (
 		-not $noConsole -and $NoResource -and
 		$AstAnalyzeResult.IsConst -and $ConstResult.IndexOf("`0") -eq -1 -and
@@ -478,6 +479,7 @@ try {
 			Write-Error $_
 		}
 	}
+	#_endif
 	if ($TinySharpSuccess) {}
 	elseif ($PSVersionTable.PSEdition -eq "Core") {
 		# unfinished!

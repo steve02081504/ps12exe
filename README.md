@@ -77,7 +77,7 @@ Starts a web server that can be used to compile powerShell scripts online.
 | --- | --- | --- |
 | Pure script repository 📦 | ✔️ All text files except images & dependencies | ❌ Contains exe files with open source license |
 | Command to generate hello world 🌍 | 😎`'"Hello World!"' \| ps12exe` | 🤔`echo "Hello World!" *> a.ps1; ps2exe a.ps1; rm a.ps1` |
-| Size of the generated hello world executable file 💾 | 🥰2048 bytes | 😨25088 bytes |
+| Size of the generated hello world executable file 💾 | 🥰1024 bytes | 😨25088 bytes |
 | GUI multilingual support 🌐 | ✔️ | ❌ |
 | Syntax check during compilation ✔️ | ✔️ | ❌ |
 | Preprocessing feature 🔄 | ✔️ | ❌ |
