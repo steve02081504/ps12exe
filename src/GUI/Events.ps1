@@ -85,7 +85,11 @@ $Script:refs.IconFileTextBox.add_DragDrop({
 	$Script:refs.IconFileTextBox.Text = $_.Data.GetData([Windows.Forms.DataFormats]::FileDrop)
 })
 
-$Script:refs.ConsoleAppCheckBox.add_CheckedChanged({
+$Script:refs.ConsoleAppCheckBox.add_CheckedChanged((.{
+	param ($Scriptblock)
+	. $Scriptblock
+	$Scriptblock
+} {
 	# 禁用控制台应用选项或窗口应用选项
 	if ($Script:refs.ConsoleAppCheckBox.Checked) {
 		$Script:refs.UnicodeEncodingCheckBox.Enabled = $true
@@ -103,7 +107,7 @@ $Script:refs.ConsoleAppCheckBox.add_CheckedChanged({
 		$Script:refs.DPIAwareCheckBox.Enabled = $true
 		$Script:refs.WinFormsDPIAwareCheckBox.Enabled = $true
 	}
-})
+}))
 # cpu架构选项只能选一个
 $Script:refs.x64CheckBox.add_CheckedChanged({
 	if ($Script:refs.x64CheckBox.Checked) {
