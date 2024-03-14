@@ -140,10 +140,11 @@ function RemoveFileHandlerProgram($className) {
 	Remove-Item -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\$className" -Recurse
 }
 
+. $PSScriptRoot\..\predicate.ps1
 if ('reset' -eq $action -or (IsDisable $action)) {
 	AddCommandToContextMenu "ps12exeCompile" "ps1" $LocalizeData.CompileTitle (PwshCodeAsCommand "ps12exe '%1';pause")
 	AddCommandToContextMenu "ps12exeGUIOpen" "ps1" $LocalizeData.OpenInGUI (PwshCodeAsCommand "ps12exeGUI -PS1File '%1'")
-	AddFileHandlerProgram "ps12exeGUI.psccfg" (PwshCodeAsCommand "ps12exeGUI '%1'") $LocalizeData.GUICfgFileDesc 
+	AddFileHandlerProgram "ps12exeGUI.psccfg" (PwshCodeAsCommand "ps12exeGUI '%1'") $LocalizeData.GUICfgFileDesc
 	AddFileType ".psccfg" "ps12exeGUI.psccfg"
 }
 if ('reset' -eq $action -or (IsEnable $action)) {
