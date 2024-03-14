@@ -142,16 +142,16 @@ function RemoveFileHandlerProgram($className) {
 
 . $PSScriptRoot\..\predicate.ps1
 if ('reset' -eq $action -or (IsDisable $action)) {
-	AddCommandToContextMenu "ps12exeCompile" "ps1" $LocalizeData.CompileTitle (PwshCodeAsCommand "ps12exe '%1';pause")
-	AddCommandToContextMenu "ps12exeGUIOpen" "ps1" $LocalizeData.OpenInGUI (PwshCodeAsCommand "ps12exeGUI -PS1File '%1'")
-	AddFileHandlerProgram "ps12exeGUI.psccfg" (PwshCodeAsCommand "ps12exeGUI '%1'") $LocalizeData.GUICfgFileDesc
-	AddFileType ".psccfg" "ps12exeGUI.psccfg"
-}
-if ('reset' -eq $action -or (IsEnable $action)) {
 	RemoveCommandsFromContextMenu "ps12exeCompile"
 	RemoveCommandsFromContextMenu "ps12exeGUIOpen"
 	RemoveFileHandlerProgram "ps12exeGUI.psccfg"
 	RemoveFileType ".psccfg"
+}
+if ('reset' -eq $action -or (IsEnable $action)) {
+	AddCommandToContextMenu "ps12exeCompile" "ps1" $LocalizeData.CompileTitle (PwshCodeAsCommand "ps12exe '%1';pause")
+	AddCommandToContextMenu "ps12exeGUIOpen" "ps1" $LocalizeData.OpenInGUI (PwshCodeAsCommand "ps12exeGUI -PS1File '%1'")
+	AddFileHandlerProgram "ps12exeGUI.psccfg" (PwshCodeAsCommand "ps12exeGUI '%1'") $LocalizeData.GUICfgFileDesc
+	AddFileType ".psccfg" "ps12exeGUI.psccfg"
 }
 [ExplorerRefresher]::RefreshSettings()
 [ExplorerRefresher]::RefreshDesktop()
