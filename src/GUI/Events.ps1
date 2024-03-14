@@ -1,5 +1,7 @@
 ﻿# enter和esc键绑定
 
+. "$PSScriptRoot\Functions.ps1"
+
 $Script:refs.CancelButton = New-Object Windows.Forms.Button
 $Script:refs.MainForm.CancelButton = $Script:refs.CancelButton
 $Script:refs.CancelButton.add_Click({

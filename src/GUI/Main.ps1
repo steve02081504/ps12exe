@@ -22,7 +22,7 @@ ps12exeGUI -help
 #>
 [CmdletBinding()]
 param(
-	[ValidatePattern('.(psccfg|xml)$')]
+	[ValidatePattern('|.(psccfg|xml)$')]
 	[string]$ConfingFile,
 	[ArgumentCompleter({
 		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
