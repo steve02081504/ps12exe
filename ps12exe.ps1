@@ -202,7 +202,7 @@ if ($help) {
 if (-not ($inputFile -or $Content)) {
 	Show-Help | Out-Host
 	Write-Host
-	Write-Host "Input not specified!"
+	"Input not specified!" # 为了GUI的输出捕获，不直接输出到控制台
 	return
 }
 

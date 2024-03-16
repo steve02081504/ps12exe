@@ -84,29 +84,32 @@ catch {
 #endregion Other Actions Before ShowDialog
 
 # Set Console Window Title
-$BackUpTitle = $Host.UI.RawUI.WindowTitle
-$Host.UI.RawUI.WindowTitle = "ps12exe GUI Console Host"
+try {
+	$BackUpTitle = $Host.UI.RawUI.WindowTitle
+	$Host.UI.RawUI.WindowTitle = "ps12exe GUI Console Host"
 
-# Set Console Icon
-$consolePtr = [ps12exeGUI.Win32]::GetConsoleWindow()
+	# Set Console Icon
+	$consolePtr = [ps12exeGUI.Win32]::GetConsoleWindow()
 
-[ps12exeGUI.Win32]::ShowWindow($consolePtr, 0) | Out-Null
+	[ps12exeGUI.Win32]::ShowWindow($consolePtr, 0) | Out-Null
 
-$Icon = [System.Drawing.Icon]::ExtractAssociatedIcon("$PSScriptRoot\..\..\img\icon.ico")
-$Script:refs.MainForm.Icon = $Icon
+	$Icon = [System.Drawing.Icon]::ExtractAssociatedIcon("$PSScriptRoot\..\..\img\icon.ico")
+	$Script:refs.MainForm.Icon = $Icon
 
-# Show the form
-try { [void]$Script:refs.MainForm.ShowDialog() } catch { Update-ErrorLog -ErrorRecord $_ -Message "Exception encountered unexpectedly at ShowDialog." }
+	# Show the form
+	try { [void]$Script:refs.MainForm.ShowDialog() } catch { Update-ErrorLog -ErrorRecord $_ -Message "Exception encountered unexpectedly at ShowDialog." }
+}
+finally {
+	# Dispose all controls
+	$Script:refs.MainForm.Controls | ForEach-Object { $_.Dispose() }
+	$Script:refs.MainForm.Dispose()
+	$Icon.Dispose()
 
-# Dispose all controls
-$Script:refs.MainForm.Controls | ForEach-Object { $_.Dispose() }
-$Script:refs.MainForm.Dispose()
-$Icon.Dispose()
+	[ps12exeGUI.Win32]::ShowWindow($consolePtr, 1) | Out-Null
 
-[ps12exeGUI.Win32]::ShowWindow($consolePtr, 1) | Out-Null
+	# Restore Console Window Title
+	$Host.UI.RawUI.WindowTitle = $BackUpTitle
 
-# Restore Console Window Title
-$Host.UI.RawUI.WindowTitle = $BackUpTitle
-
-# Remove all variables in the script scope
-Get-Variable -Scope Script | Remove-Variable -Scope Script -Force -ErrorAction Ignore
+	# Remove all variables in the script scope
+	Get-Variable -Scope Script | Remove-Variable -Scope Script -Force -ErrorAction Ignore
+}
