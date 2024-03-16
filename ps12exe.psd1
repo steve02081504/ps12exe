@@ -90,7 +90,7 @@
 			ProjectUri = 'https://github.com/steve02081504/ps12exe'
 
 			# A URL to an icon representing this module.
-			# IconUri = ''
+			IconUri = 'https://raw.githubusercontent.com/steve02081504/ps12exe/master/img/icon.ico'
 
 			# ReleaseNotes of this module
 			# ReleaseNotes = ''
