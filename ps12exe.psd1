@@ -21,7 +21,14 @@
 	Copyright              = '(c) steve02081504.'
 
 	# Description of the functionality provided by this module
-	Description            = 'better repo 2 compile pwsh scripts to exe'
+	Description            = @'
+better repo 2 compile pwsh scripts to exe:
+- Use `ps12exe a.ps1` to convert `a.ps1` into `a.exe`;
+- Use `ps12exeGUI` for a graphical interface that simplifies compilation;
+- Use `Set-ps12exeContextMenu` to add a context menu item for quick compilation or GUI access on `.ps1` files;
+- Use `Start-ps12exeWebServer` to launch a web server that allows users to compile scripts online;
+All commands in this module support the `-help` option for detailed assistance in your language.
+'@
 
 	# Minimum version of the PowerShell engine required by this module
 	PowerShellVersion      = '5.0'
