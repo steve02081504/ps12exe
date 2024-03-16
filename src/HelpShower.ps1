@@ -40,7 +40,7 @@ function ShowParamsHelp($ParamsHelpData) {
 				# 环境变量，绿色渲染
 				$color = $VirtualTerminal.Colors.BrightGreen
 			}
-			elseif (Get-Command $str -ErrorAction Ignore) {
+			elseif ($str -match '^[\w\-]+$' -and (Get-Command $str -ErrorAction Ignore)) {
 				# 命令，黄色渲染
 				$color = $VirtualTerminal.Colors.BrightYellow
 			}

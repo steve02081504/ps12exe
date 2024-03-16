@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param (
 	[string]$inputFile,
-	[switch]$removeResources
+	[switch]$removeResources,
+	[switch]$removeVersionInfo
 )
 
 Get-ChildItem $PSScriptRoot\bin\AsmResolver -Recurse -Filter AsmResolver.PE*.dll | ForEach-Object {

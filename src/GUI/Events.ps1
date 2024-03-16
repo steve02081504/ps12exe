@@ -1,5 +1,4 @@
 ﻿# enter和esc键绑定
-
 $Script:refs.CancelButton = New-Object Windows.Forms.Button
 $Script:refs.MainForm.CancelButton = $Script:refs.CancelButton
 $Script:refs.CancelButton.add_Click({
@@ -8,7 +7,6 @@ $Script:refs.CancelButton.add_Click({
 $Script:refs.MainForm.AcceptButton = $Script:refs.CompileButton
 
 # 自动适应窗口大小
-
 $Script:refs.MainForm.add_Load({
 	$Script:refs.MainFormResizeHeight = $Script:refs.MainForm.Height
 	$Script:refs.MainFormResizeWidth = $Script:refs.MainForm.Width
@@ -46,44 +44,34 @@ $Script:refs.IconFileButton.add_Click({
 	$Script:refs.IconFileTextBox.Text = $OpenIconFileDialog.FileName
 })
 # 允许将文件拖放到文本框中
-$Script:refs.CompileFileTextBox.add_DragEnter({
-	if ($_.Data.GetDataPresent([Windows.Forms.DataFormats]::FileDrop)) {
-		$_.Effect = [Windows.Forms.DragDropEffects]::Copy
-	}
-	else {
-		$_.Effect = [Windows.Forms.DragDropEffects]::None
-	}
-})
+@($Script:refs.CompileFileTextBox,$Script:refs.OutputFileTextBox,$Script:refs.IconFileTextBox) | ForEach-Object {
+	$_.add_DragEnter({
+		if ($_.Data.GetDataPresent([Windows.Forms.DataFormats]::FileDrop)) {
+			$_.Effect = [Windows.Forms.DragDropEffects]::Copy
+		}
+		else {
+			$_.Effect = [Windows.Forms.DragDropEffects]::None
+		}
+	})
+}
 $Script:refs.CompileFileTextBox.add_DragDrop({
 	$_.Effect = [Windows.Forms.DragDropEffects]::None
 	$Script:refs.CompileFileTextBox.Text = $_.Data.GetData([Windows.Forms.DataFormats]::FileDrop)
 })
-$Script:refs.OutputFileTextBox.add_DragEnter({
-	if ($_.Data.GetDataPresent([Windows.Forms.DataFormats]::FileDrop)) {
-		$_.Effect = [Windows.Forms.DragDropEffects]::Copy
-	}
-	else {
-		$_.Effect = [Windows.Forms.DragDropEffects]::None
-	}
-})
 $Script:refs.OutputFileTextBox.add_DragDrop({
 	$_.Effect = [Windows.Forms.DragDropEffects]::None
 	$Script:refs.OutputFileTextBox.Text = $_.Data.GetData([Windows.Forms.DataFormats]::FileDrop)
-})
-$Script:refs.IconFileTextBox.add_DragEnter({
-	if ($_.Data.GetDataPresent([Windows.Forms.DataFormats]::FileDrop)) {
-		$_.Effect = [Windows.Forms.DragDropEffects]::Copy
-	}
-	else {
-		$_.Effect = [Windows.Forms.DragDropEffects]::None
-	}
 })
 $Script:refs.IconFileTextBox.add_DragDrop({
 	$_.Effect = [Windows.Forms.DragDropEffects]::None
 	$Script:refs.IconFileTextBox.Text = $_.Data.GetData([Windows.Forms.DataFormats]::FileDrop)
 })
 
-$Script:refs.ConsoleAppCheckBox.add_CheckedChanged({
+$Script:refs.ConsoleAppCheckBox.add_CheckedChanged((.{
+	param ($Scriptblock)
+	. $Scriptblock
+	$Scriptblock
+} {
 	# 禁用控制台应用选项或窗口应用选项
 	if ($Script:refs.ConsoleAppCheckBox.Checked) {
 		$Script:refs.UnicodeEncodingCheckBox.Enabled = $true
@@ -101,7 +89,7 @@ $Script:refs.ConsoleAppCheckBox.add_CheckedChanged({
 		$Script:refs.DPIAwareCheckBox.Enabled = $true
 		$Script:refs.WinFormsDPIAwareCheckBox.Enabled = $true
 	}
-})
+}))
 # cpu架构选项只能选一个
 $Script:refs.x64CheckBox.add_CheckedChanged({
 	if ($Script:refs.x64CheckBox.Checked) {
@@ -153,43 +141,45 @@ $Script:refs.MultiThreadCheckBox.add_CheckedChanged({
 	}
 })
 $Script:refs.CompileButton.add_Click({
+	. "$PSScriptRoot\Functions.ps1"
 	$Params = Get-ps12exeArgs
 	$result = $null
 	try {
-		$result = ps12exe @Params -Localize $Localize | Out-String
+		$result = ps12exe @Params -Localize $Localize -ErrorAction Stop | Out-String
 	}
 	catch {
 		[System.Windows.Forms.MessageBox]::Show("$($Script:LocalizeData.ErrorHead) $($_.Exception.Message)", $Script:LocalizeData.CompileResult, [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
 		return
 	}
-	if (!$result) {
-		$result = $Script:LocalizeData.DefaultResult
-	}
+	if (!$result) { $result = $Script:LocalizeData.DefaultResult }
 	[System.Windows.Forms.MessageBox]::Show($result, $Script:LocalizeData.CompileResult, [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information)
 })
 $Script:refs.LoadCfgButton.add_Click({
+	. "$PSScriptRoot\Functions.ps1"
 	LoadCfgFile
 })
 
 $Script:refs.SaveCfgButton.add_Click({
+	. "$PSScriptRoot\Functions.ps1"
 	SaveCfgFile
 })
 
 $Script:refs.SaveCfg2OtherFileButton.add_Click({
+	. "$PSScriptRoot\Functions.ps1"
 	SaveCfgFileAs
 })
 $Script:DarkMode = $DarkMode
 $Script:refs.DarkModeSetButton.BackGroundImage = [System.Drawing.Image]::FromFile("$PSScriptRoot\..\..\img\darklight.png")
 $Script:refs.DarkModeSetButton.add_Click({
+	. "$PSScriptRoot\DarkMode.ps1"
 	$Script:DarkMode = !$Script:DarkMode
 	Set-DarkMode $Script:DarkMode
 })
 $Script:refs.MainForm.add_FormClosing({
+	. "$PSScriptRoot\Functions.ps1"
 	if ($script:ConfingFile) {
 		if (!(Test-Path $script:ConfingFile)) {
-			if (-not (AskSaveCfg)) {
-				return
-			}
+			if (-not (AskSaveCfg)) { return }
 		}
 		SaveCfgFile $script:ConfingFile
 	}
