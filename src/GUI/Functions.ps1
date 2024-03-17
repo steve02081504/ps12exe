@@ -93,34 +93,24 @@ function Get-ps12exeArgs {
 	$result.minifyer = [System.Management.Automation.Language.Parser]::ParseInput($UIData.minifyer, [ref]$null, [ref]$null).GetScriptBlock()
 	if ($ConfingFile) {
 		# 若icon、inputFile、outputFile、TempDir为相对路径，转换为绝对路径
-		if ($UIData.resourceParams.iconFile -and -not [System.IO.Path]::IsPathRooted($UIData.resourceParams.iconFile)) {
-			$UIData.resourceParams.iconFile = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfingFile -ChildPath $UIData.resourceParams.iconFile))
-		}
-		if ($UIData.inputFile -and -not [System.IO.Path]::IsPathRooted($UIData.inputFile)) {
-			$UIData.inputFile = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfingFile -ChildPath $UIData.inputFile))
-		}
-		if ($UIData.outputFile -and -not [System.IO.Path]::IsPathRooted($UIData.outputFile)) {
-			$UIData.outputFile = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfingFile -ChildPath $UIData.outputFile))
-		}
-		if ($UIData.TempDir -and -not [System.IO.Path]::IsPathRooted($UIData.TempDir)) {
-			$UIData.TempDir = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfingFile -ChildPath $UIData.TempDir))
+		@('iconFile', 'inputFile', 'outputFile', 'TempDir') | ForEach-Object {
+			if ($UIData.$_ -and -not [System.IO.Path]::IsPathRooted($UIData.$_)) {
+				$UIData.$_ = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfingFile -ChildPath $UIData.$_))
+			}
+			elseif ($UIData.resourceParams.$_ -and -not [System.IO.Path]::IsPathRooted($UIData.resourceParams.$_)) {
+				$UIData.resourceParams.$_ = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfingFile -ChildPath $UIData.resourceParams.$_))
+			}
 		}
 	}
 	$UIData.GetEnumerator() | Where-Object { $_.Value -eq '' } | ForEach-Object { $result.Remove($_.Key) }
 	$result
 }
 $Script:ConfingFile = ''
-function SetCfgFile {
-	param (
-		[string]$ConfingFile
-	)
+function SetCfgFile([string]$ConfingFile) {
 	$Script:refs.CfgFileLabel.Text = $Script:LocalizeData.CfgFileLabelHead + $ConfingFile
 	$script:ConfingFile = $ConfingFile
 }
-function LoadCfgFile {
-	param (
-		[string]$ConfingFile
-	)
+function LoadCfgFile([string]$ConfingFile) {
 	if (!$ConfingFile) {
 		$OpenCfgFileDialog.ShowDialog() | Out-Null
 		$ConfingFile = $OpenCfgFileDialog.FileName
@@ -131,10 +121,7 @@ function LoadCfgFile {
 		Set-UIData -UIData $UIData
 	}
 }
-function SaveCfgFileAs {
-	param (
-		[string]$ConfingFile
-	)
+function SaveCfgFileAs([string]$ConfingFile) {
 	if (!$ConfingFile) {
 		$SaveCfgFileDialog.ShowDialog() | Out-Null
 		$ConfingFile = $SaveCfgFileDialog.FileName
@@ -145,10 +132,7 @@ function SaveCfgFileAs {
 		$UIData | Export-Clixml $ConfingFile
 	}
 }
-function SaveCfgFile {
-	param (
-		[string]$ConfingFile
-	)
+function SaveCfgFile([string]$ConfingFile) {
 	if (!$ConfingFile) {
 		$ConfingFile = $Script:ConfingFile
 	}

@@ -26,12 +26,7 @@ function Set-DarkMode($set) {
 			$_.ForeColor = 'Window'
 			$_.FlatStyle = 'Flat'
 		}
-		# DWMWA_USE_IMMERSIVE_DARK_MODE
-		[ps12exeGUI.Dwm]::SetWindowAttribute($Script:refs.MainForm.Handle, 20, 1)
-		# DWMWA_BORDER_COLOR
 		$color = 0x181818
-		$color = (($color -band 0xff) -shl 16) + ($color -band 0xff00) + (($color -shr 16) -band 0xff)
-		[ps12exeGUI.Dwm]::SetWindowAttribute($Script:refs.MainForm.Handle, 34, $color)
 	}
 	else {
 		$Script:refs.MainForm.BackColor = 'Control'
@@ -49,13 +44,13 @@ function Set-DarkMode($set) {
 			$_.ForeColor = 'ControlText'
 			$_.FlatStyle = 'Standard'
 		}
-		# DWMWA_USE_IMMERSIVE_DARK_MODE
-		[ps12exeGUI.Dwm]::SetWindowAttribute($Script:refs.MainForm.Handle, 20, 0)
-		# DWMWA_BORDER_COLOR
 		$color = 0xeff4f9
-		$color = (($color -band 0xff) -shl 16) + ($color -band 0xff00) + (($color -shr 16) -band 0xff)
-		[ps12exeGUI.Dwm]::SetWindowAttribute($Script:refs.MainForm.Handle, 34, $color)
 	}
+	# DWMWA_USE_IMMERSIVE_DARK_MODE
+	[ps12exeGUI.Dwm]::SetWindowAttribute($Script:refs.MainForm.Handle, 20, $set)
+	# DWMWA_BORDER_COLOR
+	$color = (($color -band 0xff) -shl 16) + ($color -band 0xff00) + (($color -shr 16) -band 0xff)
+	[ps12exeGUI.Dwm]::SetWindowAttribute($Script:refs.MainForm.Handle, 34, $color)
 }
 
 Set-DarkMode $DarkMode
