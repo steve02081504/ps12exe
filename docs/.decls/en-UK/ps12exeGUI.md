@@ -13,7 +13,7 @@ ps12exeGUI is a GUI tool for ps12exe.
 ## SYNTAX
 
 ```
-ps12exeGUI [[-ConfingFile] <String>] [[-Localize] <String>] [[-UIMode] <String>] [-help]
+ps12exeGUI [[-ConfigFile] <String>] [[-Localize] <String>] [[-UIMode] <String>] [-help]
  [-ProgressAction <ActionPreference>] [<CommonParameters>]
 ```
 
@@ -29,7 +29,7 @@ ps12exeGUI -Localize 'en-UK' -UIMode 'Light'
 
 ### EXAMPLE 2
 ```
-ps12exeGUI -ConfingFile 'ps12exe.json' -Localize 'en-UK' -UIMode 'Dark'
+ps12exeGUI -ConfigFile 'ps12exe.json' -Localize 'en-UK' -UIMode 'Dark'
 ```
 
 ### EXAMPLE 3
@@ -39,7 +39,7 @@ ps12exeGUI -help
 
 ## PARAMETERS
 
-### -ConfingFile
+### -ConfigFile
 The path of the configuration file.
 
 ```yaml

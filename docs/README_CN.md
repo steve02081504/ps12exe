@@ -76,13 +76,13 @@ Start-ps12exeWebServer
 ### GUI参数
 
 ```powershell
-ps12exeGUI [[-ConfingFile] '<filename>'] [-Localize '<languagecode>'] [-UIMode 'Dark'|'Light'|'Auto']
+ps12exeGUI [[-ConfigFile] '<filename>'] [-Localize '<languagecode>'] [-UIMode 'Dark'|'Light'|'Auto']
 ```
 
 ```text
-ConfingFile = 配置文件的路径（默认为 无）
-   Localize = 语言代码（默认为当前系统语言，没有对应的语言文件时尝试加载'en-UK'，如果仍然没有则遍历所有语言文件直到可用）
-     UIMode = 界面模式（默认为 Auto）
+ConfigFile = 配置文件的路径（默认为 无）
+  Localize = 语言代码（默认为当前系统语言，没有对应的语言文件时尝试加载'en-UK'，如果仍然没有则遍历所有语言文件直到可用）
+    UIMode = 界面模式（默认为 Auto）
 ```
 
 ### 控制台参数

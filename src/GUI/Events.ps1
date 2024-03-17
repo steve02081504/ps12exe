@@ -143,11 +143,11 @@ $Script:refs.DarkModeSetButton.add_Click({
 	Set-DarkMode $Script:DarkMode
 })
 $Script:refs.MainForm.add_FormClosing({
-	if ($script:ConfingFile) {
-		if (!(Test-Path $script:ConfingFile)) {
+	if ($script:ConfigFile) {
+		if (!(Test-Path $script:ConfigFile)) {
 			if (-not (AskSaveCfg)) { return }
 		}
-		SaveCfgFile $script:ConfingFile
+		SaveCfgFile $script:ConfigFile
 	}
 	elseif ($Script:refs.CompileFileTextBox.Text) {
 		if (AskSaveCfg) {

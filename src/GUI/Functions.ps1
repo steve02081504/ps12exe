@@ -91,52 +91,52 @@ function Get-ps12exeArgs {
 	$UIData = Get-UIData
 	$result = $UIData.Clone()
 	$result.minifyer = [System.Management.Automation.Language.Parser]::ParseInput($UIData.minifyer, [ref]$null, [ref]$null).GetScriptBlock()
-	if ($ConfingFile) {
+	if ($ConfigFile) {
 		# 若icon、inputFile、outputFile、TempDir为相对路径，转换为绝对路径
 		@('iconFile', 'inputFile', 'outputFile', 'TempDir') | ForEach-Object {
 			if ($UIData.$_ -and -not [System.IO.Path]::IsPathRooted($UIData.$_)) {
-				$UIData.$_ = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfingFile -ChildPath $UIData.$_))
+				$UIData.$_ = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfigFile -ChildPath $UIData.$_))
 			}
 			elseif ($UIData.resourceParams.$_ -and -not [System.IO.Path]::IsPathRooted($UIData.resourceParams.$_)) {
-				$UIData.resourceParams.$_ = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfingFile -ChildPath $UIData.resourceParams.$_))
+				$UIData.resourceParams.$_ = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfigFile -ChildPath $UIData.resourceParams.$_))
 			}
 		}
 	}
 	$UIData.GetEnumerator() | Where-Object { $_.Value -eq '' } | ForEach-Object { $result.Remove($_.Key) }
 	$result
 }
-$Script:ConfingFile = ''
-function SetCfgFile([string]$ConfingFile) {
-	$Script:refs.CfgFileLabel.Text = $Script:LocalizeData.CfgFileLabelHead + $ConfingFile
-	$script:ConfingFile = $ConfingFile
+$Script:ConfigFile = ''
+function SetCfgFile([string]$ConfigFile) {
+	$Script:refs.CfgFileLabel.Text = $Script:LocalizeData.CfgFileLabelHead + $ConfigFile
+	$script:ConfigFile = $ConfigFile
 }
-function LoadCfgFile([string]$ConfingFile) {
-	if (!$ConfingFile) {
+function LoadCfgFile([string]$ConfigFile) {
+	if (!$ConfigFile) {
 		$OpenCfgFileDialog.ShowDialog() | Out-Null
-		$ConfingFile = $OpenCfgFileDialog.FileName
+		$ConfigFile = $OpenCfgFileDialog.FileName
 	}
-	if ($ConfingFile) {
-		SetCfgFile $ConfingFile
-		$UIData = Import-Clixml $ConfingFile
+	if ($ConfigFile) {
+		SetCfgFile $ConfigFile
+		$UIData = Import-Clixml $ConfigFile
 		Set-UIData -UIData $UIData
 	}
 }
-function SaveCfgFileAs([string]$ConfingFile) {
-	if (!$ConfingFile) {
+function SaveCfgFileAs([string]$ConfigFile) {
+	if (!$ConfigFile) {
 		$SaveCfgFileDialog.ShowDialog() | Out-Null
-		$ConfingFile = $SaveCfgFileDialog.FileName
+		$ConfigFile = $SaveCfgFileDialog.FileName
 	}
-	if ($ConfingFile) {
-		SetCfgFile $ConfingFile
+	if ($ConfigFile) {
+		SetCfgFile $ConfigFile
 		$UIData = Get-UIData
-		$UIData | Export-Clixml $ConfingFile
+		$UIData | Export-Clixml $ConfigFile
 	}
 }
-function SaveCfgFile([string]$ConfingFile) {
-	if (!$ConfingFile) {
-		$ConfingFile = $Script:ConfingFile
+function SaveCfgFile([string]$ConfigFile) {
+	if (!$ConfigFile) {
+		$ConfigFile = $Script:ConfigFile
 	}
-	SaveCfgFileAs $ConfingFile
+	SaveCfgFileAs $ConfigFile
 }
 
 function AskSaveCfg {

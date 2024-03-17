@@ -12,18 +12,18 @@
 
 #region Other Actions Before ShowDialog
 
-if ($ConfingFile) {
+if ($ConfigFile) {
 	# if file not exists or empty
-	if (!(Test-Path $ConfingFile) -or (Get-Item $ConfingFile).Length -eq 0) {
-		SetCfgFile $ConfingFile
+	if (!(Test-Path $ConfigFile) -or (Get-Item $ConfigFile).Length -eq 0) {
+		SetCfgFile $ConfigFile
 	}
 	else {
-		LoadCfgFile $ConfingFile
+		LoadCfgFile $ConfigFile
 	}
 }
 
 if ($PS1File) {
-	if (-not $ConfingFile) {
+	if (-not $ConfigFile) {
 		SetCfgFile "$($PS1File.Substring(0, $PS1File.LastIndexOf('.'))).psccfg"
 	}
 	$Script:refs.CompileFileTextBox.Text = "./$(Split-Path $PS1File -Leaf)" #以相对路径存储

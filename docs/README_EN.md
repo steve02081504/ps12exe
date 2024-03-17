@@ -76,13 +76,13 @@ Starts a web server that can be used to compile powerShell scripts online.
 ### GUI parameters
 
 ```powershell
-ps12exeGUI [[-ConfingFile] '<filename>'] [-Localize '<languagecode>'] [-UIMode 'Dark'|'Light'|'Auto']
+ps12exeGUI [[-ConfigFile] '<filename>'] [-Localize '<languagecode>'] [-UIMode 'Dark'|'Light'|'Auto']
 ```
 
 ```text
-ConfingFile = path to config file (default is none)
-   Localize = language code (default is current system language, try to load 'en-UK' if no corresponding language file is available, if still not available, iterate through all language files until available)
-     UIMode = UI mode (default is Auto)
+ConfigFile = path to config file (default is none)
+  Localize = language code (default is current system language, try to load 'en-UK' if no corresponding language file is available, if still not available, iterate through all language files until available)
+    UIMode = UI mode (default is Auto)
 ```
 
 ### Console parameters

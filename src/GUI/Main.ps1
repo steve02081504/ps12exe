@@ -5,7 +5,7 @@
 ps12exeGUI is a GUI tool for ps12exe.
 .DESCRIPTION
 ps12exeGUI is a GUI tool for ps12exe.
-.PARAMETER ConfingFile
+.PARAMETER ConfigFile
 The path of the configuration file.
 .PARAMETER Localize
 The language code to use.
@@ -16,14 +16,14 @@ Show this help message.
 .EXAMPLE
 ps12exeGUI -Localize 'en-UK' -UIMode 'Light'
 .EXAMPLE
-ps12exeGUI -ConfingFile 'ps12exe.json' -Localize 'en-UK' -UIMode 'Dark'
+ps12exeGUI -ConfigFile 'ps12exe.json' -Localize 'en-UK' -UIMode 'Dark'
 .EXAMPLE
 ps12exeGUI -help
 #>
 [CmdletBinding()]
 param(
 	[ValidatePattern('|.(psccfg|xml)$')]
-	[string]$ConfingFile,
+	[string]$ConfigFile,
 	[ArgumentCompleter({
 		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 		. "$PSScriptRoot\..\LocaleArgCompleter.ps1" @PSBoundParameters
@@ -56,7 +56,7 @@ try {
 
 	# Execute
 	$pwsh = [PowerShell]::Create().AddScript({
-		param ($ScriptRoot, $ConfingFile, $Localize, $UIMode, $PS1File, $help)
+		param ($ScriptRoot, $ConfigFile, $Localize, $UIMode, $PS1File, $help)
 		. "$ScriptRoot\GUIMainScript.ps1"
 	}).AddParameter('ScriptRoot', $PSScriptRoot)
 

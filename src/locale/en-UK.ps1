@@ -34,9 +34,9 @@
 	}
 	GUIHelpData			   = @{
 		title	   = "Usage:"
-		Usage	   = "ps12exeGUI [[-ConfingFile] '<filename>'] [-Localize '<language code>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]"
+		Usage	   = "ps12exeGUI [[-ConfigFile] '<filename>'] [-Localize '<language code>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]"
 		PrarmsData = [ordered]@{
-			ConfingFile = "The configuration file to load."
+			ConfigFile	= "The configuration file to load."
 			Localize	= "The language code to use."
 			UIMode		= "The UI mode to use."
 			help		= "Show this help message."
