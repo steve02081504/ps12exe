@@ -124,7 +124,7 @@ function HandleRequest($context) {
 			$runspace.RunspacePool = $runspacePool
 			$AsyncResult = $runspace.AddScript({
 					param ($userInput, $Response, $ScriptRoot, $compiledExePath)
-					
+
 					# 加载ps12exe用于处理编译请求
 					Import-Module $ScriptRoot/../../ps12exe.psm1 -ErrorAction Stop
 
@@ -144,7 +144,7 @@ function HandleRequest($context) {
 						$Response.ContentType = "text/plain"
 						$buffer = [System.Text.Encoding]::UTF8.GetBytes("$_")
 					}
-					
+
 					$Response.ContentLength64 = $buffer.Length
 					if ($buffer) {
 						$Response.OutputStream.Write($buffer, 0, $buffer.Length)
@@ -180,12 +180,13 @@ try {
 			$Timer++
 			if ($Timer -ge 120) {
 				$ipRequestCount = @{}
-				$Cache = Get-ChildItem -Path $PSScriptRoot/outputs
+				$Cache = Get-ChildItem -Path $PSScriptRoot/outputs -ErrorAction Ignore
 				if ($MaxCachedFileSize -lt ($Cache | Measure-Object -Property Length -Sum).Sum) {
 					$Cache | Sort-Object -Property LastAccessTime -Descending |
 					Select-Object -First $([math]::Floor($Cache.Count / 2)) |
 					Remove-Item -Force -ErrorAction Ignore
 				}
+				$Timer = 0
 			}
 			while ($AsyncResultArray[0].IsCompleted) {
 				$RunspaceArray[0].Dispose()
