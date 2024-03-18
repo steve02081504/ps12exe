@@ -1,10 +1,17 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<meta name="title" content="ps12exe Online">
+<meta name="description" content="A super cool online compiler for powershell scripts">
+<meta property="og:image" content="https://repository-images.githubusercontent.com/729678966/3ed3f02f-c7c9-4a18-b1f5-255e667643b6">
+<meta property="og:image:alt" content="A super cool online compiler for powershell scripts">
+<meta property="og:type" content="object">
+<meta property="og:title" content="ps12exe Online">
+<meta property="og:description" content="A super cool online compiler for powershell scripts">
 <html>
 
 <head>
 	<title>ps12exe Online</title>
-	<link rel="icon" type="image/x-icon" href="./favicon.ico">
+	<link rel="icon" type="image/x-icon" href="favicon.ico">
 	<script type='text/javascript' src='https://www.midijs.net/lib/midi.js'></script>
 	<script type="module">
 		(async ({ chrome, netscape }) => {
@@ -27,7 +34,7 @@
 		var playing = false
 		userInput.addEventListener("focus", event => {
 			if (playing) MIDIjs.resume()
-			else MIDIjs.play('./bgm',true)
+			else MIDIjs.play('./bgm', true)
 			playing = true;
 		})
 		userInput.addEventListener("blur", event => MIDIjs.pause())

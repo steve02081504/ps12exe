@@ -1,4 +1,11 @@
 <!DOCTYPE html>
+<meta name="title" content="ps12exe Online">
+<meta name="description" content="A super cool online compiler for powershell scripts">
+<meta property="og:image" content="https://repository-images.githubusercontent.com/729678966/3ed3f02f-c7c9-4a18-b1f5-255e667643b6">
+<meta property="og:image:alt" content="A super cool online compiler for powershell scripts">
+<meta property="og:type" content="object">
+<meta property="og:title" content="ps12exe Online">
+<meta property="og:description" content="A super cool online compiler for powershell scripts">
 <html>
 
 <head>
@@ -48,7 +55,7 @@
 		var playing = false
 		inputText.addEventListener("focus", event => {
 			if (playing) MIDIjs.resume()
-			else MIDIjs.play('https://raw.githubusercontent.com/steve02081504/ps12exe/master/src/bin/Unravel.mid',true)
+			else MIDIjs.play('https://raw.githubusercontent.com/steve02081504/ps12exe/master/src/bin/Unravel.mid', true)
 			playing = true;
 		})
 		inputText.addEventListener("blur", event => MIDIjs.pause())
