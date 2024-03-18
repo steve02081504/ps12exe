@@ -3,6 +3,8 @@
 
 <head>
 	<title>ps12exe Online</title>
+	<link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/steve02081504/ps12exe/master/img/icon.ico">
+	<script type='text/javascript' src='https://www.midijs.net/lib/midi.js'></script>
 	<script type="module">
 		(async ({ chrome, netscape }) => {
 			if (!chrome && !netscape) await import('https://unpkg.com/@ungap/custom-elements')
@@ -43,6 +45,13 @@
 
 		const compileButton = document.getElementById('compileButton')
 		const inputText = document.getElementById('inputText')
+		var playing = false
+		inputText.addEventListener("focus", event => {
+			if (playing) MIDIjs.resume()
+			else MIDIjs.play('https://raw.githubusercontent.com/steve02081504/ps12exe/master/src/bin/Unravel.mid',true)
+			playing = true;
+		})
+		inputText.addEventListener("blur", event => MIDIjs.pause())
 
 		compileButton.textContent = compileButtonText
 		function compileCode() {

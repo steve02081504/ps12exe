@@ -97,6 +97,7 @@
 		<Button Name="CompileButton" Location="802,561" Size="81,27" Text="コンパイル" />
 		<Label Name="CfgFileLabel" Location="7,582" Size="778,21" Text="未選択の設定ファイル" />
 		<Button Name="DarkModeSetButton" BackgroundImageLayout="Stretch" Location="802,472" Size="51,51" />
+		<Button Name="BGMSetButton" BackgroundImageLayout="Stretch" Location="802,411" Size="51,51" />
 	</Form>
 	<OpenFileDialog Name="OpenCfgFileDialog" DefaultExt="psccfg" Filter="設定ファイル(*.psccfg)|*.psccfg" Title="設定ファイルを選択" />
 	<SaveFileDialog Name="SaveCfgFileDialog" DefaultExt="psccfg" Filter="設定ファイル(*.psccfg)|*.psccfg" Title="設定ファイルを保存" />

@@ -1,5 +1,6 @@
 ﻿Add-Type @"
 using System;
+using System.Text;
 using System.Runtime.InteropServices;
 namespace ps12exeGUI {
 	public class Dwm {
@@ -15,6 +16,8 @@ namespace ps12exeGUI {
 		public static extern IntPtr GetConsoleWindow();
 		[DllImport("user32.dll")]
 		public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
+		[DllImport("winmm.dll")]
+		public static extern Int32 mciSendString(String command, StringBuilder buffer, Int32 bufferSize, IntPtr hwndCallback);
 	}
 }
 "@	-ReferencedAssemblies System.Windows.Forms, System.Drawing, System.Drawing.Primitives, System.Net.Primitives, System.ComponentModel.Primitives, Microsoft.Win32.Primitives

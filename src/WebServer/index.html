@@ -4,6 +4,8 @@
 
 <head>
 	<title>ps12exe Online</title>
+	<link rel="icon" type="image/x-icon" href="./favicon.ico">
+	<script type='text/javascript' src='https://www.midijs.net/lib/midi.js'></script>
 	<script type="module">
 		(async ({ chrome, netscape }) => {
 			if (!chrome && !netscape) await import('https://unpkg.com/@ungap/custom-elements')
@@ -22,6 +24,13 @@
 	<a id="downloadLink" download="a.exe"></a>
 	<script type="text/javascript">
 		const userInput = document.getElementById("inputText")
+		var playing = false
+		userInput.addEventListener("focus", event => {
+			if (playing) MIDIjs.resume()
+			else MIDIjs.play('./bgm',true)
+			playing = true;
+		})
+		userInput.addEventListener("blur", event => MIDIjs.pause())
 		const a = document.getElementById("downloadLink")
 		function compileCode() {
 			if (!userInput.value) {

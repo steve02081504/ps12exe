@@ -142,6 +142,13 @@ $Script:refs.DarkModeSetButton.add_Click({
 	$Script:DarkMode = !$Script:DarkMode
 	Set-DarkMode $Script:DarkMode
 })
+$Script:BGMPlaying = $true
+$Script:refs.BGMSetButton.BackGroundImage = [System.Drawing.Image]::FromFile("$PSScriptRoot\..\..\img\music.png")
+$Script:refs.BGMSetButton.add_Click({
+	if ($Script:BGMPlaying) { PauseMusic }
+	else { ResumeMusic }
+	$Script:BGMPlaying = !$Script:BGMPlaying
+})
 $Script:refs.MainForm.add_FormClosing({
 	if ($script:ConfigFile) {
 		if (!(Test-Path $script:ConfigFile)) {

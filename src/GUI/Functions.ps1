@@ -142,3 +142,10 @@ function SaveCfgFile([string]$ConfigFile) {
 function AskSaveCfg {
 	[System.Windows.Forms.MessageBox]::Show($Script:LocalizeData.AskSaveCfg, $Script:LocalizeData.AskSaveCfgTitle, [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question) -eq 'Yes'
 }
+
+function PauseMusic {
+	[ps12exeGUI.Win32]::mciSendString("pause ps12exeGUIBGM", $null, 0, 0) | Out-Null
+}
+function ResumeMusic {
+	[ps12exeGUI.Win32]::mciSendString("resume ps12exeGUIBGM", $null, 0, 0) | Out-Null
+}

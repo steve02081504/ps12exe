@@ -47,16 +47,28 @@ try {
 	$Icon = [System.Drawing.Icon]::ExtractAssociatedIcon("$PSScriptRoot\..\..\img\icon.ico")
 	$Script:refs.MainForm.Icon = $Icon
 
+	# load bgm
+	$FS = New-Object -ComObject Scripting.FileSystemObject
+	$bgmFile = $FS.GetFile("$PSScriptRoot\..\bin\Unravel.mid")
+	[ps12exeGUI.Win32]::mciSendString("open `"$($bgmFile.ShortPath)`" alias ps12exeGUIBGM type MPEGVideo", $null, 0, 0) | Out-Null
+	# play music as loop
+	[ps12exeGUI.Win32]::mciSendString("play ps12exeGUIBGM repeat", $null, 0, 0) | Out-Null
+
 	# Show the form
 	try { [void]$Script:refs.MainForm.ShowDialog() } catch { Update-ErrorLog -ErrorRecord $_ -Message "Exception encountered unexpectedly at ShowDialog." }
 }
 finally {
 	# Dispose all controls
-	$Script:refs.MainForm.Controls | ForEach-Object { $_.Dispose() }
+	$Script:refs.MainForm.Controls | ForEach-Object {
+		if ($_.BackGroundImage) { $_.BackGroundImage.Dispose() }
+		$_.Dispose()
+	}
 	$Script:refs.MainForm.Dispose()
 	$Icon.Dispose()
 
 	[ps12exeGUI.Win32]::ShowWindow($consolePtr, 1) | Out-Null
+
+	[ps12exeGUI.Win32]::mciSendString("close ps12exeGUIBGM", $null, 0, 0) | Out-Null
 
 	# Remove all variables in the script scope
 	Get-Variable -Scope Script | Remove-Variable -Scope Script -Force -ErrorAction Ignore

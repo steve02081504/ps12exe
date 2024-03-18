@@ -97,6 +97,7 @@
 		<Button Name="CompileButton" Location="802,561" Size="81,27" Text="Compilar" />
 		<Label Name="CfgFileLabel" Location="7,582" Size="778,21" Text="No se ha seleccionado ningún archivo de configuración" />
 		<Button Name="DarkModeSetButton" BackgroundImageLayout="Stretch" Location="802,472" Size="51,51" />
+		<Button Name="BGMSetButton" BackgroundImageLayout="Stretch" Location="802,411" Size="51,51" />
 	</Form>
 	<OpenFileDialog Name="OpenCfgFileDialog" DefaultExt="psccfg" Filter="Archivos de configuración(*.psccfg)|*.psccfg" Title="Seleccionar archivo de configuración" />
 	<SaveFileDialog Name="SaveCfgFileDialog" DefaultExt="psccfg" Filter="Archivos de configuración(*.psccfg)|*.psccfg" Title="Guardar archivo de configuración" />

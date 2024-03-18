@@ -158,6 +158,15 @@ function HandleRequest($context) {
 			$RunspaceArray.Add($runspace) | Out-Null
 			return
 		}
+		'/bgm' {
+			# midi file
+			$context.Response.ContentType = "audio/midi"
+			$buffer = [System.IO.File]::ReadAllBytes("$PSScriptRoot/../bin/Unravel.mid")
+		}
+		'/favicon.ico' {
+			$context.Response.ContentType = "image/x-icon"
+			$buffer = [System.IO.File]::ReadAllBytes("$PSScriptRoot/../../img/icon.ico")
+		}
 		'/' {
 			$body = Get-Content -LiteralPath "$PSScriptRoot/index.html" -Encoding utf8 -Raw
 			$buffer = [System.Text.Encoding]::UTF8.GetBytes($body)
@@ -211,5 +220,5 @@ finally {
 	# Restore Console Window Title
 	$Host.UI.RawUI.WindowTitle = $BackUpTitle
 	# 清空缓存
-	Remove-Item $PSScriptRoot/outputs/* -Recurse -Force
+	Remove-Item $PSScriptRoot/outputs/* -Recurse -Force -ErrorAction Ignore
 }
