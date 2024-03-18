@@ -6,10 +6,10 @@
 	<title>ps12exe Online</title>
 	<script type="module">
 		(async ({ chrome, netscape }) => {
-			if (!chrome && !netscape) await import('https://unpkg.com/@ungap/custom-elements');
-			const { default: HighlightedCode } = await import('https://unpkg.com/highlighted-code');
-			HighlightedCode.useTheme('github-dark');
-		})(self);
+			if (!chrome && !netscape) await import('https://unpkg.com/@ungap/custom-elements')
+			const { default: HighlightedCode } = await import('https://unpkg.com/highlighted-code')
+			HighlightedCode.useTheme('github-dark')
+		})(self)
 	</script>
 </head>
 
@@ -21,12 +21,12 @@
 	<button id="compileButton" onclick="compileCode()">cum out</button>
 	<a id="downloadLink" download="a.exe"></a>
 	<script type="text/javascript">
-		const userInput = document.getElementById("inputText");
-		const a = document.getElementById("downloadLink");
+		const userInput = document.getElementById("inputText")
+		const a = document.getElementById("downloadLink")
 		function compileCode() {
 			if (!userInput.value) {
-				alert("No code to compile");
-				return;
+				alert("No code to compile")
+				return
 			}
 			fetch("./compile", {
 				method: "POST",
@@ -35,17 +35,17 @@
 			.then(response => response.blob())
 			.then(blob => {
 				if (blob.type == "text/plain") {
-					blob.text().then(alert);
-					return;
+					blob.text().then(alert)
+					return
 				}
 				if (blob.type == "application/octet-stream") {
-					a.href = window.URL.createObjectURL(blob);
-					a.click();
+					a.href = window.URL.createObjectURL(blob)
+					a.click()
 				}
 			})
-			.catch(error => console.error("Error:", error));
+			.catch(error => console.error("Error:", error))
 		}
-		const language = navigator.language || navigator.userLanguage || 'en';
+		const language = navigator.language || navigator.userLanguage || 'en'
 		const languageTextMap = {
 			'zh': '编译',
 			'zh-CN': '编译',
@@ -64,7 +64,7 @@
 			'en': 'Compile',
 			'en-UK': 'Compile'
 		};
-		document.getElementById("compileButton").textContent = languageTextMap[language];
+		document.getElementById("compileButton").textContent = languageTextMap[language]
 	</script>
 </body>
 

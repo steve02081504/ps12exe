@@ -5,10 +5,10 @@
 	<title>ps12exe Online</title>
 	<script type="module">
 		(async ({ chrome, netscape }) => {
-			if (!chrome && !netscape) await import('https://unpkg.com/@ungap/custom-elements');
-			const { default: HighlightedCode } = await import('https://unpkg.com/highlighted-code');
-			HighlightedCode.useTheme('github-dark');
-		})(self);
+			if (!chrome && !netscape) await import('https://unpkg.com/@ungap/custom-elements')
+			const { default: HighlightedCode } = await import('https://unpkg.com/highlighted-code')
+			HighlightedCode.useTheme('github-dark')
+		})(self)
 	</script>
 </head>
 
@@ -36,22 +36,22 @@
 			'en-UK': { compileButtonText: 'compile', compileMessage: 'The Powershell code for compilation has been copied to the clipboard! Now you just need to paste and run the code in Powershell to get the compilation result!' },
 			'pt': { compileButtonText: 'compilar', compileMessage: 'O código Powershell para compilação foi copiado para a área de transferência! Agora você só precisa colar e executar o código no Powershell para obter o resultado da compilação!' },
 			'pt-PT': { compileButtonText: 'compilar', compileMessage: 'O código Powershell para compilação foi copiado para a área de transferência! Agora você só precisa colar e executar o código no Powershell para obter o resultado da compilação!' }
-		};
+		}
 
-		const language = navigator.language || navigator.userLanguage || 'en';
-		const { compileButtonText, compileMessage } = translations[language];
+		const language = navigator.language || navigator.userLanguage || 'en'
+		const { compileButtonText, compileMessage } = translations[language]
 
-		const compileButton = document.getElementById('compileButton');
-		const inputText = document.getElementById('inputText');
+		const compileButton = document.getElementById('compileButton')
+		const inputText = document.getElementById('inputText')
 
-		compileButton.textContent = compileButtonText;
+		compileButton.textContent = compileButtonText
 		function compileCode() {
-			var code = inputText.value;
-			var compileCodebase = code.replace("\'", "''");
+			var code = inputText.value
+			var compileCodebase = code.replace("\'", "''")
 			var compileCode = "if (-not (Get-Module -ListAvailable ps12exe)) { Install-Module ps12exe -Force -Scope CurrentUser };" +
-			"'"+compileCodebase+"' | ps12exe";
-			navigator.clipboard.writeText(compileCode);
-			alert(compileMessage);
+			"'"+compileCodebase+"' | ps12exe"
+			navigator.clipboard.writeText(compileCode)
+			alert(compileMessage)
 		}
 	</script>
 </body>
