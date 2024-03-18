@@ -59,12 +59,12 @@ try {
 }
 finally {
 	# Dispose all controls
-	$Script:refs.MainForm.Controls | ForEach-Object {
-		if ($_.BackGroundImage) { $_.BackGroundImage.Dispose() }
-		$_.Dispose()
+	foreach ($Ctrl in $Script:refs.Values) {
+		@('Icon', 'BackGroundImage') | ForEach-Object {
+			if ($Ctrl.$_ -is [IDisposable]) { $Ctrl.$_.Dispose() }
+		}
+		$Ctrl.Dispose()
 	}
-	$Script:refs.MainForm.Dispose()
-	$Icon.Dispose()
 
 	[ps12exeGUI.Win32]::ShowWindow($consolePtr, 1) | Out-Null
 
