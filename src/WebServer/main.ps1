@@ -171,6 +171,11 @@ function HandleRequest($context) {
 			$body = Get-Content -LiteralPath "$PSScriptRoot/index.html" -Encoding utf8 -Raw
 			$buffer = [System.Text.Encoding]::UTF8.GetBytes($body)
 		}
+		default {
+			$context.Response.StatusCode = 404
+			$context.Response.ContentType = "text/plain"
+			$buffer = [System.Text.Encoding]::UTF8.GetBytes('Not Found')
+		}
 	}
 	$context.Response.ContentLength64 = $buffer.Length
 	if ($buffer) {
