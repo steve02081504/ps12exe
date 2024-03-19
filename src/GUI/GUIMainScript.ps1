@@ -67,6 +67,10 @@ finally {
 		}
 		$Ctrl.Dispose()
 	}
+	foreach ($key in $Script:dialogInfo.Keys) {
+		$Dlg = Get-Variable -Name $key -ValueOnly
+		$Dlg.Dispose()
+	}
 
 	[ps12exeGUI.Win32]::ShowWindow($consolePtr, 1) | Out-Null
 
