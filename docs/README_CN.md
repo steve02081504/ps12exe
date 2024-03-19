@@ -211,7 +211,7 @@ $NextScript | ps12exe -outputFile $PSScriptRoot/$NextNumber.exe *> $null
 $Number
 ```
 
-`#_require` 统计整个脚本中需要的模块，并在正式脚本前加入等价以下代码的脚本：
+`#_require` 统计整个脚本中需要的模块，并在第一次`#_require`前加入等价以下代码的脚本：
 
 ```powershell
 $modules | ForEach-Object{

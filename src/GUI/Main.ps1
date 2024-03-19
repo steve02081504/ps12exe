@@ -1,5 +1,6 @@
 ﻿#Requires -Version 5.0
 
+#_if PSScript
 <#
 .SYNOPSIS
 ps12exeGUI is a GUI tool for ps12exe.
@@ -21,13 +22,16 @@ ps12exeGUI -ConfigFile 'ps12exe.json' -Localize 'en-UK' -UIMode 'Dark'
 ps12exeGUI -help
 #>
 [CmdletBinding()]
+#_endif
 param(
 	[ValidatePattern('|.(psccfg|xml)$')]
 	[string]$ConfigFile,
+	#_if PSScript
 	[ArgumentCompleter({
 		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 		. "$PSScriptRoot\..\LocaleArgCompleter.ps1" @PSBoundParameters
 	})]
+	#_endif
 	[string]$Localize,
 	[ValidateSet('Light', 'Dark', 'Auto')]
 	[string]$UIMode = 'Auto',
@@ -36,6 +40,7 @@ param(
 	[switch]$help
 )
 
+#_if PSScript
 if ($help) {
 	$LocalizeData = . $PSScriptRoot\..\LocaleLoader.ps1 -Localize $Localize
 	$MyHelp = $LocalizeData.GUIHelpData
@@ -76,3 +81,14 @@ finally {
 	# Restore Console Window Title
 	$Host.UI.RawUI.WindowTitle = $BackUpTitle
 }
+#_else
+#_require ps12exe
+#_pragma Console 0
+#_pragma iconFile $PSScriptRoot/../../../img/icon.ico
+#_pragma title ps12exeGUI
+#_pragma description 'A super cool GUI for compile powershell scripts'
+#_!!if (!(Test-Path -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\ps12exeGUI.psccfg")){
+#_!!	Set-ps12exeContextMenu 1
+#_!!}
+#_!!ps12exeGUI @PSBoundParameters
+#_endif

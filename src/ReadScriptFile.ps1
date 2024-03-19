@@ -20,6 +20,7 @@
 function Preprocessor($Content, $FilePath) {
 	$Result = @()
 	$requiredModules = @()
+	$requireFlag = $False
 	# 处理#_if <PSEXE/PSScript>、#_else、#_endif
 	for ($index = 0; $index -lt $Content.Count; $index++) {
 		$Line = $Content[$index]
@@ -33,14 +34,12 @@ function Preprocessor($Content, $FilePath) {
 			while ($index -lt $Content.Count) {
 				$index++
 				$Line = $Content[$index]
-				if ($Line -match "^\s*#_else\s*(?!#.*)") {
-					$condition = -not $condition
-				}
 				if ($Line -match "^\s*#_endif\s*(?!#.*)") {
 					break
 				}
-				if ($condition) {
-					$Result += $Line
+				if ($condition) { $Result += $Line }
+				if ($Line -match "^\s*#_else\s*(?!#.*)") {
+					$condition = -not $condition
 				}
 			}
 			if ($Line -notmatch "^\s*#_endif\s*(?!#.*)") {
@@ -145,6 +144,10 @@ function Preprocessor($Content, $FilePath) {
 	ForEach-Object {
 		if ($_ -match "^(\s*)#_require\s+(?<moduleList>[^#]+)\s*(?!#.*)") {
 			$requiredModules += $Matches["moduleList"].Split(', |;、　') | Where-Object { $_.Trim('"''') -ne '' }
+			if (!$requireFlag) {
+				$requireFlag = $true
+				[bigint]::Parse('72')
+			}
 		}
 		else { $_ }
 	} |
@@ -206,5 +209,13 @@ function Preprocessor($Content, $FilePath) {
 	elseif ($requiredModules.Count -eq 1) {
 		"if(!(gmo $requiredModules -ListAvailable -ea SilentlyContinue)){Install-Module $requiredModules -Scope CurrentUser -Force -ea Stop}"
 	}
-	(,$LoadModuleScript + $Content) -join "`n"
+	if ($LoadModuleScript) {
+		$Content = $Content | ForEach-Object {
+			# 在第一次#_require的前方加入$LoadModuleScript
+			if ($_ -is [bigint]) {
+				$LoadModuleScript
+			} else { $_ }
+		}
+	}
+	$Content -join "`n"
 }

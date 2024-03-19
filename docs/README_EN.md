@@ -212,7 +212,7 @@ $NextScript | ps12exe -outputFile $PSScriptRoot/$NextNumber.exe *> $null
 $Number
 ```
 
-`#_require` count the modules needed in the entire script and add the script equivalent of the following code before the official script:
+`#_require` count the modules needed in the entire script and add the script equivalent of the following code before the first `#_require`:
 
 ```powershell
 $modules | ForEach-Object{
