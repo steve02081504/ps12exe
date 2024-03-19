@@ -21,7 +21,7 @@ if ($noConsole) {
 	$referenceAssembies += GetAssembly "System.Drawing" $(if ($PSVersionTable.PSEdition -ne "Core") { "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" })
 }
 elseif ($PSVersionTable.PSEdition -eq "Core") {
-	$referenceAssembies += GetAssembly "System.Console" 
+	$referenceAssembies += GetAssembly "System.Console"
 	$referenceAssembies += GetAssembly "Microsoft.PowerShell.ConsoleHost"
 }
 

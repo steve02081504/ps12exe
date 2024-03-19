@@ -7,29 +7,29 @@ function PSObjectToString($obj, [Switch]$OneLine = $false) {
 			$str = '[ordered]'
 		}
 		$str += '@{'
-		if (-not $OneLine) { 
+		if (-not $OneLine) {
 			$str += "`n"
 		}
 		$str += (($obj.GetEnumerator() | ForEach-Object {
-					if (-not $OneLine) {
-						"`t" * $script:tabnum
-					}
-					$_.Key + ' = ' + $(PSObjectToString $_.Value $OneLine)
-					if (-not $OneLine) { "`n" }
-					else { ';' }
-				}) -join '')
-		if (-not $OneLine) { 
+			if (-not $OneLine) {
+				"`t" * $script:tabnum
+			}
+			$_.Key + ' = ' + $(PSObjectToString $_.Value $OneLine)
+			if (-not $OneLine) { "`n" }
+			else { ';' }
+		}) -join '')
+		if (-not $OneLine) {
 			$str += "`t" * ($script:tabnum - 1)
 		}
 		$str += '}'
 		$str
 		$script:tabnum -= 1
 	}
-	elseif ($obj -is [array]) {
+	elseif ($obj -is [System.Collections.ICollection]) {
 		'@(' + (($obj | ForEach-Object {
-					PSObjectToString $_ $OneLine
-					', '
-				} | Select-Object -SkipLast 1) -join '') + ')'
+			PSObjectToString $_ $OneLine
+			', '
+		} | Select-Object -SkipLast 1) -join '') + ')'
 	}
 	elseif ($obj -is [string]) {
 		"'" + $obj.Replace("'", "''") + "'"

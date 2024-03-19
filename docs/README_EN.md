@@ -200,6 +200,37 @@ elseif
 
 Any line beginning with `#_!!` line that `#_!!` will be removed.
 
+#### `#_require <modulesList>`
+
+```powershell
+#_require ps12exe
+#_pragma Console 0
+$Number = [bigint]::Parse('0')
+$NextNumber = $Number+1
+$NextScript = $PSEXEscript.Replace("Parse('$Number')", "Parse('$NextNumber')")
+$NextScript | ps12exe -outputFile $PSScriptRoot/$NextNumber.exe *> $null
+$Number
+```
+
+`#_require` count the modules needed in the entire script and add the script equivalent of the following code before the official script:
+
+```powershell
+$modules | ForEach-Object{
+	if(!(Get-Module $_ -ListAvailable -ea SilentlyContinue)) {
+		Install-Module $_ -Scope CurrentUser -Force -ea Stop
+	}
+}
+```
+
+It is worth noting that the code it generates will only install modules, not import them.
+Please use `Import-Module` as appropriate.
+
+When you need to require more than one module, you can use spaces, commas, or semicolons and periods as separators instead of writing multi-line require statements.
+
+```powershell
+#_require module1 module2;module3、module4,module5
+```
+
 #### `#_pragma`
 
 The pragma preprocessor directive has no effect on the content of the script, but modifies the parameters used for compilation.  
@@ -212,8 +243,8 @@ PS C:\Users\steve02081504> ./a.exe
 12
 PS C:\Users\steve02081504> '#_pragma Console no
 >> 12' | ps12exe
-Preprocessed script -> 2 bytes
-Compiled file written -> 4096 bytes
+Preprocessed script -> 23 bytes
+Compiled file written -> 2560 bytes
 ```
 
 As you can see, `#_pragma Console no` makes the generated exe file run in windowed mode, even if we didn't specify `-noConsole` at compile time.
@@ -221,7 +252,7 @@ The pragma command can set any compilation parameter:
 
 ```powershell
 #_pragma noConsole #windowed
-#_pragma Console #windowed
+#_pragma Console #console
 #_pragma Console no #windowed
 #_pragma Console true #console
 #_pragma icon $PSScriptRoot/icon.ico #set icon

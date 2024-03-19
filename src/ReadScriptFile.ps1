@@ -16,8 +16,10 @@
 	Write-Verbose "Done preprocess file $([System.IO.Path]::GetFileName($File))"
 }
 . $PSScriptRoot\predicate.ps1
+. $PSScriptRoot\PSObjectToString.ps1
 function Preprocessor($Content, $FilePath) {
 	$Result = @()
+	$requiredModules = @()
 	# 处理#_if <PSEXE/PSScript>、#_else、#_endif
 	for ($index = 0; $index -lt $Content.Count; $index++) {
 		$Line = $Content[$index]
@@ -133,6 +135,13 @@ function Preprocessor($Content, $FilePath) {
 			}
 		}
 	} |
+	# 处理#_require
+	ForEach-Object {
+		if ($_ -match "^(\s*)#_require\s+(?<moduleList>[^#]+)\s*(?!#.*)") {
+			$requiredModules += $Matches["moduleList"].Split(', |;、　') | Where-Object { $_.Trim('"''') -ne '' }
+		}
+		else { $_ }
+	} |
 	# 处理#_!!<line>
 	ForEach-Object {
 		if ($_ -match "^(\s*)#_!!(?<line>.*)") {
@@ -185,5 +194,11 @@ function Preprocessor($Content, $FilePath) {
 			$_
 		}
 	}
-	$Content -join "`n"
+	$LoadModuleScript = if ($requiredModules.Count -gt 1) {
+		(PSObjectToString $requiredModules -OneLine) + '|ForEach-Object{if(!(gmo $_ -ListAvailable -ea SilentlyContinue)){Install-Module $_ -Scope CurrentUser -Force -ea Stop}}'
+	}
+	elseif ($requiredModules.Count -eq 1) {
+		"if(!(gmo $requiredModules -ListAvailable -ea SilentlyContinue)){Install-Module $requiredModules -Scope CurrentUser -Force -ea Stop}"
+	}
+	(,$LoadModuleScript + $Content) -join "`n"
 }

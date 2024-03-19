@@ -208,6 +208,7 @@ if (-not ($inputFile -or $Content)) {
 
 $Params = $PSBoundParameters
 $ParamList = $MyInvocation.MyCommand.Parameters
+$Params.Remove('Content') | Out-Null #防止回滚覆盖
 
 function bytesOfString($str) {
 	[system.Text.Encoding]::UTF8.GetBytes($str).Count
@@ -438,7 +439,7 @@ $NotFindedCmdlets = @()
 $AstAnalyzeResult.UsedNonConstFunctions | ForEach-Object {
 	if ($_ -match '\$' -or -not $_) { return }
 	if ($CommandNames -notcontains $_) {
-		if (Get-Command $_ -ErrorAction Ignore) {
+		if ($_ -match '^[\w\-_]+$' -and (Get-Command $_ -ErrorAction Ignore)) {
 			$FindedCmdlets += $_
 		}
 		# 跳过成员函数，因为解析Add-Type太过复杂

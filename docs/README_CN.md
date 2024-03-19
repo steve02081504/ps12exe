@@ -199,6 +199,37 @@ elseif
 
 任何以`#_!!`开头的行，其开头的`#_!!`会被去除。
 
+#### `#_require <modulesList>`
+
+```powershell
+#_require ps12exe
+#_pragma Console 0
+$Number = [bigint]::Parse('0')
+$NextNumber = $Number+1
+$NextScript = $PSEXEscript.Replace("Parse('$Number')", "Parse('$NextNumber')")
+$NextScript | ps12exe -outputFile $PSScriptRoot/$NextNumber.exe *> $null
+$Number
+```
+
+`#_require` 统计整个脚本中需要的模块，并在正式脚本前加入等价以下代码的脚本：
+
+```powershell
+$modules | ForEach-Object{
+	if(!(Get-Module $_ -ListAvailable -ea SilentlyContinue)) {
+		Install-Module $_ -Scope CurrentUser -Force -ea Stop
+	}
+}
+```
+
+值得注意的是，它所生成的代码只会安装模块，而不会导入模块。
+请视情况使用`Import-Module`。
+
+当你需要require多个模块时，可以使用空格、逗号或分号、顿号作为分隔符，而不必写多行require语句。
+
+```powershell
+#_require module1 module2;module3、module4,module5
+```
+
 #### `#_pragma`
 
 pragma预处理指令对脚本内容没有任何影响，但会修改编译所使用的参数。  
@@ -211,8 +242,8 @@ PS C:\Users\steve02081504> ./a.exe
 12
 PS C:\Users\steve02081504> '#_pragma Console no
 >> 12' | ps12exe
-Preprocessed script -> 2 bytes
-Compiled file written -> 4096 bytes
+Preprocessed script -> 23 bytes
+Compiled file written -> 2560 bytes
 ```
 
 可以看到，`#_pragma Console no` 使得生成的exe文件以窗口模式运行，即使我们在编译时没有指定`-noConsole`。
@@ -220,7 +251,7 @@ pragma命令可以设置任何编译参数：
 
 ```powershell
 #_pragma noConsole #窗口模式
-#_pragma Console #窗口模式
+#_pragma Console #控制台模式
 #_pragma Console no #窗口模式
 #_pragma Console true #控制台模式
 #_pragma icon $PSScriptRoot/icon.ico #设置图标
