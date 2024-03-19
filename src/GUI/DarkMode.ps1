@@ -26,6 +26,9 @@ function Set-DarkMode($set) {
 			$_.ForeColor = 'Window'
 			$_.FlatStyle = 'Flat'
 		}
+		ForEachControl 'GroupBox' {
+			$_.ForeColor = 'Window'
+		}
 		$color = 0x181818
 	}
 	else {
@@ -43,6 +46,9 @@ function Set-DarkMode($set) {
 		ForEachControl 'CheckBox' {
 			$_.ForeColor = 'ControlText'
 			$_.FlatStyle = 'Standard'
+		}
+		ForEachControl 'GroupBox' {
+			$_.ForeColor = 'WindowText'
 		}
 		$color = 0xeff4f9
 	}
