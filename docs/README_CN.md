@@ -63,6 +63,12 @@ ps12exe .\source.ps1 .\target.exe
 
 将`"Hello World!"`编译为可执行文件输出到`.\a.exe`。
 
+```powershell
+ps12exe https://raw.githubusercontent.com/steve02081504/ps12exe/master/src/GUI/Main.ps1
+```
+
+将来自互联网的`Main.ps1`编译为可执行文件输出到`.\Main.exe`。
+
 ### 自托管Web服务
 
 ```powershell

@@ -63,6 +63,12 @@ compiles `source.ps1` into the executable target.exe (if `.\target.exe` is omitt
 
 compiles `"Hello World!"` into the executable `.\a.exe`.
 
+```powershell
+ps12exe https://raw.githubusercontent.com/steve02081504/ps12exe/master/src/GUI/Main.ps1
+```
+
+compiles `Main.ps1` from the internet into the executable `.\Main.exe`.
+
 ### Self-Host WebServer
 
 ```powershell

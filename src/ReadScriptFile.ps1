@@ -1,6 +1,6 @@
 ﻿function ReadScriptFile($File) {
 	$Content = if ($File -match "^(https?|ftp)://") {
-		(Invoke-WebRequest -Uri $File -ErrorAction SilentlyContinue).Content
+		(Invoke-WebRequest -Uri $File -ErrorAction SilentlyContinue).Content -replace '^[^\u0000-\u007F]+', ''
 	}
 	else {
 		Get-Content -LiteralPath $File -Encoding UTF8 -ErrorAction SilentlyContinue -Raw
@@ -124,11 +124,13 @@ function Preprocessor($Content, $FilePath) {
 			}
 			elseif ($ParamList[$pragmaname].ParameterType -eq [string]) {
 				if ($value -match '^\"(?<value>[^\"]*)\"\s*(?!#.*)') {
-					$value = $Matches["value"]
-					$value.Replace('$PSScriptRoot', $ScriptRoot)
+					$value = $Matches["value"].Replace('$PSScriptRoot', $ScriptRoot)
 				}
 				elseif ($value -match "^\'(?<value>[^\']*)\'\s*(?!#.*)") {
 					$value = $Matches["value"]
+				}
+				else {
+					$value = $value.Replace('$PSScriptRoot', $ScriptRoot)
 				}
 				$Params[$pragmaname] = $value
 			}

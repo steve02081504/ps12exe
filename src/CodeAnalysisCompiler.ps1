@@ -81,8 +81,6 @@ if ($prepareDebug) {
 	$pdbStream.Close()
 }
 
-Write-Host "Compiling file..."
-
 if (!$emitResult.Success) {
 	throw $emitResult.Diagnostics -join "`n"
 }

@@ -473,25 +473,35 @@ try {
 		}
 	}
 	#_endif
-	if ($TinySharpSuccess) {}
-	elseif ($PSVersionTable.PSEdition -eq "Core") {
-		# unfinished!
-		if (!$TargetFramework) {
-			$Info = [System.Environment]::Version
-			$TargetFramework = ".NETCore,Version=v$($Info.Major).$($Info.Minor)"
+	try {
+		if (!$TinySharpSuccess) {
+			Write-Host "Compiling file..."
 		}
-		. $PSScriptRoot\src\CodeAnalysisCompiler.ps1
-	}
-	else {
-		if (!$TargetFramework) {
-			$TargetFramework = ".NETFramework,Version=v4.7"
+		if ($TinySharpSuccess) {}
+		elseif ($PSVersionTable.PSEdition -eq "Core") {
+			# unfinished!
+			if (!$TargetFramework) {
+				$Info = [System.Environment]::Version
+				$TargetFramework = ".NETCore,Version=v$($Info.Major).$($Info.Minor)"
+			}
+			. $PSScriptRoot\src\CodeAnalysisCompiler.ps1
 		}
-		. $PSScriptRoot\src\CodeDomCompiler.ps1
+		else {
+			if (!$TargetFramework) {
+				$TargetFramework = ".NETFramework,Version=v4.7"
+			}
+			. $PSScriptRoot\src\CodeDomCompiler.ps1
+		}
+		RollUp
 	}
-	RollUp
+	catch {
+		RollUp
+		Write-Host "Compilation failed!" -ForegroundColor Red
+		throw $_
+	}
 
 	if (!(Test-Path $outputFile)) {
-		Write-Error -ErrorAction "Continue" "Output file $outputFile not written"
+		Write-Error "Output file $outputFile not written" -ErrorAction Stop
 	}
 	else {
 		#_if PSScript
@@ -527,8 +537,6 @@ catch {
 		UsingWinPowershell $Params
 	}
 	else {
-		RollUp
-		Write-Host "Compilation failed!" -ForegroundColor Red
 		$_ | Write-Error
 		$githubfeedback = "https://github.com/steve02081504/ps12exe/issues/new?assignees=steve02081504&labels=bug&projects=&template=bug-report.yaml"
 		$urlParams = @{

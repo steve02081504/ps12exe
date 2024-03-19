@@ -76,7 +76,6 @@ if ($prepareDebug) {
 	$cp.TempFiles.KeepFiles = $TRUE
 }
 
-Write-Host "Compiling file..."
 $CompilerOptions += "/define:$($Constants -join ';')"
 $cp.CompilerOptions = $CompilerOptions -ne '' -join ' '
 Write-Verbose "Using Compiler Options: $($cp.CompilerOptions)"

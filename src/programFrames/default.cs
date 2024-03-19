@@ -2015,8 +2015,7 @@ namespace PSRunnerNS {
 				};
 
 				for(int i = 0; i < args.Length; i++) {
-					if (Regex.IsMatch(args[i], @"^(-|\$)\w*$"));
-					else
+					if (!Regex.IsMatch(args[i], @"^(-|\$)\w*$"))
 						args[i] = "\'"+args[i].Replace("'", "''")+"\'";
 				}
 
