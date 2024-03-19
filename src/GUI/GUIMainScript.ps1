@@ -52,7 +52,9 @@ try {
 	$bgmFile = $FS.GetFile("$PSScriptRoot\..\bin\Unravel.mid")
 	[ps12exeGUI.Win32]::mciSendString("open `"$($bgmFile.ShortPath)`" alias ps12exeGUIBGM type MPEGVideo", $null, 0, 0) | Out-Null
 	# play music as loop
+	$IsAlreadyPlayingSomething = [ps12exeGUI.Win32]::IsPlayingSound()
 	[ps12exeGUI.Win32]::mciSendString("play ps12exeGUIBGM repeat", $null, 0, 0) | Out-Null
+	if ($IsAlreadyPlayingSomething) { PauseMusic }
 
 	# Show the form
 	try { [void]$Script:refs.MainForm.ShowDialog() } catch { Update-ErrorLog -ErrorRecord $_ -Message "Exception encountered unexpectedly at ShowDialog." }
