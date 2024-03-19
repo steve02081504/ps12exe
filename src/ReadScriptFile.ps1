@@ -123,7 +123,7 @@ function Preprocessor($Content, $FilePath) {
 					$Params["no$pragmaname"] = [Switch]-not $value
 				}
 			}
-			elseif ($Params[$pragmaname] -is [string]) {
+			elseif ($ParamList[$pragmaname].ParameterType -eq [string]) {
 				if ($value -match '^\"(?<value>[^\"]*)\"\s*(?!#.*)') {
 					$value = $Matches["value"]
 					$value.Replace('$PSScriptRoot', $ScriptRoot)
@@ -132,6 +132,12 @@ function Preprocessor($Content, $FilePath) {
 					$value = $Matches["value"]
 				}
 				$Params[$pragmaname] = $value
+			}
+			elseif($ParamList[$pragmaname].ParameterType) {
+				Write-Warning "Unknown pragma: $pragmaname, as type $($ParamList[$pragmaname].ParameterType) can't analyze."
+			}
+			else {
+				Write-Warning "Unknown pragma: $pragmaname"
 			}
 		}
 	} |
