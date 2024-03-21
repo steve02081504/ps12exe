@@ -21,9 +21,9 @@ Add-Type $TinySharpCode -ReferencedAssemblies $Refs
 # 编译
 $file = [TinySharp.Program]::Compile($ConstResult, $architecture, [ps12exeConstEvalHost]::LastExitCode, -not $noOutput)
 if ($iconFile) {
-	[TinySharp.Program]::SetWin32Icon($file, $iconFile)
+	$file.SetWin32Icon($iconFile)
 }
 if ($description -or $company -or $title -or $product -or $copyright -or $trademark -or $version) {
-	[TinySharp.Program]::SetAssemblyInfo($file, $description, $company, $title, $product, $copyright, $trademark, $version)
+	$file.SetAssemblyInfo($description, $company, $title, $product, $copyright, $trademark, $version)
 }
-$file.Write($outputFile)
+$file.Build($outputFile)

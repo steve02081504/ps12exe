@@ -457,8 +457,8 @@ if ($NotFindedCmdlets) {
 try {
 	. $PSScriptRoot\src\InitCompileThings.ps1
 	#_if PSScript
-	if (-not $noConsole -and $NoResource -and $AstAnalyzeResult.IsConst) {
-		# TODO: GUI（MassageBoxW）、Resources
+	if (-not $noConsole -and $AstAnalyzeResult.IsConst -and -not $iconFile) {
+		# TODO: GUI（MassageBoxW）、icon
 		Write-Verbose "Const result, trying TinySharp Compiler..."
 		Write-Host "Compiling file..."
 

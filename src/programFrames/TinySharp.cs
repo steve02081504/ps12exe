@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Linq;
 using AsmResolver;
 using AsmResolver.DotNet;
 using AsmResolver.DotNet.Builder.Metadata.Blob;
@@ -19,32 +20,21 @@ using AsmResolver.PE.DotNet.Metadata.Tables;
 using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
 using AsmResolver.PE.Win32Resources;
 using AsmResolver.PE.Win32Resources.Icon;
+using AsmResolver.PE.Win32Resources.Version;
 using AsmResolver.PE.File;
 using AsmResolver.PE.File.Headers;
 
 namespace TinySharp {
 	public class Program {
-		public static PEFile Compile(
+		public static Program Compile(
 			string outputValue, string architecture = "x64", int ExitCode = 0, bool hasOutput = true
 		) {
 			string baseFunction = "7";
-			bool allASCIIoutput = true;
-			for (int i = 0; i < outputValue.Length; i++) {
-				if (outputValue[i] > 127 || outputValue[i] <= 0) {
-					allASCIIoutput = false;
-					break;
-				}
-			}
+			bool allASCIIoutput = outputValue.All(c => c >= 0 && c <= 127);
 			var module = new ModuleDefinition("Dummy");
 
 			// Segment containing our string to print.
-			DataSegment segment = null;
-			if(allASCIIoutput) {
-				segment = new DataSegment(Encoding.ASCII.GetBytes(outputValue+'\0'));
-			}
-			else{
-				segment = new DataSegment(Encoding.Unicode.GetBytes(outputValue+'\0'));
-			}
+			DataSegment segment = new DataSegment((allASCIIoutput?Encoding.ASCII:Encoding.Unicode).GetBytes(outputValue+'\0'));
 
 			var PEKind = OptionalHeaderMagic.PE64;
 			var ArchType = MachineType.Amd64;
@@ -159,9 +149,7 @@ namespace TinySharp {
 			}
 
 			// Add urctbase module reference
-			var baseLibrary = "Kernel32";
-			if (allASCIIoutput)
-				baseLibrary = "ucrtbase";
+			var baseLibrary = allASCIIoutput ? "ucrtbase" : "Kernel32";
 			if (hasOutput)
 				tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex(baseLibrary)));
 
@@ -214,14 +202,101 @@ namespace TinySharp {
 			if (architecture == "anycpu")
 				image.DotNetDirectory.Flags &= ~DotNetDirectoryFlags.Bit32Required;
 
-			// Assemble PE file.
-			var file = new MyBuilder().CreateFile(image);
+			var result = new Program();
+			result.Image = image;
 
 			// Put string to print in the padding data.
-			if (hasOutput)
-				file.ExtraSectionData = segment;
+			if (hasOutput) result.OutSegment = segment;
 
-			return file;
+			return result;
+		}
+		private DataSegment OutSegment = null;
+		private IPEImage Image = null;
+		public void Build(string OutFile) {
+			// Assemble PE file.
+			var file = new MyBuilder().CreateFile(this.Image);
+
+			// Put string to print in the padding data.
+			if (OutSegment!=null)
+				file.ExtraSectionData = this.OutSegment;
+
+			file.Write(OutFile);
+		}
+		public void SetWin32Icon(string IconFile) {
+			// Create a new icon group with 1 icon.
+			var newGroup = new IconGroupDirectory { Type = 1, Count = 1 };
+
+			// Add the icon to the group (header stripped).
+			byte[] header = File.ReadAllBytes(IconFile);
+			var iconBytes = BitConverter.ToUInt32(header, 14);
+			// cut head and tail
+			byte[] icon = header.Skip(0x16).Take((int)iconBytes).ToArray();
+			newGroup.AddEntry(
+				new IconGroupDirectoryEntry {
+					Id = (ushort) 1, // Icon ID (must be unique)
+					BytesInRes = iconBytes,
+					PixelBitCount = BitConverter.ToUInt16(header, 12),
+					Width = header[6],
+					Height = header[7],
+					ColorCount = 0,
+					ColorPlanes = 1
+				},
+				new IconEntry { RawIcon = icon }
+			);
+
+			// Add icon to icon resource group.
+			var newResource = new IconResource();
+			newResource.AddEntry(0x7f00, newGroup);
+
+			// Add resource to PE.
+			if(this.Image.Resources==null) this.Image.Resources = new ResourceDirectory(0u);
+			this.Image.Resources.Entries.Insert(0, new ResourceDirectory(ResourceType.Icon));
+			this.Image.Resources.Entries.Insert(1, new ResourceDirectory(ResourceType.GroupIcon));
+			newResource.WriteToDirectory(this.Image.Resources);
+		}
+		public void SetAssemblyInfo(string description, string company, string title, string product, string copyright, string trademark, string version) {
+			// Create new version resource.
+			var versionResource = new VersionInfoResource();
+			if (string.IsNullOrEmpty(version)) version = "0.0.0.0";
+
+			var TypedVersion = new System.Version(version);
+			version = TypedVersion.ToString();
+
+			// Add info.
+			var fixedVersionInfo = new FixedVersionInfo {
+				FileVersion = TypedVersion,
+				ProductVersion = TypedVersion,
+				FileDate = (ulong)DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+				FileType = FileType.App,
+				FileOS = FileOS.Windows32,
+				FileSubType = FileSubType.DriverInstallable,
+			};
+			versionResource.FixedVersionInfo = fixedVersionInfo;
+
+			// Add strings.
+			var stringFileInfo = new StringFileInfo();
+			var stringTable = new StringTable(0, 0x4b0){
+				{ StringTable.ProductNameKey, product },
+				{ StringTable.FileVersionKey, version },
+				{ StringTable.ProductVersionKey, version },
+				{ StringTable.FileDescriptionKey, title },
+				{ StringTable.CommentsKey, description },
+				{ StringTable.LegalCopyrightKey, copyright }
+			};
+
+			stringFileInfo.Tables.Add(stringTable);
+			versionResource.AddEntry(stringFileInfo);
+
+			// Register translation.
+			var varFileInfo = new VarFileInfo();
+			var varTable = new VarTable();
+			varTable.Values.Add(0x4b00000);
+			varFileInfo.Tables.Add(varTable);
+			versionResource.AddEntry(varFileInfo);
+
+			// Add to resources.
+			if(this.Image.Resources==null) this.Image.Resources = new ResourceDirectory(0u);
+			versionResource.WriteToDirectory(this.Image.Resources);
 		}
 	}
 
