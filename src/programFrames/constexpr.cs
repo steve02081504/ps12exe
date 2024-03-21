@@ -49,10 +49,12 @@ namespace PSRunnerNS {
 						title = titleAttribute.Title;
 					else
 						title = System.AppDomain.CurrentDomain.FriendlyName;
-					// 弹窗输出$ConstResult
-					MessageBox.Show("$ConstResult", title, MessageBoxButtons.OK);
+					// 弹窗输出 \ConstResult
+					const string[] ConstResult = { "$ConstResult" };
+					foreach (string item in ConstResult)
+						MessageBox.Show(item, title, MessageBoxButtons.OK);
 				#else
-					// 控制台输出$ConstResult
+					// 控制台输出 \ConstResult
 					System.Console.WriteLine("$ConstResult");
 				#endif
 			#endif

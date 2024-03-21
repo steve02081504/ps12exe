@@ -49,9 +49,12 @@ public class ps12exeConstEvalHost : PSHost {
 
 	if ($asyncResult.IsCompleted) {
 		$RowResult = $pwsh.EndInvoke($asyncResult)
-		$ConstResult = $RowResult -join "`n"
+		$ConstResult = $RowResult | ForEach-Object {
+			($_ | Out-String).Replace('\', '\\').Replace('"', '\"').Replace("`n", "\n").Replace("`r", "\r")
+		}
+		$ConstResult = $ConstResult -join $(if($noConsole){'","'}else{"`n"})
 		Write-Verbose "Done evaluation of constants -> $(bytesOfString $ConstResult) bytes"
-		if ($ConstResult.Length -gt 19968) {
+		if ($ConstResult.Length -gt 19kb) {
 			Write-Verbose "Const result is too long, fail back to normal program frame"
 		}
 		else {
@@ -60,7 +63,7 @@ public class ps12exeConstEvalHost : PSHost {
 			#_else #否则正常读取cs文件
 				[string]$programFrame = Get-Content $PSScriptRoot/programFrames/constexpr.cs -Raw -Encoding UTF8
 			#_endif
-			$programFrame = $programFrame.Replace("`$ConstResult", $ConstResult.Replace('\', '\\').Replace('"', '\"').Replace("`n", "\n").Replace("`r", "\r"))
+			$programFrame = $programFrame.Replace("`$ConstResult", $ConstResult)
 			$programFrame = $programFrame.Replace("`$ConstExitCodeResult", [ps12exeConstEvalHost]::LastExitCode)
 			if ($RowResult.Count -eq 0) {
 				$noOutput = $true
