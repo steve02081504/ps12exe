@@ -91,6 +91,7 @@ help       : Mostrar esta información de ayuda.
         product='<producto>'; copyright='<derechos de autor>'; trademark='<marca>'; version='<versión>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
+        [-GuestMode] [-Localize '<código de idioma>'] [-help]
 ```
 
 ```Texto
@@ -120,6 +121,9 @@ requireAdmin     : Si se habilita el UAC, el archivo ejecutable compilado sólo 
 supportOS        : Usar las características de las últimas versiones de Windows (ejecutar [Environment]::OSVersion para ver las diferencias)
 virtualize       : Se ha activado la virtualización de aplicaciones (se fuerza el tiempo de ejecución x86)
 longPaths        : Habilitar las rutas largas (> 260 caracteres) si están habilitadas en el sistema operativo (sólo para Windows 10 o superior)
+GuestMode        : Compilación de scripts con protección adicional frente al acceso a archivos nativos
+Localize         : El código de idioma que desea usar
+Help             : Mostrar esta información de ayuda
 ```
 
 ### Observaciones
@@ -133,7 +137,7 @@ ps12exe preprocesa el script antes de compilarlo.
 #_if PSEXE # Este es el código de preprocesamiento usado cuando el script es compilado por ps12exe.
 	#_include_as_value programFrame "$PSScriptRoot/ps12exe.cs" #Insertar el contenido de ps12exe.cs en este script.
 #_else #De lo contrario, lea el archivo cs normalmente
-	[cadena]$programFrame = Get-Content $PSScriptRoot/ps12exe.cs -Raw -Encoding UTF8
+	[string]$programFrame = Get-Content $PSScriptRoot/ps12exe.cs -Raw -Encoding UTF8
 #_endif
 ```
 
@@ -154,7 +158,7 @@ Ahora sólo se soportan las siguientes condiciones: `PSEXE` y `PSScript`.
 #### `#_include <nombre_archivo|url>`/`#_include_as_value <valuename> <archivo|url>`
 
 ```powershell
-#_include <nombre_de_archivo|url>/`#_include_as_value <valuename> <file|url>``
+#_include <nombre_archivo|url>
 #_include_as_value <nombre_valor> <archivo|url>
 ```
 
@@ -184,11 +188,11 @@ $resultado = & "$PSScriptRoot/otro.ps1" -args
 ```powershell
 $Script:eshDir =
 #_if PSScript #No es posible tener $EshellUI en PSEXE con un $PSScriptRoot inválido
-if (Test-Path "$($EshellUI.Sources.Path)/ruta/esh") { $EshellUI.Sources.Path }
-elseif (Test-Path $PSScriptRoot/... /ruta/esh) { "$PSScriptRoot/..." }
-} elseif
+if (Test-Path "$($EshellUI.Sources.Path)/path/esh") { $EshellUI.Sources.Path }
+elseif (Test-Path $PSScriptRoot/../path/esh) { "$PSScriptRoot/.." }
+elseif
 #_else
-	¡#_! Si
+	#_!!if
 #_endif
 (Test-Path $env:LOCALAPPDATA/esh) { "$env:LOCALAPPDATA/esh" }
 ```
@@ -211,7 +215,7 @@ $Número
 
 ```powershell
 $modules | ForEach-Object{
-	¡si(! (Get-Module $_ -ListAvailable -ea SilentlyContinue)) {
+	if(!(Get-Module $_ -ListAvailable -ea SilentlyContinue)) {
 		Install-Module $_ -Scope CurrentUser -Force -ea Stop
 	}
 }
@@ -223,7 +227,7 @@ Por favor, utilice `Import-Module` cuando sea apropiado.
 Cuando necesites requerir más de un módulo, puedes usar espacios, comas, o punto y coma como separadores en lugar de escribir sentencias require de varias líneas.
 
 ```powershell
-#_require módulo1 módulo2;módulo3,módulo4,módulo5
+#_require module1 module2;module3、module4,module5
 ```
 
 #### `#_pragma`
@@ -232,14 +236,14 @@ La directiva de preprocesamiento pragma no tiene efecto sobre el contenido del s
 He aquí un ejemplo:
 
 ```powershell
-PS C:³\sers\steve02081504> '12' | ps12exe
-Archivo compilado escrito -> 1024 bytes
-PS C:³Users\steve02081504> . /a.exe
+PS C:\Users\steve02081504> '12' | ps12exe
+Compiled file written -> 1024 bytes
+PS C:\Users\steve02081504> ./a.exe
 12
-PS C:@Users\steve02081504> '#_pragma Console no
+PS C:\Users\steve02081504> '#_pragma Console no
 >> 12' | ps12exe
-Script preprocesado -> 23 bytes
-Archivo compilado escrito -> 2560 bytes
+Preprocessed script -> 23 bytes
+Compiled file written -> 2560 bytes
 ```
 
 Como puede ver, `#_pragma Console no` hace que el archivo exe generado se ejecute en modo ventana, incluso si no especificamos `-noConsole` en tiempo de compilación.
@@ -248,8 +252,8 @@ El comando pragma puede establecer cualquier parámetro de compilación:
 ```powershell
 #_pragma noConsole #Modo ventana
 #_pragma Console #Modo consola
-#Console no Modo ventana
-#Console true Modo consola
+#_pragma Console no #Modo ventana
+#_pragma Console true #Modo consola
 #_pragma icon $PSScriptRoot/icon.ico #Configurar icono
 #_pragma title "title" #Establecer título del exe
 ```
@@ -262,7 +266,7 @@ Puede utilizar el parámetro `-Minifyer` para especificar un bloque de script qu
 Si no sabe cómo escribir un bloque de script de este tipo, puede utilizar [psminnifyer](https://github.com/steve02081504/psminnifyer).
 
 ```powershell
-& ./ps12exe.ps1 ./main.ps1 -NoConsole -Minifyer { $_ | & . /psminnifyer.ps1 }
+& ./ps12exe.ps1 ./main.ps1 -NoConsole -Minifyer { $_ | & ./psminnifyer.ps1 }
 ```
 
 ### Lista de cmdlets no implementados
@@ -285,7 +289,7 @@ El script compilado manejará los parámetros igual que el script original. Una 
 
 Nunca almacene contraseñas en scripts compilados.  
 Todo el script es fácilmente visible para cualquier descompilador .net.  
-¡![image](https://github.com/steve02081504/ps12exe/assets/31927825/92d96e53-ba52-406f-ae8b-538891f42779)
+![image](https://github.com/steve02081504/ps12exe/assets/31927825/92d96e53-ba52-406f-ae8b-538891f42779)
 
 ### Distinguir entornos por script  
 
@@ -317,34 +321,34 @@ ipconfig | Out-String
 $Host.UI.RawUI.FlushInputBuffer()
 ```
 
-### Comparación ventajosa 🏆
+## Comparación de Ventajas 🏆
 
-### Comparación rápida 🏁
+### Comparación Rápida 🏁
 
-| Comparar contenido | ps12exe | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
+| Aspecto | ps12exe | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
 | --- | --- | --- |
-| Repositorio puro de scripts 📦 | ✔️ son todos archivos de texto excepto imágenes y dependencias | ❌ contiene archivos exe con acuerdos de código abierto |
-| Comandos necesarios para generar hola mundo 🌍 | 😎 ``"¡Hola Mundo!"'' || ps12exe` | 🤔 ``echo "¡Hola Mundo!" *> a.ps1; PS2EXE a.ps1; rm a. ps1` |
-| tamaño del ejecutable generado de hola mundo 💾 | 🥰1024 bytes | 😨25088 bytes |
-| Soporte multilingüe de la interfaz gráfica de usuario 🌐 ✔️
-| Comprobación de sintaxis en tiempo de compilación ✔️ | ✔️ | ❌ |
-| Características de preprocesamiento 🔄 ✔️
-| Análisis sintáctico de parámetros especiales como `-extract` 🧹 | 🗑️ eliminado | 🥲 Requiere modificación del código fuente |
-| PR welcome 🤝 | 🥰 ¡Bienvenido! | 🤷14 PRs, 13 de ellos cerrados |
+| Repositorio de solo scripts 📦 | ✔️ Solo archivos de texto, excepto imágenes y dependencias | ❌ Contiene archivos ejecutables con licencia de código abierto |
+| Comando para generar "Hello World" 🌍 | 😎`'"Hello World!"' \| ps12exe` | 🤔`echo "Hello World!" *> a.ps1; PS2EXE a.ps1; rm a.ps1` |
+| Tamaño del archivo ejecutable "Hello World" 💾 | 🥰 1024 bytes | 😨 25088 bytes |
+| Soporte multilingüe en la GUI 🌐 | ✔️ | ❌ |
+| Verificación de sintaxis en tiempo de compilación ✔️ | ✔️ | ❌ |
+| Función de preprocesamiento 🔄 | ✔️ | ❌ | |
+| `-extract` y otros parámetros especiales de análisis sintáctico 🧹 | 🗑️ Eliminado | 🥲 Requiere modificación del código fuente |.
+| PR welcome level 🤝 | 🥰 ¡Bienvenido! | 🤷 14 PRs, 13 de los cuales fueron cerrados |
 
-### Comparación detallada 🔍
+### Comparación Compleja 🔍
 
-En comparación con [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5), este proyecto aporta las siguientes mejoras:
+En comparación con [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5), este proyecto presenta las siguientes mejoras:
 
 | Mejoras | Descripción |
 | --- | --- |
-| ✔️ Comprobación de sintaxis en tiempo de compilación | Comprobación de sintaxis en tiempo de compilación para mejorar la calidad del código | ✔️
-| 🔄 Potente preprocesamiento | Preprocesamiento de scripts antes de compilar, sin necesidad de copiar y pegar todo en los scripts | | 🔄 Potente preprocesamiento.
-| 🛠️ `-Parámetro CompilerOptions` | Nuevo parámetro que permite personalizar aún más el ejecutable generado | |
-| 📦️ `-Minifyer` parameter | Preprocesa los scripts antes de la compilación para producir ejecutables más pequeños |
-| 🌐 Soporte para compilar scripts y archivos de inclusión desde URLs | Soporte para descargar iconos desde URLs |
-| 🖥️ Optimización del parámetro `-noConsole` | Optimizado el manejo de opciones y la visualización del título de la ventana, ahora puede personalizar el título de la ventana emergente a través de la configuración | 🖥️
-| Eliminados archivos exe Eliminados archivos exe del repositorio de código.
-| 🌍 Soporte multi-lenguaje, GUI sólo script | Mejor soporte multi-lenguaje, GUI sólo script con soporte de modo oscuro | 🌍 Soporte multi-lenguaje, GUI sólo script con soporte de modo oscuro
-| 📖 Separar archivos cs de archivos ps1 | | más fácil de leer y mantener | | más fácil de leer y mantener.
-| 🚀 Más mejoras | y más... |
+| ✔️ Verificación de sintaxis en tiempo de compilación | Realiza una verificación de sintaxis durante la compilación para mejorar la calidad del código |
+| 🔄 Potente función de preprocesamiento | Realiza un preprocesamiento del script antes de la compilación, evitando la necesidad de copiar y pegar todo el contenido en el script |
+| 🛠️ Parámetro `-CompilerOptions` | Permite una mayor personalización del archivo ejecutable generado |
+| 📦️ Parámetro `-Minifyer` | Realiza un preprocesamiento antes de la compilación para generar un archivo ejecutable más pequeño |
+| 🌐 Soporte para compilar scripts y archivos de inclusión desde URL | Admite la descarga de iconos desde una URL |
+| 🖥️ Optimización del parámetro `-noConsole` | Mejora el manejo de opciones y la visualización del título de la ventana emergente personalizada |
+| 🧹 Eliminación del archivo exe | Se eliminó el archivo exe del repositorio de código |
+| 🌍 Soporte multilingüe y GUI de solo script | Mejora el soporte multilingüe y la GUI de solo script, incluyendo el modo oscuro |
+| 📖 Separación de archivos cs de archivos ps1 | Facilita la lectura y el mantenimiento |
+| 🚀 Otras mejoras | ¡Y muchas más! |

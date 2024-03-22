@@ -61,7 +61,7 @@
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
 	[-GuestMode] [-Localize '<言語コード>'] [-help]"
 		PrarmsData = [ordered]@{
-			input			 = "PowerShellスクリプトファイルの内容の文字列で、``-Content``と同じです。"
+			input			 = "PowerShellスクリプトファイルの内容の文字列で、``-Content``と同じです"
 			inputFile		 = "実行可能ファイルに変換したいPowerShellスクリプトファイルのパスまたはURL（ファイルはUTF8またはUTF16でエンコードされている必要があります）"
 			Content			 = "実行可能ファイルに変換したいPowerShellスクリプトの内容"
 			outputFile		 = "ターゲットの実行可能ファイル名またはディレクトリで、デフォルトは``'.exe'``拡張子を持つ``inputFile``です"
@@ -87,9 +87,9 @@
 			supportOS		 = "最新のWindowsバージョンの機能を使用します（``[Environment]::OSVersion``を実行して違いを確認）"
 			virtualize		 = "アプリケーションの仮想化が有効になっています（x86ランタイムを強制）"
 			longPaths		 = "OSで有効になっている場合、長いパス（260文字以上）を有効にします（Windows 10以上にのみ適用）"
-			GuestMode		 = "ネイティブ ファイルへのアクセスを防ぐための保護を追加してスクリプトをコンパイルします。"
-			Localize		 = "使用する言語コード。"
-			Help			 = "このヘルプ情報を表示します。"
+			GuestMode		 = "ネイティブ ファイルへのアクセスを防ぐために、スクリプトをコンパイルする際に保護を追加します"
+			Localize		 = "使用する言語コード"
+			Help			 = "このヘルプ情報を表示します"
 		}
 	}
 }
