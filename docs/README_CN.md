@@ -331,7 +331,7 @@ $Host.UI.RawUI.FlushInputBuffer()
 | 比对内容 | ps12exe | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
 | --- | --- | --- |
 | 纯脚本仓库 📦 | ✔️除了图片和依赖全是文本文件 | ❌含有有开源协议的exe文件 |
-| 生成hello world所需要的命令 🌍 | 😎`'"Hello World!"' \| ps12exe` | 🤔`echo "Hello World!" *> a.ps1; ps2exe a.ps1; rm a.ps1` |
+| 生成hello world所需要的命令 🌍 | 😎`'"Hello World!"' \| ps12exe` | 🤔`echo "Hello World!" *> a.ps1; PS2EXE a.ps1; rm a.ps1` |
 | 生成的hello world可执行文件大小 💾 | 🥰1024 bytes | 😨25088 bytes |
 | GUI多语言支持 🌐 | ✔️ | ❌ |
 | 编译时的语法检查 ✔️ | ✔️ | ❌ |
