@@ -8,7 +8,6 @@
 	ServerStopped		   = "HTTP 服务器已停止！"
 	ServerStartFailed	   = "HTTP 服务器启动失败！"
 	ServerListening		   = "访问地址："
-	UnsafeWarning		   = "警告：该服务并不安全，ps12exe可能在编译某些未其作者考虑到的经过精心设置的脚本时意外执行一些有副作用的代码。"
 	ExitServerTip		   = "您随时可以按 Ctrl+C 退出服务器"
 	# GUI
 	ErrorHead			   = "错误："

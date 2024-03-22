@@ -65,7 +65,6 @@ else {
 $BackUpTitle = $Host.UI.RawUI.WindowTitle
 $Host.UI.RawUI.WindowTitle = "ps12exe Web Server"
 
-Write-Host $LocalizeData.UnsafeWarning -ForegroundColor Yellow
 Write-Host $LocalizeData.ExitServerTip -ForegroundColor Yellow
 
 # Define a hashtable to track request counts per IP

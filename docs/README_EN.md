@@ -1,8 +1,5 @@
 # ps12exe
 
-> [!WARNING]
-> Do not to compile scripts from unverified sources, there's possibility that ps12exe might download and execute malicious script during the compile time.
-
 ## ToDos
 
 The following is what I don't have the time/energy/ability to complete at the moment. Feel free to submit a PR if you're interested!

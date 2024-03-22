@@ -1,8 +1,5 @@
 # ps12exe
 
-> [!WARNING]
-> Do not to compile scripts from unverified sources, there's possibility that ps12exe might download and execute malicious script during the compile time.
-
 ## Introduction
 
 [![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml)

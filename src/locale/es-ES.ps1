@@ -8,7 +8,6 @@
 	ServerStopped		   = "¡Servidor HTTP detenido!"
 	ServerStartFailed	   = "Error al iniciar el servidor HTTP."
 	ServerListening		   = "Dirección de acceso:"
-	UnsafeWarning		   = "Advertencia: Este servicio no es seguro. ps12exe podría ejecutar inadvertidamente código con efectos secundarios al compilar ciertos scripts cuidadosamente diseñados que el autor no consideró."
 	ExitServerTip		   = "Puede presionar Ctrl+C para salir del servidor en cualquier momento."
 	# GUI
 	ErrorHead			   = "Error:"
