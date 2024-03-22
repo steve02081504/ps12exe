@@ -1,0 +1,347 @@
+# ps12exe
+
+## 導入
+
+[![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/アクション/ワークフロー/CI.yml)
+[![PSGallery ダウンロード数](https://img.shields.io/powershellgallery/dt/ps12exe)](https://www.powershellgallery.com/packages/ps12exe)
+[![GitHub issues by-label bug](https://img.shields.io/github/issues/steve02081504/ps12exe/bug?label=bugs)](https://github.com/steve02081504/ps12exe/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
+[![コーダシー・バッジ](https://app.codacy.com/project/badge/Grade/ecfd57f5f2eb4ac5bbcbcd525b454f99)](https://app.codacy.com/gh/steve02081504/ps12exe/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
+[![コードファクター](https://www.codefactor.io/repository/github/steve02081504/ps12exe/badge/master)](https://www.codefactor.io/repository/github/steve02081504/ps12exe/overview/master)
+[![PR歓迎](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
+
+![repo img](https://repository-images.githubusercontent.com/729678966/3ed3f02f-c7c9-4a18-b1f5-255e667643b6)
+
+[![中文](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/China.png)](./docs/README_CN.md)
+[![English](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/United-Kingdom.png)](./docs/README_EN.md)
+[![Español](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Spain.png)](./docs/README_ES.md)
+
+## インストール
+
+```powershell
+Install-Module ps12exe ## ps12exeモジュールをインストールする
+Set-ps12exeContextMenu ## コンテキストメニューを設定する
+```
+
+(リポジトリをクローンして `.\ps12exe.ps1`)
+
+## 使用方法
+
+### 右クリックメニュー
+
+一度 `Set-ps12exeContextMenu` を設定すれば、任意の ps1 ファイルを右クリックして exe にコンパイルしたり、ps12exeGUI を開いたりすることができます。 
+![image](https://github.com/steve02081504/ps12exe/assets/31927825/24e7caf7-2bd8-46aa-8e1d-ee6da44c2dcc)
+
+### GUI モード
+
+```powershell
+ps12exeGUI
+```
+
+### コンソールモード
+
+```powershell
+ps12exe .\ソース.ps1 .\ターゲット.exe
+```
+
+`source.ps1`を`target.exe`にコンパイルする（`. \を省略した場合は `. \source.exe`に書き出されます)。
+
+```powershell
+'"Hello World!"' | ps12exe
+```
+
+`"Hello World!"`を実行ファイルにコンパイルして `.\a.exe`に出力します。
+
+```powershell
+ps12exe https://raw.githubusercontent.com/steve02081504/ps12exe/master/src/GUI/Main.ps1
+```
+
+インターネットから `Main.ps1` を実行ファイルにコンパイルして `.\Main.exe`に出力する。
+
+### セルフホスト型ウェブサービス
+
+```powershell
+Start-ps12exeWebServer
+```
+
+ユーザーがオンラインでpowershellコードをコンパイルできるようにするWebサービスを開始します。
+
+## パラメーター
+
+### GUI パラメータ
+
+```powershell
+ps12exeGUI [[-ConfigFile] '<filename>'] [-Localize '<languagecode>'] [-UIMode 'Dark'|'Light'|'Auto'] ]。
+```
+
+```text
+ConfigFile = 設定ファイルへのパス (デフォルトはなし)
+  Localize = 言語コード (デフォルトは現在のシステム言語。対応する言語ファイルがない場合は 'en-UK' をロードしようとします。）
+    UIMode = インターフェースモード (デフォルトはAuto)
+```
+
+### コンソールパラメータ
+
+```powershell
+[input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>'] [-CompilerOptions '<filename>'] [-CompilerOptions '<filename>''
+        [-CompilerOptions '<options>'] [-TempDir '<directory>'] [-minifyer '<scriptblock>'] [-noConsole].
+        [アーキテクチャ 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
+        [-resourceParams @{iconFile='<filename|url>'; title='<title>'; description='<description>'; company='<company>'.
+        product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}].
+        [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel].
+        [DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]。
+```
+
+```text
+           input = Powershellスクリプトファイルの内容、-Contentパラメータと同じ。
+       inputFile = 実行ファイルに変換するPowershellスクリプトファイルのパスまたはURL (ファイルはUTF8またはUTF16でエンコードされている必要があります)
+         Content = 実行ファイルに変換するPowershellスクリプトの内容
+      outputFile = ターゲット実行ファイルの名前またはフォルダ、デフォルトはinputFileで拡張子は".exe"
+ CompilerOptions = コンパイラの追加オプション（https://msdn.microsoft.com/en-us/library/78f4aasd.aspx を参照）
+         TempDir = 一時ファイル用のディレクトリ (デフォルトは %temp% にランダムに生成される一時ディレクトリ)
+        minifyer = コンパイル前にスクリプトをミニファイするためのスクリプトブロック
+            lcid = コンパイルされた実行ファイルのロケールID、指定されていない場合は現在のユーザーのロケール
+    prepareDebug = デバッグに役立つ情報を生成する。
+    architecture = 特定のランタイム用にのみコンパイルする。 指定可能な値は「x64」、「x86」、「anycpu」です。
+  threadingModel = 「シングル・スレッド・フラット」または「マルチスレッド・フラット」モード。
+       noConsole = 生成される実行ファイルは、コンソールウィンドウのないWindowsフォームアプリケーションになります。
+ UNICODEEncoding = 出力はコンソール・モードで UNICODE エンコードされます。
+   credentialGUI = コンソール・モードでは、グラフィカル・ユーザー・インターフェイスを使用して資格情報の入力を促します。
+  resourceParams = コンパイルされた実行ファイルのリソースパラメータを含むハッシュテーブル
+      configFile = 設定ファイル（<outputfile>.exe.config）を生成する。
+        noOutput = 生成された実行ファイルは標準出力を出力しない（詳細や情報チャンネルを含む）
+         noError = 生成された実行ファイルはいかなるエラー出力も出力しません（警告およびデバッグ・チャンネルを含む）。
+  noVisualStyles = 生成されるWindows GUIアプリケーションのビジュアル・スタイルを無効にします（-noConsoleとのみ使用されます）。
+    exitOnCancel = "Read Host "入力ボックスで "Cancel "または "X "が選択された場合、アプリケーションを終了します（-noConsoleとの組み合わせのみ）。
+        DPIAware = ディスプレイのスケーリングが有効な場合、GUIコントロールは可能な限りスケーリングされます。
+winFormsDPIAware = ディスプレイのスケーリングが有効な場合、WinFormsはDPIスケーリングを使用する（Windows 10と.Net 4.7以上が必要）
+    requireAdmin = UACが有効な場合、コンパイルされた実行ファイルは昇格権限でのみ実行可能（必要な場合、UACダイアログボックスがポップアップ表示される）
+       supportOS = 最新のWindowsバージョンの機能を使用します（[Environment]::OSVersionを実行して違いを確認してください）。
+      virtualize = アプリケーションの仮想化を有効にする（x86ランタイムを強制する）
+       longPaths = OSでサポートされている場合、長いパス（260文字以上）を有効にする（Windows 10以降のみ）
+```
+### 備考
+
+### 前処理
+
+ps12exe はコンパイル前にスクリプトを前処理します。 
+
+```powershell
+# ps12exe.csファイルからプログラムフレームを読み込む
+#_if PSEXE # これは ps12exe によってスクリプトがコンパイルされるときに使用される前処理コードです。
+	#_include_as_value programFrame "$PSScriptRoot/ps12exe.cs" #ps12exe.csの内容をこのスクリプトに挿入する。
+#_else #そうでなければ、csファイルを普通に読み込む
+	[string]$programFrame = Get-Content $PSScriptRoot/ps12exe.cs -Raw -Encoding UTF8
+#_endif
+```
+
+#### `#_if <condition>`/`#_else`/`#_endif`
+
+```powershell
+$LocalizeData =
+	#PSScript
+		. PSScript .
+	#_else
+		#"$PSScriptRoot/src/locale/ja-UK.psd1" をインクルードする。
+	#_endif
+```
+
+PSEXE` と `PSScript` は以下の条件でのみサポートされるようになりました。 
+PSEXE` は真、`PSScript` は偽。 
+
+#### `#_include <ファイル名|url>`/`#_include_as_value <値> <ファイル名|url>`.
+
+```powershell
+<filename|url>/`#_include_as_value <valuename> <file|url>`
+<valuename> <file|url>/`#_include_as_value <valuename> <file|url>`
+```
+
+ファイル `<filename|url>` または `<file|url>` の内容をスクリプトに含めます。 ファイルの内容は `#_include`/`#_include_as_value` コマンドで指定した場所に挿入されます。 
+
+前処理コマンドの `#_include` 系列は、`#_if` ステートメントとは異なり、ファイル名を引用符で囲まない場合、末尾のスペース `#` もファイル名の一部として扱います。 
+
+```powershell
+#_include $PSScriptRoot/super #変なファイル名.ps1
+#_include "$PSScriptRoot/filename.ps1" #安全なコメント！
+```
+
+include`を使うと、ファイルの内容が前処理されるので、複数のレベルのファイルをインクルードすることができます。
+
+このため、複数のレベルのファイルをインクルードすることができます。 `#_include_as_value` を使用すると、ファイルの内容が文字列の値としてスクリプトに挿入されます。 ファイルの内容は前処理されません。 
+
+ほとんどの場合、 `#_if` と `#_include` の前処理コマンドを使わなくても、exe に変換した後のスクリプトにサブスクリプトを正しくインクルードすることができます：
+
+```powershell
+. PSScriptRoot/another.ps1
+& $PSScriptRoot/another.ps1
+$result = & "$PSScriptRoot/another.ps1" -args
+```
+
+#### `#_!!! ``
+
+```powershell
+スクリプト:eshDir =
+#_if PSScript #無効な$PSScriptRootで$EshellUIをPSEXEに入れることはできない
+if (Test-Path "$($EshellUI.Sources.Path)/path/esh") { $EshellUI.Sources.Path }.
+elseif (Test-Path $PSScriptRoot/... /path/esh) { "$PSScriptRoot/..." }
+} elseif
+#elseの場合
+	#_! !
+#(テストパス$env:LOCALAPPDATA/esh)
+(Test-Path $env:LOCALAPPDATA/esh) { "$env:LOCALAPPDATA/esh" }.
+```
+
+で始まる行はすべて `#_!!!! で始まる行は削除される！ は削除される。
+
+#### `#_require <モジュールリスト>`
+
+```powershell
+#_require ps12exe
+#_pragma コンソール 0
+$Number = [bigint]::Parse('0')
+$NextNumber = $Number+1
+$NextScript = $PSEXEscript.Replace("Parse('$Number')", "Parse('$NextNumber')")
+$NextScript | ps12exe -outputFile $PSScriptRoot/$NextNumber.exe *> $null
+番号
+```
+
+`#_require` スクリプト全体で必要なモジュールを数え、最初の `#_require` の前に以下のコードと同等のスクリプトを追加します：
+
+```powershell
+モジュール | ForEach-Object{
+	if(！ (Get-Module $_ -ListAvailable -ea SilentlyContinue)) { { Install-Module $_ -SilentlyContinue
+		Install-Module $_ -Scope CurrentUser -Force -ea Stop
+	}
+}
+```
+
+このコードが生成するのはモジュールのインストールだけで、インポートではないことに注意してください。
+適宜 `Import-Module` を使用してください。
+
+複数のモジュールをrequireする必要がある場合は、複数行のrequire文を書く代わりに、区切り文字としてスペース、カンマ、セミコロンとダンスを使うことができます。
+
+``powershell.
+#module1 module2;module3,module4,module5
+``
+
+#### `#_pragma`
+
+pragma プリプロセッシングディレクティブはスクリプトの内容には影響しませんが、コンパイルに使用するパラメータを変更します。 
+以下に例を示します：
+
+```powershell
+PS C:♪Userssteve02081504> '12' | ps12exe
+コンパイルされたファイルが書き込まれました。
+PS C:♪Userssteve♪♪♪ . /a.exe
+12
+PS C:\Userssteve02081504> '#_pragma Console no
+>> 12' | ps12exe
+処理前のスクリプト -> 23 バイト
+書き込まれたコンパイル済みファイル -> 2560 バイト
+```
+
+ご覧のように、コンパイル時に`#_pragma Console no`を指定しなかったとしても、生成されたexeファイルはウィンドウモードで実行されます。
+pragmaコマンドは任意のコンパイルパラメータを設定できる：
+
+```powershell
+#_pragma noConsole #ウィンドウモード
+#_pragma Console #コンソールモード
+#_pragma Console no #ウィンドウモード
+#_pragma Console true #コンソールモード
+#_pragma icon $PSScriptRoot/icon.ico #アイコンの設定
+#_pragma title "title" #exeのタイトルを設定する
+```
+
+### ミニファイア
+
+ps12exeの "コンパイル "はスクリプト内の全てをそのままリソースとして実行ファイルに埋め込むので、スクリプトに無駄な文字列が多いと、実行ファイルは非常に大きくなります。 
+Minifyer`` パラメータを使うと、コンパイルの前にスクリプトを前処理するスクリプトブロックを指定することができ、生成される実行ファイルを小さくすることができます。 
+
+このようなスクリプトブロックの書き方がわからない場合は、[psminnifyer](https://github.com/steve02081504/psminnifyer) を使ってください。
+
+```powershell
+& . /ps12exe.ps1 . /main.ps1 -NoConsole -Minifyer { $_ | & . /psminnifyer.ps1 }.
+```
+
+### 未実装コマンドレット一覧
+
+ps12exe の基本的な入出力コマンドは C# で書き換える必要がある。 未実装のものは、コンソールモードでの *`Write-Progress`* (作業が多すぎる) と *`Start-Transcript`*/*`Stop-Transcript`* (Microsoft には適切なリファレンス実装がない) です。
+
+### GUIモードの出力形式
+
+デフォルトでは、powershellの小さなコマンドの出力形式は1行1行です（文字列の配列として）。 コマンドが10行の出力を生成し、GUIを使用して出力される場合、10個のメッセージボックスが表示され、それぞれが決定されるのを待ちます。 これを避けるには、`Out-String`コマンドをコマンドラインにインポートする。 これにより、出力が10行の文字列配列に変換され、そのすべてがメッセー ジボックスに表示される（例：`dir C:| Out-String`）。
+
+### 設定ファイル
+
+ps12exe は `generated executable + ".config"` という名前の設定ファイルを作成できます。 ほとんどの場合、これらの設定ファイルは必須ではなく、どの.Net Frameworkのバージョンを使用するかのリストです。 通常は実際の.Net Frameworkを使用するので、設定ファイルなしで実行ファイルを実行してみてください。
+
+### パラメーター処理
+
+コンパイルされたスクリプトは、元のスクリプトと同様にパラメータを処理します。 すべての実行可能ファイルでは、すべてのパラメータはString型であり、パラメータ型が暗黙的に変換されない場合は、スクリプト内で明示的に変換する必要があります。 実行可能ファイルにコンテンツをパイプすることもできますが、同じ制限（パイプされた値はすべてString型）があります。
+
+### パスワードのセキュリティ
+
+コンパイル済みスクリプトには、絶対にパスワードを保存しないでください！ 
+スクリプト全体は、.net デコンパイラで簡単に見ることができます。 
+! [image](https://github.com/steve02081504/ps12exe/assets/31927825/92d96e53-ba52-406f-ae8b-538891f42779)
+
+### スクリプトによって環境を区別する  
+
+スクリプトがコンパイルされたexeで実行されているのか、スクリプトで実行されているのかは、``$Host.Name``で判別できます。
+
+```powershell
+if ($Host.Name -eq "PSEXE") { Write-Output "ps12exe" } else { Write-Output "他のホスト" }.
+```
+
+### スクリプト変数
+
+ps12exe はスクリプトを実行ファイルに変換するので、変数 `$MyInvocation` の値はスクリプトの値とは異なる。
+
+実行ファイルがあるディレクトリのパスを取得するには `$PSScriptRoot` を使用し、実行ファイル自体のパスを取得するには新しい `$PSEXEpath` を使用します。
+
+# -noConsole モードでのバックグラウンドウィンドウ
+
+noConsole` モードを使用するスクリプト（`Get-Credential` や `cmd.exe` を必要とするコマンドなど）で外部ウィンドウを開くと、ウィンドウがバックグラウンドで開きます。
+
+これは外部ウィンドウを閉じるときに、ウィンドウズが親ウィンドウをアクティブにしようとするためです。 コンパイルされたスクリプトはウィンドウを持たないため、コンパイルされたスクリプトの親ウィンドウがアクティブになり、通常はエクスプローラやPowershellのウィンドウがアクティブになります。
+
+これを回避するには、`$Host.UI.RawUI.FlushInputBuffer()`を使って、アクティブにできる不可視のウィンドウを開きます。 次に`$Host.UI.RawUI.FlushInputBuffer()`を呼び出すと、このウィンドウは閉じます（以下同様）。
+
+次の例では、`ipconfig | Out-String`を一度だけ呼び出すのとは異なり、バックグラウンドでウィンドウを開かなくなります：
+
+```powershell
+$Host.UI.RawUI.FlushInputBuffer()
+ipconfig | Out-String
+$Host.UI.RawUI.FlushInputBuffer()
+```
+
+### 有利な比較 🏆。
+
+### 迅速な比較
+
+| 比較内容 | ps12exe | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
+| --- | --- | --- |
+| 純粋なスクリプトリポジトリ 📦 | ✔️ はイメージと依存関係を除くすべてのテキストファイル ❌ はオープンソースで合意された exe ファイルを含んでいる |
+| ハローワールドの生成に必要なコマンド 🌍 ``"Hello World!"'' 😎 😎 ps12exe` | 🤔 ``echo "Hello World!" *> a.ps1; PS2EXE a.ps1; rm a. ps1`; rm a.
+|  |   |  😨 |  25088バイト
+| GUI の多言語サポート 🌐 | ✔️ | ❌ | コンパイル時の構文チェック ✔️。
+| コンパイル時の構文チェック ✔️ | ✔️ | ❌ | |  前処理機能
+| プリプロセッシング機能 🔄 | ✔️ | ❌ | |  特殊パラメータの解析
+| 🥲 ソースコードの修正が必要。
+| PR歓迎 🤝 🥰歓迎！| 🤷🤷🤷🤷🤷のうち13件はクローズされた。
+
+### 詳細な比較 ᔍ [`MScholt]との比較
+
+[`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5)と比較して、このプロジェクトは以下の改善をもたらします：
+
+| 改良点 | 説明
+| --- | --- |
+| ✔️ コンパイル時の構文チェック | コンパイル時に構文チェックを行い、コードの品質を向上させる。
+| 🔄 強力な前処理 | コンパイル前にスクリプトを前処理。
+| 🛠️ `-CompilerOptions` パラメーター | 生成される実行ファイルをさらにカスタマイズできる新しいパラメー ター。
+| 📦️ `-Minifyer` パラメーター | コンパイル前にスクリプトを前処理し、より小さな実行ファイルを生成する。
+| URL からのスクリプトとインクルードファイルのコンパイルに対応 🌐 URL からのアイコンのダウンロードに対応
+| 🖥️ `-noConsole` パラメータの最適化 | オプションの処理とウィンドウタイトルの表示を最適化。
+| exe ファイルをコードリポジトリから削除しました。
+| 🌍多言語サポート、スクリプトのみのGUI 🌍多言語サポート、スクリプトのみのGUI、ダークモードのサポートが改善されました。
+| cs ファイルを ps1 ファイルから分離 📐 読みやすく、メンテナンスしやすい。
+| 🚀より多くの改善点 | and more... |
