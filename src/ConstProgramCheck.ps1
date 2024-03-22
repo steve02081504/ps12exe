@@ -50,7 +50,7 @@ public class ps12exeConstEvalHost : PSHost {
 	if ($asyncResult.IsCompleted) {
 		$RowResult = $pwsh.EndInvoke($asyncResult)
 		$ConstResult = $RowResult | ForEach-Object {
-			($_ | Out-String).Replace('\', '\\').Replace('"', '\"').Replace("`n", "\n").Replace("`r", "\r")
+			(($_ | Out-String) -replace '\r\n$', '').Replace('\', '\\').Replace('"', '\"').Replace("`n", "\n").Replace("`r", "\r")
 		}
 		$ConstResult = $ConstResult -join $(if($noConsole){'","'}else{"`n"})
 		Write-Verbose "Done evaluation of constants -> $(bytesOfString $ConstResult) bytes"

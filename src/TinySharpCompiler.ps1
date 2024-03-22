@@ -1,3 +1,9 @@
+# 重新构建编译内容
+$ConstResult = $RowResult | ForEach-Object {
+	(($_ | Out-String) -replace '\r\n$', '')
+}
+$ConstResult = $ConstResult -join "`n"
+
 # 对于$PSScriptRoot\bin\AsmResolver下的所有dll文件
 $Refs = @(
 	'System',

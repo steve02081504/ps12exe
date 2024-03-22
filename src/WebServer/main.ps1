@@ -131,7 +131,7 @@ function HandleRequest($context) {
 
 					# 编译代码
 					try {
-						$userInput | ps12exe -outputFile $compiledExePath -ErrorAction Stop
+						$userInput | ps12exe -outputFile $compiledExePath -GuestMode -ErrorAction Stop
 						$buffer = [System.IO.File]::ReadAllBytes($compiledExePath)
 						$Response.ContentType = "application/octet-stream"
 					}

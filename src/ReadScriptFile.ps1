@@ -1,16 +1,19 @@
-﻿function ReadScriptFile($File) {
+﻿function BaseReadFile($File) {
 	$Content = if ($File -match "^(https?|ftp)://") {
 		(Invoke-WebRequest -Uri $File -ErrorAction SilentlyContinue).Content -replace '^[^\u0000-\u007F]+', ''
 	}
-	else {
+	elseif(-not $GuestMode) {
 		Get-Content -LiteralPath $File -Encoding UTF8 -ErrorAction SilentlyContinue -Raw
 	}
 	Write-Host "Reading file $([System.IO.Path]::GetFileName($File)) size $($Content.Length) bytes"
-	$Content = $Content -join "`n" -split '\r?\n'
 	if (-not $Content) {
-		Write-Error "No data found. May be read error or file protected."
-		return
+		Write-Error "No data found. May be read error or file protected." -ErrorAction Stop
 	}
+	$Content
+}
+function ReadScriptFile($File) {
+	$Content = BaseReadFile $File
+	$Content = $Content -join "`n" -split '\r?\n'
 	Write-Verbose "Done reading file $([System.IO.Path]::GetFileName($File)), starting preprocess..."
 	Preprocessor $Content $File
 	Write-Verbose "Done preprocess file $([System.IO.Path]::GetFileName($File))"
@@ -64,7 +67,7 @@ function Preprocessor($Content, $FilePath) {
 		else { $file = $rest }
 		$file = $file.Replace('$PSScriptRoot', $ScriptRoot)
 		# 若是相对路径，则转换为基于$FilePath的绝对路径
-		if ($file -notmatch "^[a-zA-Z]:") {
+		if ($file -notmatch "^[a-zA-Z]:" -and $file -notmatch "^(https|ftp)://") {
 			$file = "$ScriptRoot/$file"
 		}
 		if (!(Test-Path $file -PathType Leaf)) {
@@ -164,19 +167,12 @@ function Preprocessor($Content, $FilePath) {
 	ForEach-Object {
 		if ($_ -match "^\s*#_include\s+(?<rest>.+)\s*") {
 			$file = GetIncludeFilePath $Matches["rest"]
-			if (!$file) { return }
 			ReadScriptFile $file
 		}
 		elseif ($_ -match "^\s*#_include_as_value\s+(?<valuename>[a-zA-Z_][a-zA-Z_0-9]+)\s+(?<rest>.+)\s*") {
 			$valuename = $Matches["valuename"]
 			$file = GetIncludeFilePath $Matches["rest"]
-			if (!$file) { return }
-			Write-Host "Reading file $([System.IO.Path]::GetFileName($File)) size $((Get-Item $File).Length) bytes"
-			$IncludeContent = Get-Content -LiteralPath $file -Encoding UTF8 -ErrorAction SilentlyContinue
-			if (-not $IncludeContent) {
-				Write-Error "No data found. May be read error or file protected."
-				return
-			}
+			$IncludeContent = BaseReadFile $file
 			$IncludeContent = $IncludeContent -join "`n"
 			$IncludeContent = $IncludeContent.Replace("'", "''")
 			"`$$valuename = '$IncludeContent'"

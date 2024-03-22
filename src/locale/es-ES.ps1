@@ -58,7 +58,8 @@
 	[-resourceParams @{iconFile='<nombre de archivo|url>'; title='<título>'; description='<descripción>'; company='<compañía>';
 	product='<producto>'; copyright='<derechos de autor>'; trademark='<marca>'; version='<versión>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
-	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]"
+	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
+	[-GuestMode] [-Localize '<código de idioma>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "La cadena del contenido del archivo de script de PowerShell, igual que ``-Content``."
 			inputFile		 = "La ruta o URL del archivo de script de PowerShell que desea convertir en un archivo ejecutable (el archivo debe estar codificado en UTF8 o UTF16)"
@@ -86,6 +87,9 @@
 			supportOS		 = "Usar las características de las últimas versiones de Windows (ejecutar ``[Environment]::OSVersion`` para ver las diferencias)"
 			virtualize		 = "Se ha activado la virtualización de aplicaciones (se fuerza el tiempo de ejecución x86)"
 			longPaths		 = "Habilitar las rutas largas (> 260 caracteres) si están habilitadas en el sistema operativo (sólo para Windows 10 o superior)"
+			GuestMode		 = "Compilación de scripts con protección adicional frente al acceso a archivos nativos"
+			Localize		 = "El código de idioma que desea usar"
+			Help			 = "Mostrar esta información de ayuda"
 		}
 	}
 }

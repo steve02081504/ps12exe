@@ -126,6 +126,14 @@ Param(
 	[Switch]$supportOS,
 	[Switch]$virtualize,
 	[Switch]$longPaths,
+	[Switch]$GuestMode,
+	#_if PSScript
+		[ArgumentCompleter({
+			Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+			. "$PSScriptRoot\src\LocaleArgCompleter.ps1" @PSBoundParameters
+		})]
+	#_endif
+	[string]$Localize,
 	[Switch]$help,
 	# TODO，不进入文档
 	[Parameter(DontShow)]
@@ -159,16 +167,7 @@ Param(
 	[String]$version,
 	# 内部参数，不进入文档
 	[Parameter(DontShow)]
-	[Switch]$nested,
-	# 兼容参数，不进入文档
-	[Parameter(DontShow)]
-	#_if PSScript
-		[ArgumentCompleter({
-			Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-			. "$PSScriptRoot\src\LocaleArgCompleter.ps1" @PSBoundParameters
-		})]
-	#_endif
-	[string]$Localize
+	[Switch]$nested
 )
 $Verbose = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent
 function RollUp {
