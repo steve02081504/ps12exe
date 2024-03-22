@@ -1,16 +1,5 @@
 # ps12exe
 
-## ToDos
-
-The following is what I don't have the time/energy/ability to complete at the moment. Feel free to submit a PR if you're interested!
-
-| Task                                                       | Difficulty | Category | Challenges                                      | Progress  |
-| ---------------------------------------------------------- | ---------- | -------- | ------------------------------------------------ | --------- |
-| More optional compile-time optimizations                   | ⭐⭐⭐       | Optimization | Detailed AST processing functions               | Not started |
-| Support exporting specific PowerShell functions in exe or dll files for use in C/C++ and other languages | ⭐⭐⭐⭐ | Functionality | DllExport project currently does not support single-file C# programs | DllMain function and export examples completed in `programFarms/DllExport.cs` |
-| Support compiling code in PowerShell Core, eliminating dependency on Windows PowerShell | ⭐⭐⭐⭐ | Functionality | CodeAnalysis usage: Various libraries not found | Relevant functionality defined in `CodeAnalysisCompiler.ps1`, `-UseWindowsPowerShell` parameter added (currently set to `true` by default), unable to successfully compile executable file |
-| More i18ns!  | ⭐⭐ | i18n     | | Done in EN/CN, welcome to add more! |
-
 ## Introduction
 
 [![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml)
