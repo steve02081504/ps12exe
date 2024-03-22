@@ -2,7 +2,7 @@
 
 ## 導入
 
-[![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/アクション/ワークフロー/CI.yml)
+[![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml)
 [![PSGallery ダウンロード数](https://img.shields.io/powershellgallery/dt/ps12exe)](https://www.powershellgallery.com/packages/ps12exe)
 [![GitHub issues by-label bug](https://img.shields.io/github/issues/steve02081504/ps12exe/bug?label=bugs)](https://github.com/steve02081504/ps12exe/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
 [![コーダシー・バッジ](https://app.codacy.com/project/badge/Grade/ecfd57f5f2eb4ac5bbcbcd525b454f99)](https://app.codacy.com/gh/steve02081504/ps12exe/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
@@ -43,7 +43,7 @@ ps12exeGUI
 ps12exe .\ソース.ps1 .\ターゲット.exe
 ```
 
-`source.ps1`を`target.exe`にコンパイルする（`. \を省略した場合は `. \source.exe`に書き出されます)。
+`ソース.ps1`を`ターゲット.exe`にコンパイルする（`.\ソース.ps1`を省略した場合は `.\ソース.exe`に書き出されます）。
 
 ```powershell
 '"Hello World!"' | ps12exe
@@ -70,54 +70,55 @@ Start-ps12exeWebServer
 ### GUI パラメータ
 
 ```powershell
-ps12exeGUI [[-ConfigFile] '<filename>'] [-Localize '<languagecode>'] [-UIMode 'Dark'|'Light'|'Auto'] ]。
+ps12exeGUI [[-ConfigFile] '<設定ファイル>'] [-Localize '<言語コード>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 ```
 
 ```text
-ConfigFile = 設定ファイルへのパス (デフォルトはなし)
-  Localize = 言語コード (デフォルトは現在のシステム言語。対応する言語ファイルがない場合は 'en-UK' をロードしようとします。）
-    UIMode = インターフェースモード (デフォルトはAuto)
+ConfigFile : 読み込む設定ファイル。
+Localize   : 使用する言語コード。
+UIMode     : 使用するユーザーインターフェースモード。
+help       : このヘルプ情報を表示します。
 ```
 
 ### コンソールパラメータ
 
 ```powershell
-[input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>'] [-CompilerOptions '<filename>'] [-CompilerOptions '<filename>''
-        [-CompilerOptions '<options>'] [-TempDir '<directory>'] [-minifyer '<scriptblock>'] [-noConsole].
-        [アーキテクチャ 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
-        [-resourceParams @{iconFile='<filename|url>'; title='<title>'; description='<description>'; company='<company>'.
-        product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}].
-        [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel].
-        [DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]。
+[input |] ps12exe [[-inputFile] '<ファイル名|url>' | -Content '<スクリプト>'] [-outputFile '<ファイル名>']
+        [-CompilerOptions '<オプション>'] [-TempDir '<ディレクトリ>'] [-minifyer '<scriptblock>'] [-noConsole]
+        [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
+        [-resourceParams @{iconFile='<ファイル名|url>'; title='<タイトル>'; description='<説明>'; company='<会社>';
+        product='<製品>'; copyright='<著作権>'; trademark='<商標>'; version='<バージョ ン>'}]
+        [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
+        [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
 ```
 
 ```text
-           input = Powershellスクリプトファイルの内容、-Contentパラメータと同じ。
-       inputFile = 実行ファイルに変換するPowershellスクリプトファイルのパスまたはURL (ファイルはUTF8またはUTF16でエンコードされている必要があります)
-         Content = 実行ファイルに変換するPowershellスクリプトの内容
-      outputFile = ターゲット実行ファイルの名前またはフォルダ、デフォルトはinputFileで拡張子は".exe"
- CompilerOptions = コンパイラの追加オプション（https://msdn.microsoft.com/en-us/library/78f4aasd.aspx を参照）
-         TempDir = 一時ファイル用のディレクトリ (デフォルトは %temp% にランダムに生成される一時ディレクトリ)
-        minifyer = コンパイル前にスクリプトをミニファイするためのスクリプトブロック
-            lcid = コンパイルされた実行ファイルのロケールID、指定されていない場合は現在のユーザーのロケール
-    prepareDebug = デバッグに役立つ情報を生成する。
-    architecture = 特定のランタイム用にのみコンパイルする。 指定可能な値は「x64」、「x86」、「anycpu」です。
-  threadingModel = 「シングル・スレッド・フラット」または「マルチスレッド・フラット」モード。
-       noConsole = 生成される実行ファイルは、コンソールウィンドウのないWindowsフォームアプリケーションになります。
- UNICODEEncoding = 出力はコンソール・モードで UNICODE エンコードされます。
-   credentialGUI = コンソール・モードでは、グラフィカル・ユーザー・インターフェイスを使用して資格情報の入力を促します。
-  resourceParams = コンパイルされた実行ファイルのリソースパラメータを含むハッシュテーブル
-      configFile = 設定ファイル（<outputfile>.exe.config）を生成する。
-        noOutput = 生成された実行ファイルは標準出力を出力しない（詳細や情報チャンネルを含む）
-         noError = 生成された実行ファイルはいかなるエラー出力も出力しません（警告およびデバッグ・チャンネルを含む）。
-  noVisualStyles = 生成されるWindows GUIアプリケーションのビジュアル・スタイルを無効にします（-noConsoleとのみ使用されます）。
-    exitOnCancel = "Read Host "入力ボックスで "Cancel "または "X "が選択された場合、アプリケーションを終了します（-noConsoleとの組み合わせのみ）。
-        DPIAware = ディスプレイのスケーリングが有効な場合、GUIコントロールは可能な限りスケーリングされます。
-winFormsDPIAware = ディスプレイのスケーリングが有効な場合、WinFormsはDPIスケーリングを使用する（Windows 10と.Net 4.7以上が必要）
-    requireAdmin = UACが有効な場合、コンパイルされた実行ファイルは昇格権限でのみ実行可能（必要な場合、UACダイアログボックスがポップアップ表示される）
-       supportOS = 最新のWindowsバージョンの機能を使用します（[Environment]::OSVersionを実行して違いを確認してください）。
-      virtualize = アプリケーションの仮想化を有効にする（x86ランタイムを強制する）
-       longPaths = OSでサポートされている場合、長いパス（260文字以上）を有効にする（Windows 10以降のみ）
+input            : PowerShellスクリプトファイルの内容の文字列で、-Contentと同じです。
+inputFile        : 実行可能ファイルに変換したいPowerShellスクリプトファイルのパスまたはURL（ファイルはUTF8またはUTF16でエンコードされている必要があります）
+Content          : 実行可能ファイルに変換したいPowerShellスクリプトの内容
+outputFile       : ターゲットの実行可能ファイル名またはディレクトリで、デフォルトは'.exe'拡張子を持つinputFileです
+CompilerOptions  : 追加のコンパイラオプション（参照： https://msdn.microsoft.com/en-us/library/78f4aasd.aspx）
+TempDir          : 一時ファイルを保存するディレクトリ（デフォルトは%temp%にランダムに生成される一時ディレクトリ）
+minifyer         : コンパイル前にスクリプトを縮小するスクリプトブロック
+lcid             : コンパイルされた実行可能ファイルのロケールID。指定されていない場合は、現在のユーザーのカルチャーです
+prepareDebug     : デバッグに役立つ情報を作成します
+architecture     : 特定のランタイムのみのコンパイル。可能な値は'x64'、'x86'、'anycpu'です
+threadingModel   : 'STA'（シングルスレッドアパートメント）または'MTA'（マルチスレッドアパートメント）モード
+noConsole        : 生成された実行可能ファイルは、コンソールウィンドウのないWindows Formsアプリケーションになります
+UNICODEEncoding  : コンソールモードで出力をUNICODEでエンコードします
+credentialGUI    : コンソールモードでGUIプロンプトを使用して資格情報を求めます
+resourceParams   : コンパイルされた実行可能ファイルのリソースパラメータを含むハッシュテーブル
+configFile       : 設定ファイル（<outputfile>.exe.config）を書きます
+noOutput         : 生成された実行可能ファイルは、標準出力（詳細および情報チャネルを含む）を生成しません
+noError          : 生成された実行可能ファイルは、エラー出力（警告およびデバッグチャネルを含む）を生成しません
+noVisualStyles   : 生成されたWindows GUIアプリケーションのビジュアルスタイルを無効にし ます（-noConsoleと共に使用）
+exitOnCancel     : Read-Host入力ボックスでCancelまたは\"X\"を選択したときにプログラムを終了します（-noConsoleと共に使用）
+DPIAware         : 表示スケーリングが有効になっている場合、GUIコントロールは可能な限り スケーリングされます
+winFormsDPIAware : 表示スケーリングが有効になっている場合、WinFormsはDPIスケーリングを 使用します（Windows 10および.Net 4.7以上が必要）
+requireAdmin     : UACが有効になっている場合、コンパイルされた実行可能ファイルは昇格さ れたコンテキストでのみ実行可能です（必要に応じてUACダイアログが表示されます）
+supportOS        : 最新のWindowsバージョンの機能を使用します（[Environment]::OSVersion を実行して違いを確認）
+virtualize       : アプリケーションの仮想化が有効になっています（x86ランタイムを強制）
+longPaths        : OSで有効になっている場合、長いパス（260文字以上）を有効にします（Windows 10以上にのみ適用）
 ```
 ### 備考
 
@@ -145,8 +146,8 @@ $LocalizeData =
 	#_endif
 ```
 
-PSEXE` と `PSScript` は以下の条件でのみサポートされるようになりました。 
-PSEXE` は真、`PSScript` は偽。 
+`PSEXE` と `PSScript` は以下の条件でのみサポートされるようになりました。 
+`PSEXE` は真、`PSScript` は偽。 
 
 #### `#_include <ファイル名|url>`/`#_include_as_value <値> <ファイル名|url>`.
 
@@ -176,7 +177,7 @@ include`を使うと、ファイルの内容が前処理されるので、複数
 $result = & "$PSScriptRoot/another.ps1" -args
 ```
 
-#### `#_!!! ``
+#### `#_!!!`
 
 ```powershell
 スクリプト:eshDir =
@@ -219,9 +220,9 @@ $NextScript | ps12exe -outputFile $PSScriptRoot/$NextNumber.exe *> $null
 
 複数のモジュールをrequireする必要がある場合は、複数行のrequire文を書く代わりに、区切り文字としてスペース、カンマ、セミコロンとダンスを使うことができます。
 
-``powershell.
-#module1 module2;module3,module4,module5
-``
+```powershell
+#_require module1 module2;module3,module4,module5
+```
 
 #### `#_pragma`
 

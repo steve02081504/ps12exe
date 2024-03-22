@@ -23,7 +23,7 @@ Install-Module ps12exe ## Instala el módulo ps12exe
 Set-ps12exeContextMenu ## Configura el menú contextual
 ```
 
-(También puede clonar el repositorio y ejecutar `. \ps12exe.ps1`)
+(También puede clonar el repositorio y ejecutar `.\ps12exe.ps1`)
 
 ## Cómo usar
 
@@ -41,22 +41,22 @@ ps12exeGUI
 ### Modo Consola
 
 ```powershell
-ps12exe . \source.ps1 . \target.exe
+ps12exe .\source.ps1 .\target.exe
 ```
 
-Compila `source.ps1` en `target.exe` (si omite `. \target.exe`, la salida se escribirá en `. \source.exe`).
+Compila `source.ps1` en `target.exe` (si omite `.\target.exe`, la salida se escribirá en `.\source.exe`).
 
 ```powershell
 '"¡Hola Mundo!"' | ps12exe
 ```
 
-Compila `"¡Hola Mundo!"` en un archivo ejecutable para ser enviado a `. \a.exe`.
+Compila `"¡Hola Mundo!"` en un archivo ejecutable para ser enviado a `.\a.exe`.
 
 ```powershell
 ps12exe https://raw.githubusercontent.com/steve02081504/ps12exe/master/src/GUI/Main.ps1
 ```
 
-Compila ``Main.ps1`` desde Internet en un archivo ejecutable para su salida en `. \Main.exe`.
+Compila ``Main.ps1`` desde Internet en un archivo ejecutable para su salida en `.\Main.exe`.
 
 ### Servicio web autoalojado
 
@@ -71,54 +71,55 @@ Inicia un servicio web que permite a los usuarios compilar código powershell en
 ### Parámetros GUI
 
 ```powershell
-ps12exeGUI [[-ConfigFile] '<filename>'] [-Localize '<languagecode>'] [-UIMode 'Dark'|'Light'|'Auto']
+ps12exeGUI [[-ConfigFile] '<archivo de configuración>'] [-Localize '<código de idioma>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 ```
 
 ```Texto
-ConfigFile = ruta al archivo de configuración (por defecto, ninguna)
-  Localize = código de idioma (por defecto es el idioma actual del sistema, si no hay un archivo de idioma correspondiente intenta cargar 'en-UK', si todavía no hay ninguno entonces itera a través de todos los archivos de idioma hasta que haya uno disponible)
-    UIMode = modo de interfaz (por defecto es Auto)
+ConfigFile : El archivo de configuración que desea cargar.
+Localize   : El código de idioma que desea usar.
+UIMode     : El modo de interfaz de usuario que desea usar.
+help       : Mostrar esta información de ayuda.
 ```
 
 ### Parámetros de la consola
 
 ```powershell
-[input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>']
-        [-CompilerOptions '<opciones>'] [-TempDir '<directorio>'] [-minifyer '<bloqueScript>'] [-noConsole]
-        [-arquitectura 'x86'|'x64'] [-modelo de hilo 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
-        [-resourceParams @{iconFile='<filename|url>'; title='<title>'; description='<description>'; company='<company>'.
-        product='<producto>'; copyright='<copyright>'; trademark='<marca comercial>'; version='<versión>'}].
+[input |] ps12exe [[-inputFile] '<nombre de archivo|url>' | -Content '<script>'] [-outputFile '<nombre de archivo>']
+        [-CompilerOptions '<opciones>'] [-TempDir '<carpeta>'] [-minifyer '<scriptblock>'] [-noConsole]
+        [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
+        [-resourceParams @{iconFile='<nombre de archivo|url>'; title='<título>'; description='<descripción>'; company='<compañía>';
+        product='<producto>'; copyright='<derechos de autor>'; trademark='<marca>'; version='<versión>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
 ```
 
 ```Texto
-           input = El contenido del archivo de script Powershell, igual que el parámetro -Content.
-       inputFile = Ruta o URL del archivo de script Powershell que se convertirá en ejecutable (el archivo debe estar codificado en UTF8 o UTF16).
-         Content = contenido del script Powershell que se convertirá en un archivo ejecutable
-      outputFile = nombre o carpeta del ejecutable de destino, por defecto inputFile con extensión ".exe
- CompilerOptions = opciones adicionales del compilador (ver https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)
-         TempDir = directorio para archivos temporales (por defecto es un directorio temporal generado aleatoriamente en %temp%)
-        minifyer = bloque de script para minificar scripts antes de la compilación
-            lcid = el ID de localización del ejecutable compilado, o la localización del usuario actual si no se especifica
-    prepareDebug = generar información útil para depuración
-    architecture = Compilar sólo para un tiempo de ejecución específico. Los valores posibles son "x64", "x86" y "anycpu".
-  threadingModel = Modo "single-threaded flat" o "multi-threaded flat".
-       noConsole = El ejecutable generado será una aplicación Windows Forms sin ventana de consola.
- UNICODEEncoding = la salida estará codificada en UNICODE en modo consola
-   credentialGUI = Utilizar una interfaz gráfica de usuario para solicitar credenciales en modo consola
-  resourceParams = tabla hash que contiene parámetros de recursos para ejecutables compilados
-      configFile = generar fichero de configuración (<ficheroSalida>.exe.config)
-        noOutput = el ejecutable generado no emitirá ninguna salida estándar (incluidos los canales de detalle e información)
-         noError = el ejecutable generado no mostrará ninguna salida de error (incluidos los canales de advertencia y depuración)
-  noVisualStyles = Deshabilita los estilos visuales para las aplicaciones Windows GUI generadas (sólo se utiliza con -noConsole)
-    exitOnCancel = salir de la aplicación si se selecciona "Cancelar" o "X" en el cuadro de entrada "Leer Host" (sólo con -noConsole)
-        DPIAware = si el escalado de pantalla está activado, los controles de la GUI se escalarán tanto como sea posible
-winFormsDPIAware = si el escalado de pantalla está activado, WinForms utilizará el escalado DPI (requiere Windows 10 y .Net 4.7 o superior)
-    requireAdmin = si UAC está habilitado, los ejecutables compilados sólo pueden ejecutarse con privilegios elevados (el cuadro de diálogo UAC aparece si es necesario)
-       supportOS = utiliza las características de la última versión de Windows (ejecute [Environment]::OSVersion para ver la diferencia)
-      virtualize = habilitar la virtualización de aplicaciones (forzar tiempo de ejecución x86)
-       longPaths = Habilitar rutas largas (más de 260 caracteres) si son soportadas por el SO (sólo para Windows 10 o posterior)
+input            : La cadena del contenido del archivo de script de PowerShell, igual que -Content.
+inputFile        : La ruta o URL del archivo de script de PowerShell que desea convertir en un archivo ejecutable (el archivo debe estar codificado en UTF8 o UTF16)
+Content          : El contenido del script de PowerShell que desea convertir en un archivo ejecutable
+outputFile       : El nombre del archivo o carpeta de destino, por defecto es el inputFile con la extensión '.exe'
+CompilerOptions  : Opciones adicionales del compilador (ver https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)
+TempDir          : El directorio donde se almacenan los archivos temporales (por defecto es un directorio temporal generado aleatoriamente en %temp%)
+minifyer         : Un bloque de script que reduce el tamaño del script antes de la compilación
+lcid             : El identificador de ubicación del archivo ejecutable compilado. Si no se especifica, será la cultura del usuario actual
+prepareDebug     : Crear información que ayude a la depuración
+architecture     : Compilar sólo para un tiempo de ejecución específico. Los valores posibles son 'x64', 'x86' y 'anycpu'
+threadingModel   : Modo 'apartamento de un solo hilo' o 'apartamento de varios hilos'
+noConsole        : El archivo ejecutable generado será una aplicación de Windows Forms sin ventana de consola
+UNICODEEncoding  : Codificar la salida como UNICODE en el modo de consola
+credentialGUI    : Usar un GUI para solicitar credenciales en el modo de consola
+resourceParams   : Una tabla hash que contiene los parámetros de recursos del archivo ejecutable compilado
+configFile       : Escribir un archivo de configuración (<outputfile>.exe.config)
+noOutput         : El archivo ejecutable generado no producirá salida estándar (incluyendo los canales detallado e informativo)
+noError          : El archivo ejecutable generado no producirá salida de error (incluyendo los canales de advertencia y depuración)
+noVisualStyles   : Desactivar los estilos visuales de la aplicación GUI de Windows generada (sólo se usa con -noConsole)
+exitOnCancel     : Salir del programa cuando se elija Cancelar o "X" en el cuadro de entrada de Read-Host (sólo se usa con -noConsole)
+DPIAware         : Si se habilita el escalado de pantalla, los controles GUI se escalarán lo más posible
+winFormsDPIAware : Si se habilita el escalado de pantalla, WinForms usará el escalado DPI (requiere Windows 10 y .Net 4.7 o superior)
+requireAdmin     : Si se habilita el UAC, el archivo ejecutable compilado sólo se podrá ejecutar en un contexto elevado (si es necesario, aparecerá el cuadro de diálogo del UAC)
+supportOS        : Usar las características de las últimas versiones de Windows (ejecutar [Environment]::OSVersion para ver las diferencias)
+virtualize       : Se ha activado la virtualización de aplicaciones (se fuerza el tiempo de ejecución x86)
+longPaths        : Habilitar las rutas largas (> 260 caracteres) si están habilitadas en el sistema operativo (sólo para Windows 10 o superior)
 ```
 
 ### Observaciones
@@ -150,7 +151,7 @@ $LocalizeData =
 Ahora sólo se soportan las siguientes condiciones: `PSEXE` y `PSScript`.  
 `PSEXE` es verdadero; `PSScript` es falso.  
 
-#### `#_include <nombre_archivo|url>`/`#_include_as_value <valuename> <archivo|url>``
+#### `#_include <nombre_archivo|url>`/`#_include_as_value <valuename> <archivo|url>`
 
 ```powershell
 #_include <nombre_de_archivo|url>/`#_include_as_value <valuename> <file|url>``
@@ -178,7 +179,7 @@ En la mayoría de los casos no necesita usar los comandos de preprocesamiento `#
 $resultado = & "$PSScriptRoot/otro.ps1" -args
 ```
 
-¡¡¡#### `#_!!! ``
+#### `#_!!!`
 
 ```powershell
 $Script:eshDir =
@@ -221,7 +222,7 @@ Por favor, utilice `Import-Module` cuando sea apropiado.
 
 Cuando necesites requerir más de un módulo, puedes usar espacios, comas, o punto y coma como separadores en lugar de escribir sentencias require de varias líneas.
 
-```powershell.
+```powershell
 #_require módulo1 módulo2;módulo3,módulo4,módulo5
 ```
 
@@ -256,12 +257,12 @@ El comando pragma puede establecer cualquier parámetro de compilación:
 ### Minifyer
 
 Dado que la "compilación" de ps12exe incrusta todo en el script textualmente como un recurso en el ejecutable resultante, si el script tiene muchas cadenas inútiles, el ejecutable resultante será muy grande.  
-Puede utilizar el parámetro ``-Minifyer`` para especificar un bloque de script que preprocesará el script antes de la compilación para obtener un ejecutable generado más pequeño.  
+Puede utilizar el parámetro `-Minifyer` para especificar un bloque de script que preprocesará el script antes de la compilación para obtener un ejecutable generado más pequeño.  
 
 Si no sabe cómo escribir un bloque de script de este tipo, puede utilizar [psminnifyer](https://github.com/steve02081504/psminnifyer).
 
 ```powershell
-& . /ps12exe.ps1 . /main.ps1 -NoConsole -Minifyer { $_ | & . /psminnifyer.ps1 }
+& ./ps12exe.ps1 ./main.ps1 -NoConsole -Minifyer { $_ | & . /psminnifyer.ps1 }
 ```
 
 ### Lista de cmdlets no implementados

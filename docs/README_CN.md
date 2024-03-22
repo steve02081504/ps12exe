@@ -12,6 +12,8 @@
 ![repo img](https://repository-images.githubusercontent.com/729678966/3ed3f02f-c7c9-4a18-b1f5-255e667643b6)
 
 [![English](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/United-Kingdom.png)](./docs/README_EN.md)
+[![日本](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Japan.png)](./docs/README_JP.md)
+[![Español](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Spain.png)](./docs/README_ES.md)
 
 ## 安装
 
@@ -68,54 +70,55 @@ Start-ps12exeWebServer
 ### GUI参数
 
 ```powershell
-ps12exeGUI [[-ConfigFile] '<filename>'] [-Localize '<languagecode>'] [-UIMode 'Dark'|'Light'|'Auto']
+ps12exeGUI [[-ConfigFile] '<配置文件>'] [-Localize '<语言代码>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 ```
 
 ```text
-ConfigFile = 配置文件的路径（默认为 无）
-  Localize = 语言代码（默认为当前系统语言，没有对应的语言文件时尝试加载'en-UK'，如果仍然没有则遍历所有语言文件直到可用）
-    UIMode = 界面模式（默认为 Auto）
+ConfigFile : 要加载的配置文件。
+Localize   : 要使用的语言代码。
+UIMode     : 要使用的用户界面模式。
+help       : 显示此帮助信息。
 ```
 
 ### 控制台参数
 
 ```powershell
-[input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>']
-        [-CompilerOptions '<options>'] [-TempDir '<directory>'] [-minifyer '<scriptblock>'] [-noConsole]
+[input |] ps12exe [[-inputFile] '<文件名|url>' | -Content '<脚本>'] [-outputFile '<文件名>']
+        [-CompilerOptions '<选项>'] [-TempDir '<文件夹>'] [-minifyer '<scriptblock>'] [-noConsole]
         [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
-        [-resourceParams @{iconFile='<filename|url>'; title='<title>'; description='<description>'; company='<company>';
-        product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}]
+        [-resourceParams @{iconFile='<文件名|url>'; title='<标题>'; description='<简介>'; company='<公司>';
+        product='<产品>'; copyright='<版权>'; trademark='<水印>'; version='<版本>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
 ```
 
 ```text
-           input = Powershell 脚本文件的内容，与 -Content 参数相同。
-       inputFile = 要转换为可执行文件的 Powershell 脚本文件的路径或网址（文件必须是 UTF8 或 UTF16 编码）
-         Content = 要转换为可执行文件的 Powershell 脚本的内容
-      outputFile = 目标可执行文件的名称或所在的文件夹，默认为 inputFile 加上 ".exe" 扩展名
- CompilerOptions = 附加的编译器选项（请参阅 https://msdn.microsoft.com/en-us/library/78f4aasd.aspx）
-         TempDir = 用于存放临时文件的目录（默认为位于 %temp% 中的随机生成的临时目录）
-        minifyer = 用于在编译前缩小脚本的脚本块
-            lcid = 编译后可执行文件的区域设置 ID。如果未指定，则为当前用户的区域设置
-    prepareDebug = 为调试生成有用的信息
-    architecture = 仅针对特定的运行时编译。可选的值有 "x64"、"x86" 和 "anycpu"
-  threadingModel = "单线程公寓"或 "多线程公寓"模式
-       noConsole = 生成的可执行文件将是没有控制台窗口的 Windows 窗体应用程序
- UNICODEEncoding = 在控制台模式下将输出以 UNICODE 编码
-   credentialGUI = 在控制台模式下使用图形用户界面来提示凭据
-  resourceParams = 包含编译后可执行文件的资源参数的哈希表
-      configFile = 生成配置文件（<outputfile>.exe.config）
-        noOutput = 生成的可执行文件将不输出任何标准输出（包括详细和信息通道）
-         noError = 生成的可执行文件将不输出任何错误输出（包括警告和调试通道）
-  noVisualStyles = 禁用生成的 Windows GUI 应用程序的视觉样式（仅与 -noConsole 一起使用）
-    exitOnCancel = 在 "读取主机"输入框中选择 "取消"或 "X"时退出程序（仅适用于 -noConsole）
-        DPIAware = 如果启用了显示缩放功能，将尽可能地缩放图形用户界面的控件
-winFormsDPIAware = 如果启用了显示缩放，WinForms 将使用 DPI 缩放（需要 Windows 10 和 .Net 4.7 或更高版本）
-    requireAdmin = 如果启用了 UAC，编译后的可执行文件只能在提升的权限下运行（如果需要，会弹出 UAC 对话框）
-       supportOS = 使用最新 Windows 版本的特性（执行 [Environment]::OSVersion 查看区别）
-      virtualize = 启用应用程序虚拟化（强制使用 x86 运行时）
-       longPaths = 启用长路径（超过 260 个字符）如果操作系统支持（仅适用于 Windows 10 或更高版本）
+input            : PowerShell脚本文件内容的字符串，与-Content相同。
+inputFile        : 您想要转换为可执行文件的PowerShell脚本文件路径或URL（文件必须是UTF8或UTF16编码）
+Content          : 您想要转换为可执行文件的PowerShell脚本内容
+outputFile       : 目标可执行文件名或文件夹，默认为带有'.exe'扩展名的inputFile
+CompilerOptions  : 额外的编译器选项（参见 https://msdn.microsoft.com/en-us/library/78f4aasd.aspx）
+TempDir          : 存储临时文件的目录（默认为%temp%中随机生成的临时目录）
+minifyer         : 在编译之前缩小脚本的脚本块
+lcid             : 编译的可执行文件的位置ID。如果未指定，则为当前用户文化
+prepareDebug     : 创建有助于调试的信息
+architecture     : 仅为特定运行时编译。可能的值为'x64'，'x86'和'anycpu'
+threadingModel   : '单线程单元'或'多线程单元'模式
+noConsole        : 生成的可执行文件将是一个没有控制台窗口的Windows Forms应用程序
+UNICODEEncoding  : 在控制台模式下将输出编码为UNICODE
+credentialGUI    : 在控制台模式下使用GUI提示凭据
+resourceParams   : 包含编译的可执行文件的资源参数的哈希表
+configFile       : 写一个配置文件（<outputfile>.exe.config）
+noOutput         : 生成的可执行文件将不生成标准输出（包括详细和信息通道）
+noError          : 生成的可执行文件将不生成错误输出（包括警告和调试通道）
+noVisualStyles   : 禁用生成的Windows GUI应用程序的视觉样式（仅与-noConsole一起使用）
+exitOnCancel     : 当在Read-Host输入框中选择Cancel或"X"时退出程序（仅与-noConsole一起使用）
+DPIAware         : 如果启用了显示缩放，GUI控件将尽可能进行缩放
+winFormsDPIAware : 如果启用了显示缩放，WinForms将使用DPI缩放（需要Windows 10和.Net 4.7或更高版本）
+requireAdmin     : 如果启用了UAC，编译的可执行文件只能在提升的上下文中运行（如果需要，会出现UAC对话框）
+supportOS        : 使用最新Windows版本的功能（执行[Environment]::OSVersion以查看差异）
+virtualize       : 已激活应用程序虚拟化（强制x86运行时）
+longPaths        : 如果在OS上启用，启用长路径（> 260个字符）（仅适用于Windows 10或更高版本）
 ```
 
 ### 备注
