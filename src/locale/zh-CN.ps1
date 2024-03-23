@@ -7,6 +7,7 @@
 	ServerStarted		   = "HTTP 服务器已启动！"
 	ServerStopped		   = "HTTP 服务器已停止！"
 	ServerStartFailed	   = "HTTP 服务器启动失败！"
+	TryRunAsRoot		   = "请尝试以管理员身份运行。"
 	ServerListening		   = "访问地址："
 	ExitServerTip		   = "您随时可以按 Ctrl+C 退出服务器"
 	# GUI

@@ -7,6 +7,7 @@
 	ServerStarted		   = "¡Servidor HTTP iniciado!"
 	ServerStopped		   = "¡Servidor HTTP detenido!"
 	ServerStartFailed	   = "Error al iniciar el servidor HTTP."
+	TryRunAsRoot		   = "Vuelva a intentarlo como usuario root."
 	ServerListening		   = "Dirección de acceso:"
 	ExitServerTip		   = "Puede presionar Ctrl+C para salir del servidor en cualquier momento."
 	# GUI

@@ -57,7 +57,10 @@ if ($http.IsListening) {
 	Write-Host "$($LocalizeData.ServerListening) $($http.Prefixes)" -ForegroundColor Yellow
 }
 else {
-	Write-Host $LocalizeData.ServerFailed -ForegroundColor Black -BackgroundColor Red
+	if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]"Administrator")) {
+		Write-Host $LocalizeData.TryRunAsRoot -ForegroundColor Yellow
+	}
+	Write-Host $LocalizeData.ServerStartFailed -ForegroundColor Black -BackgroundColor Red
 	return
 }
 

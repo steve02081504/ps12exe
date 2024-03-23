@@ -7,6 +7,7 @@
 	ServerStarted		   = "HTTP server started!"
 	ServerStopped		   = "HTTP server stopped!"
 	ServerStartFailed	   = "Failed to start HTTP server!"
+	TryRunAsRoot		   = "Please try again as root."
 	ServerListening		   = "Access address:"
 	ExitServerTip		   = "You can press Ctrl+C to exit the server at any time."
 	# GUI

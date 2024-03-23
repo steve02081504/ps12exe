@@ -7,6 +7,7 @@
 	ServerStarted		   = "HTTPサーバーが起動しました！"
 	ServerStopped		   = "HTTPサーバーが停止しました！"
 	ServerStartFailed	   = "HTTPサーバーの起動に失敗しました！"
+	TryRunAsRoot		   = "ルート権限で実行してください。"
 	ServerListening		   = "アクセスアドレス："
 	ExitServerTip		   = "いつでもCtrl+Cを押してサーバーを終了できます"
 	# GUI
