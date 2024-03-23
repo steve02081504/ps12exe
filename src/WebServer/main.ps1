@@ -122,7 +122,7 @@ function HandleRequest($context) {
 			$runspace = [powershell]::Create()
 			$runspace.RunspacePool = $runspacePool
 			$AsyncResult = $runspace.AddScript({
-					param ($userInput, $Response, $ScriptRoot, $compiledExePath)
+					param ($userInput, $Response, $ScriptRoot, $compiledExePath, $clientIP)
 
 					# 加载ps12exe用于处理编译请求
 					Import-Module $ScriptRoot/../../ps12exe.psm1 -ErrorAction Stop
@@ -131,13 +131,14 @@ function HandleRequest($context) {
 
 					# 编译代码
 					try {
-						$userInput | ps12exe -outputFile $compiledExePath -GuestMode -ErrorAction Stop
+						$userInput | ps12exe -outputFile $compiledExePath -GuestMode:$($clientIP -ne '127.0.0.1') -ErrorAction Stop
 						$buffer = [System.IO.File]::ReadAllBytes($compiledExePath)
 						$Response.ContentType = "application/octet-stream"
 					}
 					catch {
 						# 若ErrorId不是ParseError则写入日志
 						if ($_.ErrorId -ine "ParseError") {
+							Write-Host "${clientIP}:" -ForegroundColor Red
 							Write-Host $_ -ForegroundColor Red
 						}
 						$Response.ContentType = "text/plain"
@@ -151,7 +152,7 @@ function HandleRequest($context) {
 					$Response.Close()
 				}).
 			AddArgument($userInput).AddArgument($context.Response).
-			AddArgument($PSScriptRoot).AddArgument($compiledExePath).
+			AddArgument($PSScriptRoot).AddArgument($compiledExePath).AddArgument($clientIP).
 			BeginInvoke()
 			$AsyncResultArray.Add($AsyncResult) | Out-Null
 			$RunspaceArray.Add($runspace) | Out-Null

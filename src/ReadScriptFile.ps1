@@ -1,5 +1,13 @@
 ﻿function BaseReadFile($File) {
 	$Content = if ($File -match "^(https?|ftp)://") {
+		if($GuestMode) {
+			if((Invoke-WebRequest $File -Method Head -ErrorAction SilentlyContinue).Headers.'Content-Length' -gt 1mb){
+				Write-Error "The file is too large to read." -ErrorAction Stop
+			}
+			if($File -match "^ftp://") {
+				Write-Error "FTP is not supported in GuestMode." -ErrorAction Stop
+			}
+		}
 		(Invoke-WebRequest -Uri $File -ErrorAction SilentlyContinue).Content -replace '^[^\u0000-\u007F]+', ''
 	}
 	elseif(-not $GuestMode) {

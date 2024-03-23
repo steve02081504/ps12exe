@@ -48,7 +48,7 @@ public class ps12exeConstEvalHost : PSHost {
 	$timeoutSeconds /= 20
 
 	if ($asyncResult.IsCompleted) {
-		$RowResult = $pwsh.EndInvoke($asyncResult)
+		$RowResult = $pwsh.EndInvoke($asyncResult) | Where-Object { $_ -ne $null }
 		$ConstResult = $RowResult | ForEach-Object {
 			(($_ | Out-String) -replace '\r\n$', '').Replace('\', '\\').Replace('"', '\"').Replace("`n", "\n").Replace("`r", "\r")
 		}
