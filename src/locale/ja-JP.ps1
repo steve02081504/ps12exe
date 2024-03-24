@@ -25,6 +25,7 @@
 		PrarmsData = [ordered]@{
 			HostUrl			  = "登録するHTTPサーバーのアドレス。"
 			MaxCompileThreads = "最大コンパイルスレッド数。"
+			MaxCompileTime	  = "最大コンパイル時間（秒）。"
 			ReqLimitPerMin	  = "IPアドレスごとの1分間のリクエスト制限。"
 			MaxCachedFileSize = "最大キャッシュファイルサイズ。"
 			MaxScriptFileSize = "最大スクリプトファイルサイズ。"

@@ -25,6 +25,7 @@
 		PrarmsData = [ordered]@{
 			HostUrl			  = "The HTTP server address to register."
 			MaxCompileThreads = "The maximum number of compile threads."
+			MaxCompileTime	  = "The maximum compile time in seconds."
 			ReqLimitPerMin	  = "The maximum number of requests per minute per IP."
 			MaxCachedFileSize = "The maximum size of the cached file."
 			MaxScriptFileSize = "The maximum size of the script file."

@@ -25,6 +25,7 @@
 		PrarmsData = [ordered]@{
 			HostUrl			  = "要注册的 HTTP 服务器地址。"
 			MaxCompileThreads = "最大编译线程数。"
+			MaxCompileTime	  = "最大编译时间（秒）。"
 			ReqLimitPerMin	  = "每个IP每分钟的请求限制。"
 			MaxCachedFileSize = "最大缓存文件大小。"
 			MaxScriptFileSize = "最大脚本文件大小。"

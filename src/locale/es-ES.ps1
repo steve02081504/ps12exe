@@ -25,6 +25,7 @@
 		PrarmsData = [ordered]@{
 			HostUrl			  = "La dirección del servidor HTTP que se registrará."
 			MaxCompileThreads = "El número maximo de hilos de compilación."
+			MaxCompileTime	  = "El tiempo maximo de compilación (segundos)."
 			ReqLimitPerMin	  = "El número de solicitudes por minuto para cada IP."
 			MaxCachedFileSize = "El tamaño maximo de archivo caché."
 			MaxScriptFileSize = "El tamaño maximo de archivo de código."
