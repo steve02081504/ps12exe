@@ -20,11 +20,13 @@
 	# Console
 	WebServerHelpData	   = @{
 		title	   = "Uso:"
-		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-ReqLimitPerMin '<uint>']
-	[-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-Localize '<código de idioma>'] [-help]"
+		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
+	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>']
+	[-Localize '<código de idioma>'] [-help]"
 		PrarmsData = [ordered]@{
 			HostUrl			  = "La dirección del servidor HTTP que se registrará."
 			MaxCompileThreads = "El número maximo de hilos de compilación."
+			MaxCompileTime	  = "El tiempo maximo de compilación (segundos)."
 			ReqLimitPerMin	  = "El número de solicitudes por minuto para cada IP."
 			MaxCachedFileSize = "El tamaño maximo de archivo caché."
 			MaxScriptFileSize = "El tamaño maximo de archivo de código."

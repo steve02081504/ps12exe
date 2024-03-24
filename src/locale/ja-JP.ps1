@@ -20,11 +20,13 @@
 	# コンソール
 	WebServerHelpData	   = @{
 		title	   = "使用方法："
-		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-ReqLimitPerMin '<uint>']
-	[-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-Localize '<言語コード>'] [-help]"
+		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
+	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>']
+	[-Localize '<言語コード>'] [-help]"
 		PrarmsData = [ordered]@{
 			HostUrl			  = "登録するHTTPサーバーのアドレス。"
 			MaxCompileThreads = "最大コンパイルスレッド数。"
+			MaxCompileTime	  = "最大コンパイル時間（秒）。"
 			ReqLimitPerMin	  = "IPアドレスごとの1分間のリクエスト制限。"
 			MaxCachedFileSize = "最大キャッシュファイルサイズ。"
 			MaxScriptFileSize = "最大スクリプトファイルサイズ。"

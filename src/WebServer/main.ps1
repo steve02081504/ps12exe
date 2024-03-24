@@ -9,6 +9,8 @@ run a web server to allow users to compile powershell scripts
 The url of the web server
 .PARAMETER MaxCompileThreads
 The maximum number of compile threads
+.PARAMETER MaxCompileTime
+The maximum compile time of a compile in seconds
 .PARAMETER ReqLimitPerMin
 The maximum number of requests per minute per IP
 .PARAMETER MaxCachedFileSize
@@ -28,6 +30,7 @@ Start-ps12exeWebServer -HostUrl 'http://localhost:80/'
 param (
 	$HostUrl = 'http://localhost:8080/',
 	$MaxCompileThreads = 8,
+	$MaxCompileTime = 20,
 	$ReqLimitPerMin = 5,
 	$MaxCachedFileSize = 32mb,
 	$MaxScriptFileSize = 2mb,
@@ -72,9 +75,8 @@ Write-Host $LocalizeData.ExitServerTip -ForegroundColor Yellow
 
 # Define a hashtable to track request counts per IP
 $ipRequestCount = @{}
-# 两个队列用于装载$AsyncResult和$Runspace，直到$AsyncResult结束我们才能对$Runspace进行Dispose。。。
+# 一个队列用于装载$AsyncResult和$Runspace以及其他信息，直到$AsyncResult结束我们才能对$Runspace进行Dispose。。。
 $AsyncResultArray = New-Object System.Collections.ArrayList
-$RunspaceArray = New-Object System.Collections.ArrayList
 # Create a runspace pool
 $runspacePool = [runspacefactory]::CreateRunspacePool(1, $MaxCompileThreads)
 $runspacePool.Open()
@@ -91,7 +93,7 @@ function HandleRequest($context) {
 				Write-Verbose "No data found when Handling Request, returning empty response"
 				break
 			}
-			if ($userInput.Length -gt $MaxScriptFileSize) {
+			if ($userInput.Length -gt $MaxScriptFileSize -and $clientIP -ne '127.0.0.1') {
 				Write-Verbose "User Input is too large, returning 413 error"
 				$context.Response.StatusCode = 413
 				$context.Response.ContentType = "text/plain"
@@ -157,8 +159,12 @@ function HandleRequest($context) {
 			AddArgument($userInput).AddArgument($context.Response).
 			AddArgument($PSScriptRoot).AddArgument($compiledExePath).AddArgument($clientIP).
 			BeginInvoke()
-			$AsyncResultArray.Add($AsyncResult) | Out-Null
-			$RunspaceArray.Add($runspace) | Out-Null
+			$AsyncResultArray.Add(@{
+				AsyncHandle = $AsyncResult
+				Runspace    = $runspace
+				Time        = Get-Date
+				IP          = $clientIP
+			}) | Out-Null
 			return
 		}
 		'/bgm' {
@@ -186,6 +192,27 @@ function HandleRequest($context) {
 	}
 	$context.Response.Close()
 }
+function AutoCacheClear {
+	$Cache = Get-ChildItem -Path $PSScriptRoot/outputs -ErrorAction Ignore
+	if ($MaxCachedFileSize -lt ($Cache | Measure-Object -Property Length -Sum).Sum) {
+		$Cache | Sort-Object -Property LastAccessTime -Descending |
+		Select-Object -First $([math]::Floor($Cache.Count / 2)) |
+		Remove-Item -Force -ErrorAction Ignore
+	}
+}
+function AutoRunspaceRecycle {
+	while ($AsyncResultArray[0].AsyncHandle.IsCompleted) {
+		$AsyncResultArray[0].Runspace.Dispose()
+		$AsyncResultArray.RemoveAt(0)
+	}
+	$TimeNow = Get-Date
+	while ($AsyncResultArray[0] -and ($TimeNow - $AsyncResultArray[0].Time).Seconds -ge $MaxCompileTime) {
+		if ($AsyncResultArray[0].IP -eq '127.0.0.1') { break }
+		$AsyncResultArray[0].Runspace.Stop()
+		$AsyncResultArray[0].Runspace.Dispose()
+		$AsyncResultArray.RemoveAt(0)
+	}
+}
 
 try {
 	# 无限循环，用于监听请求 直到用户按下 Ctrl+C
@@ -197,19 +224,10 @@ try {
 			$Timer++
 			if ($Timer -ge 120) {
 				$ipRequestCount = @{}
-				$Cache = Get-ChildItem -Path $PSScriptRoot/outputs -ErrorAction Ignore
-				if ($MaxCachedFileSize -lt ($Cache | Measure-Object -Property Length -Sum).Sum) {
-					$Cache | Sort-Object -Property LastAccessTime -Descending |
-					Select-Object -First $([math]::Floor($Cache.Count / 2)) |
-					Remove-Item -Force -ErrorAction Ignore
-				}
+				AutoCacheClear
 				$Timer = 0
 			}
-			while ($AsyncResultArray[0].IsCompleted) {
-				$RunspaceArray[0].Dispose()
-				$AsyncResultArray.RemoveAt(0)
-				$RunspaceArray.RemoveAt(0)
-			}
+			AutoRunspaceRecycle
 		}
 		HandleRequest($http.EndGetContext($Async))
 	}
@@ -217,10 +235,10 @@ try {
 finally {
 	# 关闭 HttpListener
 	$http.Stop()
-	while ($RunspaceArray.Count) {
-		$RunspaceArray[0].Stop()
-		$RunspaceArray[0].Dispose()
-		$RunspaceArray.RemoveAt(0)
+	while ($AsyncResultArray.Count) {
+		$AsyncResultArray[0].Runspace.Stop()
+		$AsyncResultArray[0].Runspace.Dispose()
+		$AsyncResultArray.RemoveAt(0)
 	}
 	$runspacePool.Close()
 	$runspacePool.Dispose()
