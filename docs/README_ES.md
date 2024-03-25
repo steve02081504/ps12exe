@@ -183,7 +183,7 @@ En la mayoría de los casos no necesita usar los comandos de preprocesamiento `#
 $resultado = & "$PSScriptRoot/otro.ps1" -args
 ```
 
-#### `#_!!!`
+#### `#_!!`
 
 ```powershell
 $Script:eshDir =
@@ -197,7 +197,7 @@ elseif
 (Test-Path $env:LOCALAPPDATA/esh) { "$env:LOCALAPPDATA/esh" }
 ```
 
-¡¡¡Cualquier línea que empiece por `#_!!! ¡¡¡` al principio de una línea con `#_!!! ` será eliminada.
+Cualquier línea que empiece por `#_!!` al principio de una línea con `#_!!` será eliminada.
 
 #### `#_require <modulesList>`
 
@@ -275,7 +275,7 @@ Los comandos básicos de entrada/salida de ps12exe deben ser reescritos en C#. L
 
 ### Formato de salida en modo GUI
 
-Por defecto, el formato de salida para comandos pequeños en powershell es una línea por línea (como un array de cadenas). Cuando un comando genera 10 líneas de salida y se le da salida usando la GUI, aparecen 10 cajas de mensajes, cada una esperando ser determinada. Para evitar esto, importe el comando `Out-String` a la línea de comandos. Esto convertirá la salida en una matriz de cadenas de 10 líneas, todas las cuales se mostrarán en un cuadro de mensaje (por ejemplo, `dir C:|| Out-String`).
+Por defecto, el formato de salida para comandos pequeños en powershell es una línea por línea (como un array de cadenas). Cuando un comando genera 10 líneas de salida y se le da salida usando la GUI, aparecen 10 cajas de mensajes, cada una esperando ser determinada. Para evitar esto, importe el comando `Out-String` a la línea de comandos. Esto convertirá la salida en una matriz de cadenas de 10 líneas, todas las cuales se mostrarán en un cuadro de mensaje (por ejemplo, `dir C:\ | Out-String`).
 
 ### Ficheros de configuración
 
@@ -293,7 +293,7 @@ Todo el script es fácilmente visible para cualquier descompilador .net.
 
 ### Distinguir entornos por script  
 
-Puedes saber si un script se está ejecutando en un exe compilado o en un script por ``$Host.Name``. 
+Puedes saber si un script se está ejecutando en un exe compilado o en un script por `$Host.Name`. 
 
 ```powershell
 if ($Host.Name -eq "PSEXE") { Write-Output "ps12exe" } else { Write-Output "Algún otro host" }
