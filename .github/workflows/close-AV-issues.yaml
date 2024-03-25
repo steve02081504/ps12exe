@@ -1,0 +1,18 @@
+name: Close AV issues
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  close-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Check for keywords
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const script = require('./.github/workflows/close-AV-issues.js')
+            await script({github, context})
+          github-token: ${{ secrets.BOT_TOKEN }}
