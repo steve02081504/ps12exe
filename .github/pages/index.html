@@ -14,6 +14,7 @@
 	<script src='https://www.midijs.net/lib/midi.js'></script>
 	<script src="https://cdn.jsdelivr.net/npm/darkreader@4.9.80/darkreader.min.js"></script>
 	<script>
+		DarkReader.setFetchMethod(window.fetch)
 		DarkReader.enable()
 		var HighlightCode;
 		function SetDarkMode(Set) {
