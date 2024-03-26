@@ -12,12 +12,24 @@
 <head>
 	<title>ps12exe Online</title>
 	<link rel="icon" type="image/x-icon" href="favicon.ico">
-	<script type='text/javascript' src='https://www.midijs.net/lib/midi.js'></script>
-	<script type="module">
+	<script src='https://www.midijs.net/lib/midi.js'></script>
+	<script src="https://cdn.jsdelivr.net/npm/darkreader@4.9.80/darkreader.min.js"></script>
+	<script>
+		DarkReader.enable()
+		var HighlightCode;
+		function SetDarkMode(Set) {
+			if (Set) DarkReader.enable()
+			else DarkReader.disable()
+			HighlightCode.useTheme(Set ? 'github-dark' : 'github')
+		}
 		(async ({ chrome, netscape }) => {
 			if (!chrome && !netscape) await import('https://unpkg.com/@ungap/custom-elements')
-			const { default: HighlightedCode } = await import('https://unpkg.com/highlighted-code')
-			HighlightedCode.useTheme('github-dark')
+			HighlightCode = await import('https://unpkg.com/highlighted-code').then(x => x.default)
+			var dark = window.matchMedia('(prefers-color-scheme: dark)');
+			SetDarkMode(dark.matches)
+			dark.addEventListener('change', event => {
+				SetDarkMode(event.matches)
+			})
 		})(self)
 	</script>
 </head>
@@ -25,7 +37,9 @@
 <body>
 	<textarea style="width: 98%; height:95vh;" is="highlighted-code" language="powershell" tabSize="4" placeholder="#_pragma noConsole
 'Hello World!'
-" id="inputText"></textarea>
+" id="inputText">#_pragma noConsole
+'Hello World!'
+</textarea>
 	<br>
 	<button id="compileButton" onclick="compileCode()">cum out</button>
 	<a id="downloadLink" download="a.exe"></a>
