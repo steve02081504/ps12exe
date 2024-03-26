@@ -270,7 +270,7 @@ pragma命令可以设置任何编译参数：
 
 ### 未实现的 cmdlet 列表
 
-ps12exe 的基本输入/输出命令必须用 C# 重写。未实现的有控制台模式下的 *`Write-Progress`*（工作量太大）和*`Start-Transcript`*/*`Stop-Transcript`*（微软没有适当的参考实现）。
+ps12exe 的基本输入/输出命令必须用 C# 重写。未实现的有控制台模式下的 *`Write-Progress`*（工作量太大）和 *`Start-Transcript`*/*`Stop-Transcript`* （微软没有适当的参考实现）。
 
 ### GUI 模式输出格式
 

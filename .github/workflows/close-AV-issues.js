@@ -1,7 +1,8 @@
+/** @param {import('@types/github-script').AsyncFunctionArguments} AsyncFunctionArguments */
 module.exports = async ({ github, context }) => {
 	const issueBody = context.payload.issue.body.toLowerCase();
-	const keywords = [
-		'high-risk', 'sandbox', '沙箱', '生成恶意'
+	var keywords = [
+		'high-risk', 'sandbox', '沙箱', '生成恶意', 'anti-virus', 'antivirus', 'malware', '杀软', '杀毒', '病毒'
 	]
 	if (keywords.some(keyword => issueBody.includes(keyword))) {
 		const issueNumber = context.payload.issue.number;
