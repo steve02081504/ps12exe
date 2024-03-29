@@ -57,11 +57,11 @@ $TempDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPa
 $Content | Set-Content $TempDir\main.ps1 -Encoding UTF8 -NoNewline
 if ($iconFile -match "^(https?|ftp)://") {
 	try {
-		if($GuestMode) {
-			if((Invoke-WebRequest $iconFile -Method Head -ErrorAction SilentlyContinue).Headers.'Content-Length' -gt 1mb){
+		if ($GuestMode) {
+			if ((Invoke-WebRequest $iconFile -Method Head -ErrorAction SilentlyContinue).Headers.'Content-Length' -gt 1mb) {
 				Write-Error "The icon is too large to read." -ErrorAction Stop
 			}
-			if($File -match "^ftp://") {
+			if ($File -match "^ftp://") {
 				Write-Error "FTP is not supported in GuestMode." -ErrorAction Stop
 			}
 		}

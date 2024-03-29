@@ -39,9 +39,9 @@
 		Usage	   = "ps12exeGUI [[-ConfigFile] '<कॉन्फ़िगरेशन फ़ाइल>'] [-Localize '<भाषा कोड>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]"
 		PrarmsData = [ordered]@{
 			ConfigFile	= "लोड करने के लिए कॉन्फ़िगरेशन फ़ाइल।"
-			Localize   = "उपयोग किया जाने वाला भाषा कोड।"
-			UIMode	   = "उपयोग किया जाने वाला उपयोगकर्ता इंटरफेस मोड।"
-			help	   = "इस मदद सूचना को दिखाएँ।"
+			Localize	= "उपयोग किया जाने वाला भाषा कोड।"
+			UIMode		= "उपयोग किया जाने वाला उपयोगकर्ता इंटरफेस मोड।"
+			help		= "इस मदद सूचना को दिखाएँ।"
 		}
 	}
 	SetContextMenuHelpData = @{

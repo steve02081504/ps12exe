@@ -52,7 +52,7 @@ public class ps12exeConstEvalHost : PSHost {
 		$ConstResult = $RowResult | ForEach-Object {
 			(($_ | Out-String) -replace '\r\n$', '').Replace('\', '\\').Replace('"', '\"').Replace("`n", "\n").Replace("`r", "\r")
 		}
-		$ConstResult = $ConstResult -join $(if($noConsole){'","'}else{"`n"})
+		$ConstResult = $ConstResult -join $(if ($noConsole) { '","' }else { "`n" })
 		Write-Verbose "Done evaluation of constants -> $(bytesOfString $ConstResult) bytes"
 		if ($ConstResult.Length -gt 19kb) {
 			Write-Verbose "Const result is too long, fail back to normal program frame"
