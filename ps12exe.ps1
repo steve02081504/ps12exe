@@ -557,9 +557,17 @@ $($_ | Format-List | Out-String)
 		foreach ($key in $urlParams.Keys) {
 			$githubfeedback += "&$key=$([system.uri]::EscapeDataString($urlParams[$key]))"
 		}
-		Write-Host "Opps, something went wrong. For help, please submit an issue by pressing Enter." -ForegroundColor Yellow
-		Read-Host | Out-Null
-		Start-Process $githubfeedback
+		Write-Host "Opps, something went wrong." -ForegroundColor Yellow
+		$versionNow = Get-Module -ListAvailable ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1
+		$versionOnline = Find-Module ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1
+		if ($versionNow.Version -ne $versionOnline.Version) {
+			Write-Host "Latest version is $versionOnline, try upgrading to $versionNow?" -ForegroundColor Yellow
+		}
+		else {
+			Write-Host "For help, please submit an issue by pressing Enter." -ForegroundColor Yellow
+			Read-Host | Out-Null
+			Start-Process $githubfeedback
+		}
 	}
 }
 finally {
