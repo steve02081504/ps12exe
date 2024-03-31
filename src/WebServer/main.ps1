@@ -1,5 +1,6 @@
 ﻿#Requires -Version 5.0
 
+#_if PSScript
 <#
 .SYNOPSIS
 run a web server to allow users to compile powershell scripts
@@ -27,6 +28,7 @@ Start-ps12exeWebServer
 Start-ps12exeWebServer -HostUrl 'http://localhost:80/'
 #>
 [CmdletBinding()]
+#_endif
 param (
 	$HostUrl = 'http://localhost:8080/',
 	$MaxCompileThreads = 8,
@@ -34,14 +36,17 @@ param (
 	$ReqLimitPerMin = 5,
 	$MaxCachedFileSize = 32mb,
 	$MaxScriptFileSize = 2mb,
+	#_if PSScript
 	[ArgumentCompleter({
 		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 		. "$PSScriptRoot\..\LocaleArgCompleter.ps1" @PSBoundParameters
 	})]
+	#_endif
 	[string]$Localize,
 	[switch]$help
 )
 
+#_if PSScript
 $LocalizeData = . $PSScriptRoot\..\LocaleLoader.ps1 -Localize $Localize
 
 if ($help) {
@@ -248,3 +253,10 @@ finally {
 	# 清空缓存
 	Remove-Item $PSScriptRoot/outputs/* -Recurse -Force -ErrorAction Ignore
 }
+#_else
+#_require ps12exe
+#_pragma iconFile $PSScriptRoot/../../img/icon.ico
+#_pragma title ps12exeWebServer
+#_pragma description 'A webserver runner for compile powershell scripts online'
+#_!!Start-ps12exeWebServer @PSBoundParameters
+#_endif
