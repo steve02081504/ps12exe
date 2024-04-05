@@ -64,19 +64,19 @@ All commands in this module support the `-help` option for detailed assistance i
 	# FormatsToProcess = @()
 
 	# Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-	NestedModules		   = @()
+	# NestedModules = @()
 
 	# Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
 	FunctionsToExport	   = @('ps12exe', 'ps12exeGUI', 'Set-ps12exeContextMenu', 'Start-ps12exeWebServer')
 
 	# Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
-	CmdletsToExport		   = @()
+	# CmdletsToExport = @()
 
 	# Variables to export from this module
-	VariablesToExport	   = @()
+	# VariablesToExport = @()
 
 	# Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
-	AliasesToExport		   = @()
+	# AliasesToExport = @()
 
 	# DSC resources to export from this module
 	# DscResourcesToExport = @()
@@ -114,7 +114,7 @@ All commands in this module support the `-help` option for detailed assistance i
 	}
 
 	# HelpInfo URI of this module
-	HelpInfoURI			   = 'https://github.com/steve02081504/ps12exe/blob/master/README.md'
+	# HelpInfoURI = ''
 
 	# Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
 	# DefaultCommandPrefix = ''
