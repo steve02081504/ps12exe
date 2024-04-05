@@ -25,6 +25,14 @@ Set-ps12exeContextMenu ## コンテキストメニューを設定する
 
 (リポジトリをクローンして `.\ps12exe.ps1`)
 
+**PS2EXE から ps12exe へのアップグレードは難しいですか？問題ありません！**
+PS2EXE2ps12exe は PS2EXE の呼び出しを ps12exe にフックできます。PS2EXE をアンインストールしてこれをインストールし、その後は通常通り PS2EXE を使用するだけです。
+
+```powershell
+Uninstall-Module PS2EXE
+Install-Module PS2EXE2ps12exe
+```
+
 ## 使用方法
 
 ### 右クリックメニュー

@@ -25,6 +25,14 @@ Set-ps12exeContextMenu #设置右键菜单
 
 （你也可以clone本仓库，然后直接运行`.\ps12exe.ps1`）
 
+**升级从 PS2EXE 到 ps12exe 难吗？没问题！**
+PS2EXE2ps12exe 可以将 PS2EXE 的调用钩入到 ps12exe 中，你只需要卸载 PS2EXE 并安装这个，然后像正常使用 PS2EXE 一样即可。
+
+```powershell
+Uninstall-Module PS2EXE
+Install-Module PS2EXE2ps12exe
+```
+
 ## 使用方法
 
 ### 右键菜单

@@ -26,6 +26,14 @@ Set-ps12exeContextMenu ## Configura el menú contextual
 
 (También puede clonar el repositorio y ejecutar `.\ps12exe.ps1`)
 
+**¿Difícil de actualizar desde PS2EXE a ps12exe? ¡No hay problema!**
+PS2EXE2ps12exe puede enganchar las llamadas de PS2EXE en ps12exe. Todo lo que necesitas hacer es desinstalar PS2EXE e instalar esto, luego usar PS2EXE como de costumbre.
+
+```powershell
+Uninstall-Module PS2EXE
+Install-Module PS2EXE2ps12exe
+```
+
 ## Cómo usar
 
 ### Menú contextual
