@@ -2,7 +2,6 @@
 
 ## Introducción
 
-
 [![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml)
 [![PSGallery download num](https://img.shields.io/powershellgallery/dt/ps12exe)](https://www.powershellgallery.com/packages/ps12exe)
 [![GitHub issues by-label bug](https://img.shields.io/github/issues/steve02081504/ps12exe/bug?label=bugs)](https://github.com/steve02081504/ps12exe/issues?q=is%3Aissue+is%3Aopen+label%3Abug)
@@ -26,7 +25,7 @@ Set-ps12exeContextMenu ## Configura el menú contextual
 
 (También puede clonar el repositorio y ejecutar `.\ps12exe.ps1`)
 
-**¿Difícil de actualizar desde PS2EXE a ps12exe? ¡No hay problema!**
+**¿Difícil de actualizar desde PS2EXE a ps12exe? ¡No hay problema!**  
 PS2EXE2ps12exe puede enganchar las llamadas de PS2EXE en ps12exe. Todo lo que necesitas hacer es desinstalar PS2EXE e instalar esto, luego usar PS2EXE como de costumbre.
 
 ```powershell
@@ -302,7 +301,7 @@ Todo el script es fácilmente visible para cualquier descompilador .net.
 
 ### Distinguir entornos por script  
 
-Puedes saber si un script se está ejecutando en un exe compilado o en un script por `$Host.Name`. 
+Puedes saber si un script se está ejecutando en un exe compilado o en un script por `$Host.Name`.  
 
 ```powershell
 if ($Host.Name -eq "PSEXE") { Write-Output "ps12exe" } else { Write-Output "Algún otro host" }
@@ -341,8 +340,8 @@ $Host.UI.RawUI.FlushInputBuffer()
 | Tamaño del archivo ejecutable "Hello World" 💾 | 🥰 1024 bytes | 😨 25088 bytes |
 | Soporte multilingüe en la GUI 🌐 | ✔️ | ❌ |
 | Verificación de sintaxis en tiempo de compilación ✔️ | ✔️ | ❌ |
-| Función de preprocesamiento 🔄 | ✔️ | ❌ | |
-| `-extract` y otros parámetros especiales de análisis sintáctico 🧹 | 🗑️ Eliminado | 🥲 Requiere modificación del código fuente |.
+| Función de preprocesamiento 🔄 | ✔️ | ❌ |
+| `-extract` y otros parámetros especiales de análisis sintáctico 🧹 | 🗑️ Eliminado | 🥲 Requiere modificación del código fuente |
 | PR welcome level 🤝 | 🥰 ¡Bienvenido! | 🤷 14 PRs, 13 de los cuales fueron cerrados |
 
 ### Comparación Compleja 🔍

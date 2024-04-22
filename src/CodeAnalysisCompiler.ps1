@@ -6,13 +6,13 @@ $references = $referenceAssembies | ForEach-Object {
 }
 
 $compilationOptions = New-Object Microsoft.CodeAnalysis.CSharp.CSharpCompilationOptions($(
-		if ($noConsole) {
-			[Microsoft.CodeAnalysis.OutputKind]::WindowsApplication
-		}
-		else {
-			[Microsoft.CodeAnalysis.OutputKind]::ConsoleApplication
-		}
-	))
+	if ($noConsole) {
+		[Microsoft.CodeAnalysis.OutputKind]::WindowsApplication
+	}
+	else {
+		[Microsoft.CodeAnalysis.OutputKind]::ConsoleApplication
+	}
+))
 
 # Get a default CSharpParseOptions instance
 $parseOptions = [Microsoft.CodeAnalysis.CSharp.CSharpParseOptions]::Default
@@ -25,15 +25,15 @@ if ($iconFile) {
 }
 if (!$virtualize) {
 	$compilationOptions = $compilationOptions.WithPlatform($(
-			switch ($architecture) {
-				"x86" { [Microsoft.CodeAnalysis.Platform]::X86 }
-				"x64" { [Microsoft.CodeAnalysis.Platform]::X64 }
-				"anycpu" { [Microsoft.CodeAnalysis.Platform]::AnyCpu }
-				default {
-					Write-Warning "Invalid platform $architecture, using AnyCpu"
-					[Microsoft.CodeAnalysis.Platform]::AnyCpu
-				}
-			})
+		switch ($architecture) {
+			"x86" { [Microsoft.CodeAnalysis.Platform]::X86 }
+			"x64" { [Microsoft.CodeAnalysis.Platform]::X64 }
+			"anycpu" { [Microsoft.CodeAnalysis.Platform]::AnyCpu }
+			default {
+				Write-Warning "Invalid platform $architecture, using AnyCpu"
+				[Microsoft.CodeAnalysis.Platform]::AnyCpu
+			}
+		})
 	)
 }
 else {
@@ -41,13 +41,13 @@ else {
 	$compilationOptions = $compilationOptions.WithPlatform([Microsoft.CodeAnalysis.Platform.X86])
 }
 $compilationOptions = $compilationOptions.WithOptimizationLevel($(
-		if ($prepareDebug) {
-			[Microsoft.CodeAnalysis.OptimizationLevel]::Debug
-		}
-		else {
-			[Microsoft.CodeAnalysis.OptimizationLevel]::Release
-		}
-	))
+	if ($prepareDebug) {
+		[Microsoft.CodeAnalysis.OptimizationLevel]::Debug
+	}
+	else {
+		[Microsoft.CodeAnalysis.OptimizationLevel]::Release
+	}
+))
 
 $treeArray = New-Object System.Collections.Generic.List[Microsoft.CodeAnalysis.SyntaxTree]
 $treeArray.Add($tree)

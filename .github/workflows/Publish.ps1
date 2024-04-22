@@ -38,6 +38,7 @@ try {
 		$XmlDoc = [xml](Get-Content -Path $_.FullName)
 		$XmlWriter = [System.XML.XmlWriter]::Create($_.FullName, $XmlWriterSettings)
 		$XmlDoc.Save($XmlWriter)
+		$XmlWriter.WriteRaw("`n")
 		$XmlWriter.Flush()
 		$XmlWriter.Close()
 	}

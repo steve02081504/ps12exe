@@ -34,7 +34,7 @@ Set-ps12exeContextMenu #Set right-click menu
 
 (you can also clone this repository and run `./ps12exe.ps1` directly)
 
-**Hard to upgrade from PS2EXE to ps12exe? No problem!**
+**Hard to upgrade from PS2EXE to ps12exe? No problem!**  
 PS2EXE2ps12exe can hooks PS2EXE calls into ps12exe, All you need is just uninstall PS2EXE and install this, then use PS2EXE as normal.
 
 ```powershell
