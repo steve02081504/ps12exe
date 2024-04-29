@@ -86,90 +86,100 @@ $AsyncResultArray = New-Object System.Collections.ArrayList
 $runspacePool = [runspacefactory]::CreateRunspacePool(1, $MaxCompileThreads)
 $runspacePool.Open()
 
+function HandleWebCompileRequest($userInput, $context) {
+	Write-Verbose "Compiling User Input: $userInput"
+	if (!$userInput) {
+		Write-Verbose "No data found when Handling Request, returning empty response"
+		break
+	}
+	$clientIP = $context.Request.RemoteEndPoint.Address.ToString()
+	if ($userInput.Length -gt $MaxScriptFileSize -and $clientIP -ne '127.0.0.1') {
+		Write-Verbose "User Input is too large, returning 413 error"
+		$context.Response.StatusCode = 413
+		$context.Response.ContentType = "text/plain"
+		$buffer = [System.Text.Encoding]::UTF8.GetBytes('File too large')
+		break
+	}
+	$ipRequestCount[$clientIP]++
+
+	# Check if the IP has exceeded the limit (e.g., 5 requests per minute)
+	if ($ipRequestCount[$clientIP] -gt $ReqLimitPerMin -and $clientIP -ne '127.0.0.1') {
+		Write-Verbose "IP $clientIP has exceeded the limit of $ReqLimitPerMin requests per minute, returning 429 error"
+		$context.Response.StatusCode = 429
+		$context.Response.ContentType = "text/plain"
+		$buffer = [System.Text.Encoding]::UTF8.GetBytes('Too many requests')
+		break
+	}
+	# hash of user input
+	$userInputHash = [System.Security.Cryptography.SHA256]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($userInput))
+	$userInputHashStr = ''
+	foreach ($byte in $userInputHash) {
+		$userInputHashStr += $byte.ToString('x2')
+	}
+	$compiledExePath = "$PSScriptRoot/outputs/$userInputHashStr.bin"
+	#if match cached file
+	if (Test-Path -Path $compiledExePath -ErrorAction Ignore) {
+		$context.Response.ContentType = "application/octet-stream"
+		$buffer = [System.IO.File]::ReadAllBytes($compiledExePath)
+		break
+	}
+	$runspace = [powershell]::Create()
+	$runspace.RunspacePool = $runspacePool
+	$AsyncResult = $runspace.AddScript({
+		param ($userInput, $Response, $ScriptRoot, $compiledExePath, $clientIP)
+
+		# 加载ps12exe用于处理编译请求
+		Import-Module $ScriptRoot/../../ps12exe.psm1 -ErrorAction Stop
+
+		New-Item -Path $ScriptRoot/outputs -ItemType Directory -Force | Out-Null
+
+		# 编译代码
+		try {
+			$userInput | ps12exe -outputFile $compiledExePath -GuestMode:$($clientIP -ne '127.0.0.1') -ErrorAction Stop
+			$buffer = [System.IO.File]::ReadAllBytes($compiledExePath)
+			$Response.ContentType = "application/octet-stream"
+		}
+		catch {
+			# 若ErrorId不是ParseError则写入日志
+			if ($_.ErrorId -ine "ParseError") {
+				Write-Host "${clientIP}:" -ForegroundColor Red
+				Write-Host $_ -ForegroundColor Red
+			}
+			$Response.ContentType = "text/plain"
+			$buffer = [System.Text.Encoding]::UTF8.GetBytes("$_")
+		}
+
+		$Response.ContentLength64 = $buffer.Length
+		if ($buffer) {
+			$Response.OutputStream.Write($buffer, 0, $buffer.Length)
+		}
+		$Response.Close()
+	}).
+	AddArgument($userInput).AddArgument($context.Response).
+	AddArgument($PSScriptRoot).AddArgument($compiledExePath).AddArgument($clientIP).
+	BeginInvoke()
+	$AsyncResultArray.Add(@{
+		AsyncHandle = $AsyncResult
+		Runspace    = $runspace
+		Time        = Get-Date
+		IP          = $clientIP
+	}) | Out-Null
+}
+$HostSubUrl = $HostUrl.Substring($HostUrl.IndexOf('://') + 3)
+$HostSubUrl = $HostSubUrl.Substring($HostSubUrl.IndexOf('/')).TrimEnd('\/')
 function HandleRequest($context) {
-	switch ($context.Request.RawUrl) {
+	$RequestUrl = $context.Request.RawUrl
+	if (-not $RequestUrl.StartsWith($HostSubUrl)) {
+		return # 无效，不属于ps12exe Web Server的请求
+	}
+	$RequestUrl = $RequestUrl.Substring($HostSubUrl.Length)
+	switch ($RequestUrl) {
 		'/compile' {
 			$Reader = New-Object System.IO.StreamReader($context.Request.InputStream)
 			$userInput = $Reader.ReadToEnd()
 			$Reader.Close()
 			$Reader.Dispose()
-			Write-Verbose "Compiling User Input: $userInput"
-			if (!$userInput) {
-				Write-Verbose "No data found when Handling Request, returning empty response"
-				break
-			}
-			if ($userInput.Length -gt $MaxScriptFileSize -and $clientIP -ne '127.0.0.1') {
-				Write-Verbose "User Input is too large, returning 413 error"
-				$context.Response.StatusCode = 413
-				$context.Response.ContentType = "text/plain"
-				$buffer = [System.Text.Encoding]::UTF8.GetBytes('File too large')
-				break
-			}
-			$clientIP = $context.Request.RemoteEndPoint.Address.ToString()
-			$ipRequestCount[$clientIP]++
-
-			# Check if the IP has exceeded the limit (e.g., 5 requests per minute)
-			if ($ipRequestCount[$clientIP] -gt $ReqLimitPerMin -and $clientIP -ne '127.0.0.1') {
-				Write-Verbose "IP $clientIP has exceeded the limit of $ReqLimitPerMin requests per minute, returning 429 error"
-				$context.Response.StatusCode = 429
-				$context.Response.ContentType = "text/plain"
-				$buffer = [System.Text.Encoding]::UTF8.GetBytes('Too many requests')
-				break
-			}
-			# hash of user input
-			$userInputHash = [System.Security.Cryptography.SHA256]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($userInput))
-			$userInputHashStr = ''
-			foreach ($byte in $userInputHash) {
-				$userInputHashStr += $byte.ToString('x2')
-			}
-			$compiledExePath = "$PSScriptRoot/outputs/$userInputHashStr.bin"
-			#if match cached file
-			if (Test-Path -Path $compiledExePath -ErrorAction Ignore) {
-				$context.Response.ContentType = "application/octet-stream"
-				$buffer = [System.IO.File]::ReadAllBytes($compiledExePath)
-				break
-			}
-			$runspace = [powershell]::Create()
-			$runspace.RunspacePool = $runspacePool
-			$AsyncResult = $runspace.AddScript({
-					param ($userInput, $Response, $ScriptRoot, $compiledExePath, $clientIP)
-
-					# 加载ps12exe用于处理编译请求
-					Import-Module $ScriptRoot/../../ps12exe.psm1 -ErrorAction Stop
-
-					New-Item -Path $ScriptRoot/outputs -ItemType Directory -Force | Out-Null
-
-					# 编译代码
-					try {
-						$userInput | ps12exe -outputFile $compiledExePath -GuestMode:$($clientIP -ne '127.0.0.1') -ErrorAction Stop
-						$buffer = [System.IO.File]::ReadAllBytes($compiledExePath)
-						$Response.ContentType = "application/octet-stream"
-					}
-					catch {
-						# 若ErrorId不是ParseError则写入日志
-						if ($_.ErrorId -ine "ParseError") {
-							Write-Host "${clientIP}:" -ForegroundColor Red
-							Write-Host $_ -ForegroundColor Red
-						}
-						$Response.ContentType = "text/plain"
-						$buffer = [System.Text.Encoding]::UTF8.GetBytes("$_")
-					}
-
-					$Response.ContentLength64 = $buffer.Length
-					if ($buffer) {
-						$Response.OutputStream.Write($buffer, 0, $buffer.Length)
-					}
-					$Response.Close()
-				}).
-			AddArgument($userInput).AddArgument($context.Response).
-			AddArgument($PSScriptRoot).AddArgument($compiledExePath).AddArgument($clientIP).
-			BeginInvoke()
-			$AsyncResultArray.Add(@{
-				AsyncHandle = $AsyncResult
-				Runspace    = $runspace
-				Time        = Get-Date
-				IP          = $clientIP
-			}) | Out-Null
+			HandleWebCompileRequest $userInput $context
 			return
 		}
 		'/bgm' {
