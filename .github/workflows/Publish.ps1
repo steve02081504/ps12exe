@@ -30,18 +30,7 @@ try {
 	# 移除docs
 	Remove-Item -Path "$repoPath/docs" -Recurse -Force
 	# 对于每个fbs文件，以xml格式读取，再用linux换行符+tab缩进写回源文件
-	$XmlWriterSettings = New-Object System.Xml.XmlWriterSettings
-	$XmlWriterSettings.Indent = $true
-	$XmlWriterSettings.IndentChars = "`t"
-	$XmlWriterSettings.NewLineChars = "`n"
-	Get-ChildItem -Path $repoPath -Recurse -Filter '*.fbs' | ForEach-Object {
-		$XmlDoc = [xml](Get-Content -Path $_.FullName)
-		$XmlWriter = [System.XML.XmlWriter]::Create($_.FullName, $XmlWriterSettings)
-		$XmlDoc.Save($XmlWriter)
-		$XmlWriter.WriteRaw("`n")
-		$XmlWriter.Flush()
-		$XmlWriter.Close()
-	}
+	. $PSScriptRoot/../../.esh/commands/GUIfix.ps1
 	# 打包发布
 	Install-Module -Name 'PowerShellGet' -Force -Scope CurrentUser | Out-Null
 	$errnum = $Error.Count
