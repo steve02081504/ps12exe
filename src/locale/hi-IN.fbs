@@ -1,6 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Data>
-	<Events Desc="Events associated with controls"></Events>
 	<Form Name="MainForm" Size="928,651" Tag="VisualStyle,DPIAware" Text="ps12exe GUI">
 		<GroupBox Name="InputsGroupBox" Location="8,1" Size="766,573">
 			<GroupBox Name="BaseIOGroupBox" Location="5,13" Size="626,102">

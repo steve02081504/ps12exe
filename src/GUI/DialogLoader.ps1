@@ -6,7 +6,7 @@
 	)
 	$Xml = [xml](Get-Content "$LocalizeDir\$Localize.fbs" -Encoding utf8)
 	$Script:MainForm = $Xml.Data.Form.OuterXml
-	$Xml.Data.ChildNodes | Select-Object -Skip 2 | ForEach-Object {
+	$Xml.Data.ChildNodes | Where-Object { $_.Name -match 'Dialog$' } | ForEach-Object {
 		$Script:dialogInfo.Add($_.Name, $_.OuterXml)
 	}
 	$Script:LocalizeData = &"$LocalizeDir\$Localize.ps1"
