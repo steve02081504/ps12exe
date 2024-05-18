@@ -2,7 +2,7 @@
 module.exports = async ({ github, context }) => {
 	const issueBody = context.payload.issue.body.toLowerCase();
 	var keywords = [
-		'high-risk', 'sandbox', '沙箱', '生成恶意', 'anti-virus', 'antivirus', 'malware', '杀软', '杀毒', '病毒' , '木马', '安全引擎', 'Trojan'
+		'high-risk', 'sandbox', '沙箱', '生成恶意', 'anti-virus', 'antivirus', 'malware', '杀软', '杀毒', '病毒' , '木马', '安全引擎', 'Win32/Trojan'
 	]
 	if (keywords.some(keyword => issueBody.includes(keyword))) {
 		const issueNumber = context.payload.issue.number;
@@ -20,6 +20,19 @@ If you're still not sure about the dll file dependencies, you can download the c
 \n\
 如果你的exe文件被误报，咱觉得最可靠的方法是向杀毒软件厂商进行申诉，帮助他们把你的exe文件从高危名单中移除。🐛\n\
 If your exe file is falsely flagged, I think the best way to get rid of it is report to the antivirus software company and help them remove your exe from the high-risk list. 🐛\n\
+\n\
+你或许还会想试试使用自签名证书对你的exe文件进行签名，这在某些情况下会有用。🔐\n\
+You may try signing your exe file with a self-signed certificate, which will be useful in some cases. 🔐\n\
+（代码来自[brandoncomputer](https://github.com/steve02081504/ps12exe/issues/10#issuecomment-2119018566)）\n\
+(code from [brandoncomputer](https://github.com/steve02081504/ps12exe/issues/10#issuecomment-2119018566))\n\
+\n\
+```powershell\n\
+New-SelfSignedCertificate -DnsName email@email.com -Type CodeSigning -CertStoreLocation cert:\\CurrentUser\\My\n\
+Export-Certificate -Cert (Get-ChildItem Cert:\\CurrentUser\\My -CodeSigningCert)[0] -FilePath code_signing.crt\n\
+Import-Certificate -FilePath .\\code_signing.crt -Cert Cert:\\CurrentUser\\TrustedPublisher\n\
+Import-Certificate -FilePath .\\code_signing.crt -Cert Cert:\\CurrentUser\\Root\n\
+Set-AuthenticodeSignature 'c:\\myexe\\myexe.exe' -Certificate (Get-ChildItem Cert:\\CurrentUser\\My -CodeSigningCert)\n\
+```\n\
 \n\
 最后，再次感谢你的反馈！\n\
 这个commit是由咱自动判断issue内容并自动回复的，存在误判的可能。不用担心，如果还有任何疑问，随时可以重新打开这个issue，我会一直在这里哒！😜\n\
