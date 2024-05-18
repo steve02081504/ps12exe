@@ -2,7 +2,10 @@
 module.exports = async ({ github, context }) => {
 	const issueBody = context.payload.issue.body.toLowerCase();
 	var keywords = [
-		'high-risk', 'sandbox', '沙箱', '生成恶意', 'anti-virus', 'antivirus', 'malware', '杀软', '杀毒', '病毒' , '木马', '安全引擎', 'Win32/Trojan'
+		'高危', 'high-risk', 'sandbox', '沙箱', '生成恶意', 'anti-virus', 'antivirus', 'malware', '杀软', '杀毒', '病毒' , '木马', '安全引擎', 'Win32/Trojan'
+	]
+	var chineseKeywords = [
+		'高危', '沙箱', '生成恶意', '杀软', '杀毒', '病毒' , '木马', '安全引擎'
 	]
 	if (keywords.some(keyword => issueBody.includes(keyword))) {
 		const issueNumber = context.payload.issue.number;
@@ -42,6 +45,8 @@ This commit is auto judged by me and auto replied, there may be mistakes. But do
 祝你每天都开开心心，像吃了蜜一样甜！🥰\n\
 Hope you have a sweet and lovely day! 🥰\n\
 "
+		if(!chineseKeywords.some(keyword => issueBody.includes(keyword))) // remove chinese strings in comment body
+			CommentBody = CommentBody.split('\n').filter(line => /\p{Unified_Ideograph}/u.test(line)).join('\n')
 		await github.rest.issues.createComment({
 			owner: context.repo.owner,
 			repo: context.repo.repo,
