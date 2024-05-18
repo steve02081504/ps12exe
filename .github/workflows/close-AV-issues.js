@@ -2,7 +2,7 @@
 module.exports = async ({ github, context }) => {
 	const issueBody = context.payload.issue.body.toLowerCase();
 	var keywords = [
-		'high-risk', 'sandbox', '沙箱', '生成恶意', 'anti-virus', 'antivirus', 'malware', '杀软', '杀毒', '病毒'
+		'high-risk', 'sandbox', '沙箱', '生成恶意', 'anti-virus', 'antivirus', 'malware', '杀软', '杀毒', '病毒' , '木马', '安全引擎', 'Trojan'
 	]
 	if (keywords.some(keyword => issueBody.includes(keyword))) {
 		const issueNumber = context.payload.issue.number;
