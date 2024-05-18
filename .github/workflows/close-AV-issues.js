@@ -10,7 +10,7 @@ module.exports = async ({ github, context }) => {
 	if (keywords.some(keyword => issueBody.includes(keyword))) {
 		const issueNumber = context.payload.issue.number;
 		const issueOwnerId = context.payload.issue.user.login;
-		const CommentBody = "嗨"+issueOwnerId+"！\n\
+		let CommentBody = "嗨"+issueOwnerId+"！\n\
 收到你的反馈啦！谢谢你的宝贵意见！👌\n\
 Hi "+issueOwnerId+"!\n\
 Thanks for your feedback! I really appreciate it!👌\n\
@@ -46,7 +46,7 @@ This commit is auto judged by me and auto replied, there may be mistakes. But do
 Hope you have a sweet and lovely day! 🥰\n\
 "
 		if(!chineseKeywords.some(keyword => issueBody.includes(keyword))) // remove chinese strings in comment body
-			CommentBody = CommentBody.split('\n').filter(line => /\p{Unified_Ideograph}/u.test(line)).join('\n')
+			CommentBody = CommentBody.split('\n').filter(line => !/\p{Unified_Ideograph}/u.test(line)).join('\n')
 		await github.rest.issues.createComment({
 			owner: context.repo.owner,
 			repo: context.repo.repo,
