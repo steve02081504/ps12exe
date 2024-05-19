@@ -13,7 +13,7 @@
 			[string]$Localize
 		)
 		$file = "$LocalizeDir\$Localize.ps1"
-		if (Test-Path $file) { $Script:LocalizeData = try { &$file } catch {} }
+		if (Test-Path $file) { $Script:LocalizeData = try { &$file } catch { $null } }
 	},
 	[string]$Localize
 )
@@ -26,7 +26,7 @@ if (!$Localize) {
 	if (!$Localize -and (Get-Command locale -ErrorAction Ignore)) {
 		$Localize = try {
 			&locale -uU
-		} catch {}
+		} catch { $null }
 	}
 	if ($Localize) {
 		$Localize = $Localize.Split('.')[0].Replace('_', '-')
