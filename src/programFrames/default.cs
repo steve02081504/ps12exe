@@ -1,4 +1,4 @@
-﻿// Simple PowerShell host created by Ingo Karstein (http://blog.karstein-consulting.com)
+// Simple PowerShell host created by Ingo Karstein (http://blog.karstein-consulting.com)
 // Reworked and GUI support by Markus Scholtes
 
 using System;
@@ -438,7 +438,7 @@ namespace PSRunnerNS {
 				X = (short)(destination.X), Y = (short)(destination.Y)
 			};
 			CHAR_INFO lpFill = new CHAR_INFO {
-				AsciiChar = fill.Character, Attributes = (ushort)((int)(fill.ForegroundColor) + (int)(fill.BackgroundColor) * 16)
+				AsciiChar = fill.Character, Attributes = (ushort)((int)(fill.ForegroundColor) + ((int)(fill.BackgroundColor) * 16))
 			};
 
 			ScrollConsoleScreenBuffer(hStdOut, ref lpScrollRectangle, ref lpClipRectangle, dwDestinationOrigin, ref lpFill);
@@ -473,7 +473,7 @@ namespace PSRunnerNS {
 			for (int y = 0; y < contents.GetLength(0); y++)
 				for (int x = 0; x < contents.GetLength(1); x++) {
 					buffer[y, x] = new CHAR_INFO {
-						AsciiChar = contents[y, x].Character, Attributes = (ushort)((int)(contents[y, x].ForegroundColor) + (int)(contents[y, x].BackgroundColor) * 16)
+						AsciiChar = contents[y, x].Character, Attributes = (ushort)((int)(contents[y, x].ForegroundColor) + ((int)(contents[y, x].BackgroundColor) * 16))
 					};
 				}
 
@@ -1791,8 +1791,8 @@ namespace PSRunnerNS {
 			private readonly PSRunnerUI _ui;
 
 			public ConsoleColorProxy(PSRunnerUI ui) {
-				if (ui == null) throw new ArgumentNullException("ui");
-				_ui = ui;
+                ArgumentNullException.ThrowIfNull(ui);
+                _ui = ui;
 			}
 
 			public ConsoleColor ErrorForegroundColor {
