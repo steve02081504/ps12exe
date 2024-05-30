@@ -1,9 +1,14 @@
 ﻿function LoadFileAsFunction($File, $FunctionName) {
-	([System.Management.Automation.Language.Parser]::ParseInput("
+	$errors = $null
+	$result = [System.Management.Automation.Language.Parser]::ParseInput("
 		function $FunctionName {
 			$(Get-Content -Path $File -Raw)
 		}
-	", $File, [ref]$null, [ref]$null)).GetScriptBlock()
+	", $File, [ref]$null, [ref]$errors)
+	$errors | ForEach-Object {
+		Write-Warning $_
+	}
+	$result.GetScriptBlock()
 }
 
 . $(LoadFileAsFunction $PSScriptRoot/ps12exe.ps1 ps12exe)

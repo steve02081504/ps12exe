@@ -210,7 +210,7 @@ $ParamList = $MyInvocation.MyCommand.Parameters
 $Params.Remove('Content') | Out-Null #防止回滚覆盖
 
 function bytesOfString($str) {
-	[system.Text.Encoding]::UTF8.GetBytes($str).Count
+	if ($str) { [system.Text.Encoding]::UTF8.GetBytes($str).Count } else { 0 }
 }
 #_if PSScript #在PSEXE中主机永远是winpwsh，所以不会内嵌
 if (!$nested) {
@@ -238,7 +238,12 @@ if (!$nested) {
 	if ($minifyer) {
 		Write-Host "Minifying script..."
 		try {
-			$MinifyedContent = $Content | ForEach-Object $minifyer
+			# get caller's stackframe
+			$Stack = Get-PSCallStack
+			$Frame = $Stack[1]
+			$Variables = $Frame.GetFrameVariables()
+			$Variables._ = [System.Management.Automation.PSVariable]::New('_', $Content)
+			$MinifyedContent = $minifyer.InvokeWithContext(@{}, $Variables.Values, $Variables.args.Value)
 			RollUp
 			Write-Host "Minifyed script -> $(bytesOfString $MinifyedContent) bytes"
 		}
