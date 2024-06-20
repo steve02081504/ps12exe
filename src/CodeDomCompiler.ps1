@@ -1,7 +1,10 @@
 ﻿$type = ('System.Collections.Generic.Dictionary`2') -as "Type"
-$type = $type.MakeGenericType( @( ("System.String" -as "Type"), ("system.string" -as "Type") ) )
+$type = $type.MakeGenericType(@([String], [String]) )
 $o = [Activator]::CreateInstance($type)
-$o.Add("CompilerVersion", "v4.0")
+if ($targetRuntime -eq 'Framework2.0') {
+	$o.Add("CompilerVersion", "v3.5")
+}
+else { $o.Add("CompilerVersion", "v4.0") }
 
 $cop = (New-Object Microsoft.CSharp.CSharpCodeProvider($o))
 $cp = New-Object System.CodeDom.Compiler.CompilerParameters($referenceAssembies, $outputFile)

@@ -61,7 +61,7 @@
 	[-resourceParams @{iconFile='<फ़ाइल नाम|url>'; title='<शीर्षक>'; description='<सारांश>'; company='<कंपनी>';
 	product='<उत्पाद>'; copyright='<कॉपीराइट>'; trademark='<नामकरण>'; version='<संस्करण>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
-	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
+	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<रनटाइम संस्करण>']
 	[-GuestMode] [-Localize '<भाषा कोड>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "PowerShell स्क्रिप्ट फ़ाइल की सामग्री का स्ट्रिंग,``-Content``के समान।"
@@ -90,6 +90,7 @@
 			supportOS		 = "नवीनतम Windows संस्करण की विशेषताओं का उपयोग करें (विभिन्नता देखने के लिए``[Environment]::OSVersion``का चालन करें)"
 			virtualize		 = "ऐप्लिकेशन वर्चुअलाईजेशन सक्रिय कर दिया गया है (एक्स86 रनटाइम को प्रयोगशाला माना)"
 			longPaths		 = "यदि ऑपरेटिंग सिस्टम पर सक्षम है, तो लंबी पथ (अधिकतम 260 वर्ण) को सक्षम करें (केवल Windows 10 या इससे ऊपर के लिए)"
+			targetRuntime	 = "लक्ष्य रनटाइम संस्करण, डिफ़ॉल्ट रूप से 'Framework4.0', 'Framework2.0' समर्थित हैं"
 			GuestMode		 = "एक्सट्रा सुरक्षा के साथ स्क्रिप्ट को कॉम्पाइल करें, स्थानीय फ़ाइलों की पहुँच को टालें"
 			Localize		 = "स्थानीयकरण भाषा कोड की निर्दिष्टि करें"
 			Help			 = "इस मदद सूचना को दिखाएँ"

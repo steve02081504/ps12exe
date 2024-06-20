@@ -12,7 +12,7 @@ namespace ps12exeGUI {
 		}
 	}
 	public class Win32 {
-		[DllImport("kernel32.dll", ExactSpelling = true)]
+		[DllImport("Kernel32.dll", ExactSpelling = true)]
 		public static extern IntPtr GetConsoleWindow();
 		[DllImport("user32.dll")]
 		public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);

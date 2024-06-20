@@ -6,7 +6,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
-using System.Management.Automation.Language;
+#if !Pwsh20
+	using System.Management.Automation.Language;
+#endif
 using System.Globalization;
 using System.Management.Automation.Host;
 using System.Security;
@@ -182,7 +184,7 @@ namespace PSRunnerNS {
 
 			/* Reads character and color attribute data from a rectangular block of character cells in a console screen buffer,
 				and the function writes the data to a rectangular block at a specified location in the destination buffer. */
-			[DllImport("kernel32.dll", EntryPoint = "ReadConsoleOutputW", CharSet = CharSet.Unicode, SetLastError = true)]
+			[DllImport("Kernel32.dll", EntryPoint = "ReadConsoleOutputW", CharSet = CharSet.Unicode, SetLastError = true)]
 			internal static extern bool ReadConsoleOutput(
 				IntPtr hConsoleOutput,
 				/* This pointer is treated as the origin of a two-dimensional array of CHAR_INFO structures
@@ -194,7 +196,7 @@ namespace PSRunnerNS {
 
 			/* Writes character and color attribute data to a specified rectangular block of character cells in a console screen buffer.
 				The data to be written is taken from a correspondingly sized rectangular block at a specified location in the source buffer */
-			[DllImport("kernel32.dll", EntryPoint = "WriteConsoleOutputW", CharSet = CharSet.Unicode, SetLastError = true)]
+			[DllImport("Kernel32.dll", EntryPoint = "WriteConsoleOutputW", CharSet = CharSet.Unicode, SetLastError = true)]
 			internal static extern bool WriteConsoleOutput(
 				IntPtr hConsoleOutput,
 				/* This pointer is treated as the origin of a two-dimensional array of CHAR_INFO structures
@@ -206,7 +208,7 @@ namespace PSRunnerNS {
 
 			/* Moves a block of data in a screen buffer. The effects of the move can be limited by specifying a clipping rectangle, so
 				the contents of the console screen buffer outside the clipping rectangle are unchanged. */
-			[DllImport("kernel32.dll", SetLastError = true)]
+			[DllImport("Kernel32.dll", SetLastError = true)]
 			static extern bool ScrollConsoleScreenBuffer(
 				IntPtr hConsoleOutput,
 				[In] ref SMALL_RECT lpScrollRectangle,
@@ -214,7 +216,7 @@ namespace PSRunnerNS {
 				COORD dwDestinationOrigin,
 				[In] ref CHAR_INFO lpFill);
 
-			[DllImport("kernel32.dll", SetLastError = true)]
+			[DllImport("Kernel32.dll", SetLastError = true)]
 			static extern IntPtr GetStdHandle(int nStdHandle);
 		#endif
 
@@ -1307,7 +1309,9 @@ namespace PSRunnerNS {
 			#endif
 		}
 
-		public override bool SupportsVirtualTerminal { get { return Console_Info.IsVirtualTerminalSupported(); } }
+		#if !Pwsh20
+			public override bool SupportsVirtualTerminal { get { return Console_Info.IsVirtualTerminalSupported(); } }
+		#endif
 
 		public override Dictionary<string, PSObject> Prompt(string caption, string message, System.Collections.ObjectModel.Collection<FieldDescription> descriptions) {
 			#if!noConsole
@@ -1940,12 +1944,16 @@ namespace PSRunnerNS {
 				}
 			}
 			{
-				Token[] tokens;
-				ParseError[] errors;
-				ScriptBlockAst AST = Parser.ParseInput(script, exepath, out tokens, out errors);
-				this.PSRunSpace.SessionStateProxy.SetVariable("PSEXECodeBlock", AST.GetScriptBlock());
-				if(errors.Length > 0)
-					throw new System.Exception(errors[0].Message);
+				#if Pwsh20
+					this.pwsh.AddScript("$PSEXECodeBlock={"+script+"}");
+				#else
+					Token[] tokens;
+					ParseError[] errors;
+					ScriptBlockAst AST = Parser.ParseInput(script, exepath, out tokens, out errors);
+					this.PSRunSpace.SessionStateProxy.SetVariable("PSEXECodeBlock", AST.GetScriptBlock());
+					if(errors.Length > 0)
+						throw new System.Exception(errors[0].Message);
+				#endif
 			}
 		}
 		~PSRunner() {
@@ -2042,7 +2050,9 @@ namespace PSRunnerNS {
 				me.ExitCode = 1;
 			}
 			finally {
-				mre.Dispose();
+				#if !Pwsh20 // bro wtf
+					mre.Dispose();
+				#endif
 			}
 
 			return me.ExitCode;

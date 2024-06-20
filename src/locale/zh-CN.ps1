@@ -61,7 +61,7 @@
 	[-resourceParams @{iconFile='<文件名|url>'; title='<标题>'; description='<简介>'; company='<公司>';
 	product='<产品>'; copyright='<版权>'; trademark='<水印>'; version='<版本>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
-	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
+	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<运行时版本>']
 	[-GuestMode] [-Localize '<语言代码>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "PowerShell脚本文件内容的字符串，与``-Content``相同。"
@@ -90,6 +90,7 @@
 			supportOS		 = "使用最新Windows版本的功能（执行``[Environment]::OSVersion``以查看差异）"
 			virtualize		 = "已激活应用程序虚拟化（强制x86运行时）"
 			longPaths		 = "如果在OS上启用，启用长路径（> 260个字符）（仅适用于Windows 10或更高版本）"
+			targetRuntime	 = "目标运行时版本，默认为 'Framework4.0'，支持 'Framework2.0'"
 			GuestMode		 = "在额外的保护下编译脚本，避免本机文件被访问"
 			Localize		 = "指定本地化语言"
 			Help			 = "显示此帮助信息"

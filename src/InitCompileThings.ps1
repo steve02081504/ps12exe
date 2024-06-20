@@ -6,29 +6,36 @@
 		$Error.Remove(0)
 	}
 }
-$referenceAssembies = @()
-# 绝不要直接使用 System.Private.CoreLib.dll，因为它是netlib的内部实现，而不是公共API
-# [int].Assembly.Location 等基础类型的程序集也是它。
-$referenceAssembies += GetAssembly "mscorlib"
-if ($PSVersionTable.PSEdition -eq "Core") {
-	$referenceAssembies += GetAssembly "System.Runtime"
+$referenceAssembies = if ($targetRuntime -eq 'Framework2.0') {
+	#_if PSScript
+		powershell -version 2.0 -OutputFormat xml -file $PSScriptRoot/RuntimePwsh2.0/RefDlls.ps1 -noConsole:($noConsole+0)
+	#_else
+		#_include_as_value Pwsh2RefDllsGetterCodeStr $PSScriptRoot/RuntimePwsh2.0/RefDlls.ps1
+		#_!! powershell -version 2.0 -OutputFormat xml -Command "&{$Pwsh2RefDllsGetterCodeStr}$(if($noConsole){' -noConsole'})"
+	#_endif
 }
-$referenceAssembies += GetAssembly "System.Management.Automation"
+else {
+	# 绝不要直接使用 System.Private.CoreLib.dll，因为它是netlib的内部实现，而不是公共API
+	# [int].Assembly.Location 等基础类型的程序集也是它。
+	GetAssembly "mscorlib"
+	if ($PSVersionTable.PSEdition -eq "Core") { GetAssembly "System.Runtime" }
+	GetAssembly "System.Management.Automation"
 
-# If noConsole is true, add System.Windows.Forms.dll and System.Drawing.dll to the reference assemblies
-if ($noConsole) {
-	$referenceAssembies += GetAssembly "System.Windows.Forms" $(if ($PSVersionTable.PSEdition -ne "Core") { "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" })
-	$referenceAssembies += GetAssembly "System.Drawing" $(if ($PSVersionTable.PSEdition -ne "Core") { "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" })
-}
-elseif ($PSVersionTable.PSEdition -eq "Core") {
-	$referenceAssembies += GetAssembly "System.Console"
-	$referenceAssembies += GetAssembly "Microsoft.PowerShell.ConsoleHost"
-}
+	# If noConsole is true, add System.Windows.Forms.dll and System.Drawing.dll to the reference assemblies
+	if ($noConsole) {
+		GetAssembly "System.Windows.Forms" $(if ($PSVersionTable.PSEdition -ne "Core") { "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" })
+		GetAssembly "System.Drawing" $(if ($PSVersionTable.PSEdition -ne "Core") { "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" })
+	}
+	elseif ($PSVersionTable.PSEdition -eq "Core") {
+		GetAssembly "System.Console"
+		GetAssembly "Microsoft.PowerShell.ConsoleHost"
+	}
 
-# If in winpwsh, add System.Core.dll to the reference assemblies
-if ($PSVersionTable.PSEdition -ne "Core") {
-	$referenceAssembies += GetAssembly "System.Core" "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-	$referenceAssembies += "System.dll" # some furking magic
+	# If in winpwsh, add System.Core.dll to the reference assemblies
+	if ($PSVersionTable.PSEdition -ne "Core") {
+		GetAssembly "System.Core" "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+		"System.dll" # some furking magic
+	}
 }
 
 . $PSScriptRoot\BuildFrame.ps1
@@ -47,6 +54,7 @@ if ($noVisualStyles) { $Constants += "noVisualStyles" }
 if ($exitOnCancel) { $Constants += "exitOnCancel" }
 if ($UNICODEEncoding) { $Constants += "UNICODEEncoding" }
 if ($winFormsDPIAware) { $Constants += "winFormsDPIAware" }
+if ($targetRuntime -eq 'Framework2.0') { $Constants += "Pwsh20" }
 
 if (-not $TempDir) {
 	$TempDir = $TempTempDir = [System.IO.Path]::GetTempPath() + [System.IO.Path]::GetRandomFileName()

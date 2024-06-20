@@ -89,6 +89,12 @@ application virtualization is activated (forcing x86 runtime)
 .PARAMETER longPaths
 enable long paths ( > 260 characters) if enabled on OS (works only with Windows 10 or up)
 
+.PARAMETER targetRuntime
+the target runtime to compile for. Possible values are 'Framework4.0' or 'Framework2.0', default is 'Framework4.0'
+
+.PARAMETER GuestMode
+Compile scripts with additional protection, prevent native files from being accessed
+
 .EXAMPLE
 ps12exe C:\Data\MyScript.ps1
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScript.exe as console executable
@@ -127,6 +133,8 @@ Param(
 	[Switch]$virtualize,
 	[Switch]$longPaths,
 	[Switch]$GuestMode,
+	[ValidateSet('Framework2.0', 'Framework4.0')]
+	[String]$targetRuntime = 'Framework4.0',
 	#_if PSScript
 		[ArgumentCompleter({
 			Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
@@ -165,6 +173,10 @@ Param(
 	[String]$trademark,
 	[Parameter(DontShow)]
 	[String]$version,
+	[Parameter(DontShow)]
+	[Switch]$runtime20,
+	[Parameter(DontShow)]
+	[Switch]$runtime40,
 	# 内部参数，不进入文档
 	[Parameter(DontShow)]
 	[Switch]$nested
@@ -285,6 +297,24 @@ if ($x86) { $architecture = 'x86' }
 if ($x64) { $architecture = 'x64' }
 $Params.architecture = $architecture
 [void]$Params.Remove("x86"); [void]$Params.Remove("x64")
+if ($runtime20) {
+	if($runtime40) {
+		Write-Error "You cannot use switches -runtime20 and -runtime40 at the same time!"
+		return
+	}
+	if ($longPaths) {
+		Write-Error "Long paths are only available with .Net 4 or above"
+		return
+	}
+	if ($winFormsDPIAware) {
+		Write-Error "DPI awareness of Windows Forms is only available with .Net 4 or above"
+		return
+	}
+}
+if ($runtime20) { $targetRuntime = 'Framework2.0' }
+if ($runtime40) { $targetRuntime = 'Framework4.0' }
+$Params.targetRuntime = $targetRuntime
+[void]$Params.Remove("runtime20"); [void]$Params.Remove("runtime40")
 if ($STA -and $MTA) {
 	Write-Error "-STA cannot be combined with -MTA"
 	return
@@ -316,14 +346,22 @@ $iconFile = $resourceParams['iconFile']
 $resourceParams.Remove('iconFile')
 
 # 语法检查
-$SyntaxErrors = $null
-$Tokens = $null
-$AST = [System.Management.Automation.Language.Parser]::ParseInput($Content, [ref]$Tokens, [ref]$SyntaxErrors)
+$SyntaxErrors = if ($targetRuntime -eq 'Framework2.0') {
+	#_if PSScript
+		powershell -version 2.0 -OutputFormat xml -file $PSScriptRoot/src/RuntimePwsh2.0/CodeChecker.ps1 -scriptText $Content
+	#_else
+		#_include_as_value Pwsh2CodeCheckerCodeStr $PSScriptRoot/src/RuntimePwsh2.0/CodeChecker.ps1
+		#_!! powershell -version 2.0 -OutputFormat xml -Command "&{$Pwsh2CodeCheckerCodeStr} -scriptText '$($Content -replace "'","''")'"
+	#_endif
+}
+if (!$SyntaxErrors) {
+	$Tokens = $null
+	$AST = [System.Management.Automation.Language.Parser]::ParseInput($Content, [ref]$Tokens, [ref]$SyntaxErrors)
+}
 if ($SyntaxErrors) {
 	Write-Error "Syntax error in script: $SyntaxErrors" -Category 'ParserError' -ErrorId 'ParseError' -TargetObject $SyntaxErrors
 	return
 }
-$Content = $AST.ToString()
 
 # retrieve absolute paths independent if path is given relative oder absolute
 if (-not $inputFile) {
@@ -482,19 +520,22 @@ try {
 			Write-Host "Compiling file..."
 		}
 		if ($TinySharpSuccess) {}
-		elseif ($PSVersionTable.PSEdition -eq "Core") {
-			# unfinished!
-			if (!$TargetFramework) {
-				$Info = [System.Environment]::Version
-				$TargetFramework = ".NETCore,Version=v$($Info.Major).$($Info.Minor)"
+		else{
+			if ($targetRuntime -eq 'Framework2.0') { $TargetFramework = ".NETFramework,Version=v2.0" }
+			if ($PSVersionTable.PSEdition -eq "Core") {
+				# unfinished!
+				if (!$TargetFramework) {
+					$Info = [System.Environment]::Version
+					$TargetFramework = ".NETCore,Version=v$($Info.Major).$($Info.Minor)"
+				}
+				. $PSScriptRoot\src\CodeAnalysisCompiler.ps1
 			}
-			. $PSScriptRoot\src\CodeAnalysisCompiler.ps1
-		}
-		else {
-			if (!$TargetFramework) {
-				$TargetFramework = ".NETFramework,Version=v4.7"
+			else {
+				if (!$TargetFramework) {
+					$TargetFramework = ".NETFramework,Version=v4.7"
+				}
+				. $PSScriptRoot\src\CodeDomCompiler.ps1
 			}
-			. $PSScriptRoot\src\CodeDomCompiler.ps1
 		}
 		RollUp
 	}
@@ -566,7 +607,7 @@ $($_ | Format-List | Out-String)
 		$versionNow = Get-Module -ListAvailable ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1
 		$versionOnline = Find-Module ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1
 		if ($versionNow.Version -ne $versionOnline.Version) {
-			Write-Host "Latest version is $versionOnline, try upgrading to $versionNow?" -ForegroundColor Yellow
+			Write-Host "Latest version is $($versionOnline.Version), try upgrading to it?" -ForegroundColor Yellow
 		}
 		else {
 			Write-Host "For help, please submit an issue by pressing Enter." -ForegroundColor Yellow

@@ -61,7 +61,7 @@
 	[-resourceParams @{iconFile='<filename|url>'; title='<title>'; description='<description>'; company='<company>';
 	product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
-	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths]
+	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<Runtime>']
 	[-GuestMode] [-Localize '<language code>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "String of the contents of the powershell script file, same as ``-Content``."
@@ -90,6 +90,7 @@
 			supportOS		 = "use functions of newest Windows versions (execute ``[Environment]::OSVersion`` to see the difference)"
 			virtualize		 = "application virtualization is activated (forcing x86 runtime)"
 			longPaths		 = "enable long paths ( > 260 characters) if enabled on OS (works only with Windows 10 or up)"
+			targetRuntime	 = "target runtime version, 'Framework4.0' by default, 'Framework2.0' are supported"
 			GuestMode		 = "Compile scripts with additional protection, prevent native files from being accessed"
 			Localize		 = "The language code to use"
 			Help			 = "Show this help message"
