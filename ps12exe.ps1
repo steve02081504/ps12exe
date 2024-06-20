@@ -606,7 +606,7 @@ $($_ | Format-List | Out-String)
 		Write-Host "Opps, something went wrong." -ForegroundColor Yellow
 		$versionNow = Get-Module -ListAvailable ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1
 		$versionOnline = Find-Module ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1
-		if ($versionNow.Version -ne $versionOnline.Version) {
+		if ($versionNow.Version -ne [Version]$versionOnline.Version) {
 			Write-Host "Latest version is $($versionOnline.Version), try upgrading to it?" -ForegroundColor Yellow
 		}
 		else {
