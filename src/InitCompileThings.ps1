@@ -8,7 +8,7 @@
 }
 $referenceAssembies = if ($targetRuntime -eq 'Framework2.0') {
 	#_if PSScript
-		powershell -version 2.0 -OutputFormat xml -file $PSScriptRoot/RuntimePwsh2.0/RefDlls.ps1 -noConsole:($noConsole+0)
+		powershell -version 2.0 -OutputFormat xml -file $PSScriptRoot/RuntimePwsh2.0/RefDlls.ps1 $(if($noConsole){'-noConsole'})
 	#_else
 		#_include_as_value Pwsh2RefDllsGetterCodeStr $PSScriptRoot/RuntimePwsh2.0/RefDlls.ps1
 		#_!! powershell -version 2.0 -OutputFormat xml -Command "&{$Pwsh2RefDllsGetterCodeStr}$(if($noConsole){' -noConsole'})"
