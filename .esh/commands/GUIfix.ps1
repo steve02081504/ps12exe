@@ -7,7 +7,7 @@ Get-ChildItem -Path $repoPath -Recurse -Filter '*.fbs' | ForEach-Object {
 	$XmlWriter = [System.XML.XmlWriter]::Create($_.FullName, $XmlWriterSettings)
 	do {
 		$res = $XmlDoc.Data.ChildNodes | Where-Object { $_.Name -notmatch '(Form|Dialog)$' } | ForEach-Object { $_.ParentNode.RemoveChild($_) }
-	}while ($res)
+	} while ($res)
 	$XmlDoc.Save($XmlWriter)
 	$XmlWriter.WriteRaw("`n")
 	$XmlWriter.Flush()

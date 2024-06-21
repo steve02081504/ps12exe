@@ -132,7 +132,6 @@ Param(
 	[Switch]$supportOS,
 	[Switch]$virtualize,
 	[Switch]$longPaths,
-	[Switch]$GuestMode,
 	[ValidateSet('Framework2.0', 'Framework4.0')]
 	[String]$targetRuntime = 'Framework4.0',
 	#_if PSScript
@@ -141,6 +140,7 @@ Param(
 			. "$PSScriptRoot\src\LocaleArgCompleter.ps1" @PSBoundParameters
 		})]
 	#_endif
+	[Switch]$GuestMode,
 	[string]$Localize,
 	[Switch]$help,
 	# TODO，不进入文档
@@ -298,7 +298,7 @@ if ($x64) { $architecture = 'x64' }
 $Params.architecture = $architecture
 [void]$Params.Remove("x86"); [void]$Params.Remove("x64")
 if ($runtime20) {
-	if($runtime40) {
+	if ($runtime40) {
 		Write-Error "You cannot use switches -runtime20 and -runtime40 at the same time!"
 		return
 	}
@@ -520,7 +520,7 @@ try {
 			Write-Host "Compiling file..."
 		}
 		if ($TinySharpSuccess) {}
-		else{
+		else {
 			if ($targetRuntime -eq 'Framework2.0') { $TargetFramework = ".NETFramework,Version=v2.0" }
 			if ($PSVersionTable.PSEdition -eq "Core") {
 				# unfinished!
