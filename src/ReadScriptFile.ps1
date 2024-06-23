@@ -164,6 +164,37 @@ function Preprocessor($Content, $FilePath) {
 		}
 		else { $_ }
 	} |
+	# 处理#_DllExport
+	ForEach-Object {
+		$_ # 对于#_DllExport，我们不在预处理时移除它：考虑到它可能被用于$PSEXEscript中
+		if ($_ -match "^(\s*)#_DllExport\s+(?<callsign>[^#\(]+)\((?<callsignParams>[^#\)]*)\)\s*(?!#.*)") {
+			$callsign = $Matches["callsign"] -split ' ' | ForEach-Object { $_.Trim() }
+			$callsignParams = $Matches["callsignParams"] -split ',' | ForEach-Object { $_.Trim() }
+		}
+		elseif ($_ -match "^(\s*)#_DllExport\s+(?<callsign>[^#\(]+)\s*(?!#.*)") {
+			$callsign = $Matches["callsign"] -split ' ' | ForEach-Object { $_.Trim() }
+			$callsignParams = @()
+		}
+		if ($callsign) {
+			if (!$callsign[1]) { $callsign = @('void', $callsign[0]) }
+			$DllExportData = @{
+				returntype = $callsign[0]
+				funcname   = $callsign[1]
+				params     = @()
+			}
+			foreach ($param in $callsignParams) {
+				$paramData = $param -split ' ' | ForEach-Object { $_.Trim() }
+				if ($paramData.Count -eq 1) {
+					Write-Warning "$($paramData[0]) is none type parameter, assume it's string."
+					$paramData = @('string', $paramData[0])
+				}
+				$DllExportData.params += @{ name = $paramData[1]; type = $paramData[0] }
+			}
+			$DllExportList += $DllExportData
+			Write-Warning "You are using #_DllExport, this marco is in dev and not support yet."
+			Write-Warning "FuncSign: [$($DllExportData.returntype)]$($DllExportData.funcname)($(($DllExportData.params|ForEach-Object{ $_.type + ' ' + $_.name }) -join ', '))"
+		}
+	} |
 	# 处理#_!!<line>
 	ForEach-Object {
 		if ($_ -match "^(\s*)#_!!(?<line>.*)") {
@@ -220,7 +251,8 @@ function Preprocessor($Content, $FilePath) {
 			# 在第一次#_require的前方加入$LoadModuleScript
 			if ($_ -is [bigint]) {
 				$LoadModuleScript
-			} else { $_ }
+			}
+			else { $_ }
 		}
 	}
 	$Content -join "`n"
