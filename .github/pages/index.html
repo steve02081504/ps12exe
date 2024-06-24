@@ -43,26 +43,22 @@
 	<br>
 	<button id="compileButton" onclick="compileCode()">cum out</button>
 	<script type="text/javascript">
-		const translations = {
-			'zh': { compileButtonText: '编译', compileMessage: '已将编译用的Powershell代码复制到剪切板！\n现在你只需要在Powershell里粘贴并运行代码就可以得到编译结果了！' },
+		let translations = {
 			'zh-CN': { compileButtonText: '编译', compileMessage: '已将编译用的Powershell代码复制到剪切板！\n现在你只需要在Powershell里粘贴并运行代码就可以得到编译结果了！' },
 			'zh-TW': { compileButtonText: '編譯', compileMessage: '已將編譯用的Powershell代碼複製到剪貼簿！\n現在你只需要在Powershell裡粘貼並執行代碼就可以得到編譯結果了！' },
 			'zh-HK': { compileButtonText: '編譯', compileMessage: '已將編譯用的Powershell代碼複製到剪貼簿！\n現在你只需要在Powershell裡粘貼並執行代碼就可以得到編譯結果了！' },
-			'es': { compileButtonText: 'compilar', compileMessage: 'Se ha copiado el código de Powershell para compilar en el portapapeles. Ahora solo necesitas pegarlo y ejecutarlo en Powershell para obtener el resultado de la compilación.' },
 			'es-ES': { compileButtonText: 'compilar', compileMessage: 'Se ha copiado el código de Powershell para compilar en el portapapeles. Ahora solo necesitas pegarlo y ejecutarlo en Powershell para obtener el resultado de la compilación.' },
-			'ja': { compileButtonText: 'コンパイル', compileMessage: 'Powershellのコンパイル用コードがクリップボードにコピーされました！\nこれをPowershellに貼り付けて実行するだけで、コンパイル結果が得られます！' },
 			'ja-JP': { compileButtonText: 'コンパイル', compileMessage: 'Powershellのコンパイル用コードがクリップボードにコピーされました！\nこれをPowershellに貼り付けて実行するだけで、コンパイル結果が得られます！' },
-			'ko': { compileButtonText: '컴파일', compileMessage: 'Powershell 코드를 컴파일하기 위한 내용이 클립보드에 복사되었습니다! 이제 Powershell에서 해당 코드를 붙여넣고 실행하면 컴파일 결과를 얻을 수 있습니다!' },
 			'ko-KR': { compileButtonText: '컴파일', compileMessage: 'Powershell 코드를 컴파일하기 위한 내용이 클립보드에 복사되었습니다! 이제 Powershell에서 해당 코드를 붙여넣고 실행하면 컴파일 결과를 얻을 수 있습니다!' },
-			'ru': { compileButtonText: 'компилировать', compileMessage: 'Код для компиляции на Powershell был скопирован в буфер обмена! Теперь вам нужно просто вставить его в Powershell и выполнить, чтобы получить результат компиляции!' },
 			'ru-RU': { compileButtonText: 'компилировать', compileMessage: 'Код для компиляции на Powershell был скопирован в буфер обмена! Теперь вам нужно просто вставить его в Powershell и выполнить, чтобы получить результат компиляции!' },
-			'en': { compileButtonText: 'compile', compileMessage: 'The Powershell code for compilation has been copied to the clipboard! Now you just need to paste and run the code in Powershell to get the compilation result!' },
 			'en-UK': { compileButtonText: 'compile', compileMessage: 'The Powershell code for compilation has been copied to the clipboard! Now you just need to paste and run the code in Powershell to get the compilation result!' },
-			'pt': { compileButtonText: 'compilar', compileMessage: 'O código Powershell para compilação foi copiado para a área de transferência! Agora você só precisa colar e executar o código no Powershell para obter o resultado da compilação!' },
 			'pt-PT': { compileButtonText: 'compilar', compileMessage: 'O código Powershell para compilação foi copiado para a área de transferência! Agora você só precisa colar e executar o código no Powershell para obter o resultado da compilação!' }
 		}
+		for (const key of Object.keys(translations)) translations[key.split('-')[0]] ??= translations[key]
 
-		const language = navigator.language || navigator.userLanguage || 'en'
+		let language = navigator.language || navigator.userLanguage || 'en'
+		if (!translations[language]) language = language.split('-')[0]
+		if (!translations[language]) language = 'en'
 		const { compileButtonText, compileMessage } = translations[language]
 
 		const compileButton = document.getElementById('compileButton')
@@ -78,7 +74,7 @@
 		compileButton.textContent = compileButtonText
 		function compileCode() {
 			var code = inputText.value
-			var compileCodebase = code.replace("\'", "''")
+			var compileCodebase = code.replace(/\'/g, "''")
 			var compileCode = "if (-not (Get-Module -ListAvailable ps12exe)) { Install-Module ps12exe -Force -Scope CurrentUser };" +
 			"'"+compileCodebase+"' | ps12exe"
 			navigator.clipboard.writeText(compileCode)
