@@ -28,6 +28,12 @@ Powershell script to convert to executable (file has to be UTF8 or UTF16 encoded
 destination executable file name or folder, defaults to inputFile with extension '.exe'
 .PARAMETER prepareDebug
 create helpful information for debugging of generated executable. See parameter -debug there
+.PARAMETER runtime20
+this switch forces PS2EXE to create a config file for the generated executable that contains the
+"supported .NET Framework versions" setting for .NET Framework 2.0/3.x for PowerShell 2.0
+.PARAMETER runtime40
+this switch forces PS2EXE to create a config file for the generated executable that contains the
+"supported .NET Framework versions" setting for .NET Framework 4.x for PowerShell 3.0 or higher
 .PARAMETER x86
 compile for 32-bit runtime only
 .PARAMETER x64
@@ -100,7 +106,7 @@ Start graphical front end to Invoke-ps2exe
 #>
 function Invoke-ps2exe {
 	[CmdletBinding()]
-	Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [SWITCH]$prepareDebug, [SWITCH]$x86, [SWITCH]$x64, [int]$lcid,
+	Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [SWITCH]$prepareDebug, [SWITCH]$runtime20, [SWITCH]$runtime40, [SWITCH]$x86, [SWITCH]$x64, [int]$lcid,
 		[SWITCH]$STA, [SWITCH]$MTA, [SWITCH]$nested, [SWITCH]$noConsole, [SWITCH]$UNICODEEncoding, [SWITCH]$credentialGUI, [STRING]$iconFile = $NULL,
 		[STRING]$title, [STRING]$description, [STRING]$company, [STRING]$product, [STRING]$copyright, [STRING]$trademark, [STRING]$version,
 		[SWITCH]$configFile, [SWITCH]$noConfigFile, [SWITCH]$noOutput, [SWITCH]$noError, [SWITCH]$noVisualStyles, [SWITCH]$exitOnCancel,

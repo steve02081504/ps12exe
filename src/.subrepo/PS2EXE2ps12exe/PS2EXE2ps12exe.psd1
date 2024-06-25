@@ -11,7 +11,7 @@
 	}
 	FunctionsToExport = @('Invoke-PS2EXE', 'Invoke-WinPS2EXE')
 	Author = 'steve02081504'
-	ModuleVersion = '0.0.0'
+	ModuleVersion = '0.0.1'
 	RootModule = 'PS2EXE2ps12exe.psm1'
 	CompanyName = 'Unknown'
 	AliasesToExport = @('ps2exe', 'ps2exe.ps1', 'Win-PS2EXE', 'Win-PS2EXE.exe')
