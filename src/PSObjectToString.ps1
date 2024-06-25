@@ -35,7 +35,7 @@ function PSObjectToString($obj, [Switch]$OneLine = $false) {
 		"'" + $obj.Replace("'", "''") + "'"
 	}
 	elseif ($obj -is [int]) { $obj }
-	elseif ($obj -is [bool]) { "`$$obj" }
+	elseif ($obj -is [bool] -or $obj -is [switch]) { "`$$obj" }
 	else { "$obj" }
 }
 function Get-ArgsString([hashtable]$Params) {
