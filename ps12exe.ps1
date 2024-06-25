@@ -184,16 +184,17 @@ Param(
 $Verbose = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent
 function RollUp {
 	param ($num = 1, [switch]$InVerbose)
-	$CousorPos = $Host.UI.RawUI.CursorPosition
-	try {
-		if (-not $Verbose -or $InVerbose) {
-			if ($nested) { throw }
-			$CousorPos.Y = $CousorPos.Y - $num
-			$Host.UI.RawUI.CursorPosition = $CousorPos
+	if (-not $Verbose -or $InVerbose) {
+		if ($Host.UI.SupportsVirtualTerminal) {
+			Write-Host $([char]27 + '[' + $num + 'A') -NoNewline
 		}
-	}
-	catch {
-		Write-Host $([char]27 + '[' + $num + 'A') -NoNewline
+		elseif (-not $nested) {
+			$CousorPos = $Host.UI.RawUI.CursorPosition
+			try {
+				$CousorPos.Y = $CousorPos.Y - $num
+				$Host.UI.RawUI.CursorPosition = $CousorPos
+			} catch { $Error.RemoveAt(0) }
+		}
 	}
 }
 function Show-Help {
@@ -207,11 +208,11 @@ function Show-Help {
 	. $PSScriptRoot\src\HelpShower.ps1 -HelpData $MyHelp
 }
 if ($help) {
-	Show-Help | Out-Host
+	Show-Help | Write-Host
 	return
 }
 if (-not ($inputFile -or $Content)) {
-	Show-Help | Out-Host
+	Show-Help | Write-Host
 	Write-Host
 	Write-Error "Input not specified!"
 	return
@@ -385,6 +386,7 @@ else {
 	}
 }
 #_if PSScript #在PSEXE中主机永远是winpwsh，可省略该部分
+. $PSScriptRoot/src/PSObjectToString.ps1
 function UsingWinPowershell($Boundparameters) {
 	# starting Windows Powershell
 	$Params = ([hashtable]$Boundparameters).Clone()
@@ -408,21 +410,11 @@ function UsingWinPowershell($Boundparameters) {
 	if ($iconFile) {
 		$Params['iconFile'] = $iconFile
 	}
-	$CallParam = foreach ($Param in $Params.GetEnumerator()) {
-		if ($Param.Value -is [Switch]) {
-			"-$($Param.Key):`$$([bool]$Param.Value)"
-		}
-		elseif ($Param.Value -is [string] -and $Param.Value) {
-			"-$($Param.Key):'$(($Param.Value).Replace("'", "''"))'"
-		}
-		else {
-			"-$($Param.Key):$($Param.Value)"
-		}
-	}
+	$CallParam = Get-ArgsString $Params
 
 	Write-Verbose "Starting WinPowershell ps12exe with parameters: $CallParam"
 
-	powershell -noprofile -Command "&'$PSScriptRoot\ps12exe.ps1' $CallParam -nested" | Out-Host
+	powershell -noprofile -Command "&'$PSScriptRoot\ps12exe.ps1' $CallParam -nested" | Write-Host
 	return
 }
 if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerShell -and (Get-Command powershell -ErrorAction Ignore)) {

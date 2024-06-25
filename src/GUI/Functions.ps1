@@ -76,17 +76,6 @@ function Set-UIData {
 	$Script:refs.LongPathSupportCheckBox.Checked = $UIData.longPaths
 }
 
-. $PSScriptRoot/../PSObjectToString.ps1
-
-function Get-ps12exeArgsString {
-	param(
-		[hashtable]$Params
-	)
-	$result = 'ps12exe'
-	$Params.GetEnumerator() | ForEach-Object { $result += " -$($_.Key):$(PSObjectToString $_.Value -OneLine)" }
-	$result
-}
-
 function Get-ps12exeArgs {
 	$UIData = Get-UIData
 	$result = $UIData.Clone()

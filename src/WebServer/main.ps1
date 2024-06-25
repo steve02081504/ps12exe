@@ -51,7 +51,7 @@ $LocalizeData = . $PSScriptRoot\..\LocaleLoader.ps1 -Localize $Localize
 
 if ($help) {
 	$MyHelp = $LocalizeData.WebServerHelpData
-	. $PSScriptRoot\..\HelpShower.ps1 -HelpData $MyHelp | Out-Host
+	. $PSScriptRoot\..\HelpShower.ps1 -HelpData $MyHelp | Write-Host
 	return
 }
 

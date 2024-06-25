@@ -38,3 +38,6 @@ function PSObjectToString($obj, [Switch]$OneLine = $false) {
 	elseif ($obj -is [bool]) { "`$$obj" }
 	else { "$obj" }
 }
+function Get-ArgsString([hashtable]$Params) {
+	$Params.GetEnumerator() | ForEach-Object { "-$($_.Key):$(PSObjectToString $_.Value -OneLine)" }
+}

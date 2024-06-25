@@ -44,7 +44,7 @@ param(
 if ($help) {
 	$LocalizeData = . $PSScriptRoot\..\LocaleLoader.ps1 -Localize $Localize
 	$MyHelp = $LocalizeData.GUIHelpData
-	. $PSScriptRoot\..\HelpShower.ps1 -HelpData $MyHelp | Out-Host
+	. $PSScriptRoot\..\HelpShower.ps1 -HelpData $MyHelp | Write-Host
 	return
 }
 
