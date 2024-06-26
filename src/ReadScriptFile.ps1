@@ -167,11 +167,11 @@ function Preprocessor($Content, $FilePath) {
 	# 处理#_DllExport
 	ForEach-Object {
 		$_ # 对于#_DllExport，我们不在预处理时移除它：考虑到它可能被用于$PSEXEscript中
-		if ($_ -match "^(\s*)#_DllExport\s+(?<callsign>[^#\(]+)\((?<callsignParams>[^#\)]*)\)\s*(?!#.*)") {
+		if ($_ -match "^(\s*)(#_DllExport\s+(?<callsign>[^#\(]+)\((?<callsignParams>[^#\)]*)\))\s*(?!#.*)") {
 			$callsign = $Matches["callsign"] -split ' ' | ForEach-Object { $_.Trim() }
 			$callsignParams = $Matches["callsignParams"] -split ',' | ForEach-Object { $_.Trim() }
 		}
-		elseif ($_ -match "^(\s*)#_DllExport\s+(?<callsign>[^#\(]+)\s*(?!#.*)") {
+		elseif ($_ -match "^(\s*)(#_DllExport\s+(?<callsign>[^#\(]+))\s*(?!#.*)") {
 			$callsign = $Matches["callsign"] -split ' ' | ForEach-Object { $_.Trim() }
 			$callsignParams = @()
 		}
@@ -185,14 +185,14 @@ function Preprocessor($Content, $FilePath) {
 			foreach ($param in $callsignParams) {
 				$paramData = $param -split ' ' | ForEach-Object { $_.Trim() }
 				if ($paramData.Count -eq 1) {
-					Write-Warning "$($paramData[0]) is none type parameter, assume it's string."
+					Write-Warning "$($Matches[2]): $($paramData[0]) is none type parameter, assume it's string."
 					$paramData = @('string', $paramData[0])
 				}
 				$DllExportData.params += @{ name = $paramData[1]; type = $paramData[0] }
 			}
-			$DllExportList += $DllExportData
+			$DllExportList.Add($DllExportData) | Out-Null
 			Write-Warning "You are using #_DllExport, this marco is in dev and not support yet."
-			Write-Warning "FuncSign: [$($DllExportData.returntype)]$($DllExportData.funcname)($(($DllExportData.params|ForEach-Object{ $_.type + ' ' + $_.name }) -join ', '))"
+			Write-Verbose "$($Matches[2]): FuncSign: [$($DllExportData.returntype)]$($DllExportData.funcname)($(($DllExportData.params|ForEach-Object{ $_.type + ' ' + $_.name }) -join ', '))"
 		}
 	} |
 	# 处理#_!!<line>

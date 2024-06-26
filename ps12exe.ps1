@@ -179,7 +179,9 @@ Param(
 	[Switch]$runtime40,
 	# 内部参数，不进入文档
 	[Parameter(DontShow)]
-	[Switch]$nested
+	[Switch]$nested,
+	[Parameter(DontShow)]
+	[string]$DllExportList
 )
 $Verbose = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent
 function RollUp {
@@ -221,6 +223,7 @@ if (-not ($inputFile -or $Content)) {
 $Params = $PSBoundParameters
 $ParamList = $MyInvocation.MyCommand.Parameters
 $Params.Remove('Content') | Out-Null #防止回滚覆盖
+$Params.Remove('DllExportList') | Out-Null
 
 function bytesOfString($str) {
 	if ($str) { [system.Text.Encoding]::UTF8.GetBytes($str).Count } else { 0 }
@@ -228,6 +231,7 @@ function bytesOfString($str) {
 #_if PSScript #在PSEXE中主机永远是winpwsh，所以不会内嵌
 if (!$nested) {
 #_endif
+	[System.Collections.ArrayList]$DllExportList = @()
 	if ($inputFile -and $Content) {
 		Write-Error "Input file and content cannot be used at the same time!"
 		return
@@ -280,6 +284,9 @@ else {
 	}
 	if (!$TempDir) {
 		Remove-Item $inputFile -ErrorAction SilentlyContinue
+	}
+	if ($DllExportList) {
+		[System.Collections.ArrayList]$DllExportList = $DllExportList | ConvertFrom-Json
 	}
 }
 #_endif
@@ -407,9 +414,8 @@ function UsingWinPowershell($Boundparameters) {
 			$Params[$_] = $resourceParams[$_]
 		}
 	}
-	if ($iconFile) {
-		$Params['iconFile'] = $iconFile
-	}
+	if ($iconFile) { $Params.iconFile = $iconFile }
+	if ($DllExportList.Length) { $Params.DllExportList = ConvertTo-Json -depth 7 -Compress -InputObject $DllExportList }
 	$CallParam = Get-ArgsString $Params
 
 	Write-Verbose "Starting WinPowershell ps12exe with parameters: $CallParam"
