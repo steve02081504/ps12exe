@@ -472,7 +472,7 @@ $resourceParamKeys | ForEach-Object {
 
 . $PSScriptRoot\src\AstAnalyze.ps1
 $AstAnalyzeResult = AstAnalyze $Ast
-Write-Verbose "AstAnalyzeResult: $($AstAnalyzeResult|Format-List|Out-String)"
+Write-Verbose "AstAnalyzeResult: $(($AstAnalyzeResult|ConvertTo-Json) -split "\r?\n" -ne '' -join "`n")"
 $CommandNames = (Get-Command).Name + (Get-Alias).Name
 $FindedCmdlets = @()
 $NotFindedCmdlets = @()

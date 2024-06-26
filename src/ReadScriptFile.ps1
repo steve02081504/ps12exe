@@ -195,13 +195,6 @@ function Preprocessor($Content, $FilePath) {
 			Write-Verbose "$($Matches[2]): FuncSign: [$($DllExportData.returntype)]$($DllExportData.funcname)($(($DllExportData.params|ForEach-Object{ $_.type + ' ' + $_.name }) -join ', '))"
 		}
 	} |
-	# 处理#_!!<line>
-	ForEach-Object {
-		if ($_ -match "^(\s*)#_!!(?<line>.*)") {
-			$Matches[1] + $Matches["line"]
-		}
-		else { $_ }
-	} |
 	# 处理#_include <file>、#_include_as_value <valuename> <file>
 	ForEach-Object {
 		if ($_ -match "^\s*#_include\s+(?<rest>.+)\s*") {
@@ -239,6 +232,13 @@ function Preprocessor($Content, $FilePath) {
 			}
 			$_
 		}
+	} |
+	# 处理#_!!<line>
+	ForEach-Object {
+		if ($_ -match "^(\s*)#_!!(?<line>.*)") {
+			$Matches[1] + $Matches["line"]
+		}
+		else { $_ }
 	}
 	$LoadModuleScript = if ($requiredModules.Count -gt 1) {
 		(PSObjectToString $requiredModules -OneLine) + '|ForEach-Object{if(!(gmo $_ -ListAvailable -ea SilentlyContinue)){Install-Module $_ -Scope CurrentUser -Force -ea Stop}}'
