@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
-<meta name="title" content="ps12exe Online">
-<meta name="description" content="A super cool online compiler for powershell scripts">
-<meta property="og:image" content="https://repository-images.githubusercontent.com/729678966/3ed3f02f-c7c9-4a18-b1f5-255e667643b6">
-<meta property="og:image:alt" content="A super cool online compiler for powershell scripts">
-<meta property="og:type" content="object">
-<meta property="og:title" content="ps12exe Online">
-<meta property="og:description" content="A super cool online compiler for powershell scripts">
+<meta charset="utf-8"/>
+<meta name="title" content="ps12exe Online"/>
+<meta name="description" content="A super cool online compiler for powershell scripts"/>
+<meta property="og:image" content="https://repository-images.githubusercontent.com/729678966/3ed3f02f-c7c9-4a18-b1f5-255e667643b6"/>
+<meta property="og:image:alt" content="A super cool online compiler for powershell scripts"/>
+<meta property="og:type" content="object"/>
+<meta property="og:title" content="ps12exe Online"/>
+<meta property="og:description" content="A super cool online compiler for powershell scripts"/>
 <html>
 
 <head>
 	<title>ps12exe Online</title>
-	<link rel="icon" type="image/x-icon" href="favicon.ico">
+	<link rel="icon" type="image/x-icon" href="favicon.ico"/>
 	<script src='https://www.midijs.net/lib/midi.js'></script>
 	<script src="https://cdn.jsdelivr.net/npm/darkreader"></script>
 	<script>
@@ -41,7 +41,7 @@
 " id="inputText">#_pragma noConsole
 'Hello World!'
 </textarea>
-	<br>
+	<br/>
 	<button id="compileButton" onclick="compileCode()">cum out</button>
 	<a id="downloadLink" download="a.exe"></a>
 	<script type="text/javascript">
@@ -76,25 +76,22 @@
 			})
 			.catch(error => console.error("Error:", error))
 		}
-		const language = navigator.language || navigator.userLanguage || 'en'
 		const languageTextMap = {
-			'zh': '编译',
 			'zh-CN': '编译',
 			'zh-TW': '編譯',
 			'zh-HK': '編譯',
-			'ru': 'Скомпилировать',
 			'ru-RU': 'Скомпилировать',
-			'ja': 'コンパイル',
 			'ja-JP': 'コンパイル',
-			'ko': '컴파일',
 			'ko-KR': '컴파일',
-			'es': 'Compilar',
 			'es-ES': 'Compilar',
-			'pt': 'Compilar',
 			'pt-PT': 'Compilar',
-			'en': 'Compile',
 			'en-UK': 'Compile'
 		};
+		for (const key of Object.keys(languageTextMap)) languageTextMap[key.split('-')[0]] ??= languageTextMap[key]
+
+		let language = navigator.language || navigator.userLanguage || 'en'
+		if (!languageTextMap[language]) language = language.split('-')[0]
+		if (!languageTextMap[language]) language = 'en'
 		document.getElementById("compileButton").textContent = languageTextMap[language]
 	</script>
 </body>
