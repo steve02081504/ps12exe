@@ -41,9 +41,9 @@
 <body>
 	<form id="mainForm" runat="server">
 		<textarea name="inputText" style="width: 98%; height:95vh;" is="highlighted-code" language="powershell" tabSize="4" placeholder="#_pragma noConsole
-'Hello World!'
+'Hello 世界！👾'
 " id="inputText">#_pragma noConsole
-'Hello World!'
+'Hello 世界！👾'
 </textarea>
 		<br/>
 		<asp:button id="compileButton" runat="server" Text="cum out"/>

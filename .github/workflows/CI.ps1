@@ -8,7 +8,7 @@ try {
 	& $repoPath/ps12exe.ps1 $repoPath/ps12exe.ps1 $repoPath/build/ps12exe.exe -verbose | Write-Host
 	& $repoPath/build/ps12exe.exe $repoPath/ps12exe.ps1 -verbose -noConsole -title 'lol' | Write-Host
 	& $repoPath/build/ps12exe.exe $repoPath/ps12exe.ps1 $repoPath/build/ps12exe2.exe -verbose | Write-Host
-	"'Hello World!'" | ps12exe -outputFile $repoPath/build/hello.exe -verbose | Write-Host
+	"'Hello 世界！👾'" | ps12exe -outputFile $repoPath/build/hello.exe -verbose | Write-Host
 	& $repoPath/build/ps12exe2.exe -Content '$PSEXEpath;$PSScriptRoot' -outputFile $repoPath/build/pathtest.exe | Write-Host
 	$pathresult = . $repoPath/build/pathtest.exe
 	$pathresultshouldbe = @("$repoPath/build/pathtest.exe", "$repoPath/build")
