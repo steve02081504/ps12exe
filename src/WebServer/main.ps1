@@ -178,7 +178,7 @@ function HandleRequest($context) {
 	}
 	$RequestUrl = $RequestUrl.Substring($HostSubUrl.Length)
 	switch ($RequestUrl) {
-		'/api/compile' {
+		{ $_ -in ('/compile', '/api/compile', '/api/compile/v1') } {
 			$Reader = New-Object System.IO.StreamReader($context.Request.InputStream)
 			$userInput = $Reader.ReadToEnd()
 			$Reader.Close()
