@@ -21,7 +21,7 @@
 	WebServerHelpData	   = @{
 		title	   = "Usage:"
 		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
-	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>']
+	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<path>']
 	[-Localize '<language code>'] [-help]"
 		PrarmsData = [ordered]@{
 			HostUrl			  = "The HTTP server address to register."
@@ -30,6 +30,7 @@
 			ReqLimitPerMin	  = "The maximum number of requests per minute per IP."
 			MaxCachedFileSize = "The maximum size of the cached file."
 			MaxScriptFileSize = "The maximum size of the script file."
+			CacheDir		  = "The directory to store the cached files."
 			Localize		  = "The language code to be used for server-side logging."
 			help			  = "Display this help information."
 		}

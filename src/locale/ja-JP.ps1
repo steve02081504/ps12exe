@@ -21,7 +21,7 @@
 	WebServerHelpData	   = @{
 		title	   = "使用方法："
 		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
-	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>']
+	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<パス>']
 	[-Localize '<言語コード>'] [-help]"
 		PrarmsData = [ordered]@{
 			HostUrl			  = "登録するHTTPサーバーのアドレス。"
@@ -30,6 +30,7 @@
 			ReqLimitPerMin	  = "IPアドレスごとの1分間のリクエスト制限。"
 			MaxCachedFileSize = "最大キャッシュファイルサイズ。"
 			MaxScriptFileSize = "最大スクリプトファイルサイズ。"
+			CacheDir		  = "キャッシュディレクトリ。"
 			Localize		  = "サーバー側の記録に使用する言語コード。"
 			help			  = "このヘルプ情報を表示します。"
 		}

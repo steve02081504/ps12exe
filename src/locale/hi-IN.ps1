@@ -21,7 +21,7 @@
 	WebServerHelpData	   = @{
 		title	   = "उपयोग:"
 		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
-	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>']
+	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<पथ>']
 	[-Localize '<भाषा कोड>'] [-help]"
 		PrarmsData = [ordered]@{
 			HostUrl			  = "रजिस्टर करने के लिए HTTP सर्वर पता।"
@@ -30,6 +30,7 @@
 			ReqLimitPerMin	  = "फ़ाइल प्रति मिनट की अनुरोध सीमा।"
 			MaxCachedFileSize = "अधिकतम कैश फ़ाइल का आकार।"
 			MaxScriptFileSize = "अधिकतम स्क्रिप्ट फ़ाइल का आकार।"
+			CacheDir		  = "अधिकतम कैश फ़ाइल का डाइरेक्टरी पथ।"
 			Localize		  = "सर्वर साइड रिकॉर्ड करने के लिए उपयोग किए जाने वाले भाषा कोड।"
 			help			  = "इस मदद सूचना को दिखाएँ।"
 		}

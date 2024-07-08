@@ -18,6 +18,8 @@ The maximum number of requests per minute per IP
 The maximum size of the cached file
 .PARAMETER MaxScriptFileSize
 The maximum size of the script file
+.PARAMETER CacheDir
+The directory to store the cached files
 .PARAMETER Localize
 The language code to be used for server-side logging
 .PARAMETER help
@@ -36,6 +38,7 @@ param (
 	$ReqLimitPerMin = 5,
 	$MaxCachedFileSize = 32mb,
 	$MaxScriptFileSize = 2mb,
+	$CacheDir = "$PSScriptRoot/outputs",
 	#_if PSScript
 	[ArgumentCompleter({
 		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
@@ -116,7 +119,7 @@ function HandleWebCompileRequest($userInput, $context) {
 	foreach ($byte in $userInputHash) {
 		$userInputHashStr += $byte.ToString('x2')
 	}
-	$compiledExePath = "$PSScriptRoot/outputs/$userInputHashStr.bin"
+	$compiledExePath = "$CacheDir/$userInputHashStr.bin"
 	#if match cached file
 	if (Test-Path -Path $compiledExePath -ErrorAction Ignore) {
 		$context.Response.ContentType = "application/octet-stream"
@@ -126,12 +129,12 @@ function HandleWebCompileRequest($userInput, $context) {
 	$runspace = [powershell]::Create()
 	$runspace.RunspacePool = $runspacePool
 	$AsyncResult = $runspace.AddScript({
-		param ($userInput, $Response, $ScriptRoot, $compiledExePath, $clientIP)
+		param ($userInput, $Response, $ScriptRoot, $CacheDir, $compiledExePath, $clientIP)
 
 		# 加载ps12exe用于处理编译请求
 		Import-Module $ScriptRoot/../../ps12exe.psm1 -ErrorAction Stop
 
-		New-Item -Path $ScriptRoot/outputs -ItemType Directory -Force | Out-Null
+		New-Item -Path $CacheDir -ItemType Directory -Force | Out-Null
 
 		# 编译代码
 		try {
@@ -156,7 +159,8 @@ function HandleWebCompileRequest($userInput, $context) {
 		$Response.Close()
 	}).
 	AddArgument($userInput).AddArgument($context.Response).
-	AddArgument($PSScriptRoot).AddArgument($compiledExePath).AddArgument($clientIP).
+	AddArgument($PSScriptRoot).AddArgument($CacheDir).
+	AddArgument($compiledExePath).AddArgument($clientIP).
 	BeginInvoke()
 	$AsyncResultArray.Add(@{
 		AsyncHandle = $AsyncResult
@@ -174,7 +178,7 @@ function HandleRequest($context) {
 	}
 	$RequestUrl = $RequestUrl.Substring($HostSubUrl.Length)
 	switch ($RequestUrl) {
-		'/compile' {
+		'/api/compile' {
 			$Reader = New-Object System.IO.StreamReader($context.Request.InputStream)
 			$userInput = $Reader.ReadToEnd()
 			$Reader.Close()
@@ -182,7 +186,7 @@ function HandleRequest($context) {
 			HandleWebCompileRequest $userInput $context
 			return
 		}
-		'/bgm' {
+		'/bgm.mid' {
 			# midi file
 			$context.Response.ContentType = "audio/midi"
 			$buffer = [System.IO.File]::ReadAllBytes("$PSScriptRoot/../bin/Unravel.mid")
@@ -208,7 +212,7 @@ function HandleRequest($context) {
 	$context.Response.Close()
 }
 function AutoCacheClear {
-	$Cache = Get-ChildItem -Path $PSScriptRoot/outputs -ErrorAction Ignore
+	$Cache = Get-ChildItem -Path $CacheDir -ErrorAction Ignore
 	if ($MaxCachedFileSize -lt ($Cache | Measure-Object -Property Length -Sum).Sum) {
 		$Cache | Sort-Object -Property LastAccessTime -Descending |
 		Select-Object -First $([math]::Floor($Cache.Count / 2)) |
@@ -261,7 +265,7 @@ finally {
 	# Restore Console Window Title
 	$Host.UI.RawUI.WindowTitle = $BackUpTitle
 	# 清空缓存
-	Remove-Item $PSScriptRoot/outputs/* -Recurse -Force -ErrorAction Ignore
+	Remove-Item $CacheDir/* -Recurse -Force -ErrorAction Ignore
 }
 #_else
 #_require ps12exe

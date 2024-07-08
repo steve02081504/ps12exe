@@ -21,7 +21,7 @@
 	WebServerHelpData	   = @{
 		title	   = "用法："
 		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
-	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>']
+	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<路径>']
 	[-Localize '<语言代码>'] [-help]"
 		PrarmsData = [ordered]@{
 			HostUrl			  = "要注册的 HTTP 服务器地址。"
@@ -30,6 +30,7 @@
 			ReqLimitPerMin	  = "每个IP每分钟的请求限制。"
 			MaxCachedFileSize = "最大缓存文件大小。"
 			MaxScriptFileSize = "最大脚本文件大小。"
+			CacheDir		  = "缓存目录。"
 			Localize		  = "服务器端记录要使用的语言代码。"
 			help			  = "显示此帮助信息。"
 		}

@@ -49,26 +49,20 @@
 		var playing = false
 		userInput.addEventListener("focus", event => {
 			if (playing) MIDIjs.resume()
-			else MIDIjs.play('./bgm', true)
+			else MIDIjs.play('./bgm.mid', true)
 			playing = true;
 		})
 		userInput.addEventListener("blur", event => MIDIjs.pause())
 		const a = document.getElementById("downloadLink")
 		function compileCode() {
-			if (!userInput.value) {
-				alert("No code to compile")
-				return
-			}
-			fetch("./compile", {
+			if (!userInput.value) return alert("No code to compile")
+			fetch("./api/compile", {
 				method: "POST",
 				body: userInput.value
 			})
 			.then(response => response.blob())
 			.then(blob => {
-				if (blob.type == "text/plain") {
-					blob.text().then(alert)
-					return
-				}
+				if (blob.type == "text/plain") return blob.text().then(alert)
 				if (blob.type == "application/octet-stream") {
 					a.href = window.URL.createObjectURL(blob)
 					a.click()
