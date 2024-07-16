@@ -191,7 +191,7 @@ namespace TinySharp {
 			image.DotNetDirectory = new DotNetDirectory {
 				EntryPoint = new MetadataToken(TableIndex.Method, hasOutput?allASCIIoutput?2u:3u:1u),
 				Metadata = new Metadata {
-					VersionString = "v4.0.", // Needs the "." at the end. (original: v4.0.30319)
+					VersionString = "v1.0.", // Needs the "." at the end. (original: v4.0.30319)
 					Streams = {
 						tablesStream,
 						blobStreamBuffer.CreateStream(),
