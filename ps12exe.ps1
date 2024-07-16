@@ -199,14 +199,15 @@ function RollUp {
 		}
 	}
 }
+#_if PSScript
+	$LocaleLoaderArg = @{ Localize = $Localize }
+	if($nested){ $LocaleLoaderArg.FaildLoadLocaleData = {} }
+#_endif
 $LocalizeData =
 #_if PSScript
-	. $PSScriptRoot\src\LocaleLoader.ps1 -Localize $Localize
+	. $PSScriptRoot\src\LocaleLoader.ps1 @LocaleLoaderArg
 #_else
 	#_include "$PSScriptRoot/src/locale/en-UK.ps1"
-#_endif
-#_if PSScript
-	if (!$LocalizeData.CompilingI18nData) { $LocalizeData.CompilingI18nData = @{} }
 #_endif
 function Show-Help {
 	. $PSScriptRoot\src\HelpShower.ps1 -HelpData $LocalizeData.ConsoleHelpData | Write-Host
