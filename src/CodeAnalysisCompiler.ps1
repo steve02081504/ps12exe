@@ -30,14 +30,14 @@ if (!$virtualize) {
 			"x64" { [Microsoft.CodeAnalysis.Platform]::X64 }
 			"anycpu" { [Microsoft.CodeAnalysis.Platform]::AnyCpu }
 			default {
-				Write-Warning "Invalid platform $architecture, using AnyCpu"
+				Write-I18n Warning InvalidArchitecture $architecture
 				[Microsoft.CodeAnalysis.Platform]::AnyCpu
 			}
 		})
 	)
 }
 else {
-	Write-Host "Application virtualization is activated, forcing x86 platfom."
+	Write-I18n Host ForceX86byVirtualization
 	$compilationOptions = $compilationOptions.WithPlatform([Microsoft.CodeAnalysis.Platform.X86])
 }
 $compilationOptions = $compilationOptions.WithOptimizationLevel($(

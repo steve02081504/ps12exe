@@ -51,7 +51,7 @@ if (!$virtualize) {
 	$CompilerOptions += $manifestParam
 }
 else {
-	Write-Host "Application virtualization is activated, forcing x86 platfom."
+	Write-I18n Host ForceX86byVirtualization
 	$CompilerOptions += "/platform:x86"
 	$CompilerOptions += "/target:$( if ($noConsole){'winexe'}else{'exe'})"
 	$CompilerOptions += "/nowin32manifest"
@@ -81,7 +81,7 @@ if ($prepareDebug) {
 
 $CompilerOptions += "/define:$($Constants -join ';')"
 $cp.CompilerOptions = $CompilerOptions -ne '' -join ' '
-Write-Verbose "Using Compiler Options: $($cp.CompilerOptions)"
+Write-Debug "Using Compiler Options: $($cp.CompilerOptions)"
 
 if (!$AstAnalyzeResult.IsConst) {
 	[VOID]$cp.EmbeddedResources.Add("$TempDir\main.ps1")

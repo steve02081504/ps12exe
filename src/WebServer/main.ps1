@@ -80,6 +80,7 @@ $BackUpTitle = $Host.UI.RawUI.WindowTitle
 $Host.UI.RawUI.WindowTitle = "ps12exe Web Server"
 
 Write-Host $LocalizeData.ExitServerTip -ForegroundColor Yellow
+$LocalizeData = $LocalizeData.WebServerI18nData
 
 # Define a hashtable to track request counts per IP
 $ipRequestCount = @{}
@@ -90,14 +91,14 @@ $runspacePool = [runspacefactory]::CreateRunspacePool(1, $MaxCompileThreads)
 $runspacePool.Open()
 
 function HandleWebCompileRequest($userInput, $context) {
-	Write-Verbose "Compiling User Input: $userInput"
+	Write-Verbose ($LocalizeData.CompilingUserInput -f $userInput)
 	if (!$userInput) {
-		Write-Verbose "No data found when Handling Request, returning empty response"
+		Write-Verbose $LocalizeData.EmptyResponse
 		break
 	}
 	$clientIP = $context.Request.RemoteEndPoint.Address.ToString()
 	if ($userInput.Length -gt $MaxScriptFileSize -and $clientIP -ne '127.0.0.1') {
-		Write-Verbose "User Input is too large, returning 413 error"
+		Write-Verbose $LocalizeData.InputTooLarge413
 		$context.Response.StatusCode = 413
 		$context.Response.ContentType = "text/plain"
 		$buffer = [System.Text.Encoding]::UTF8.GetBytes('File too large')
@@ -107,7 +108,7 @@ function HandleWebCompileRequest($userInput, $context) {
 
 	# Check if the IP has exceeded the limit (e.g., 5 requests per minute)
 	if ($ipRequestCount[$clientIP] -gt $ReqLimitPerMin -and $clientIP -ne '127.0.0.1') {
-		Write-Verbose "IP $clientIP has exceeded the limit of $ReqLimitPerMin requests per minute, returning 429 error"
+		Write-Verbose ($LocalizeData.ReqLimitExceeded429 -f @($clientIP, $ReqLimitPerMin))
 		$context.Response.StatusCode = 429
 		$context.Response.ContentType = "text/plain"
 		$buffer = [System.Text.Encoding]::UTF8.GetBytes('Too many requests')

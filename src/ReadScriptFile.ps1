@@ -2,10 +2,12 @@
 	$Content = if ($File -match "^(https?|ftp)://") {
 		if ($GuestMode) {
 			if ((Invoke-WebRequest $File -Method Head -ErrorAction SilentlyContinue).Headers.'Content-Length' -gt 1mb) {
-				Write-Error "The file is too large to read." -ErrorAction Stop
+				Write-I18n Error GuestModeFileTooLarge $File -Category LimitsExceeded
+				throw
 			}
 			if ($File -match "^ftp://") {
-				Write-Error "FTP is not supported in GuestMode." -ErrorAction Stop
+				Write-I18n Error GuestModeFtpNotSupported -Category ReadError
+				throw
 			}
 		}
 		(Invoke-WebRequest -Uri $File -ErrorAction SilentlyContinue).Content -replace '^[^\u0000-\u007F]+', ''
@@ -13,18 +15,20 @@
 	elseif (-not $GuestMode) {
 		Get-Content -LiteralPath $File -Encoding UTF8 -ErrorAction SilentlyContinue -Raw
 	}
-	Write-Host "Reading file $([System.IO.Path]::GetFileName($File)) size $($Content.Length) bytes"
+	Write-I18n Host ReadingScript @([System.IO.Path]::GetFileName($File),$Content.Length)
 	if (-not $Content) {
-		Write-Error "No data found. May be read error or file protected." -ErrorAction Stop
+		Write-I18n Error ReadFileFailed $File -Category ReadError
+		throw
 	}
 	$Content
 }
 function ReadScriptFile($File) {
 	$Content = BaseReadFile $File
 	$Content = $Content -join "`n" -split '\r?\n'
-	Write-Verbose "Done reading file $([System.IO.Path]::GetFileName($File)), starting preprocess..."
+	$FileName = [System.IO.Path]::GetFileName($File)
+	Write-I18n Verbose ReadingScriptDone $FileName
 	Preprocessor $Content $File
-	Write-Verbose "Done preprocess file $([System.IO.Path]::GetFileName($File))"
+	Write-I18n Verbose PreprocessScriptDone $FileName
 }
 . $PSScriptRoot\predicate.ps1
 . $PSScriptRoot\PSObjectToString.ps1
@@ -40,7 +44,7 @@ function Preprocessor($Content, $FilePath) {
 			$condition = switch ($condition) {
 				'PSEXE' { $TRUE }
 				'PSScript' { $False }
-				default { Write-Error "Unknown condition: $condition`nassuming false."; $False }
+				default { Write-I18n Error PreprocessUnknownIfCondition $condition -Category InvalidData; $False }
 			}
 			while ($index -lt $Content.Count) {
 				$index++
@@ -54,7 +58,7 @@ function Preprocessor($Content, $FilePath) {
 				}
 			}
 			if ($Line -notmatch "^\s*#_endif\s*(?!#.*)") {
-				Write-Error "Missing #_endif"
+				Write-I18n Error PreprocessMissingEndif -Category SyntaxError
 				return
 			}
 		}
@@ -102,7 +106,7 @@ function Preprocessor($Content, $FilePath) {
 				$Params["no$pragmaname"] = [Switch]-not $value
 				return
 			}
-			Write-Warning "Unknown pragma: $($Matches["pragmaname"])"
+			Write-I18n Warning UnknownPragma $($Matches["pragmaname"])
 		}
 		elseif ($_ -match "^\s*#_pragma\s+(?<pragmaname>[a-zA-Z_][a-zA-Z_0-9]+)\s+(?<rest>.+)\s*$") {
 			$pragmaname = $Matches["pragmaname"]
@@ -119,7 +123,7 @@ function Preprocessor($Content, $FilePath) {
 					$value = $false
 				}
 				else {
-					Write-Warning "Unknown pragma value: $value, cannot take is as a boolean."
+					Write-I18n Warning UnknownPragmaBoolValue $value
 					return
 				}
 				if ($pragmaname.StartsWith("no")) {
@@ -146,10 +150,10 @@ function Preprocessor($Content, $FilePath) {
 				$Params[$pragmaname] = $value
 			}
 			elseif ($ParamList[$pragmaname].ParameterType) {
-				Write-Warning "Unknown pragma: $pragmaname, as type $($ParamList[$pragmaname].ParameterType) can't analyze."
+				Write-I18n Warning UnknownPragmaBadParameterType $($pragmaname,$ParamList[$pragmaname].ParameterType)
 			}
 			else {
-				Write-Warning "Unknown pragma: $pragmaname"
+				Write-I18n Warning UnknownPragma $pragmaname
 			}
 		}
 	} |
@@ -185,14 +189,14 @@ function Preprocessor($Content, $FilePath) {
 			foreach ($param in $callsignParams) {
 				$paramData = $param -split ' ' | ForEach-Object { $_.Trim() }
 				if ($paramData.Count -eq 1) {
-					Write-Warning "$($Matches[2]): $($paramData[0]) is none type parameter, assume it's string."
+					Write-I18n Warning DllExportDelNoneTypeArg $($Matches[2],$paramData[0])
 					$paramData = @('string', $paramData[0])
 				}
 				$DllExportData.params += @{ name = $paramData[1]; type = $paramData[0] }
 			}
 			$DllExportList.Add($DllExportData) | Out-Null
-			Write-Warning "You are using #_DllExport, this marco is in dev and not support yet."
-			Write-Verbose "$($Matches[2]): FuncSign: [$($DllExportData.returntype)]$($DllExportData.funcname)($(($DllExportData.params|ForEach-Object{ $_.type + ' ' + $_.name }) -join ', '))"
+			Write-I18n Warning DllExportUsing
+			Write-Debug "$($Matches[2]): FuncSign: [$($DllExportData.returntype)]$($DllExportData.funcname)($(($DllExportData.params|ForEach-Object{ $_.type + ' ' + $_.name }) -join ', '))"
 		}
 	} |
 	# 处理#_!!<line>

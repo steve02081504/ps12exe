@@ -67,16 +67,19 @@ if ($iconFile -match "^(https?|ftp)://") {
 	try {
 		if ($GuestMode) {
 			if ((Invoke-WebRequest $iconFile -Method Head -ErrorAction SilentlyContinue).Headers.'Content-Length' -gt 1mb) {
-				Write-Error "The icon is too large to read." -ErrorAction Stop
+				Write-I18n Error GuestModeIconFileTooLarge $iconFile -Category LimitsExceeded
+				throw
 			}
 			if ($File -match "^ftp://") {
-				Write-Error "FTP is not supported in GuestMode." -ErrorAction Stop
+				Write-I18n Error GuestModeFtpNotSupported -Category ReadError
+				throw
 			}
 		}
-		Invoke-WebRequest -Uri $iconFile -OutFile $TempDir\icon.ico
+		Invoke-WebRequest -ErrorAction Stop -Uri $iconFile -OutFile $TempDir\icon.ico
 	}
 	catch {
-		Write-Error "Icon file $iconFile not found!" -ErrorAction Stop
+		Write-I18n Error IconFileNotFound $iconFile -Category ReadError
+		throw
 	}
 	$iconFile = "$TempDir\icon.ico"
 }
@@ -85,6 +88,7 @@ elseif ($iconFile) {
 	$iconFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($iconFile)
 
 	if (!(Test-Path $iconFile -PathType Leaf)) {
-		Write-Error "Icon file $iconFile not found!" -ErrorAction Stop
+		Write-I18n Error IconFileNotFound $iconFile -Category ReadError
+		throw
 	}
 }

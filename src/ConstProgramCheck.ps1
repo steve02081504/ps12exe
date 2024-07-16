@@ -1,8 +1,7 @@
 ﻿if ($AstAnalyzeResult.IsConst) {
 	$timeoutSeconds = 7  # 设置超时限制（秒）
 
-	Write-Verbose "constant program, using constexpr program frame"
-	Write-Verbose "Evaluation of constants..."
+	Write-I18n Verbose ConstEvalStart
 
 	# 一个自定义host以便挂钩SetShouldExit
 	Add-Type @"
@@ -53,9 +52,9 @@ public class ps12exeConstEvalHost : PSHost {
 			(($_ | Out-String) -replace '\r\n$', '').Replace('\', '\\').Replace('"', '\"').Replace("`n", "\n").Replace("`r", "\r")
 		}
 		$ConstResult = $ConstResult -join $(if ($noConsole) { '","' }else { "`n" })
-		Write-Verbose "Done evaluation of constants -> $(bytesOfString $ConstResult) bytes"
+		Write-I18n Verbose ConstEvalDone $(bytesOfString $ConstResult)
 		if ($ConstResult.Length -gt 19kb) {
-			Write-Verbose "Const result is too long, fail back to normal program frame"
+			Write-I18n Verbose ConstEvalTooLongFallback
 		}
 		else {
 			#_if PSEXE #这是该脚本被ps12exe编译时使用的预处理代码
@@ -71,7 +70,7 @@ public class ps12exeConstEvalHost : PSHost {
 		}
 	}
 	else {
-		Write-Verbose "Evaluation timed out after $timeoutSeconds seconds, fail back to normal program frame"
+		Write-I18n Verbose ConstEvalTimeoutFallback $timeoutSeconds
 		$pwsh.Stop()
 	}
 
