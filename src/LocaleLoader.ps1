@@ -63,4 +63,6 @@ if (!(&$CheckLocaleData)) {
 		}
 	}
 }
-$Script:LocalizeData
+$result = $Script:LocalizeData
+Remove-Variable -Name LocalizeData -Scope Script
+$result
