@@ -217,7 +217,7 @@ namespace TinySharp {
 			var file = new MyBuilder().CreateFile(this.Image);
 
 			// Put string to print in the padding data.
-			if (OutSegment!=null)
+			if (OutSegment != null)
 				file.ExtraSectionData = this.OutSegment;
 
 			file.Write(OutFile);
@@ -249,7 +249,7 @@ namespace TinySharp {
 			newResource.AddEntry(0x7f00, newGroup);
 
 			// Add resource to PE.
-			if(this.Image.Resources==null) this.Image.Resources = new ResourceDirectory(0u);
+			if (this.Image.Resources == null) this.Image.Resources = new ResourceDirectory(0u);
 			this.Image.Resources.Entries.Insert(0, new ResourceDirectory(ResourceType.Icon));
 			this.Image.Resources.Entries.Insert(1, new ResourceDirectory(ResourceType.GroupIcon));
 			newResource.WriteToDirectory(this.Image.Resources);
@@ -295,7 +295,7 @@ namespace TinySharp {
 			versionResource.AddEntry(varFileInfo);
 
 			// Add to resources.
-			if(this.Image.Resources==null) this.Image.Resources = new ResourceDirectory(0u);
+			if (this.Image.Resources == null) this.Image.Resources = new ResourceDirectory(0u);
 			versionResource.WriteToDirectory(this.Image.Resources);
 		}
 	}

@@ -15,7 +15,7 @@
 	elseif (-not $GuestMode) {
 		Get-Content -LiteralPath $File -Encoding UTF8 -ErrorAction SilentlyContinue -Raw
 	}
-	Write-I18n Host ReadingScript @([System.IO.Path]::GetFileName($File),$Content.Length)
+	Write-I18n Host ReadingScript @([System.IO.Path]::GetFileName($File), $Content.Length)
 	if (-not $Content) {
 		Write-I18n Error ReadFileFailed $File -Category ReadError
 		throw
@@ -150,7 +150,7 @@ function Preprocessor($Content, $FilePath) {
 				$Params[$pragmaname] = $value
 			}
 			elseif ($ParamList[$pragmaname].ParameterType) {
-				Write-I18n Warning UnknownPragmaBadParameterType $($pragmaname,$ParamList[$pragmaname].ParameterType)
+				Write-I18n Warning UnknownPragmaBadParameterType $($pragmaname, $ParamList[$pragmaname].ParameterType)
 			}
 			else {
 				Write-I18n Warning UnknownPragma $pragmaname
@@ -189,7 +189,7 @@ function Preprocessor($Content, $FilePath) {
 			foreach ($param in $callsignParams) {
 				$paramData = $param -split ' ' | ForEach-Object { $_.Trim() }
 				if ($paramData.Count -eq 1) {
-					Write-I18n Warning DllExportDelNoneTypeArg $($Matches[2],$paramData[0])
+					Write-I18n Warning DllExportDelNoneTypeArg $($Matches[2], $paramData[0])
 					$paramData = @('string', $paramData[0])
 				}
 				$DllExportData.params += @{ name = $paramData[1]; type = $paramData[0] }

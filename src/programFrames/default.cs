@@ -221,7 +221,7 @@ namespace PSRunnerNS {
 		#endif
 
 		public override ConsoleColor BackgroundColor {
-			#if!noConsole
+			#if !noConsole
 				get { return Console.BackgroundColor; }
 				set { Console.BackgroundColor = value; }
 			#else
@@ -232,7 +232,7 @@ namespace PSRunnerNS {
 
 		public override System.Management.Automation.Host.Size BufferSize {
 			get {
-				#if!noConsole
+				#if !noConsole
 					if (!Console_Info.IsOutputRedirected())
 						return new System.Management.Automation.Host.Size(Console.BufferWidth, Console.BufferHeight);
 				#endif
@@ -240,7 +240,7 @@ namespace PSRunnerNS {
 				return new System.Management.Automation.Host.Size(120, 50);
 			}
 			set {
-				#if!noConsole
+				#if !noConsole
 					Console.BufferWidth = value.Width;
 					Console.BufferHeight = value.Height;
 				#endif
@@ -250,7 +250,7 @@ namespace PSRunnerNS {
 		public override Coordinates CursorPosition {
 			get {
 				return new Coordinates(
-				#if!noConsole
+				#if !noConsole
 					Console.CursorLeft, Console.CursorTop
 				#else
 					// Dummywert für Winforms zurückgeben.
@@ -259,7 +259,7 @@ namespace PSRunnerNS {
 				);
 			}
 			set {
-				#if!noConsole
+				#if !noConsole
 					Console.CursorTop = value.Y;
 					Console.CursorLeft = value.X;
 				#endif
@@ -269,7 +269,7 @@ namespace PSRunnerNS {
 		public override int CursorSize {
 			get {
 				return
-					#if!noConsole
+					#if !noConsole
 						Console.CursorSize
 					#else
 						// Dummywert für Winforms zurückgeben.
@@ -278,7 +278,7 @@ namespace PSRunnerNS {
 				;
 			}
 			set {
-				#if!noConsole
+				#if !noConsole
 					Console.CursorSize = value;
 				#endif
 			}
@@ -289,7 +289,7 @@ namespace PSRunnerNS {
 		#endif
 
 		public override void FlushInputBuffer() {
-			#if!noConsole
+			#if !noConsole
 			if (!Console_Info.IsInputRedirected()) {
 				while (Console.KeyAvailable)
 					Console.ReadKey(true);
@@ -308,7 +308,7 @@ namespace PSRunnerNS {
 		}
 
 		public override ConsoleColor ForegroundColor {
-			#if!noConsole
+			#if !noConsole
 				get { return Console.ForegroundColor; }
 				set { Console.ForegroundColor = value; }
 			#else
@@ -318,7 +318,7 @@ namespace PSRunnerNS {
 		}
 
 		public override BufferCell[, ] GetBufferContents(System.Management.Automation.Host.Rectangle rectangle) {
-			#if!noConsole
+			#if !noConsole
 			IntPtr hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
 			CHAR_INFO[, ] buffer = new CHAR_INFO[rectangle.Bottom - rectangle.Top + 1, rectangle.Right - rectangle.Left + 1];
 			COORD buffer_size = new COORD {
@@ -355,7 +355,7 @@ namespace PSRunnerNS {
 		public override bool KeyAvailable {
 			get {
 				return
-					#if!noConsole
+					#if !noConsole
 						Console.KeyAvailable
 					#else
 						true
@@ -367,7 +367,7 @@ namespace PSRunnerNS {
 		public override System.Management.Automation.Host.Size MaxPhysicalWindowSize {
 			get {
 				return new System.Management.Automation.Host.Size(
-					#if!noConsole
+					#if !noConsole
 						Console.LargestWindowWidth, Console.LargestWindowHeight
 					#else
 						// Dummy-Wert für Winforms
@@ -380,7 +380,7 @@ namespace PSRunnerNS {
 		public override System.Management.Automation.Host.Size MaxWindowSize {
 			get {
 				return new System.Management.Automation.Host.Size(
-					#if!noConsole
+					#if !noConsole
 						Console.BufferWidth, Console.BufferWidth
 					#else
 						// Dummy-Wert für Winforms
@@ -391,7 +391,7 @@ namespace PSRunnerNS {
 		}
 
 		public override KeyInfo ReadKey(ReadKeyOptions options) {
-			#if!noConsole
+			#if !noConsole
 			ConsoleKeyInfo info = Console.ReadKey((options & ReadKeyOptions.NoEcho) != 0);
 
 			ControlKeyStates state = 0;
@@ -416,7 +416,7 @@ namespace PSRunnerNS {
 		}
 
 		public override void ScrollBufferContents(System.Management.Automation.Host.Rectangle source, Coordinates destination, System.Management.Automation.Host.Rectangle clip, BufferCell fill) { // no destination block clipping implemented
-			#if!noConsole
+			#if !noConsole
 			// clip area out of source range?
 			if ((source.Left > clip.Right) || (source.Right < clip.Left) || (source.Top > clip.Bottom) || (source.Bottom < clip.Top)) { // clipping out of range -> nothing to do
 				return;
@@ -448,7 +448,7 @@ namespace PSRunnerNS {
 		}
 
 		public override void SetBufferContents(System.Management.Automation.Host.Rectangle rectangle, BufferCell fill) {
-			#if!noConsole
+			#if !noConsole
 			// using a trick: move the buffer out of the screen, the source area gets filled with the char fill.Character
 			if (rectangle.Left >= 0)
 				Console.MoveBufferArea(rectangle.Left, rectangle.Top, rectangle.Right - rectangle.Left + 1, rectangle.Bottom - rectangle.Top + 1, BufferSize.Width, BufferSize.Height, fill.Character, fill.ForegroundColor, fill.BackgroundColor);
@@ -459,7 +459,7 @@ namespace PSRunnerNS {
 		}
 
 		public override void SetBufferContents(Coordinates origin, BufferCell[, ] contents) {
-			#if!noConsole
+			#if !noConsole
 			IntPtr hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
 			CHAR_INFO[, ] buffer = new CHAR_INFO[contents.GetLength(0), contents.GetLength(1)];
 			COORD buffer_size = new COORD {
@@ -486,7 +486,7 @@ namespace PSRunnerNS {
 		public override Coordinates WindowPosition {
 			get {
 				return new Coordinates(
-					#if!noConsole
+					#if !noConsole
 						Console.WindowLeft, Console.WindowTop
 					#else
 						// Dummy-Wert für Winforms
@@ -495,7 +495,7 @@ namespace PSRunnerNS {
 				);
 			}
 			set {
-				#if!noConsole
+				#if !noConsole
 				Console.WindowLeft = value.X;
 				Console.WindowTop = value.Y;
 				#endif
@@ -505,7 +505,7 @@ namespace PSRunnerNS {
 		public override System.Management.Automation.Host.Size WindowSize {
 			get {
 				return new System.Management.Automation.Host.Size(
-				#if!noConsole
+				#if !noConsole
 					Console.WindowWidth, Console.WindowHeight
 				#else
 					// Dummy-Wert für Winforms
@@ -514,7 +514,7 @@ namespace PSRunnerNS {
 				);
 			}
 			set {
-				#if!noConsole
+				#if !noConsole
 				Console.WindowWidth = value.Width;
 				Console.WindowHeight = value.Height;
 				#endif
@@ -524,7 +524,7 @@ namespace PSRunnerNS {
 		public override string WindowTitle {
 			get {
 				return
-				#if!noConsole
+				#if !noConsole
 				Console.Title
 				#else
 				_windowTitleData
@@ -532,7 +532,7 @@ namespace PSRunnerNS {
 				;
 			}
 			set {
-				#if!noConsole
+				#if !noConsole
 				Console.Title
 				#else
 				_windowTitleData
@@ -857,7 +857,7 @@ namespace PSRunnerNS {
 	public class Progress_Form: Form {
 		private ConsoleColor ProgressBarColor = ConsoleColor.DarkCyan;
 
-		#if!noVisualStyles
+		#if !noVisualStyles
 		private System.Timers.Timer _timer = new System.Timers.Timer();
 		private int _barNumber = -1;
 		private int _barValue = -1;
@@ -932,14 +932,14 @@ namespace PSRunnerNS {
 			this.StartPosition = FormStartPosition.CenterScreen;
 
 			this.ResumeLayout();
-			#if!noVisualStyles
+			#if !noVisualStyles
 			_timer.Elapsed += new System.Timers.ElapsedEventHandler(TimeTick);
 			_timer.Interval = 50; // milliseconds
 			_timer.AutoReset = true;
 			_timer.Start();
 			#endif
 		}
-		#if!noVisualStyles
+		#if !noVisualStyles
 		private void TimeTick(object source, System.Timers.ElapsedEventArgs eventargs) { // worker function that is called by _timer event
 			if (_inTick) return;
 			_inTick = true;
@@ -1046,7 +1046,7 @@ namespace PSRunnerNS {
 
 			if (objRecord.RecordType == ProgressRecordType.Completed) {
 				if (currentProgress >= 0) {
-					#if!noVisualStyles
+					#if !noVisualStyles
 					if (_barNumber == currentProgress) _barNumber = -1;
 					#endif
 					this.Controls.Remove(progressDataList[currentProgress].lbActivity);
@@ -1065,7 +1065,7 @@ namespace PSRunnerNS {
 				}
 
 				if (progressDataList.Count == 0) {
-					#if!noVisualStyles
+					#if !noVisualStyles
 					_timer.Stop();
 					_timer.Dispose();
 					#endif
@@ -1159,7 +1159,7 @@ namespace PSRunnerNS {
 				progressDataList[currentProgress].lbStatus.Text = "";
 
 			if ((objRecord.PercentComplete >= 0) && (objRecord.PercentComplete <= 100)) {
-				#if!noVisualStyles
+				#if !noVisualStyles
 				if (objRecord.PercentComplete < 100)
 					progressDataList[currentProgress].objProgressBar.Value = objRecord.PercentComplete + 1;
 				else
@@ -1175,13 +1175,13 @@ namespace PSRunnerNS {
 				if (objRecord.PercentComplete > 100) {
 					progressDataList[currentProgress].objProgressBar.Value = 0;
 					progressDataList[currentProgress].objProgressBar.Visible = true;
-					#if!noVisualStyles
+					#if !noVisualStyles
 					_barNumber = currentProgress;
 					_barValue = 0;
 					#endif
 				} else {
 					progressDataList[currentProgress].objProgressBar.Visible = false;
-					#if!noVisualStyles
+					#if !noVisualStyles
 					if (_barNumber == currentProgress) _barNumber = -1;
 					#endif
 				}
@@ -1293,7 +1293,7 @@ namespace PSRunnerNS {
 		public ConsoleColor VerboseBackgroundColor = ConsoleColor.Black;
 
 		public ConsoleColor ProgressForegroundColor =
-		#if!noConsole
+		#if !noConsole
 			ConsoleColor.Yellow
 		#else
 			ConsoleColor.DarkCyan
@@ -1303,7 +1303,7 @@ namespace PSRunnerNS {
 
 		public PSRunnerUI() {
 			rawUI = new PSRunnerRawUI();
-			#if!noConsole
+			#if !noConsole
 				rawUI.ForegroundColor = Console.ForegroundColor;
 				rawUI.BackgroundColor = Console.BackgroundColor;
 			#endif
@@ -1314,7 +1314,7 @@ namespace PSRunnerNS {
 		#endif
 
 		public override Dictionary<string, PSObject> Prompt(string caption, string message, System.Collections.ObjectModel.Collection<FieldDescription> descriptions) {
-			#if!noConsole
+			#if !noConsole
 				if (!string.IsNullOrEmpty(caption)) WriteLine(caption);
 				if (!string.IsNullOrEmpty(message)) WriteLine(message);
 			#else
@@ -1351,7 +1351,7 @@ namespace PSRunnerNS {
 					string data;
 					do {
 						if (!string.IsNullOrEmpty(cd.Name))
-							#if!noConsole
+							#if !noConsole
 								Write(string.Format("{0}[{1}]: ", cd.Name, index));
 							#else
 								_ib_message = string.Format("{0}[{1}]: ", cd.Name, index);
@@ -1373,7 +1373,7 @@ namespace PSRunnerNS {
 					string line;
 					if (type != typeof(System.Security.SecureString)) {
 						if (type != typeof(System.Management.Automation.PSCredential)) {
-							#if!noConsole
+							#if !noConsole
 							if (!string.IsNullOrEmpty(cd.Name)) Write(cd.Name);
 							if (!string.IsNullOrEmpty(cd.HelpMessage)) Write(" (Type !? for help.)");
 							if ((!string.IsNullOrEmpty(cd.Name)) || (!string.IsNullOrEmpty(cd.HelpMessage))) Write(": ");
@@ -1401,7 +1401,7 @@ namespace PSRunnerNS {
 							obj = PromptForCredential("", "", "", "");
 					} else {
 						if (!string.IsNullOrEmpty(cd.Name))
-							#if!noConsole
+							#if !noConsole
 								Write(string.Format("{0}: ", cd.Name));
 							#else
 								_ib_message = string.Format("{0}: ", cd.Name);
@@ -1479,7 +1479,7 @@ namespace PSRunnerNS {
 		}
 
 		public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName, PSCredentialTypes allowedCredentialTypes, PSCredentialUIOptions options) {
-			#if!(noConsole || credentialGUI)
+			#if !(noConsole || credentialGUI)
 			if (!string.IsNullOrEmpty(caption)) WriteLine(caption);
 			WriteLine(message);
 
@@ -1515,7 +1515,7 @@ namespace PSRunnerNS {
 		}
 
 		public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName) {
-			#if!(noConsole || credentialGUI)
+			#if !(noConsole || credentialGUI)
 				if (!string.IsNullOrEmpty(caption)) WriteLine(caption);
 				WriteLine(message);
 
@@ -1563,7 +1563,7 @@ namespace PSRunnerNS {
 		#endif
 
 		public override string ReadLine() {
-			#if!noConsole
+			#if !noConsole
 				return Console.ReadLine();
 			#else
 				string sWert = "";
@@ -1598,7 +1598,7 @@ namespace PSRunnerNS {
 
 		public override System.Security.SecureString ReadLineAsSecureString() {
 			System.Security.SecureString secstr;
-			#if!noConsole
+			#if !noConsole
 				secstr = getPassword();
 			#else
 				secstr = new System.Security.SecureString();
@@ -1618,8 +1618,8 @@ namespace PSRunnerNS {
 
 		// called by Write-Host
 		public override void Write(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value) {
-			#if!noOutput
-			#if!noConsole
+			#if !noOutput
+			#if !noConsole
 			ConsoleColor fgc = Console.ForegroundColor, bgc = Console.BackgroundColor;
 			Console.ForegroundColor = foregroundColor;
 			Console.BackgroundColor = backgroundColor;
@@ -1634,8 +1634,8 @@ namespace PSRunnerNS {
 		}
 
 		public override void Write(string value) {
-			#if!noOutput
-			#if!noConsole
+			#if !noOutput
+			#if !noConsole
 			Console.Write(value);
 			#else
 			if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
@@ -1646,8 +1646,8 @@ namespace PSRunnerNS {
 
 		// called by Write-Debug
 		public override void WriteDebugLine(string message) {
-			#if!noError
-			#if!noConsole
+			#if !noError
+			#if !noConsole
 			WriteLineInternal(DebugForegroundColor, DebugBackgroundColor, string.Format("DEBUG: {0}", message));
 			#else
 			MessageBox.Show(message, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -1657,8 +1657,8 @@ namespace PSRunnerNS {
 
 		// called by Write-Error
 		public override void WriteErrorLine(string value) {
-			#if!noError
-			#if!noConsole
+			#if !noError
+			#if !noConsole
 			if (Console_Info.IsErrorRedirected())
 				Console.Error.WriteLine(string.Format("ERROR: {0}", value));
 			else
@@ -1670,8 +1670,8 @@ namespace PSRunnerNS {
 		}
 
 		public override void WriteLine() {
-			#if!noOutput
-			#if!noConsole
+			#if !noOutput
+			#if !noConsole
 			Console.WriteLine();
 			#else
 			MessageBox.Show("", rawUI.WindowTitle);
@@ -1680,8 +1680,8 @@ namespace PSRunnerNS {
 		}
 
 		public override void WriteLine(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value) {
-			#if!noOutput
-			#if!noConsole
+			#if !noOutput
+			#if !noConsole
 			ConsoleColor fgc = Console.ForegroundColor, bgc = Console.BackgroundColor;
 			Console.ForegroundColor = foregroundColor;
 			Console.BackgroundColor = backgroundColor;
@@ -1695,7 +1695,7 @@ namespace PSRunnerNS {
 			#endif
 		}
 
-		#if!(noError || noConsole)
+		#if !(noError || noConsole)
 		private void WriteLineInternal(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value) {
 			ConsoleColor fgc = Console.ForegroundColor, bgc = Console.BackgroundColor;
 			Console.ForegroundColor = foregroundColor;
@@ -1708,8 +1708,8 @@ namespace PSRunnerNS {
 
 		// called by Write-Output
 		public override void WriteLine(string value) {
-			#if!noOutput
-			#if!noConsole
+			#if !noOutput
+			#if !noConsole
 			Console.WriteLine(value);
 			#else
 			if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
@@ -1755,8 +1755,8 @@ namespace PSRunnerNS {
 
 		// called by Write-Verbose
 		public override void WriteVerboseLine(string message) {
-			#if!noOutput
-			#if!noConsole
+			#if !noOutput
+			#if !noConsole
 			WriteLine(VerboseForegroundColor, VerboseBackgroundColor, string.Format("VERBOSE: {0}", message));
 			#else
 			MessageBox.Show(message, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -1766,8 +1766,8 @@ namespace PSRunnerNS {
 
 		// called by Write-Warning
 		public override void WriteWarningLine(string message) {
-			#if!noError
-				#if!noConsole
+			#if !noError
+				#if !noConsole
 					WriteLineInternal(WarningForegroundColor, WarningBackgroundColor, string.Format("WARNING: {0}", message));
 				#else
 					MessageBox.Show(message, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -1975,7 +1975,7 @@ namespace PSRunnerNS {
 			System.Threading.Thread.CurrentThread.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo("$lcid");
 			#endif
 
-			#if!noVisualStyles && noConsole
+			#if !noVisualStyles && noConsole
 			Application.EnableVisualStyles();
 			#endif
 		}
@@ -1991,7 +1991,7 @@ namespace PSRunnerNS {
 			System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);
 
 			try {
-				#if!noConsole
+				#if !noConsole
 				Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs eventargs) => {
 					try {
 						me.pwsh.BeginStop((_) => {
@@ -2044,7 +2044,7 @@ namespace PSRunnerNS {
 					me.ui.WriteErrorLine(me.pwsh.InvocationStateInfo.Reason.Message);
 			}
 			catch (Exception ex) {
-				#if!noError
+				#if !noError
 					me.ui.WriteErrorLine(ex.Message);
 				#endif
 				me.ExitCode = 1;

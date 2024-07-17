@@ -37,7 +37,7 @@ namespace PSRunnerNS {
 				System.Console.OutputEncoding = new System.Text.UnicodeEncoding();
 				#endif
 
-				#if!noVisualStyles && noConsole
+				#if !noVisualStyles && noConsole
 				Application.EnableVisualStyles();
 				#endif
 
