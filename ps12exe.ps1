@@ -185,6 +185,7 @@ Param(
 )
 $Verbose = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent
 $Debug = $DebugPreference -ne 'SilentlyContinue'
+$UICultureBackup = [cultureinfo]::CurrentUICulture
 function RollUp {
 	param ($num = 1, [switch]$InVerbose)
 	if (-not ($Verbose -or $InVerbose -or $Debug)) {
@@ -395,8 +396,10 @@ if ($targetRuntime -eq 'Framework2.0') {
 	#_endif
 }
 else {
+	[cultureinfo]::CurrentUICulture = $LocalizeData.LangID
 	$SyntaxErrors = $Tokens = $null
 	$AST = [System.Management.Automation.Language.Parser]::ParseInput($Content, [ref]$Tokens, [ref]$SyntaxErrors)
+	[cultureinfo]::CurrentUICulture = $UICultureBackup
 }
 if ($SyntaxErrors) {
 	Write-I18n Error -Category ParserError -TargetObject $SyntaxErrors InputSyntaxError
