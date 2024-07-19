@@ -1,4 +1,6 @@
 ﻿@{
+	LangName = "Español (España)"
+	LangID = "es-ES"
 	# Right click Menu
 	CompileTitle		   = "Compilar a EXE"
 	OpenInGUI			   = "Abrir en ps12exeGUI"
@@ -114,7 +116,8 @@
 		CombinedArg_STA_MTA = "-STA no se puede usar con -MTA"
 		InvalidResourceParam = "Parámetro -resourceParams con una clave inválida: {0}"
 		CombinedArg_ConfigFileYes_No = "-configFile no se puede usar con -noConfigFile"
-		InputSyntaxError = "Error de sintaxis en el script: {0}"
+		InputSyntaxError = "¡Error de sintaxis en el script!"
+		SyntaxErrorLineStart = "En la línea {0}, Col {1}:"
 		IdenticalInputOutput = "¡El archivo de entrada es idéntico al archivo de salida!"
 		CombinedArg_Virtualize_requireAdmin = "-virtualize no se puede usar con -requireAdmin"
 		CombinedArg_Virtualize_supportOS = "-virtualize no se puede usar con -supportOS"

@@ -226,7 +226,7 @@ function Write-I18n(
 	$ForegroundColor = $Host.UI.RawUI.ForegroundColor
 ) {
 	$value = $LocalizeData.CompilingI18nData[$Mid] -f $FormatArgs
-	if (!$value) { $value = "fatal error: No i18n data for $Mid" }
+	if (!$value) { $value = "fatal error: No i18n data for $Mid, Rest format args: $FormatArgs" }
 	switch ($PipeLineType) {
 		'Info' { Write-Information $value }
 		'Warning' { Write-Warning $value }
@@ -386,20 +386,34 @@ $iconFile = $resourceParams['iconFile']
 $resourceParams.Remove('iconFile')
 
 # 语法检查
-$SyntaxErrors = if ($targetRuntime -eq 'Framework2.0') {
+if ($targetRuntime -eq 'Framework2.0') {
 	#_if PSScript
-		powershell -version 2.0 -OutputFormat xml -file $PSScriptRoot/src/RuntimePwsh2.0/CodeChecker.ps1 -scriptText $Content
+		$SyntaxErrors = powershell -version 2.0 -OutputFormat xml -file $PSScriptRoot/src/RuntimePwsh2.0/CodeChecker.ps1 -scriptText $Content
 	#_else
 		#_include_as_value Pwsh2CodeCheckerCodeStr $PSScriptRoot/src/RuntimePwsh2.0/CodeChecker.ps1
 		#_!! powershell -version 2.0 -OutputFormat xml -Command "&{$Pwsh2CodeCheckerCodeStr} -scriptText '$($Content -replace "'","''")'"
 	#_endif
 }
-if (!$SyntaxErrors) {
-	$Tokens = $null
+else {
+	$SyntaxErrors = $Tokens = $null
 	$AST = [System.Management.Automation.Language.Parser]::ParseInput($Content, [ref]$Tokens, [ref]$SyntaxErrors)
 }
 if ($SyntaxErrors) {
 	Write-I18n Error -Category ParserError -TargetObject $SyntaxErrors InputSyntaxError
+	$errorData = & $PSScriptRoot/src/SyntaxErrorI18nDataBuilder.ps1 -SyntaxErrors $SyntaxErrors -CodeContent $Content -Localize:$LocalizeData.LangID
+	$lastFullText = $null
+	foreach ($errinfo in $errorData) {
+		$fullText = ($errinfo.SpoceText + $errinfo.Text) -join "`n"
+		if ($fullText -ne $lastFullText) {
+			$lastFullText = $fullText
+			Write-Host
+			Write-Debug $(($errinfo | ConvertTo-Json) -split "\r?\n" -ne '' -join "`n")
+			Write-I18n Host SyntaxErrorLineStart $errinfo.SpoceText -ForegroundColor Red
+			Write-Host $errinfo.Text
+			Write-Host (" "*($errinfo.Spoce.Column-1) + '^'*([Math]::Max($errinfo.Spoce.ColumnEnd-$errinfo.Spoce.Column,1))) -ForegroundColor Red
+		}
+		Write-Host $errinfo.Message
+	}
 	return
 }
 

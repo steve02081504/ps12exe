@@ -1,4 +1,6 @@
 ﻿@{
+	LangName = "हिंदी (हिंदी)"
+	LangID = "hi-IN"
 	# Right click Menu
 	CompileTitle		   = "कॉम्पाइल करें EXE में"
 	OpenInGUI			   = "ps12exeGUI में खोलें"
@@ -114,7 +116,8 @@
 		CombinedArg_STA_MTA = "-STA का उपयोग -MTA के साथ नहीं किया जा सकता"
 		InvalidResourceParam = "पैरामीटर -resourceParams में एक अमान्य कुंजी है: {0}"
 		CombinedArg_ConfigFileYes_No = "-configFile का उपयोग -noConfigFile के साथ नहीं किया जा सकता"
-		InputSyntaxError = "स्क्रिप्ट में वाक्य रचना त्रुटि: {0}"
+		InputSyntaxError = "स्क्रिप्ट में वाक्य रचना त्रुटि!"
+		SyntaxErrorLineStart = "पंक्ति {0}, स्तंभ {1}:"
 		IdenticalInputOutput = "इनपुट फ़ाइल आउटपुट फ़ाइल के समान है!"
 		CombinedArg_Virtualize_requireAdmin = "-virtualize का उपयोग -requireAdmin के साथ नहीं किया जा सकता"
 		CombinedArg_Virtualize_supportOS = "-virtualize का उपयोग -supportOS के साथ नहीं किया जा सकता"

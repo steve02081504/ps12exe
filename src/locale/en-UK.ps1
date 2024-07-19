@@ -1,4 +1,6 @@
 ﻿@{
+	LangName = "English (United Kingdom)"
+	LangID = "en-UK"
 	# Right click Menu
 	CompileTitle		   = "Compile To EXE"
 	OpenInGUI			   = "Open in ps12exeGUI"
@@ -114,7 +116,8 @@
 		CombinedArg_STA_MTA = "-STA cannot be combined with -MTA"
 		InvalidResourceParam = "Parameter -resourceParams has an invalid key: {0}"
 		CombinedArg_ConfigFileYes_No = "-configFile cannot be combined with -noConfigFile"
-		InputSyntaxError = "Syntax error in script: {0}"
+		InputSyntaxError = "Syntax error in script!"
+		SyntaxErrorLineStart = "At line {0}, Col {1}:"
 		IdenticalInputOutput = "Input file is identical to output file!"
 		CombinedArg_Virtualize_requireAdmin = "-virtualize cannot be combined with -requireAdmin"
 		CombinedArg_Virtualize_supportOS = "-virtualize cannot be combined with -supportOS"
