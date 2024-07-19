@@ -184,9 +184,10 @@ Param(
 	[string]$DllExportList
 )
 $Verbose = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent
+$Debug = $DebugPreference -ne 'SilentlyContinue'
 function RollUp {
 	param ($num = 1, [switch]$InVerbose)
-	if (-not $Verbose -or $InVerbose) {
+	if (-not ($Verbose -or $InVerbose -or $Debug)) {
 		if ($Host.UI.SupportsVirtualTerminal) {
 			Write-Host $([char]27 + '[' + $num + 'A') -NoNewline
 		}
@@ -199,9 +200,10 @@ function RollUp {
 		}
 	}
 }
+if ($Debug) { $DebugPreference = 'Continue' } # fix -debug sets it to 'Inquire'
 #_if PSScript
 	$LocaleLoaderArg = @{ Localize = $Localize }
-	if($nested){ $LocaleLoaderArg.FaildLoadLocaleData = {} }
+	if ($nested) { $LocaleLoaderArg.FaildLoadLocaleData = {} }
 #_endif
 $LocalizeData =
 #_if PSScript
@@ -477,7 +479,7 @@ if ($virtualize) {
 	}
 }
 
-if(!$configFile) {
+if (!$configFile) {
 	foreach ($_ in @("longPaths", "winFormsDPIAware")) {
 		if ($Params[$_]) {
 			Write-I18n Warning "CombinedArg_NoConfigFile_$_" -Category InvalidArgument
@@ -520,7 +522,7 @@ if ($NotFindedCmdlets) {
 try {
 	. $PSScriptRoot\src\InitCompileThings.ps1
 	#_if PSScript
-	if (-not $noConsole -and $AstAnalyzeResult.IsConst -and -not $iconFile) {
+	if (-not $noConsole -and $AstAnalyzeResult.IsConst -and -not $iconFile -and -not $requireAdmin) {
 		# TODO: GUI（MassageBoxW）、icon
 		Write-I18n Verbose TryingTinySharpCompile
 		Write-I18n Host CompilingFile
@@ -539,9 +541,6 @@ try {
 	try {
 		if (!$TinySharpSuccess) {
 			Write-I18n Host CompilingFile
-		}
-		if ($TinySharpSuccess) {}
-		else {
 			if ($targetRuntime -eq 'Framework2.0') { $TargetFramework = ".NETFramework,Version=v2.0" }
 			if ($PSVersionTable.PSEdition -eq "Core") {
 				# unfinished!
@@ -574,7 +573,7 @@ try {
 		#_if PSScript
 		if (-not $TinySharpSuccess) {
 			& $PSScriptRoot\src\ExeSinker.ps1 $outputFile -removeResources:$(
-				$NoResource -and $AstAnalyzeResult.IsConst
+				$NoResource -and $AstAnalyzeResult.IsConst -and -not $requireAdmin
 			) -removeVersionInfo:$($resourceParams.Count -eq 0)
 		}
 		#_endif
@@ -603,7 +602,7 @@ catch {
 		Write-I18n Host RoslynFailedFallback -ForegroundColor Yellow
 		UsingWinPowershell $Params
 	}
-	elseif(!$GuestMode) {
+	elseif (!$GuestMode) {
 		$githubfeedback = "https://github.com/steve02081504/ps12exe/issues/new?assignees=steve02081504&labels=bug&projects=&template=bug-report.yaml"
 		$urlParams = @{
 			title                = "$_"

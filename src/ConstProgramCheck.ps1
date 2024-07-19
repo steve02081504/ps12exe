@@ -26,7 +26,7 @@ public class ps12exeConstEvalHost : PSHost {
     public override void NotifyBeginApplication() { }
     public override void NotifyEndApplication() { }
 }
-"@
+"@ *> $null
 	$myhost = [ps12exeConstEvalHost]::New()
 	$runspace = [runspacefactory]::CreateRunspace($myhost)
 	$runspace.Open()
