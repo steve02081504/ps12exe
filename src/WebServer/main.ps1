@@ -90,11 +90,11 @@ $AsyncResultArray = New-Object System.Collections.ArrayList
 $runspacePool = [runspacefactory]::CreateRunspacePool(1, $MaxCompileThreads)
 $runspacePool.Open()
 
-function HandleWebCompileRequest($userInput, $context) {
+function HandleWebCompileRequest($userInput, $context, $Localize) {
 	Write-Verbose ($LocalizeData.CompilingUserInput -f $userInput)
 	if (!$userInput) {
 		Write-Verbose $LocalizeData.EmptyResponse
-		break
+		return
 	}
 	$clientIP = $context.Request.RemoteEndPoint.Address.ToString()
 	if ($userInput.Length -gt $MaxScriptFileSize -and $clientIP -ne '127.0.0.1') {
@@ -102,7 +102,7 @@ function HandleWebCompileRequest($userInput, $context) {
 		$context.Response.StatusCode = 413
 		$context.Response.ContentType = "text/plain"
 		$buffer = [System.Text.Encoding]::UTF8.GetBytes('File too large')
-		break
+		return
 	}
 	$ipRequestCount[$clientIP]++
 
@@ -112,7 +112,7 @@ function HandleWebCompileRequest($userInput, $context) {
 		$context.Response.StatusCode = 429
 		$context.Response.ContentType = "text/plain"
 		$buffer = [System.Text.Encoding]::UTF8.GetBytes('Too many requests')
-		break
+		return
 	}
 	# hash of user input
 	$userInputHash = [System.Security.Cryptography.SHA256]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($userInput))
@@ -125,12 +125,12 @@ function HandleWebCompileRequest($userInput, $context) {
 	if (Test-Path -Path $compiledExePath -ErrorAction Ignore) {
 		$context.Response.ContentType = "application/octet-stream"
 		$buffer = [System.IO.File]::ReadAllBytes($compiledExePath)
-		break
+		return
 	}
 	$runspace = [powershell]::Create()
 	$runspace.RunspacePool = $runspacePool
 	$AsyncResult = $runspace.AddScript({
-		param ($userInput, $Response, $ScriptRoot, $CacheDir, $compiledExePath, $clientIP)
+		param ($userInput, $Response, $ScriptRoot, $CacheDir, $compiledExePath, $clientIP, $Localize)
 
 		# 加载ps12exe用于处理编译请求
 		Import-Module $ScriptRoot/../../ps12exe.psm1 -ErrorAction Stop
@@ -139,18 +139,22 @@ function HandleWebCompileRequest($userInput, $context) {
 
 		# 编译代码
 		try {
-			$userInput | ps12exe -outputFile $compiledExePath -GuestMode:$($clientIP -ne '127.0.0.1') -ErrorAction Stop
-			$buffer = [System.IO.File]::ReadAllBytes($compiledExePath)
-			$Response.ContentType = "application/octet-stream"
+			$userInput | ps12exe -outputFile $compiledExePath -GuestMode:$($clientIP -ne '127.0.0.1') -ErrorAction Stop -Localize $Localize
 		}
-		catch {
-			# 若ErrorId不是ParseError则写入日志
-			if ($_.ErrorId -ine "ParseError") {
+		catch { $LastExitCode = 1 }
+		if ($LastExitCode) {
+			# 若ErrorId不是ParserError则写入日志
+			$e = $Error[0]
+			if ($e.CategoryInfo.Category -ine "ParserError") {
 				Write-Host "${clientIP}:" -ForegroundColor Red
-				Write-Host $_ -ForegroundColor Red
+				Write-Host $e -ForegroundColor Red
 			}
 			$Response.ContentType = "text/plain"
-			$buffer = [System.Text.Encoding]::UTF8.GetBytes("$_")
+			$buffer = [System.Text.Encoding]::UTF8.GetBytes(($e,$e.TargetObject.Text -join "`n"))
+		}
+		else {
+			$buffer = [System.IO.File]::ReadAllBytes($compiledExePath)
+			$Response.ContentType = "application/octet-stream"
 		}
 
 		$Response.ContentLength64 = $buffer.Length
@@ -161,7 +165,7 @@ function HandleWebCompileRequest($userInput, $context) {
 	}).
 	AddArgument($userInput).AddArgument($context.Response).
 	AddArgument($PSScriptRoot).AddArgument($CacheDir).
-	AddArgument($compiledExePath).AddArgument($clientIP).
+	AddArgument($compiledExePath).AddArgument($clientIP).AddArgument($Localize).
 	BeginInvoke()
 	$AsyncResultArray.Add(@{
 		AsyncHandle = $AsyncResult
@@ -179,12 +183,29 @@ function HandleRequest($context) {
 	}
 	$RequestUrl = $RequestUrl.Substring($HostSubUrl.Length)
 	switch ($RequestUrl) {
-		{ $_ -in ('/compile', '/api/compile', '/api/compile/v1') } {
+		{ $_ -in ('/api/compile', '/api/compile/v1') } {
 			$Reader = New-Object System.IO.StreamReader($context.Request.InputStream)
 			$userInput = $Reader.ReadToEnd()
 			$Reader.Close()
 			$Reader.Dispose()
 			HandleWebCompileRequest $userInput $context
+			return
+		}
+		'/api/compile/v2' {
+			$Reader = New-Object System.IO.StreamReader($context.Request.InputStream)
+			$userInput = $Reader.ReadToEnd()
+			$Reader.Close()
+			$Reader.Dispose()
+			try {
+				$userInput = $userInput | ConvertFrom-Json
+			}
+			catch {
+				$context.Response.StatusCode = 400
+				$context.Response.ContentType = "text/plain"
+				$buffer = [System.Text.Encoding]::UTF8.GetBytes('Invalid JSON')
+				return
+			}
+			HandleWebCompileRequest $userInput.content $context $userInput.locale
 			return
 		}
 		'/bgm.mid' {

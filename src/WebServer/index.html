@@ -56,9 +56,12 @@
 		const a = document.getElementById("downloadLink")
 		function compileCode() {
 			if (!userInput.value) return alert("No code to compile")
-			fetch("./api/compile", {
+			fetch("./api/compile/v2", {
 				method: "POST",
-				body: userInput.value
+				body: JSON.stringify({
+					content: userInput.value,
+					locale: language
+				})
 			})
 			.then(response => response.blob())
 			.then(blob => {

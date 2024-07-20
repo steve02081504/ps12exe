@@ -129,7 +129,7 @@ function SaveCfgFile([string]$ConfigFile) {
 }
 
 function AskSaveCfg {
-	[System.Windows.Forms.MessageBox]::Show($Script:LocalizeData.AskSaveCfg, $Script:LocalizeData.AskSaveCfgTitle, [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question) -eq 'Yes'
+	[System.Windows.Forms.MessageBox]::Show([string]$Script:LocalizeData.AskSaveCfg, [string]$Script:LocalizeData.AskSaveCfgTitle, [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question) -eq 'Yes'
 }
 
 function PauseMusic {

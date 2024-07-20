@@ -183,6 +183,7 @@ Param(
 	[Parameter(DontShow)]
 	[string]$DllExportList
 )
+$global:LastExitCode = 0
 $Verbose = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent
 $Debug = $DebugPreference -ne 'SilentlyContinue'
 $UICultureBackup = [cultureinfo]::CurrentUICulture
@@ -216,7 +217,7 @@ function Show-Help {
 	. $PSScriptRoot\src\HelpShower.ps1 -HelpData $LocalizeData.ConsoleHelpData | Write-Host
 }
 function Write-I18n(
-	[ValidateSet('Info', 'Warning', 'Error', 'Debug', 'Verbose', 'Host')]
+	[ValidateSet('Info', 'Warning', 'Error', 'Debug', 'Verbose', 'Host', 'Output')]
 	$PipeLineType,
 	$Mid,
 	$FormatArgs,
@@ -228,18 +229,20 @@ function Write-I18n(
 ) {
 	$value = $LocalizeData.CompilingI18nData[$Mid] -f $FormatArgs
 	if (!$value) { $value = "fatal error: No i18n data for $Mid, Rest format args: $FormatArgs" }
+	if (!$ForegroundColor) { $ForegroundColor = 'White' }
 	switch ($PipeLineType) {
 		'Info' { Write-Information $value }
 		'Warning' { Write-Warning $value }
 		'Error' {
-			$Host.UI.RawUI.ForegroundColor = "Red"
+			if (!$Exception) { $Exception = [System.Exception]::new($value) }
+			try{$Host.UI.RawUI.ForegroundColor = "Red"}catch{}
 			$Host.UI.WriteErrorLine($value)
-			$Host.UI.RawUI.ForegroundColor = $ForegroundColor
-			if (!$Exception) { $Exception = New-Object System.Exception }
+			try{$Host.UI.RawUI.ForegroundColor = $ForegroundColor}catch{}
 			Write-Error -Exception $Exception -Message $value -Category $Category -ErrorId $ErrorId -TargetObject $TargetObject -ErrorAction SilentlyContinue
 		}
 		'Debug' { Write-Debug $value }
 		'Host' { Write-Host $value -ForegroundColor $ForegroundColor }
+		'Output' { $value }
 		'Verbose' { Write-Verbose $value }
 	}
 }
@@ -251,6 +254,7 @@ if (-not ($inputFile -or $Content)) {
 	Show-Help
 	Write-Host
 	Write-I18n Error NoneInput -Category InvalidArgument
+	$global:LastExitCode = 2
 	return
 }
 
@@ -268,13 +272,13 @@ if (!$nested) {
 	[System.Collections.ArrayList]$DllExportList = @()
 	if ($inputFile -and $Content) {
 		Write-I18n Error BothInputAndContentSpecified -Category InvalidArgument
+		$global:LastExitCode = 2
 		return
 	}
 	. $PSScriptRoot\src\ReadScriptFile.ps1
 	try {
 		if ($inputFile) {
 			$Content = ReadScriptFile $inputFile
-			if (!$Content) { return }
 			if ((bytesOfString $Content) -ne (Get-Item $inputFile -ErrorAction Ignore).Length) {
 				Write-I18n Host PreprocessedScriptSize $(bytesOfString $Content)
 			}
@@ -289,7 +293,14 @@ if (!$nested) {
 		}
 	}
 	catch {
+		$global:LastExitCode = 1
 		return
+	}
+	if ($minifyer -is [string]) {
+		if (Get-Command $minifyer -ErrorAction Ignore) {
+			$minifyer = "$minifyer `$_"
+		}
+		$minifyer = [scriptblock]::Create($minifyer)
 	}
 	if ($minifyer) {
 		Write-I18n Host MinifyingScript
@@ -319,6 +330,7 @@ else {
 	$Content = Get-Content -Raw -LiteralPath $inputFile -Encoding UTF8 -ErrorAction SilentlyContinue
 	if (!$Content) {
 		Write-I18n Error TempFileMissing $inputFile -Category ResourceUnavailable
+		$global:LastExitCode = 3
 		return
 	}
 	if (!$TempDir) {
@@ -338,6 +350,7 @@ $Params.GetEnumerator() | ForEach-Object {
 # 处理兼容旧版参数列表
 if ($x86 -and $x64) {
 	Write-I18n Error CombinedArg_x86_x64 -Category InvalidArgument
+	$global:LastExitCode = 2
 	return
 }
 if ($x86) { $architecture = 'x86' }
@@ -348,6 +361,7 @@ if ($runtime20) {
 	foreach ($_ in @("runtime40", "longPaths", "winFormsDPIAware")) {
 		if ($Params[$_]) {
 			Write-I18n Error "CombinedArg_Runtime20_$_" -Category InvalidArgument
+			$global:LastExitCode = 2
 			return
 		}
 	}
@@ -358,6 +372,7 @@ $Params.targetRuntime = $targetRuntime
 [void]$Params.Remove("runtime20"); [void]$Params.Remove("runtime40")
 if ($STA -and $MTA) {
 	Write-I18n Error CombinedArg_STA_MTA -Category InvalidArgument
+	$global:LastExitCode = 2
 	return
 }
 if ($STA) { $threadingModel = 'STA' }
@@ -378,6 +393,7 @@ $resourceParams.GetEnumerator() | ForEach-Object {
 }
 if ($configFile -and $noConfigFile) {
 	Write-I18n Error CombinedArg_ConfigFileYes_No -Category InvalidArgument
+	$global:LastExitCode = 2
 	return
 }
 if ($noConfigFile) { $configFile = $FALSE }
@@ -402,21 +418,36 @@ else {
 	[cultureinfo]::CurrentUICulture = $UICultureBackup
 }
 if ($SyntaxErrors) {
-	Write-I18n Error -Category ParserError -TargetObject $SyntaxErrors InputSyntaxError
 	$errorData = & $PSScriptRoot/src/SyntaxErrorI18nDataBuilder.ps1 -SyntaxErrors $SyntaxErrors -CodeContent $Content -Localize:$LocalizeData.LangID
 	$lastFullText = $null
+	$ErrMessage = @()
 	foreach ($errinfo in $errorData) {
 		$fullText = ($errinfo.SpoceText + $errinfo.Text) -join "`n"
 		if ($fullText -ne $lastFullText) {
 			$lastFullText = $fullText
-			Write-Host
-			Write-Debug $(($errinfo | ConvertTo-Json) -split "\r?\n" -ne '' -join "`n")
-			Write-I18n Host SyntaxErrorLineStart $errinfo.SpoceText -ForegroundColor Red
-			Write-Host $errinfo.Text
-			Write-Host (" "*($errinfo.Spoce.Column-1) + '^'*([Math]::Max($errinfo.Spoce.ColumnEnd-$errinfo.Spoce.Column,1))) -ForegroundColor Red
+			$ErrMessage += [ordered]@{
+				Split = ''
+				StartLine = Write-I18n Output SyntaxErrorLineStart $errinfo.SpoceText
+				ScriptLine = $errinfo.Text
+				HighlightLine = (" "*($errinfo.Spoce.Column-1) + '^'*([Math]::Max($errinfo.Spoce.ColumnEnd-$errinfo.Spoce.Column,1)))
+				Messages = @()
+			}
 		}
-		Write-Host $errinfo.Message
+		$ErrMessage[-1].Messages += $errinfo.Message
 	}
+	Write-I18n Error -Category ParserError -TargetObject @{
+		Errors = $SyntaxErrors
+		Text = ($ErrMessage | ForEach-Object{ $_.GetEnumerator() | ForEach-Object {$_.Value} }) -join "`n"
+		MessageTree = $ErrMessage
+	} InputSyntaxError
+	$ErrMessage | ForEach-Object{
+		Write-Host $_.Split
+		Write-Host $_.StartLine -ForegroundColor Cyan
+		Write-Host $_.ScriptLine
+		Write-Host $_.HighlightLine -ForegroundColor Red
+		Write-Host ($_.Messages -join "`n")
+	}
+	$global:LastExitCode = 1
 	return
 }
 
@@ -469,8 +500,7 @@ function UsingWinPowershell($Boundparameters) {
 
 	Write-Debug "Starting WinPowershell ps12exe with parameters: $CallParam"
 
-	powershell -noprofile -Command "&'$PSScriptRoot\ps12exe.ps1' $CallParam -nested" | Write-Host
-	return
+	powershell -noprofile -Command "&'$PSScriptRoot\ps12exe.ps1' $CallParam -nested; exit `$LastExitCode" | Write-Host
 }
 if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerShell -and (Get-Command powershell -ErrorAction Ignore)) {
 	UsingWinPowershell $Params
@@ -480,6 +510,7 @@ if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerSh
 
 if ($inputFile -eq $outputFile) {
 	Write-I18n Error IdenticalInputOutput -Category InvalidArgument
+	$global:LastExitCode = 2
 	return
 }
 
@@ -491,6 +522,7 @@ if ($virtualize) {
 	foreach ($_ in @("requireAdmin", "supportOS", "longPaths")) {
 		if ($Params[$_]) {
 			Write-I18n Error "CombinedArg_Virtualize_$_" -Category InvalidArgument
+			$global:LastExitCode = 2
 			return
 		}
 	}
@@ -584,6 +616,7 @@ try {
 
 	if (!(Test-Path $outputFile)) {
 		Write-I18n Error OutputFileNotWritten -Category WriteError
+		$global:LastExitCode = 3
 		return
 	}
 	else {
@@ -620,6 +653,7 @@ catch {
 		UsingWinPowershell $Params
 	}
 	elseif (!$GuestMode) {
+		$global:LastExitCode = 3
 		$githubfeedback = "https://github.com/steve02081504/ps12exe/issues/new?assignees=steve02081504&labels=bug&projects=&template=bug-report.yaml"
 		$urlParams = @{
 			title                = "$_"
@@ -658,3 +692,6 @@ finally {
 		Remove-Item $TempTempDir -Recurse -Force -ErrorAction SilentlyContinue
 	}
 }
+#_if PSEXE
+	#_!! exit $LastExitCode
+#_endif

@@ -114,12 +114,20 @@ $ThreadCheckBoxs | ForEach-Object {
 }
 $Script:refs.CompileButton.add_Click({
 	$Params = Get-ps12exeArgs
-	$result = $null
-	try {
-		$result = ps12exe @Params -Localize $Localize -ErrorAction Stop | Out-String
+	$result = try {
+		ps12exe @Params -Localize $Localize -ErrorAction Stop | Out-String
 	}
-	catch {
-		[System.Windows.Forms.MessageBox]::Show("$($Script:LocalizeData.ErrorHead) $($_.Exception.Message)", $Script:LocalizeData.CompileResult, [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
+	catch { $LastExitCode = 1 }
+	if ($LastExitCode) {
+		$e = $Error[0]
+		$Message = if ($e.CategoryInfo.Category -ine "ParserError") {
+			"$($Script:LocalizeData.ErrorHead) $($e.Exception.Message)"
+		}
+		else {
+			($e,$e.TargetObject.Text) -join "`n"
+		}
+		Write-Host "Message: $Message"
+		[System.Windows.Forms.MessageBox]::Show([string]$Message, $Script:LocalizeData.CompileResult, [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
 		return
 	}
 	if (!$result) { $result = $Script:LocalizeData.DefaultResult }
