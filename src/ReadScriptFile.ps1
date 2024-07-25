@@ -244,12 +244,14 @@ function Preprocessor($Content, $FilePath) {
 			$_
 		}
 	}
+	$NuGetIniter = "try{Import-PackageProvider NuGet}catch{Install-PackageProvider NuGet -Scope CurrentUser -Force -ea Ignore;Import-PackageProvider NuGet -ea Ignore}"
 	$LoadModuleScript = if ($requiredModules.Count -gt 1) {
-		(PSObjectToString $requiredModules -OneLine) + '|%{if(!(gmo $_ -ListAvailable -ea SilentlyContinue)){Install-Module $_ -Scope CurrentUser -Force -ea Stop}}'
+		(PSObjectToString $requiredModules -OneLine) + '|%{if(!(gmo $_ -ListAvailable -ea SilentlyContinue)){'+$NuGetIniter+';Install-Module $_ -Scope CurrentUser -Force -ea Stop}}'
 	}
 	elseif ($requiredModules.Count -eq 1) {
-		"if(!(gmo $requiredModules -ListAvailable -ea SilentlyContinue)){Install-Module $requiredModules -Scope CurrentUser -Force -ea Stop}"
+		"if(!(gmo $requiredModules -ListAvailable -ea SilentlyContinue)){$NuGetIniter;Install-Module $requiredModules -Scope CurrentUser -Force -ea Stop}"
 	}
+	$LoadModuleScript = $LoadModuleScript -join "`n"
 	if ($LoadModuleScript) {
 		$Content = $Content | ForEach-Object {
 			# 在第一次#_require的前方加入$LoadModuleScript
