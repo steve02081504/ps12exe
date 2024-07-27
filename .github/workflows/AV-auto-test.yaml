@@ -1,0 +1,29 @@
+name: AV-auto-test
+on:
+  schedule:
+    - cron: "27 7 * * *"
+  workflow_dispatch:
+        
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - name: compile exe for VT submission
+        shell: pwsh
+        run: |
+          Install-Module -Name ps12exe -Force -Scope CurrentUser
+          @'
+          #_require ps12exe
+          #_pragma Console 0
+          $Number = [bigint]::Parse('${{ github.run_id }}')
+          $NextNumber = $Number+1
+          $NextScript = $PSEXEscript.Replace("Parse('$Number')", "Parse('$NextNumber')")
+          $NextScript | ps12exe -outputFile $PSScriptRoot/$NextNumber.exe *> $null
+          $Number
+          '@ | ps12exe -o ./${{ github.run_id }}.exe
+      - name: VirusTotal Scan
+        uses: crazy-max/ghaction-virustotal@v4
+        with:
+          vt_api_key: ${{ secrets.VT_API_KEY }}
+          files: |
+            ./${{ github.run_id }}.exe
