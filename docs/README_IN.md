@@ -193,6 +193,24 @@ $LocalizeData =
 $result = & "$PSScriptRoot/another.ps1" -args
 ```
 
+#### `#_include_as_(base64|bytes) <valuename> <file|url>`
+
+```powershell
+#_include_as_base64 <valuename> <file|url>
+#_include_as_bytes <valuename> <file|url>
+```
+
+प्रीप्रोसेसर समय पर एक फ़ाइल की सामग्री को बेस64 स्ट्रिंग या बाइट सरणी के रूप में स्क्रिप्ट में शामिल करता है। फ़ाइल सामग्री स्वयं प्रीप्रोसेस नहीं की जाती है।
+
+यहाँ एक साधारण पैकर उदाहरण दिया गया है:
+
+```powershell
+#_include_as_bytes mydata $PSScriptRoot/data.bin
+[System.IO.File]::WriteAllBytes("data.bin", $mydata)
+```
+
+यह EXE निष्पादन पर संकलन के दौरान स्क्रिप्ट में एम्बेडेड `data.bin` फ़ाइल को निकालेगा।
+
 #### `#_!!`
 
 ```powershell

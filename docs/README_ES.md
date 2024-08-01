@@ -193,6 +193,24 @@ En la mayoría de los casos no necesita usar los comandos de preprocesamiento `#
 $resultado = & "$PSScriptRoot/otro.ps1" -args
 ```
 
+#### `#_include_as_(base64|bytes) <valuename> <file|url>`
+
+```powershell
+#_include_as_base64 <valuename> <file|url>
+#_include_as_bytes <valuename> <file|url>
+```
+
+Incluye el contenido de un archivo como una cadena base64 o una matriz de bytes en el script en el momento del preprocesamiento. El contenido del archivo en sí no se preprocesa.
+
+Aquí hay un ejemplo simple de empaquetador:
+
+```powershell
+#_include_as_bytes mydata $PSScriptRoot/data.bin
+[System.IO.File]::WriteAllBytes("data.bin", $mydata)
+```
+
+Este EXE, al ejecutarse, extraerá el archivo `data.bin` incrustado en el script durante la compilación.
+
 #### `#_!!`
 
 ```powershell

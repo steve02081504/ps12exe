@@ -193,6 +193,24 @@ $LocalizeData =
 $result = & "$PSScriptRoot/another.ps1" -args
 ```
 
+#### `#_include_as_(base64|bytes) <valuename> <file|url>`
+
+```powershell
+#_include_as_base64 <valuename> <file|url>
+#_include_as_bytes <valuename> <file|url>
+```
+
+将文件内容在预处理阶段转换为base64字符串或bytes数组插入脚本。文件内容不会被预处理。
+
+以下是一个简单的packer示例：
+
+```powershell
+#_include_as_bytes mydata $PSScriptRoot/data.bin
+[System.IO.File]::WriteAllBytes("data.bin", $mydata)
+```
+
+该exe将在运行后释放编译时被内嵌到脚本中的`data.bin`文件。
+
 #### `#_!!`
 
 ```powershell

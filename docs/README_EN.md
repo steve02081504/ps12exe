@@ -193,6 +193,24 @@ In most cases you don't need to use the `#_if` and `#_include` preprocessing com
 $result = & "$PSScriptRoot/another.ps1" -args
 ```
 
+#### `#_include_as_(base64|bytes) <valuename> <file|url>`
+
+```powershell
+#_include_as_base64 <valuename> <file|url>
+#_include_as_bytes <valuename> <file|url>
+```
+
+Includes the content of a file as a base64 string or byte array at preprocessing time. The file content itself is not preprocessed.
+
+Here's a simple packer example:
+
+```powershell
+#_include_as_bytes mydata $PSScriptRoot/data.bin
+[System.IO.File]::WriteAllBytes("data.bin", $mydata)
+```
+
+This EXE will, upon execution, extract the `data.bin` file embedded in the script during compilation.
+
 #### `#_!!`
 
 ```powershell

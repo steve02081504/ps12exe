@@ -1,4 +1,4 @@
-﻿function BaseReadFile($File) {
+﻿function BaseReadFile($File, $Encoding = 'UTF8') {
 	$Content = if ($File -match "^(https?|ftp)://") {
 		if ($GuestMode) {
 			if ((Invoke-WebRequest $File -Method Head -ErrorAction SilentlyContinue).Headers.'Content-Length' -gt 1mb) {
@@ -10,10 +10,12 @@
 				throw
 			}
 		}
-		(Invoke-WebRequest -Uri $File -ErrorAction SilentlyContinue).Content -replace '^[^\u0000-\u007F]+', ''
+		$result = (Invoke-WebRequest -Uri $File -ErrorAction SilentlyContinue).Content
+		if ($Encoding -ne 'byte') { $result = $result -replace '^[^\u0000-\u007F]+', '' }
+		$result
 	}
 	elseif (-not $GuestMode) {
-		Get-Content -LiteralPath $File -Encoding UTF8 -ErrorAction SilentlyContinue -Raw
+		Get-Content -LiteralPath $File -Encoding $Encoding -ErrorAction SilentlyContinue -Raw
 	}
 	Write-I18n Host ReadingScript @([System.IO.Path]::GetFileName($File), $Content.Length)
 	if (-not $Content) {
@@ -206,7 +208,7 @@ function Preprocessor($Content, $FilePath) {
 		}
 		else { $_ }
 	} |
-	# 处理#_include <file>、#_include_as_value <valuename> <file>
+	# 处理#_include <file>、#_include_as_value <valuename> <file>、#_include_as_(base64|bytes) <valuename> <file>
 	ForEach-Object {
 		if ($_ -match "^\s*#_include\s+(?<rest>.+)\s*") {
 			$file = GetIncludeFilePath $Matches["rest"]
@@ -219,6 +221,18 @@ function Preprocessor($Content, $FilePath) {
 			$IncludeContent = $IncludeContent -join "`n"
 			$IncludeContent = $IncludeContent.Replace("'", "''")
 			"`$$valuename = '$IncludeContent'"
+		}
+		elseif ($_ -match "^\s*#_include_as_(?<type>base64|bytes)\s+(?<valuename>[a-zA-Z_][a-zA-Z_0-9]+)\s+(?<rest>.+)\s*") {
+			$valuename = $Matches["valuename"]
+			$file = GetIncludeFilePath $Matches["rest"]
+			$IncludeContent = BaseReadFile $file Byte
+			$IncludeContent = [System.Convert]::ToBase64String($IncludeContent)
+			if ($Matches["type"] -eq 'bytes') {
+				"`$$valuename = [System.Convert]::FromBase64String('$IncludeContent')"
+			}
+			else {
+				"`$$valuename = '$IncludeContent'"
+			}
 		}
 		else {
 			if ($_ -match '^\s*(?<assign>\$\w+\s*\=\s*)?(?<callopt>\.|&)\s*(?<rest>(\"|)\$PSScriptRoot.+)\s*') {
