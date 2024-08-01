@@ -143,7 +143,7 @@
 		ConfigFileCreated = "EXE の設定ファイルが作成されました"
 		SourceFileCopied = "デバッグ用のソースファイル名がコピーされました：{0}"
 		RoslynFailedFallback = "Roslyn CodeAnalysis に失敗しました`nWindows PowerShell with CodeDom を使用してフォールバックします...`n将来このフォールバックを回避するには、-UseWindowsPowerShell を引数に追加してください`n...または、ps12exe リポジトリに PR を送信してこの問題を修正してください！"
-		ReadingScript = "ファイル {0} を読み取っています ({1}バイト)"
+		ReadingFile = "ファイル {0} を読み取っています ({1}バイト)"
 		ForceX86byVirtualization = "アプリケーション仮想化が有効化されているため、x86 プラットフォームを強制します。"
 		TryingTinySharpCompile = "結果が定数であるため、TinySharp コンパイラを試します..."
 		TinySharpFailedFallback = "TinySharp コンパイラエラー。通常のプログラムフレームにフォールバックします"

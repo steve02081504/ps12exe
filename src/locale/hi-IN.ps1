@@ -143,7 +143,7 @@
 		ConfigFileCreated = "EXE के लिए कॉन्फ़िगरेशन फ़ाइल बनाई गई"
 		SourceFileCopied = "डिबग के लिए स्रोत फ़ाइल नाम कॉपी किया गया: {0}"
 		RoslynFailedFallback = "Roslyn CodeAnalysis विफल`nWindows PowerShell के साथ CodeDom का उपयोग करके वापस गिर रहा है...`nआप भविष्य में इस फ़ॉलबैक को छोड़ने के लिए तर्कों में -UseWindowsPowerShell जोड़ना चाह सकते हैं`n...या ps12exe रिपॉजिटरी में PR सबमिट करें इसे ठीक करने के लिए!"
-		ReadingScript = "फ़ाइल {0} आकार {1} बाइट्स पढ़ रहा है"
+		ReadingFile = "फ़ाइल {0} आकार {1} बाइट्स पढ़ रहा है"
 		ForceX86byVirtualization = "अनुप्रयोग वर्चुअलाइजेशन सक्रिय है, x86 प्लेटफ़ॉर्म को मजबूर कर रहा है।"
 		TryingTinySharpCompile = "स्थिरांक परिणाम, TinySharp संकलक का प्रयास कर रहा है..."
 		TinySharpFailedFallback = "TinySharp संकलक त्रुटि, सामान्य प्रोग्राम फ्रेम पर वापस गिरें"

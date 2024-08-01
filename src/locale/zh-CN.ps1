@@ -143,7 +143,7 @@
 		ConfigFileCreated = "创建了 EXE 的配置文件"
 		SourceFileCopied = "已复制用于调试的源文件名：{0}"
 		RoslynFailedFallback = "Roslyn编译失败`n正在回退到使用带有CodeDom的Windows PowerShell...`n你可能想要在将来将 -UseWindowsPowerShell 添加到参数中以跳过此回退`n...或提交 PR 到 ps12exe 仓库来修复此问题！"
-		ReadingScript = "正在读取{0}，{1}字节"
+		ReadingFile = "正在读取{0}，{1}字节"
 		ForceX86byVirtualization = "已激活应用程序虚拟化，强制使用x86平台。"
 		TryingTinySharpCompile = "结果为常量，尝试 TinySharp 编译器..."
 		TinySharpFailedFallback = "TinySharp 编译器错误，退回正常程序框架"

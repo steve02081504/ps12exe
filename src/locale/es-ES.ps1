@@ -143,7 +143,7 @@
 		ConfigFileCreated = "Se creó el archivo de configuración para EXE"
 		SourceFileCopied = "Nombre de archivo fuente copiado para depuración: {0}"
 		RoslynFailedFallback = "Falló Roslyn CodeAnalysis`nRetrocediendo a Usar Windows PowerShell con CodeDom...`nEs posible que desee agregar -UseWindowsPowerShell a los argumentos para omitir este retroceso en el futuro.`n...o envíe un PR al repositorio ps12exe para solucionarlo!"
-		ReadingScript = "Leyendo {0}, tamaño {1} bytes"
+		ReadingFile = "Leyendo {0}, tamaño {1} bytes"
 		ForceX86byVirtualization = "Se activó la virtualización de aplicaciones, forzando la plataforma x86."
 		TryingTinySharpCompile = "Resultado constante, intentando el compilador TinySharp..."
 		TinySharpFailedFallback = "Error del compilador TinySharp, retroceso al marco de programa normal"

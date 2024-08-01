@@ -17,7 +17,7 @@
 	elseif (-not $GuestMode) {
 		Get-Content -LiteralPath $File -Encoding $Encoding -ErrorAction SilentlyContinue -Raw
 	}
-	Write-I18n Host ReadingScript @([System.IO.Path]::GetFileName($File), $Content.Length)
+	Write-I18n Host ReadingFile @([System.IO.Path]::GetFileName($File), $Content.Length)
 	if (-not $Content) {
 		Write-I18n Error ReadFileFailed $File -Category ReadError
 		throw

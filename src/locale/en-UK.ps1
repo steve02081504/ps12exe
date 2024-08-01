@@ -143,7 +143,7 @@
 		ConfigFileCreated = "Config file for EXE created"
 		SourceFileCopied = "Source file name for debug copied: {0}"
 		RoslynFailedFallback = "Roslyn CodeAnalysis failed`nFalling back to Use Windows Powershell with CodeDom...`nYou may want to add -UseWindowsPowerShell to args to skip this fallback in future.`n...or submit a PR to ps12exe repo to fix this!"
-		ReadingScript = "Reading file {0} size {1} bytes"
+		ReadingFile = "Reading file {0} size {1} bytes"
 		ForceX86byVirtualization = "Application virtualization is activated, forcing x86 platfom."
 		TryingTinySharpCompile = "Const result, trying TinySharp Compiler..."
 		TinySharpFailedFallback = "TinySharp Compiler error, fail back to normal program frame"
