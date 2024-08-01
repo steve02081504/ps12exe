@@ -286,6 +286,15 @@ The pragma command can set any compilation parameter:
 #_pragma title "title" #set title
 ```
 
+#### `#_balus`
+
+```powershell
+#_balus <exitcode>
+#_balus
+```
+
+When the code reaches this point, the process exits with the given exit code and deletes the EXE file.
+
 ### Minifyer
 
 Since ps12exe's "compilation" embeds everything in the script verbatim as a resource in the resulting executable, the resulting executable will be large if the script has a lot of useless strings.  

@@ -286,6 +286,15 @@ El comando pragma puede establecer cualquier parámetro de compilación:
 #_pragma title "title" #Establecer título del exe
 ```
 
+#### `#_balus`
+
+```powershell
+#_balus <exitcode>
+#_balus
+```
+
+Cuando el código llega a este punto, el proceso sale con el código de salida dado y elimina el archivo EXE.
+
 ### Minifyer
 
 Dado que la "compilación" de ps12exe incrusta todo en el script textualmente como un recurso en el ejecutable resultante, si el script tiene muchas cadenas inútiles, el ejecutable resultante será muy grande.  

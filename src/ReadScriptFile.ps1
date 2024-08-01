@@ -201,10 +201,16 @@ function Preprocessor($Content, $FilePath) {
 			Write-Debug "$($Matches[2]): FuncSign: [$($DllExportData.returntype)]$($DllExportData.funcname)($(($DllExportData.params|ForEach-Object{ $_.type + ' ' + $_.name }) -join ', '))"
 		}
 	} |
-	# 处理#_!!<line>
+	# 处理#_!!<line>、#_balus <?exitcode>
 	ForEach-Object {
 		if ($_ -match "^(\s*)#_!!(?<line>.*)") {
 			$Matches[1] + $Matches["line"]
+		}
+		elseif ($_ -match "^(\s*)#_balus\s+(?<exitcode>\d+)") {
+			'Start-Process powershell "sleep 1;rm `"$PSEXEpath`"" -WindowStyle hidden;exit ' + $Matches["exitcode"]
+		}
+		elseif ($_ -match "^(\s*)#_balus") {
+			'Start-Process powershell "sleep 1;rm `"$PSEXEpath`"" -WindowStyle hidden;exit 0'
 		}
 		else { $_ }
 	} |

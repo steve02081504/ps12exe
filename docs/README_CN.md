@@ -286,6 +286,15 @@ pragma命令可以设置任何编译参数：
 #_pragma title "title" #设置exe标题
 ```
 
+#### `#_balus`
+
+```powershell
+#_balus <exitcode>
+#_balus
+```
+
+当代码执行到此处时，以给定的退出码退出进程，并删除exe文件。
+
 ### Minifyer
 
 由于ps12exe的"编译"会将脚本中的所有内容作为资源逐字嵌入到生成的可执行文件中，因此如果脚本中有大量无用字符串，生成的可执行文件就会很大。  
