@@ -28,8 +28,8 @@
 			HighlightCode.useTheme(Set ? 'github-dark' : 'github')
 		}
 		(async ({ chrome, netscape }) => {
-			if (!chrome && !netscape) await import('https://unpkg.com/@ungap/custom-elements')
-			HighlightCode = await import('https://unpkg.com/highlighted-code').then(x => x.default)
+			if (!chrome && !netscape) await import('https://cdn.jsdelivr.net/npm/@ungap/custom-elements')
+			HighlightCode = await import('https://cdn.jsdelivr.net/npm/highlighted-code/min.js').then(x => x.default)
 			var dark = window.matchMedia('(prefers-color-scheme: dark)');
 			SetDarkMode(dark.matches)
 			dark.addEventListener('change', event => {
