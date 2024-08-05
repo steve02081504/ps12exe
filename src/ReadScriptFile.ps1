@@ -139,7 +139,7 @@ function Preprocessor($Content, $FilePath) {
 					$Params["no$pragmaname"] = [Switch]-not $value
 				}
 			}
-			elseif ($ParamList[$pragmaname].ParameterType -eq [string]) {
+			elseif ($ParamList[$pragmaname].ParameterType -eq [string] -or $ParamList[$pragmaname+"File"].ParameterType -eq [string]) {
 				if ($value -match '^\"(?<value>[^\"]*)\"\s*(?!#.*)') {
 					$value = $Matches["value"].Replace('$PSScriptRoot', $ScriptRoot)
 				}
@@ -149,7 +149,12 @@ function Preprocessor($Content, $FilePath) {
 				else {
 					$value = $value.Replace('$PSScriptRoot', $ScriptRoot)
 				}
-				$Params[$pragmaname] = $value
+				if ($ParamList[$pragmaname].ParameterType -eq [string]) {
+					$Params[$pragmaname] = $value
+				}
+				elseif ($ParamList[$pragmaname+"File"].ParameterType -eq [string]) {
+					$Params[$pragmaname+"File"] = $value
+				}
 			}
 			elseif ($ParamList[$pragmaname].ParameterType) {
 				Write-I18n Warning UnknownPragmaBadParameterType $($pragmaname, $ParamList[$pragmaname].ParameterType)
