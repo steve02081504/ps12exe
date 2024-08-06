@@ -126,6 +126,7 @@
 		CombinedArg_NoConfigFile_winFormsDPIAware = "एक कॉन्फ़िगरेशन फ़ाइल के निर्माण को मजबूर करना, क्योंकि विकल्प -winFormsDPIAware को इसकी आवश्यकता होती है"
 		SomeCmdletsMayNotAvailable = "उपयोग किए गए Cmdlets {0} लेकिन रनटाइम में उपलब्ध नहीं हो सकते हैं, सुनिश्चित करें कि आपने उनकी जांच की है!"
 		SomeNotFindedCmdlets = "अज्ञात कार्यों {0} का उपयोग किया गया"
+		SomeTypesMayNotAvailable = "उपयोग किए गए टाइप {0} रनटाइम में उपलब्ध नहीं हो सकते हैं, सुनिश्चित करें कि आपने उनकी जांच की है!"
 		CompilingFile = "संकलन..."
 		CompilationFailed = "संकलन विफल!"
 		OutputFileNotWritten = "आउटपुट फ़ाइल {0} नहीं लिखी गई"

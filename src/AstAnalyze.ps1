@@ -20,12 +20,14 @@ function AstAnalyze($Ast) {
 	$script:ConstCommands = @('Write-Host', 'echo', 'Write-Output', 'Write-Debug', 'Write-Information', 'ConvertFrom-Json', 'ConvertTo-Json', 'Write-Host')
 	$script:ConstVariables = @('?', '^', '$', 'Error', 'false', 'IsCoreCLR', 'IsLinux', 'IsMacOS', 'IsWindows', 'null', 'true', 'PSEXEScript', 'Write-Host')
 	$script:ConstTypes = @('Boolean', 'Char', 'DateTime', 'Decimal', 'Double', 'Int16', 'Int32', 'Int64', 'Int8', 'Int', 'Single', 'String', 'UInt16', 'UInt32', 'UInt64', 'UInt8', 'Void', 'Regex', 'System.Text.RegularExpressions.RegexOptions', 'HashTable', 'OrderedDictionary', 'PSObject', 'PSVariable', 'PSNoteProperty', 'PSMemberInfo', 'PSCustomObject', 'Math', 'Array', 'ref', 'Guid')
+	$script:ConstAttributes = @('cmdletbinding', 'cmdlet', 'parameter', 'alias')
 	$script:EffectVariables = @('ConfirmPreference', 'DebugPreference', 'EnabledExperimentalFeatures', 'ErrorActionPreference', 'ErrorView', 'ExecutionContext', 'FormatEnumerationLimit', 'HOME', 'Host', 'InformationPreference', 'input', 'MaximumHistoryCount', 'MyInvocation', 'NestedPromptLevel', 'OutputEncoding', 'PID', 'PROFILE', 'ProgressPreference', 'PSBoundParameters', 'PSCommandPath', 'PSCulture', 'PSDefaultParameterValues', 'PSEdition', 'PSEmailServer', 'PSGetAPI', 'PSHOME', 'PSNativeCommandArgumentPassing', 'PSNativeCommandUseErrorActionPreference', 'PSScriptRoot', 'PSSessionApplicationName', 'PSSessionConfigurationName', 'PSSessionOption', 'PSStyle', 'PSUICulture', 'PSVersionTable', 'PWD', 'ShellId', 'StackTrace', 'VerbosePreference', 'WarningPreference', 'WhatIfPreference')
 	$script:AnalyzeResult = @{
 		IsConst                  = $true
 		ImporttedExternalScripts = $false
 		UsedNonConstVariables    = @()
 		UsedNonConstFunctions    = @()
+		UsedNonConstTypes        = @()
 	}
 	$script:ConstTypes = $script:ConstTypes | ForEach-Object { ($_ -as [Type]).FullName } | Where-Object { $_ -ne $null }
 	function IsConstType([string]$typename) {
@@ -89,6 +91,12 @@ function AstAnalyze($Ast) {
 			}
 			$script:ConstCommands = $ConstCommandsBackup
 			$script:ConstVariables = $ConstVariablesBackup
+		}
+		elseif ($Ast -is [System.Management.Automation.Language.AttributeAst]) {
+			if ($script:ConstAttributes -notcontains $Ast.TypeName.FullName) {
+				$script:AnalyzeResult.IsConst = $false
+				$script:AnalyzeResult.UsedNonConstTypes += $Ast.TypeName.FullName
+			}
 		}
 		return $false
 	}

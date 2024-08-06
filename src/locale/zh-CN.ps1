@@ -126,6 +126,7 @@
 		CombinedArg_NoConfigFile_winFormsDPIAware = "强制生成配置文件，因为选项 -winFormsDPIAware 需要此配置文件"
 		SomeCmdletsMayNotAvailable = "使用了可能会在运行时不可用的命令 {0}，确保已检查它们！"
 		SomeNotFindedCmdlets = "使用了未知的命令 {0}"
+		SomeTypesMayNotAvailable = "使用了可能会在运行时不可用的类型 {0}，确保已检查它们！"
 		CompilingFile = "编译中..."
 		CompilationFailed = "编译失败！"
 		OutputFileNotWritten = "未写入输出文件 {0}"

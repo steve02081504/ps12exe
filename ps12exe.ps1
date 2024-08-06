@@ -562,11 +562,20 @@ $AstAnalyzeResult.UsedNonConstFunctions | ForEach-Object {
 		}
 	}
 }
+$NotFindedTypes = @()
+$AstAnalyzeResult.UsedNonConstTypes | ForEach-Object {
+	if (!($_ -as [Type])) {
+		$NotFindedTypes += $_
+	}
+}
 if ($FindedCmdlets) {
 	Write-I18n Warning SomeCmdletsMayNotAvailable $($FindedCmdlets -join '、')
 }
 if ($NotFindedCmdlets) {
 	Write-I18n Warning SomeNotFindedCmdlets $($NotFindedCmdlets -join '、')
+}
+if ($NotFindedTypes) {
+	Write-I18n Warning SomeTypesMayNotAvailable $($NotFindedTypes -join '、')
 }
 try {
 	. $PSScriptRoot\src\InitCompileThings.ps1
@@ -676,6 +685,7 @@ $($_ | Format-List | Out-String)
 		}
 		Write-I18n Host OppsSomethingWentWrong -ForegroundColor Yellow
 		$versionNow = Get-Module -ListAvailable ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1
+		if ($versionNow.Version -eq '0.0.0') { break }
 		$versionOnline = Find-Module ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1
 		if ("$($versionNow.Version)" -ne "$($versionOnline.Version)") {
 			Write-I18n Host TryUpgrade $($versionOnline.Version) -ForegroundColor Yellow

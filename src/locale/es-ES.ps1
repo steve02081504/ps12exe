@@ -126,6 +126,7 @@
 		CombinedArg_NoConfigFile_winFormsDPIAware = "Forzando la generación de un archivo de configuración, ya que la opción -winFormsDPIAware lo requiere"
 		SomeCmdletsMayNotAvailable = "¡Se usaron cmdlets {0} pero pueden no estar disponibles en tiempo de ejecución, asegúrese de haberlos verificado!"
 		SomeNotFindedCmdlets = "Se usaron funciones desconocidas {0}"
+		SomeTypesMayNotAvailable = "¡Se usaron tipos {0} pero pueden no estar disponibles en tiempo de ejecución, asegúrese de haberlos verificado!"
 		CompilingFile = "Compilando archivo..."
 		CompilationFailed = "¡Falló la compilación!"
 		OutputFileNotWritten = "No se escribió el archivo de salida {0}"
