@@ -127,6 +127,7 @@
 		SomeCmdletsMayNotAvailable = "実行時に利用できない可能性のあるコマンドレット {0} が使用されています。確認してください！"
 		SomeNotFindedCmdlets = "未知の命令 {0} が使用されています"
 		SomeTypesMayNotAvailable = "実行時に利用できない可能性のある型 {0} が使用されています。確認してください！"
+		TopLevelNoCmdletBindingFound = "このプログラムにはパラメータブロックがありますが、パラメータブロックにCmdletBinding属性がありません。そのため、完成したプログラムがパラメータを受け取れなくなる可能性があります。"
 		CompilingFile = "コンパイル中..."
 		CompilationFailed = "コンパイルに失敗しました！"
 		OutputFileNotWritten = "出力ファイル {0} が書き込まれませんでした"

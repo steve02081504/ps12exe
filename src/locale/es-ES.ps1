@@ -127,6 +127,7 @@
 		SomeCmdletsMayNotAvailable = "¡Se usaron cmdlets {0} pero pueden no estar disponibles en tiempo de ejecución, asegúrese de haberlos verificado!"
 		SomeNotFindedCmdlets = "Se usaron funciones desconocidas {0}"
 		SomeTypesMayNotAvailable = "¡Se usaron tipos {0} pero pueden no estar disponibles en tiempo de ejecución, asegúrese de haberlos verificado!"
+		TopLevelNoCmdletBindingFound = "El programa tiene un bloque de parámetros, pero el bloque de parámetros no tiene el atributo CmdletBinding. Esto puede hacer que el programa final no pueda recibir parámetros."
 		CompilingFile = "Compilando archivo..."
 		CompilationFailed = "¡Falló la compilación!"
 		OutputFileNotWritten = "No se escribió el archivo de salida {0}"

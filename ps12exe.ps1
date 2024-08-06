@@ -472,6 +472,9 @@ if ($SyntaxErrors) {
 	$global:LastExitCode = 1
 	return
 }
+elseif (!$AST) {
+	$AST = [System.Management.Automation.Language.Parser]::ParseInput($Content, [ref]$null, [ref]$null)
+}
 
 # retrieve absolute paths independent if path is given relative oder absolute
 if (-not $inputFile) {
@@ -563,6 +566,19 @@ if (!$configFile) {
 $resourceParamKeys | ForEach-Object {
 	if ($resourceParams.ContainsKey($_)) {
 		$resourceParams[$_] = $resourceParams[$_] -replace "\\", "\\"
+	}
+}
+
+if ($AST.ParamBlock) {
+	$hasCmdletBinding = $false
+	foreach ($param in $AST.ParamBlock.Attributes) {
+		if ($param.TypeName.Name -eq 'CmdletBinding') {
+			$hasCmdletBinding = $true
+			break
+		}
+	}
+	if (!$hasCmdletBinding) {
+		Write-I18n Warning TopLevelNoCmdletBindingFound
 	}
 }
 
