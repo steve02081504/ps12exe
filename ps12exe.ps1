@@ -95,6 +95,12 @@ the target runtime to compile for. Possible values are 'Framework4.0' or 'Framew
 .PARAMETER GuestMode
 Compile scripts with additional protection, prevent native files from being accessed
 
+.PARAMETER Localize
+The language code to be used for server-side logging
+
+.PARAMETER help
+Display localized help message
+
 .EXAMPLE
 ps12exe C:\Data\MyScript.ps1
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScript.exe as console executable
@@ -143,43 +149,59 @@ Param(
 	[Switch]$GuestMode,
 	[string]$Localize,
 	[Switch]$help,
-	# TODO，不进入文档
+	# TODO
+	# in dev, not support yet
 	[Parameter(DontShow)]
 	[switch]$UseWindowsPowerShell = $true,
-	# 兼容旧版参数列表，不进入文档
+	# deprecated. use `-noConfigFile` instead.
 	[Parameter(DontShow)]
 	[Switch]$noConfigFile,
+	# deprecated. use `-Architecture x86` instead.
 	[Parameter(DontShow)]
 	[Switch]$x86,
+	# deprecated. use `-Architecture x64` instead.
 	[Parameter(DontShow)]
 	[Switch]$x64,
+	# deprecated. use `-ThreadModel STA` instead.
 	[Parameter(DontShow)]
 	[Switch]$STA,
+	# deprecated. use `-ThreadModel MTA` instead.
 	[Parameter(DontShow)]
 	[Switch]$MTA,
+	# deprecated. use `-resourceParams {iconFile = $iconFile}` instead.
 	[Parameter(DontShow)]
 	[String]$iconFile,
+	# deprecated. use `-resourceParams {title = $title}` instead.
 	[Parameter(DontShow)]
 	[String]$title,
+	# deprecated. use `-resourceParams {description = $description}` instead.
 	[Parameter(DontShow)]
 	[String]$description,
+	# deprecated. use `-resourceParams {company = $company}` instead.
 	[Parameter(DontShow)]
 	[String]$company,
+	# deprecated. use `-resourceParams {product = $product}` instead.
 	[Parameter(DontShow)]
 	[String]$product,
+	# deprecated. use `-resourceParams {copyright = $copyright}` instead.
 	[Parameter(DontShow)]
 	[String]$copyright,
+	# deprecated. use `-resourceParams {trademark = $trademark}` instead.
 	[Parameter(DontShow)]
 	[String]$trademark,
+	# deprecated. use `-resourceParams {version = $version}` instead.
 	[Parameter(DontShow)]
 	[String]$version,
+	# deprecated. use `-targetRuntime Framework2.0` instead.
 	[Parameter(DontShow)]
 	[Switch]$runtime20,
+	# deprecated. use `-targetRuntime Framework4.0` instead.
 	[Parameter(DontShow)]
 	[Switch]$runtime40,
-	# 内部参数，不进入文档
+	# internal. do not use it unless you know what you are doing.
 	[Parameter(DontShow)]
 	[Switch]$nested,
+	# internal. do not use it unless you know what you are doing.
 	[Parameter(DontShow)]
 	[string]$DllExportList
 )
