@@ -148,33 +148,33 @@ namespace TinySharp {
 				));
 			}
 
-			// Add urctbase module reference
-			var baseLibrary = allASCIIoutput ? "ucrtbase" : "Kernel32";
-			if (hasOutput)
+			if (hasOutput) {
+				// Add urctbase module reference
+				var baseLibrary = allASCIIoutput ? "ucrtbase" : "Kernel32";
 				tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex(baseLibrary)));
 
-			// Add P/Invoke metadata to the puts method.
-			if (hasOutput)
-			if (allASCIIoutput)
-				tablesStream.GetTable<ImplementationMapRow>().Add(new ImplementationMapRow(
-					ImplementationMapAttributes.CallConvCdecl,
-					tablesStream.GetIndexEncoder(CodedIndex.MemberForwarded).EncodeToken(new MetadataToken(TableIndex.Method, 1)),
-					stringsStreamBuffer.GetStringIndex("puts"),
-					1
-				));
-			else {
-				tablesStream.GetTable<ImplementationMapRow>().Add(new ImplementationMapRow(
-					ImplementationMapAttributes.CallConvCdecl,
-					tablesStream.GetIndexEncoder(CodedIndex.MemberForwarded).EncodeToken(new MetadataToken(TableIndex.Method, 1)),
-					stringsStreamBuffer.GetStringIndex("GetStdHandle"),
-					1
-				));
-				tablesStream.GetTable<ImplementationMapRow>().Add(new ImplementationMapRow(
-					ImplementationMapAttributes.CallConvCdecl,
-					tablesStream.GetIndexEncoder(CodedIndex.MemberForwarded).EncodeToken(new MetadataToken(TableIndex.Method, 2)),
-					stringsStreamBuffer.GetStringIndex("WriteConsoleW"),
-					1
-				));
+				// Add P/Invoke metadata to the puts method.
+				if (allASCIIoutput)
+					tablesStream.GetTable<ImplementationMapRow>().Add(new ImplementationMapRow(
+						ImplementationMapAttributes.CallConvCdecl,
+						tablesStream.GetIndexEncoder(CodedIndex.MemberForwarded).EncodeToken(new MetadataToken(TableIndex.Method, 1)),
+						stringsStreamBuffer.GetStringIndex("puts"),
+						1
+					));
+				else {
+					tablesStream.GetTable<ImplementationMapRow>().Add(new ImplementationMapRow(
+						ImplementationMapAttributes.CallConvCdecl,
+						tablesStream.GetIndexEncoder(CodedIndex.MemberForwarded).EncodeToken(new MetadataToken(TableIndex.Method, 1)),
+						stringsStreamBuffer.GetStringIndex("GetStdHandle"),
+						1
+					));
+					tablesStream.GetTable<ImplementationMapRow>().Add(new ImplementationMapRow(
+						ImplementationMapAttributes.CallConvCdecl,
+						tablesStream.GetIndexEncoder(CodedIndex.MemberForwarded).EncodeToken(new MetadataToken(TableIndex.Method, 2)),
+						stringsStreamBuffer.GetStringIndex("WriteConsoleW"),
+						1
+					));
+				}
 			}
 
 			// Define assembly manifest.
@@ -210,8 +210,8 @@ namespace TinySharp {
 
 			return result;
 		}
-		private DataSegment OutSegment = null;
-		private IPEImage Image = null;
+		private DataSegment OutSegment;
+		private IPEImage Image;
 		public void Build(string OutFile) {
 			// Assemble PE file.
 			var file = new MyBuilder().CreateFile(this.Image);

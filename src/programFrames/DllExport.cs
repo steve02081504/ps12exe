@@ -14,7 +14,7 @@ using RGiesecke.DllExport;
 using System.Runtime.Versioning;
 
 namespace PSRunnerNS {
-	partial class PSRunnerEntry {
+	partial static class PSRunnerEntry {
 		// DllInitChecker
 		[$threadingModelThread]
 		public static void DllInitChecker() {
@@ -53,7 +53,7 @@ namespace PSRunnerNS {
 		public static int DllExportExample(int a, int b) {
 			DllInitChecker();
 			if(me.ShouldExit)
-				throw new System.Exception(me.pwsh.InvocationStateInfo.Reason.Message);
+				throw new System.TypeUnloadedException(me.pwsh.InvocationStateInfo.Reason.Message);
 			//set parameters as variables in psrunspace
 			me.PSRunSpace.SessionStateProxy.SetVariable("PSEXEDLLCallIngParameters", new System.Collections.ArrayList{a, b});
 			me.pwsh.AddScript("DllExportExample @PSEXEDLLCallIngParameters");
@@ -75,9 +75,7 @@ namespace PSRunnerNS {
 				if (me.ShouldExit) break;
 
 			if(me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed)
-				throw new System.Exception(me.pwsh.InvocationStateInfo.Reason.Message);
-			if(me.ShouldExit)
-				throw new System.Exception(me.pwsh.InvocationStateInfo.Reason.Message);
+				throw new System.InternalErrorException(me.pwsh.InvocationStateInfo.Reason.Message);
 
 			//if only one object is in colOutput, return it
 			if(colOutput.Count == 1)

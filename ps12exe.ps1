@@ -569,18 +569,6 @@ $resourceParamKeys | ForEach-Object {
 	}
 }
 
-if ($AST.ParamBlock) {
-	$hasCmdletBinding = $false
-	foreach ($param in $AST.ParamBlock.Attributes) {
-		if ($param.TypeName.Name -eq 'CmdletBinding') {
-			$hasCmdletBinding = $true
-			break
-		}
-	}
-	if (!$hasCmdletBinding) {
-		Write-I18n Warning TopLevelNoCmdletBindingFound
-	}
-}
 
 . $PSScriptRoot\src\AstAnalyze.ps1
 $AstAnalyzeResult = AstAnalyze $Ast
@@ -598,6 +586,19 @@ $AstAnalyzeResult.UsedNonConstFunctions | ForEach-Object {
 		elseif (-not $_.Contains(']::')) {
 			$NotFindedCmdlets += $_
 		}
+	}
+}
+if ($AST.ParamBlock) {
+	$hasCmdletBinding = $false
+	foreach ($param in $AST.ParamBlock.Attributes) {
+		if ($param.TypeName.Name -eq 'CmdletBinding') {
+			$hasCmdletBinding = $true
+			$AstAnalyzeResult.IsConst = $false
+			break
+		}
+	}
+	if (!$hasCmdletBinding) {
+		Write-I18n Warning TopLevelNoCmdletBindingFound
 	}
 }
 $NotFindedTypes = @()

@@ -1952,7 +1952,7 @@ namespace PSRunnerNS {
 					ScriptBlockAst AST = Parser.ParseInput(script, exepath, out tokens, out errors);
 					this.PSRunSpace.SessionStateProxy.SetVariable("PSEXECodeBlock", AST.GetScriptBlock());
 					if(errors.Length > 0)
-						throw new System.Exception(errors[0].Message);
+						throw new System.InvalidProgramException(errors[0].Message);
 				#endif
 			}
 		}
@@ -1980,7 +1980,7 @@ namespace PSRunnerNS {
 			#endif
 		}
 	}
-	class PSRunnerEntry {
+	static class PSRunnerEntry {
 		static PSRunner me;
 
 		// EXEMain

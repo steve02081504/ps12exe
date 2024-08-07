@@ -30,7 +30,7 @@ using System.Runtime.Versioning;
 #endif
 
 namespace PSRunnerNS {
-	internal class PSRunnerEntry {
+	internal static class PSRunnerEntry {
 		private static int Main() {
 			#if !noOutput
 				#if UNICODEEncoding && !noConsole
