@@ -39,9 +39,14 @@
 	}
 	GUIHelpData			   = @{
 		title	   = "使用方法："
-		Usage	   = "ps12exeGUI [[-ConfigFile] '<設定ファイル>'] [-Localize '<言語コード>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]"
+		Usage	   = @"
+ps12exeGUI [[-ConfigFile] '<設定ファイル>'] [-PS1File '<スクリプトファイル>'] [-Localize '<言語コード>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+
+ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コード>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+"@
 		PrarmsData = [ordered]@{
 			ConfigFile	= "読み込む設定ファイル。"
+			PS1File		= "コンパイルするスクリプトファイル。"
 			Localize	= "使用する言語コード。"
 			UIMode		= "使用するユーザーインターフェースモード。"
 			help		= "このヘルプ情報を表示します。"

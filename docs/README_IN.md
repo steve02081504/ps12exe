@@ -81,11 +81,14 @@ Start-ps12exeWebServer
 ### जीयूआई पैरामीटर
 
 ```powershell
-ps12exeGUI [[-ConfigFile] '<कॉन्फ़िगरेशन फ़ाइल>'] [-Localize '<भाषा कोड>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-ConfigFile] '<कॉन्फ़िगरेशन फ़ाइल>'] [-PS1File '<स्क्रिप्ट फ़ाइल>'] [-Localize '<भाषा कोड>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+
+ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize '<भाषा कोड>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 ```
 
 ```text
 ConfigFile : लोड करने के लिए कॉन्फ़िगरेशन फ़ाइल।
+PS1File    : कंपाइल करने के लिए स्क्रिप्ट फ़ाइल।
 Localize   : उपयोग किया जाने वाला भाषा कोड।
 UIMode     : उपयोग किया जाने वाला उपयोगकर्ता इंटरफेस मोड।
 help       : इस मदद सूचना को दिखाएँ।

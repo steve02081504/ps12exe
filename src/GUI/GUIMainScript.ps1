@@ -13,6 +13,7 @@
 #region Other Actions Before ShowDialog
 
 if ($ConfigFile) {
+	[string]$Script:ConfigFile = Resolve-Path -LiteralPath $ConfigFile
 	# if file not exists or empty
 	if (!(Test-Path $ConfigFile) -or (Get-Item $ConfigFile).Length -eq 0) {
 		SetCfgFile $ConfigFile
@@ -23,10 +24,14 @@ if ($ConfigFile) {
 }
 
 if ($PS1File) {
-	if (-not $ConfigFile) {
+	[string]$PS1File = Resolve-Path -LiteralPath $PS1File
+	if (-not $Script:ConfigFile) {
 		SetCfgFile "$($PS1File.Substring(0, $PS1File.LastIndexOf('.'))).psccfg"
 	}
-	$Script:refs.CompileFileTextBox.Text = "./$(Split-Path $PS1File -Leaf)" #以相对路径存储
+	# 计算相对于$ConfigFile的相对路径
+	$PS1FilePath = Resolve-Path -LiteralPath $PS1File -Relative -RelativeBasePath (Split-Path $ConfigFile)
+	if (!$PS1FilePath) { $PS1FilePath = "./$(Split-Path $PS1File -Leaf)" }
+	$Script:refs.CompileFileTextBox.Text = $PS1FilePath
 }
 
 try {

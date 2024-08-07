@@ -39,9 +39,14 @@
 	}
 	GUIHelpData			   = @{
 		title	   = "用法："
-		Usage	   = "ps12exeGUI [[-ConfigFile] '<配置文件>'] [-Localize '<语言代码>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]"
+		Usage	   = @"
+ps12exeGUI [[-ConfigFile] '<配置文件>'] [-PS1File '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+
+ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+"@
 		PrarmsData = [ordered]@{
 			ConfigFile	= "要加载的配置文件。"
+			PS1File		= "要编译的脚本文件。"
 			Localize	= "要使用的语言代码。"
 			UIMode		= "要使用的用户界面模式。"
 			help		= "显示此帮助信息。"

@@ -94,7 +94,6 @@ function Get-ps12exeArgs {
 	$UIData.GetEnumerator() | Where-Object { $_.Value -eq '' } | ForEach-Object { $result.Remove($_.Key) }
 	$result
 }
-$Script:ConfigFile = ''
 function SetCfgFile([string]$ConfigFile) {
 	$Script:refs.CfgFileLabel.Text = $Script:LocalizeData.CfgFileLabelHead + $ConfigFile
 	$script:ConfigFile = $ConfigFile

@@ -1,6 +1,5 @@
 ﻿#Requires -Version 5.0
 
-#_if PSScript
 <#
 .SYNOPSIS
 ps12exeGUI is a GUI tool for ps12exe.
@@ -8,6 +7,8 @@ ps12exeGUI is a GUI tool for ps12exe.
 ps12exeGUI is a GUI tool for ps12exe.
 .PARAMETER ConfigFile
 The path of the configuration file.
+.PARAMETER PS1File
+The path of the script file.
 .PARAMETER Localize
 The language code to use.
 .PARAMETER UIMode
@@ -17,26 +18,31 @@ Show this help message.
 .EXAMPLE
 ps12exeGUI -Localize 'en-UK' -UIMode 'Light'
 .EXAMPLE
-ps12exeGUI -ConfigFile 'ps12exe.json' -Localize 'en-UK' -UIMode 'Dark'
+ps12exeGUI -ConfigFile 'proj.psccfg' -Localize 'en-UK' -UIMode 'Dark'
 .EXAMPLE
 ps12exeGUI -help
 #>
-[CmdletBinding()]
-#_endif
+[CmdletBinding(DefaultParameterSetName = 'ConfigOrPS1File')]
 param(
-	[ValidatePattern('|.(psccfg|xml)$')]
+	[Parameter(DontShow, ParameterSetName = 'ConfigOrPS1File', Position = 0)]
+	[ValidatePattern('^.*\.(psccfg|xml|ps1)$')]
+	[string]$ConfigOrPS1File,
+	[Parameter(Mandatory, ParameterSetName = 'ConfigFile', Position = 0)]
+	[ValidatePattern('^.*\.(psccfg|xml)$')]
 	[string]$ConfigFile,
+	[Parameter(ParameterSetName = 'ConfigFile')]
+	[Parameter(Mandatory, ParameterSetName = 'Ps1File', Position = 0)]
+	[ValidatePattern('^.*\.ps1$')]
+	[string]$PS1File,
 	#_if PSScript
-	[ArgumentCompleter({
-		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-		. "$PSScriptRoot\..\LocaleArgCompleter.ps1" @PSBoundParameters
-	})]
+		[ArgumentCompleter({
+			Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+			. "$PSScriptRoot\..\LocaleArgCompleter.ps1" @PSBoundParameters
+		})]
 	#_endif
 	[string]$Localize,
 	[ValidateSet('Light', 'Dark', 'Auto')]
 	[string]$UIMode = 'Auto',
-	[ValidatePattern('|.ps1$')]
-	[string]$PS1File,
 	[switch]$help
 )
 
@@ -46,6 +52,16 @@ if ($help) {
 	$MyHelp = $LocalizeData.GUIHelpData
 	. $PSScriptRoot\..\HelpShower.ps1 -HelpData $MyHelp | Write-Host
 	return
+}
+
+if ($ConfigOrPS1File) {
+	if ($ConfigOrPS1File -match '\.ps1$') {
+		$PSBoundParameters.PS1File = $ConfigOrPS1File
+	}
+	else {
+		$PSBoundParameters.ConfigFile = $ConfigOrPS1File
+	}
+	$PSBoundParameters.Remove('ConfigOrPS1File') | Out-Null
 }
 
 try {
