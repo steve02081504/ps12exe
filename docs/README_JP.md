@@ -81,11 +81,14 @@ Start-ps12exeWebServer
 ### GUI パラメータ
 
 ```powershell
-ps12exeGUI [[-ConfigFile] '<設定ファイル>'] [-Localize '<言語コード>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-ConfigFile] '<設定ファイル>'] [-PS1File '<スクリプトファイル>'] [-Localize '<言語コード>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+
+ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コード>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 ```
 
 ```text
 ConfigFile : 読み込む設定ファイル。
+PS1File    : コンパイルするスクリプトファイル。
 Localize   : 使用する言語コード。
 UIMode     : 使用するユーザーインターフェースモード。
 help       : このヘルプ情報を表示します。

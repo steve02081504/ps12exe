@@ -81,11 +81,14 @@ Starts a web server that can be used to compile powerShell scripts online.
 ### GUI parameters
 
 ```powershell
-ps12exeGUI [[-ConfigFile] '<filename>'] [-Localize '<language code>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-ConfigFile] '<config file>'] [-PS1File '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+
+ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 ```
 
 ```text
 ConfigFile : The configuration file to load.
+PS1File    : The script file to be compiled.
 Localize   : The language code to use.
 UIMode     : The UI mode to use.
 help       : Show this help message.
