@@ -216,11 +216,12 @@ function RollUp {
 			Write-Host $([char]27 + '[' + $num + 'A') -NoNewline
 		}
 		elseif (-not $nested) {
-			$CousorPos = $Host.UI.RawUI.CursorPosition
-			try {
-				$CousorPos.Y = $CousorPos.Y - $num
-				$Host.UI.RawUI.CursorPosition = $CousorPos
-			} catch { $Error.RemoveAt(0) }
+			if ($CousorPos = $Host.UI.RawUI.CursorPosition) {
+				try {
+					$CousorPos.Y = $CousorPos.Y - $num
+					$Host.UI.RawUI.CursorPosition = $CousorPos
+				} catch { $Error.RemoveAt(0) }
+			}
 		}
 	}
 }

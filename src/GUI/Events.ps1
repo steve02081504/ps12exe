@@ -114,10 +114,16 @@ $ThreadCheckBoxs | ForEach-Object {
 }
 $Script:refs.CompileButton.add_Click({
 	$Params = Get-ps12exeArgs
+	if ($Script:ConfigFile) {
+		$PathNow = Get-Location
+		$projDir = Split-Path $Script:ConfigFile -Parent
+		Set-Location $projDir
+	}
 	$result = try {
 		ps12exe @Params -Localize $Localize -ErrorAction Stop | Out-String
 	}
 	catch { $LastExitCode = 1 }
+	if ($Script:ConfigFile) { Set-Location $PathNow }
 	if ($LastExitCode) {
 		$e = $Error[0]
 		$Message = if ($e.CategoryInfo.Category -ine "ParserError") {
@@ -126,7 +132,6 @@ $Script:refs.CompileButton.add_Click({
 		else {
 			($e,$e.TargetObject.Text) -join "`n"
 		}
-		Write-Host "Message: $Message"
 		[System.Windows.Forms.MessageBox]::Show([string]$Message, $Script:LocalizeData.CompileResult, [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
 		return
 	}

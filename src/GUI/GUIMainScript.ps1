@@ -70,7 +70,7 @@ finally {
 		@('Icon', 'BackGroundImage') | ForEach-Object {
 			if ($Ctrl.$_ -is [IDisposable]) { $Ctrl.$_.Dispose() }
 		}
-		$Ctrl.Dispose()
+		if ($Ctrl -is [IDisposable]) { $Ctrl.Dispose() }
 	}
 	foreach ($key in $Script:dialogInfo.Keys) {
 		$Dlg = Get-Variable -Name $key -ValueOnly
