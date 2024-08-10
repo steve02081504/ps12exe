@@ -132,7 +132,6 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		SomeCmdletsMayNotAvailable = "Cmdlets {0} used but may not available in runtime, make sure you've checked it!"
 		SomeNotFindedCmdlets = "Unknown functions {0} used"
 		SomeTypesMayNotAvailable = "Types {0} used but may not available in runtime, make sure you've checked it!"
-		TopLevelNoCmdletBindingFound = "The program has a parameter block, but the parameter block does not have the CmdletBinding attribute. This may cause the final program to be unable to receive parameters."
 		CompilingFile = "Compiling file..."
 		CompilationFailed = "Compilation failed!"
 		OutputFileNotWritten = "Output file {0} not written"

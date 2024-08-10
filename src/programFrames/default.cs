@@ -1943,18 +1943,18 @@ namespace PSRunnerNS {
 					this.PSRunSpace.SessionStateProxy.SetVariable("PSEXEscript", script);
 				}
 			}
+			/*
+			#if !Pwsh20
 			{
-				#if Pwsh20
-					this.pwsh.AddScript("$PSEXECodeBlock={"+script+"}");
-				#else
-					Token[] tokens;
-					ParseError[] errors;
-					ScriptBlockAst AST = Parser.ParseInput(script, exepath, out tokens, out errors);
-					this.PSRunSpace.SessionStateProxy.SetVariable("PSEXECodeBlock", AST.GetScriptBlock());
-					if(errors.Length > 0)
-						throw new System.InvalidProgramException(errors[0].Message);
-				#endif
+				Token[] tokens;
+				ParseError[] errors;
+				ScriptBlockAst AST = Parser.ParseInput(script, exepath, out tokens, out errors);
+				if(errors.Length > 0)
+					throw new System.InvalidProgramException(errors[0].Message);
 			}
+			#endif
+			*/
+			this.pwsh.AddScript("function PSEXEMainFunction{"+script+"}");
 		}
 		~PSRunner() {
 			this.pwsh.Dispose();
@@ -2027,7 +2027,7 @@ namespace PSRunnerNS {
 						args[i] = "\'"+args[i].Replace("'", "''")+"\'";
 				}
 
-				me.pwsh.AddScript("$Input|.$PSEXECodeBlock "+String.Join(" ", args)+"|Out-String -Stream");
+				me.pwsh.AddScript("$Input|PSEXEMainFunction "+String.Join(" ", args)+"|Out-String -Stream");
 
 				me.pwsh.BeginInvoke<string, PSObject> (colInput, colOutput, null, (IAsyncResult ar) => {
 					if (ar.IsCompleted)

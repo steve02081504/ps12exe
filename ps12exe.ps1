@@ -589,19 +589,7 @@ $AstAnalyzeResult.UsedNonConstFunctions | ForEach-Object {
 		}
 	}
 }
-if ($AST.ParamBlock) {
-	$hasCmdletBinding = $false
-	foreach ($param in $AST.ParamBlock.Attributes) {
-		if ($param.TypeName.Name -eq 'CmdletBinding') {
-			$hasCmdletBinding = $true
-			$AstAnalyzeResult.IsConst = $false
-			break
-		}
-	}
-	if (!$hasCmdletBinding) {
-		Write-I18n Warning TopLevelNoCmdletBindingFound
-	}
-}
+if ($AST.ParamBlock) { $AstAnalyzeResult.IsConst = $false }
 $NotFindedTypes = @()
 $AstAnalyzeResult.UsedNonConstTypes | ForEach-Object {
 	if (!($_ -as [Type])) {

@@ -132,7 +132,6 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		SomeCmdletsMayNotAvailable = "使用了可能会在运行时不可用的命令 {0}，确保已检查它们！"
 		SomeNotFindedCmdlets = "使用了未知的命令 {0}"
 		SomeTypesMayNotAvailable = "使用了可能会在运行时不可用的类型 {0}，确保已检查它们！"
-		TopLevelNoCmdletBindingFound = "该程序有参数块，但参数块没有CmdletBinding属性，这可能导致成品程序无法接收参数。"
 		CompilingFile = "编译中..."
 		CompilationFailed = "编译失败！"
 		OutputFileNotWritten = "未写入输出文件 {0}"

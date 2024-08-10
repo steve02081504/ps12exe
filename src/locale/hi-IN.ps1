@@ -132,7 +132,6 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		SomeCmdletsMayNotAvailable = "उपयोग किए गए Cmdlets {0} लेकिन रनटाइम में उपलब्ध नहीं हो सकते हैं, सुनिश्चित करें कि आपने उनकी जांच की है!"
 		SomeNotFindedCmdlets = "अज्ञात कार्यों {0} का उपयोग किया गया"
 		SomeTypesMayNotAvailable = "उपयोग किए गए टाइप {0} रनटाइम में उपलब्ध नहीं हो सकते हैं, सुनिश्चित करें कि आपने उनकी जांच की है!"
-		TopLevelNoCmdletBindingFound = "इस प्रोग्राम में एक पैरामीटर ब्लॉक है, लेकिन पैरामीटर ब्लॉक में CmdletBinding विशेषता नहीं है। इससे अंतिम प्रोग्राम पैरामीटर प्राप्त करने में असमर्थ हो सकता है।"
 		CompilingFile = "संकलन..."
 		CompilationFailed = "संकलन विफल!"
 		OutputFileNotWritten = "आउटपुट फ़ाइल {0} नहीं लिखी गई"

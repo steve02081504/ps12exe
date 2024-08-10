@@ -31,7 +31,7 @@ namespace PSRunnerNS {
 					me.ui.WriteLine(((PSDataCollection<PSObject>) sender)[e.Index].ToString());
 				};
 
-				me.pwsh.AddScript(".$PSEXECodeBlock|Out-String -Stream");
+				me.pwsh.AddScript("PSEXEMainFunction|Out-String -Stream");
 
 				me.pwsh.BeginInvoke<string, PSObject> (colInput, colOutput, null, (IAsyncResult ar) => {
 					if (ar.IsCompleted)
