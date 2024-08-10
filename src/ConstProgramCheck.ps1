@@ -33,7 +33,7 @@ public class ps12exeConstEvalHost : PSHost {
 	$pwsh = [System.Management.Automation.PowerShell]::Create()
 	$pwsh.Runspace = $runspace
 	$runspace.SessionStateProxy.SetVariable("PSEXEScript", $Content)
-	$null = $pwsh.AddScript($Content)
+	$null = $pwsh.AddScript("function PSEXEMainFunction{$Content};PSEXEMainFunction")
 
 	$asyncResult = $pwsh.BeginInvoke()
 
