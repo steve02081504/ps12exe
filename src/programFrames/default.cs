@@ -1943,18 +1943,20 @@ namespace PSRunnerNS {
 					this.PSRunSpace.SessionStateProxy.SetVariable("PSEXEscript", script);
 				}
 			}
-			/*
-			#if !Pwsh20
+			script = "function PSEXEMainFunction{"+script+"}";
+			#if Pwsh20
+				this.pwsh.AddScript(script);
+			#else
 			{
 				Token[] tokens;
 				ParseError[] errors;
 				ScriptBlockAst AST = Parser.ParseInput(script, exepath, out tokens, out errors);
+				this.PSRunSpace.SessionStateProxy.SetVariable("PSEXEIniter", AST.GetScriptBlock());
 				if(errors.Length > 0)
 					throw new System.InvalidProgramException(errors[0].Message);
+				this.pwsh.AddScript(".$PSEXEIniter");
 			}
 			#endif
-			*/
-			this.pwsh.AddScript("function PSEXEMainFunction{"+script+"}");
 		}
 		~PSRunner() {
 			this.pwsh.Dispose();
