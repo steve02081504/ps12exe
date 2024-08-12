@@ -220,7 +220,7 @@ Este EXE, al ejecutarse, extraerá el archivo `data.bin` incrustado en el script
 
 ```powershell
 $Script:eshDir =
-#_if PSScript #No es posible tener $EshellUI en PSEXE con un $PSScriptRoot inválido
+#_if PSScript #No es posible tener $EshellUI en PSEXE
 if (Test-Path "$($EshellUI.Sources.Path)/path/esh") { $EshellUI.Sources.Path }
 elseif (Test-Path $PSScriptRoot/../path/esh) { "$PSScriptRoot/.." }
 elseif

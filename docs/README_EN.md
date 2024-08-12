@@ -219,7 +219,7 @@ This EXE will, upon execution, extract the `data.bin` file embedded in the scrip
 
 ```powershell
 $Script:eshDir =
-#_if PSScript #It is not possible to have $EshellUI in PSEXE and $PSScriptRoot is not valid!
+#_if PSScript #It is not possible to have $EshellUI in PSEXE
 if (Test-Path "$($EshellUI.Sources.Path)/path/esh") { $EshellUI.Sources.Path }
 elseif (Test-Path $PSScriptRoot/../path/esh) { "$PSScriptRoot/.." }
 elseif

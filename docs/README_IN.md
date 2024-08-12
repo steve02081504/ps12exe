@@ -219,7 +219,7 @@ $result = & "$PSScriptRoot/another.ps1" -args
 
 ```powershell
 $Script:eshDir =
-#_if PSScript #PSEXE में $EshellUI का होना असंभव है, और $PSScriptRoot अमान्य है
+#_if PSScript #PSEXE में $EshellUI का होना असंभव है
 if (Test-Path "$($EshellUI.Sources.Path)/path/esh") { $EshellUI.Sources.Path }
 elseif (Test-Path $PSScriptRoot/../path/esh) { "$PSScriptRoot/.." }
 elseif

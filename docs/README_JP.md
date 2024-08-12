@@ -219,7 +219,7 @@ $result = & "$PSScriptRoot/another.ps1" -args
 
 ```powershell
 $Script:eshDir =
-#_if PSScript #無効な$PSScriptRootで$EshellUIをPSEXEに入れることはできない
+#_if PSScript #$EshellUIをPSEXEに入れることはできない
 if (Test-Path "$($EshellUI.Sources.Path)/path/esh") { $EshellUI.Sources.Path }
 elseif (Test-Path $PSScriptRoot/../path/esh) { "$PSScriptRoot/.." }
 elseif
