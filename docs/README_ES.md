@@ -1,5 +1,9 @@
 # ps12exe
 
+> [!CAUTION]
+> ¡No almacene contraseñas en el código fuente!  
+> Consulte [aquí](#seguridad-de-contraseñas) para obtener más detalles.  
+
 ## Introducción
 
 ps12exe es un módulo de PowerShell que permite crear ejecutables a partir de scripts .ps1.  

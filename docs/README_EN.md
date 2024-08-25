@@ -1,5 +1,9 @@
 # ps12exe
 
+> [!CAUTION]
+> Do not store passwords in source code!  
+> See [here](#password-security) for more details.  
+
 ## Introduction
 
 ps12exe is a PowerShell module that allows you to create an executable file from a .ps1 script.  
