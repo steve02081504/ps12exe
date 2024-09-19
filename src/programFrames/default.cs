@@ -409,9 +409,9 @@ namespace PSRunnerNS {
 			return new KeyInfo((int) info.Key, info.KeyChar, state, (options & ReadKeyOptions.IncludeKeyDown) != 0);
 			#else
 			if ((options & ReadKeyOptions.IncludeKeyDown) != 0)
-				return ReadKey_Box.Show("", "", true);
+				return ReadKey_Box.Show(_windowTitleData, "", true);
 			else
-				return ReadKey_Box.Show("", "", false);
+				return ReadKey_Box.Show(_windowTitleData, "", false);
 			#endif
 		}
 
@@ -525,17 +525,17 @@ namespace PSRunnerNS {
 			get {
 				return
 				#if !noConsole
-				Console.Title
+					Console.Title
 				#else
-				_windowTitleData
+					_windowTitleData
 				#endif
 				;
 			}
 			set {
 				#if !noConsole
-				Console.Title
+					Console.Title
 				#else
-				_windowTitleData
+					_windowTitleData
 				#endif
 				= value;
 			}
@@ -598,10 +598,7 @@ namespace PSRunnerNS {
 			buttonCancel.SetBounds(System.Math.Max(93, label.Right - 77), label.Bottom + 36, 75, 23);
 
 			// Configure form
-			if (string.IsNullOrEmpty(strTitle))
-				form.Text = System.AppDomain.CurrentDomain.FriendlyName;
-			else
-				form.Text = strTitle;
+			form.Text = strTitle;
 			form.ClientSize = new System.Drawing.Size(System.Math.Max(178, label.Right + 10), label.Bottom + 71);
 			form.Controls.AddRange(new Control[] {
 				textBox,
@@ -695,10 +692,7 @@ namespace PSRunnerNS {
 			buttonOk.SetBounds(System.Math.Max(12, iMaxX - 77), iPosY + 36, 75, 23);
 
 			// configure form
-			if (string.IsNullOrEmpty(strTitle))
-				form.Text = System.AppDomain.CurrentDomain.FriendlyName;
-			else
-				form.Text = strTitle;
+			form.Text = strTitle;
 			form.ClientSize = new System.Drawing.Size(System.Math.Max(178, iMaxX + 10), iPosY + 71);
 			form.Controls.Add(buttonOk);
 			form.FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -834,10 +828,7 @@ namespace PSRunnerNS {
 			form.Controls.Add(label);
 
 			// configure form
-			if (string.IsNullOrEmpty(strTitle))
-				form.Text = System.AppDomain.CurrentDomain.FriendlyName;
-			else
-				form.Text = strTitle;
+			form.Text = strTitle;
 			form.ClientSize = new System.Drawing.Size(System.Math.Max(178, label.Right + 10), label.Bottom + 55);
 			form.FormBorderStyle = FormBorderStyle.FixedDialog;
 			form.StartPosition = FormStartPosition.CenterScreen;
@@ -856,6 +847,7 @@ namespace PSRunnerNS {
 
 	public class Progress_Form: Form {
 		private ConsoleColor ProgressBarColor = ConsoleColor.DarkCyan;
+		private string WindowTitle = "";
 
 		#if !noVisualStyles
 		private System.Timers.Timer _timer = new System.Timers.Timer();
@@ -877,43 +869,11 @@ namespace PSRunnerNS {
 
 		private List<Progress_Data> progressDataList = new List<Progress_Data> ();
 
-		private Color DrawingColor(ConsoleColor color) { // convert ConsoleColor to System.Drawing.Color
-			switch (color) {
-			case ConsoleColor.Black:
-				return Color.Black;
-			case ConsoleColor.Blue:
-				return Color.Blue;
-			case ConsoleColor.Cyan:
-				return Color.Cyan;
-			case ConsoleColor.DarkBlue:
-				return Color.DarkBlue;
-			case ConsoleColor.DarkGray:
-				return Color.DarkGray;
-			case ConsoleColor.DarkGreen:
-				return Color.DarkGreen;
-			case ConsoleColor.DarkCyan:
-				return Color.DarkCyan;
-			case ConsoleColor.DarkMagenta:
-				return Color.DarkMagenta;
-			case ConsoleColor.DarkRed:
-				return Color.DarkRed;
-			case ConsoleColor.DarkYellow:
-				return ColorTranslator.FromOle(35723);//#8B8B00
-			case ConsoleColor.Gray:
-				return Color.Gray;
-			case ConsoleColor.Green:
-				return Color.Green;
-			case ConsoleColor.Magenta:
-				return Color.Magenta;
-			case ConsoleColor.Red:
-				return Color.Red;
-			case ConsoleColor.White:
-				return Color.White;
-			default:
-				return Color.Yellow;
-			}
+		public Progress_Form(string Title, ConsoleColor BarColor) {
+			WindowTitle = Title;
+			ProgressBarColor = BarColor;
+			InitializeComponent();
 		}
-
 		private void InitializeComponent() {
 			this.SuspendLayout();
 
@@ -921,7 +881,7 @@ namespace PSRunnerNS {
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 
 			this.AutoScroll = true;
-			this.Text = System.AppDomain.CurrentDomain.FriendlyName;
+			this.Text = WindowTitle;
 			this.Height = 147;
 			this.Width = 800;
 			this.BackColor = Color.White;
@@ -939,6 +899,16 @@ namespace PSRunnerNS {
 			_timer.Start();
 			#endif
 		}
+
+		private Color DrawingColor(ConsoleColor color) { // convert ConsoleColor to System.Drawing.Color
+			switch (color) {
+			case ConsoleColor.DarkYellow:
+				return ColorTranslator.FromOle(35723);//#8B8B00
+			default:
+				return Color.FromName(color.ToString());
+			}
+		}
+
 		#if !noVisualStyles
 		private void TimeTick(object source, System.Timers.ElapsedEventArgs eventargs) { // worker function that is called by _timer event
 			if (_inTick) return;
@@ -1021,15 +991,6 @@ namespace PSRunnerNS {
 
 		public int GetCount() {
 			return progressDataList.Count;
-		}
-
-		public Progress_Form() {
-			InitializeComponent();
-		}
-
-		public Progress_Form(ConsoleColor BarColor) {
-			ProgressBarColor = BarColor;
-			InitializeComponent();
 		}
 
 		public void Update(ProgressRecord objRecord) {
@@ -1326,8 +1287,7 @@ namespace PSRunnerNS {
 					MessageBox.Show(sMeldung, sTitel);
 				}
 
-				// Titel und Labeltext für Input_Box zurücksetzen
-				_ib_caption = "";
+				// Labeltext für Input_Box zurücksetzen
 				_ib_message = "";
 			#endif
 			Dictionary<string, PSObject> ret = new Dictionary<string, PSObject> ();
@@ -1414,8 +1374,7 @@ namespace PSRunnerNS {
 				}
 			}
 			#if noConsole
-			// Titel und Labeltext für Input_Box zurücksetzen
-			_ib_caption = "";
+			// Labeltext für Input_Box zurücksetzen
 			_ib_message = "";
 			#endif
 			return ret;
@@ -1423,6 +1382,7 @@ namespace PSRunnerNS {
 
 		public override int PromptForChoice(string caption, string message, System.Collections.ObjectModel.Collection<ChoiceDescription> choices, int defaultChoice) {
 			#if noConsole
+			if (string.IsNullOrEmpty(caption)) caption = rawUI.WindowTitle;
 			int iReturn = Choice_Box.Show(choices, defaultChoice, caption, message);
 			if (iReturn == -1)
 				iReturn = defaultChoice;
@@ -1558,7 +1518,6 @@ namespace PSRunnerNS {
 		}
 
 		#if noConsole
-		private string _ib_caption;
 		private string _ib_message;
 		#endif
 
@@ -1567,7 +1526,7 @@ namespace PSRunnerNS {
 				return Console.ReadLine();
 			#else
 				string sWert = "";
-				if (Input_Box.Show(_ib_caption, _ib_message, ref sWert) == DialogResult.OK)
+				if (Input_Box.Show(rawUI.WindowTitle, _ib_message, ref sWert) == DialogResult.OK)
 					return sWert;
 				#if exitOnCancel
 					Environment.Exit(1);
@@ -1604,7 +1563,7 @@ namespace PSRunnerNS {
 				secstr = new System.Security.SecureString();
 				string sWert = "";
 
-				if (Input_Box.Show(_ib_caption, _ib_message, ref sWert, true) == DialogResult.OK) {
+				if (Input_Box.Show(rawUI.WindowTitle, _ib_message, ref sWert, true) == DialogResult.OK) {
 					foreach(char ch in sWert)
 					secstr.AppendChar(ch);
 				}
@@ -1725,7 +1684,7 @@ namespace PSRunnerNS {
 			#if noConsole
 			if (pf == null) {
 				if (record.RecordType == ProgressRecordType.Completed) return;
-				pf = new Progress_Form(ProgressForegroundColor);
+				pf = new Progress_Form(rawUI.WindowTitle, ProgressForegroundColor);
 				pf.Show();
 			}
 			pf.Update(record);
