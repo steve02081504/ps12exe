@@ -509,6 +509,7 @@ function UsingWinPowershell($Boundparameters) {
 	$Params.Remove("outputFile")
 	$Params.Remove("resourceParams") #使用旧版参数列表传递hashtable参数更为保险
 	$TempFile = if ($TempDir) {
+		New-Item -ItemType Directory -Path $TempDir -ErrorAction SilentlyContinue | Out-Null
 		[System.IO.Path]::Combine($TempDir, 'main.ps1')
 	} else { [System.IO.Path]::GetTempFileName() }
 	$Content | Set-Content $TempFile -Encoding UTF8 -NoNewline
@@ -605,6 +606,7 @@ if ($NotFindedCmdlets) {
 if ($NotFindedTypes) {
 	Write-I18n Warning SomeTypesMayNotAvailable $($NotFindedTypes -join '、')
 }
+New-Item -ItemType Directory -Path $TempDir -ErrorAction SilentlyContinue | Out-Null
 try {
 	. $PSScriptRoot\src\InitCompileThings.ps1
 	#_if PSScript
