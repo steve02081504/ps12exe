@@ -606,7 +606,9 @@ if ($NotFindedCmdlets) {
 if ($NotFindedTypes) {
 	Write-I18n Warning SomeTypesMayNotAvailable $($NotFindedTypes -join '、')
 }
-New-Item -ItemType Directory -Path $TempDir -ErrorAction SilentlyContinue | Out-Null
+if ($TempDir) {
+	New-Item -ItemType Directory -Path $TempDir -ErrorAction SilentlyContinue | Out-Null
+}
 try {
 	. $PSScriptRoot\src\InitCompileThings.ps1
 	#_if PSScript
