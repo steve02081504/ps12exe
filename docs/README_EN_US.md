@@ -1,8 +1,8 @@
 # ps12exe
 
 > [!CAUTION]
-> Don't store passwords in the source code, you hear?
-> See [this section](#password-security) for more details.
+> Don't store passwords in the source code, you hear?  
+> See [this section](#password-security) for more details.  
 
 ## Introduction
 

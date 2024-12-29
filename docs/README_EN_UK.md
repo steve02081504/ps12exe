@@ -2,7 +2,7 @@
 
 > [!CAUTION]
 > Don't store passwords in the source code!  
-> See [here](#password-security) for more details.
+> See [here](#password-security) for more details.  
 
 ## Introduction
 
