@@ -70,7 +70,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 	product='<producto>'; copyright='<derechos de autor>'; trademark='<marca>'; version='<versión>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<Versión de tiempo de ejecución>']
-	[-GuestMode] [-Localize '<código de idioma>'] [-help]"
+	[-SkipVersionCheck] [-GuestMode] [-Localize '<código de idioma>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "La cadena del contenido del archivo de script de PowerShell, igual que ``-Content``."
 			inputFile		 = "La ruta o URL del archivo de script de PowerShell que desea convertir en un archivo ejecutable (el archivo debe estar codificado en UTF8 o UTF16)"
@@ -99,12 +99,14 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 			virtualize		 = "Se ha activado la virtualización de aplicaciones (se fuerza el tiempo de ejecución x86)"
 			longPaths		 = "Habilitar las rutas largas (> 260 caracteres) si están habilitadas en el sistema operativo (sólo para Windows 10 o superior)"
 			targetRuntime	 = "Versión de tiempo de ejecución de destino, ``'Framework4.0'`` por defecto, se admiten ``'Framework2.0'``"
+			SkipVersionCheck = "Omitir la comprobación de nuevas versiones de ps12exe"
 			GuestMode		 = "Compilación de scripts con protección adicional frente al acceso a archivos nativos"
 			Localize		 = "El código de idioma que desea usar"
 			Help			 = "Mostrar esta información de ayuda"
 		}
 	}
 	CompilingI18nData = @{
+		NewVersionAvailable = "¡Hay una nueva versión de ps12exe disponible: {0}!"
 		NoneInput = "¡Sin entrada!"
 		BothInputAndContentSpecified = "¡No se puede usar el archivo de entrada y el contenido al mismo tiempo!"
 		PreprocessDone = "Finalización de la preprocesación del script de entrada"

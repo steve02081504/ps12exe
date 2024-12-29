@@ -70,7 +70,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 	product='<उत्पाद>'; copyright='<कॉपीराइट>'; trademark='<नामकरण>'; version='<संस्करण>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<रनटाइम संस्करण>']
-	[-GuestMode] [-Localize '<भाषा कोड>'] [-help]"
+	[-SkipVersionCheck] [-GuestMode] [-Localize '<भाषा कोड>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "PowerShell स्क्रिप्ट फ़ाइल की सामग्री का स्ट्रिंग, ``-Content`` के समान।"
 			inputFile		 = "जिसे आप एक्सीक्यूटेबल फ़ाइल में परिवर्तित करना चाहते हैं, उस PowerShell स्क्रिप्ट फ़ाइल का पथ या URL (फ़ाइल को UTF8 या UTF16 एन्कोड किया गया होना चाहिए)"
@@ -99,12 +99,14 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 			virtualize		 = "ऐप्लिकेशन वर्चुअलाईजेशन सक्रिय कर दिया गया है (एक्स86 रनटाइम को प्रयोगशाला माना)"
 			longPaths		 = "यदि ऑपरेटिंग सिस्टम पर सक्षम है, तो लंबी पथ (अधिकतम 260 वर्ण) को सक्षम करें (केवल Windows 10 या इससे ऊपर के लिए)"
 			targetRuntime	 = "लक्ष्य रनटाइम संस्करण, डिफ़ॉल्ट रूप से ``'Framework4.0'``, ``'Framework2.0'`` समर्थित हैं"
+			SkipVersionCheck = "ps12exe के नए संस्करण की जाँच छोड़ें"
 			GuestMode		 = "एक्सट्रा सुरक्षा के साथ स्क्रिप्ट को कॉम्पाइल करें, स्थानीय फ़ाइलों की पहुँच को टालें"
 			Localize		 = "स्थानीयकरण भाषा कोड की निर्दिष्टि करें"
 			Help			 = "इस मदद सूचना को दिखाएँ"
 		}
 	}
 	CompilingI18nData = @{
+		NewVersionAvailable = "ps12exe का नया संस्करण उपलब्ध है: {0}!"
 		NoneInput = "कोई इनपुट फ़ाइल निर्दिष्ट नहीं है!"
 		BothInputAndContentSpecified = "इनपुट फ़ाइल और सामग्री का उपयोग एक साथ नहीं किया जा सकता है!"
 		PreprocessDone = "इनपुट स्क्रिप्ट को प्रीप्रोसेस करना पूर्ण हुआ"

@@ -110,7 +110,7 @@ help       : Mostrar esta información de ayuda.
         product='<producto>'; copyright='<derechos de autor>'; trademark='<marca>'; version='<versión>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<Versión de tiempo de ejecución>']
-        [-GuestMode] [-Localize '<código de idioma>'] [-help]
+        [-SkipVersionCheck] [-GuestMode] [-Localize '<código de idioma>'] [-help]
 ```
 
 ```text
@@ -141,6 +141,7 @@ supportOS        : Usar las características de las últimas versiones de Window
 virtualize       : Se ha activado la virtualización de aplicaciones (se fuerza el tiempo de ejecución x86)
 longPaths        : Habilitar las rutas largas (> 260 caracteres) si están habilitadas en el sistema operativo (sólo para Windows 10 o superior)
 targetRuntime    : Versión de tiempo de ejecución de destino, 'Framework4.0' por defecto, se admiten 'Framework2.0'
+SkipVersionCheck : Omitir la comprobación de nuevas versiones de ps12exe
 GuestMode        : Compilación de scripts con protección adicional frente al acceso a archivos nativos
 Localize         : El código de idioma que desea usar
 Help             : Mostrar esta información de ayuda

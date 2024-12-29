@@ -98,6 +98,9 @@ Compile scripts with additional protection, prevent native files from being acce
 .PARAMETER Localize
 The language code to be used for server-side logging
 
+.PARAMETER SkipVersionCheck
+Do not check for updates
+
 .PARAMETER help
 Display localized help message
 
@@ -140,13 +143,14 @@ Param(
 	[Switch]$longPaths,
 	[ValidateSet('Framework2.0', 'Framework4.0')]
 	[String]$targetRuntime = 'Framework4.0',
+	[Switch]$SkipVersionCheck,
+	[Switch]$GuestMode,
 	#_if PSScript
 		[ArgumentCompleter({
 			Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 			. "$PSScriptRoot\src\LocaleArgCompleter.ps1" @PSBoundParameters
 		})]
 	#_endif
-	[Switch]$GuestMode,
 	[string]$Localize,
 	[Switch]$help,
 	# TODO
@@ -269,6 +273,28 @@ function Write-I18n(
 		'Verbose' { Write-Verbose $value }
 	}
 }
+#_if PSScript
+	$versionNow = (Get-Module -ListAvailable ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1).Version
+	if ($versionNow -ne '0.0.0') { # not dev version
+		if (Test-Path $env:TEMP/ps12exe_version.txt) {
+			$versionOnline = Get-Content $env:TEMP/ps12exe_version.txt -Encoding utf8 | Select-Object -First 1
+			if ((-not $nested) -and (-not $SkipVersionCheck) -and ($versionNow -ne $versionOnline)) {
+				try {
+					$ForegroundColor = $Host.UI.RawUI.ForegroundColor
+					$Host.UI.RawUI.ForegroundColor = "Yellow"
+				} catch {}
+				Write-I18n Host NewVersionAvailable $versionOnline
+				try { $Host.UI.RawUI.ForegroundColor = $ForegroundColor } catch {}
+			}
+		}
+		if ((-not $nested) -and (-not $SkipVersionCheck) -and -not (Get-Job -Name ps12exe_version_check -ErrorAction Ignore)) {
+			Start-Job {
+				$versionOnline = (Find-Module ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1).Version
+				Set-Content $env:TEMP/ps12exe_version.txt -Value $versionOnline -Encoding utf8
+			} -Name ps12exe_version_check | Out-Null
+		}
+	}
+#_endif
 if ($help) {
 	Show-Help
 	return
@@ -693,6 +719,7 @@ catch {
 		Write-I18n Host RoslynFailedFallback -ForegroundColor Yellow
 		UsingWinPowershell $Params
 	}
+	#_if PSScript
 	elseif (!$GuestMode) {
 		$global:LastExitCode = 3
 		$githubfeedback = "https://github.com/steve02081504/ps12exe/issues/new?assignees=steve02081504&labels=bug&projects=&template=bug-report.yaml"
@@ -716,11 +743,9 @@ $($_ | Format-List | Out-String)
 			$githubfeedback += "&$key=$([system.uri]::EscapeDataString($urlParams[$key]))"
 		}
 		Write-I18n Host OppsSomethingWentWrong -ForegroundColor Yellow
-		$versionNow = Get-Module -ListAvailable ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1
-		if ($versionNow.Version -eq '0.0.0') { break }
-		$versionOnline = Find-Module ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1
-		if ("$($versionNow.Version)" -ne "$($versionOnline.Version)") {
-			Write-I18n Host TryUpgrade $($versionOnline.Version) -ForegroundColor Yellow
+		if ($versionNow -eq '0.0.0') {} # dev version, do noting
+		if ($versionNow -ne $versionOnline) {
+			Write-I18n Host TryUpgrade $versionOnline -ForegroundColor Yellow
 		}
 		else {
 			Write-I18n Host EnterToSubmitIssue -ForegroundColor Yellow
@@ -728,6 +753,7 @@ $($_ | Format-List | Out-String)
 			Start-Process $githubfeedback
 		}
 	}
+	#_endif
 }
 finally {
 	if ($TempTempDir) {

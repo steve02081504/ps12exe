@@ -70,7 +70,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 	product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<Runtime>']
-	[-GuestMode] [-Localize '<language code>'] [-help]"
+	[-SkipVersionCheck] [-GuestMode] [-Localize '<language code>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "String of the PowerShell script file's contents, same as ``-Content``."
 			inputFile		 = "PowerShell script file path or URL you wanna convert to an executable (file must be UTF8 or UTF16 encoded)."
@@ -99,12 +99,14 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 			virtualize		 = "App virtualization is activated (forcing x86 runtime)."
 			longPaths		 = "Enable long paths ( > 260 characters) if enabled on the OS (Windows 10 or up)."
 			targetRuntime	 = "Target runtime version, ``'Framework4.0'`` by default, ``'Framework2.0'`` is supported."
+			SkipVersionCheck = "Skip the check for new versions of ps12exe"
 			GuestMode		 = "Compile scripts with extra protection, preventin' native files from being accessed."
 			Localize		 = "Language code."
 			Help			 = "Show this here help message."
 		}
 	}
 	CompilingI18nData = @{
+		NewVersionAvailable = "There's a new version of ps12exe available: {0}!"
 		NoneInput = "No input file specified!"
 		BothInputAndContentSpecified = "Input file and content can't be used at the same time."
 		PreprocessDone = "Done pre-processing the input script!"

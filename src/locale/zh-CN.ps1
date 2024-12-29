@@ -70,7 +70,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 	product='<产品>'; copyright='<版权>'; trademark='<水印>'; version='<版本>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<运行时版本>']
-	[-GuestMode] [-Localize '<语言代码>'] [-help]"
+	[-SkipVersionCheck] [-GuestMode] [-Localize '<语言代码>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "PowerShell脚本文件内容的字符串，与``-Content``相同。"
 			inputFile		 = "您想要转换为可执行文件的PowerShell脚本文件路径或URL（文件必须是UTF8或UTF16编码）"
@@ -99,12 +99,14 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 			virtualize		 = "已激活应用程序虚拟化（强制x86运行时）"
 			longPaths		 = "如果在OS上启用，启用长路径（> 260个字符）（仅适用于Windows 10或更高版本）"
 			targetRuntime	 = "目标运行时版本，默认为 ``'Framework4.0'``，支持 ``'Framework2.0'``"
+			SkipVersionCheck = "跳过ps12exe的新版本检查"
 			GuestMode		 = "在额外的保护下编译脚本，避免本机文件被访问"
 			Localize		 = "指定本地化语言"
 			Help			 = "显示此帮助信息"
 		}
 	}
 	CompilingI18nData = @{
+		NewVersionAvailable = "ps12exe有了新版本：{0}！"
 		NoneInput = "无输入！"
 		BothInputAndContentSpecified = "不能同时输入文件和内容！"
 		PreprocessDone = "预处理输入脚本完成"
