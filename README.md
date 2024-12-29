@@ -2,7 +2,7 @@
 
 > [!CAUTION]
 > Do not store passwords in source code!  
-> See [localed readme](https://steve02081504.github.io/ps12exe/readme) for more details.  
+> See [localed readme](https://steve02081504.github.io/ps12exe/readme#password-security-stuff) for more details.  
 
 ## Introduction
 
@@ -18,7 +18,8 @@ ps12exe is a PowerShell module that allows you to create an executable file from
 ![repo img](https://repository-images.githubusercontent.com/729678966/3ed3f02f-c7c9-4a18-b1f5-255e667643b6)
 
 [![中文](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/China.png)](./docs/README_CN.md)
-[![English](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/United-Kingdom.png)](./docs/README_EN.md)
+[![English (United Kingdom)](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/United-Kingdom.png)](./docs/README_EN_UK.md)
+[![English (United States)](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/United-States.png)](./docs/README_EN_US.md)
 [![日本語](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Japan.png)](./docs/README_JP.md)
 [![Español](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Spain.png)](./docs/README_ES.md)
 [![हिन्दी](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/India.png)](./docs/README_HI.md)

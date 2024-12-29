@@ -17,10 +17,11 @@ ps12exe是一个 PowerShell 模块，它允许你从 .ps1 脚本创建可执行�
 
 ![repo img](https://repository-images.githubusercontent.com/729678966/3ed3f02f-c7c9-4a18-b1f5-255e667643b6)
 
-[![English](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/United-Kingdom.png)](./docs/README_EN.md)
-[![日本語](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Japan.png)](./docs/README_JP.md)
-[![Español](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Spain.png)](./docs/README_ES.md)
-[![हिन्दी](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/India.png)](./docs/README_HI.md)
+[![English (United Kingdom)](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/United-Kingdom.png)](./README_EN_UK.md)
+[![English (United States)](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/United-States.png)](./README_EN_US.md)
+[![日本語](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Japan.png)](./README_JP.md)
+[![Español](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Spain.png)](./README_ES.md)
+[![हिन्दी](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/India.png)](./README_HI.md)
 
 ## 安装
 
@@ -131,7 +132,7 @@ configFile       : 写一个配置文件（<outputfile>.exe.config）
 noOutput         : 生成的可执行文件将不生成标准输出（包括详细和信息通道）
 noError          : 生成的可执行文件将不生成错误输出（包括警告和调试通道）
 noVisualStyles   : 禁用生成的Windows GUI应用程序的视觉样式（仅与-noConsole一起使用）
-exitOnCancel     : 当在Read-Host输入框中选择Cancel或"X"时退出程序（仅与-noConsole一起使用）
+exitOnCancel     : 当在Read-Host输入框中选择Cancel或'X'时退出程序（仅与-noConsole一起使用）
 DPIAware         : 如果启用了显示缩放，GUI控件将尽可能进行缩放
 winFormsDPIAware : 如果启用了显示缩放，WinForms将使用DPI缩放（需要Windows 10和.Net 4.7或更高版本）
 requireAdmin     : 如果启用了UAC，编译的可执行文件只能在提升的上下文中运行（如果需要，会出现UAC对话框）
@@ -332,6 +333,7 @@ ps12exe 可以创建配置文件，文件名为`生成的可执行文件 + ".con
 
 ### 密码安全
 
+<a id="password-security-stuff"></a>
 切勿在编译后的脚本中存储密码！  
 整个脚本对任何 .net 反编译器来说轻松可见。  
 ![图片](https://github.com/steve02081504/ps12exe/assets/31927825/92d96e53-ba52-406f-ae8b-538891f42779)

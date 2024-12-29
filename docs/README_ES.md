@@ -17,10 +17,11 @@ ps12exe es un módulo de PowerShell que permite crear ejecutables a partir de sc
 
 ![repo img](https://repository-images.githubusercontent.com/729678966/3ed3f02f-c7c9-4a18-b1f5-255e667643b6)
 
-[![中文](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/China.png)](./docs/README_CN.md)
-[![English](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/United-Kingdom.png)](./docs/README_EN.md)
-[![日本語](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Japan.png)](./docs/README_JP.md)
-[![हिन्दी](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/India.png)](./docs/README_HI.md)
+[![中文](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/China.png)](./README_CN.md)
+[![English (United Kingdom)](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/United-Kingdom.png)](./README_EN_UK.md)
+[![English (United States)](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/United-States.png)](./README_EN_US.md)
+[![日本語](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Japan.png)](./README_JP.md)
+[![हिन्दी](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/India.png)](./README_HI.md)
 
 ## Instalación
 
@@ -112,7 +113,7 @@ help       : Mostrar esta información de ayuda.
         [-GuestMode] [-Localize '<código de idioma>'] [-help]
 ```
 
-```Texto
+```text
 input            : La cadena del contenido del archivo de script de PowerShell, igual que -Content.
 inputFile        : La ruta o URL del archivo de script de PowerShell que desea convertir en un archivo ejecutable (el archivo debe estar codificado en UTF8 o UTF16)
 Content          : El contenido del script de PowerShell que desea convertir en un archivo ejecutable
@@ -132,7 +133,7 @@ configFile       : Escribir un archivo de configuración (<outputfile>.exe.confi
 noOutput         : El archivo ejecutable generado no producirá salida estándar (incluyendo los canales detallado e informativo)
 noError          : El archivo ejecutable generado no producirá salida de error (incluyendo los canales de advertencia y depuración)
 noVisualStyles   : Desactivar los estilos visuales de la aplicación GUI de Windows generada (sólo se usa con -noConsole)
-exitOnCancel     : Salir del programa cuando se elija Cancelar o "X" en el cuadro de entrada de Read-Host (sólo se usa con -noConsole)
+exitOnCancel     : Salir del programa cuando se elija Cancelar o 'X' en el cuadro de entrada de Read-Host (sólo se usa con -noConsole)
 DPIAware         : Si se habilita el escalado de pantalla, los controles GUI se escalarán lo más posible
 winFormsDPIAware : Si se habilita el escalado de pantalla, WinForms usará el escalado DPI (requiere Windows 10 y .Net 4.7 o superior)
 requireAdmin     : Si se habilita el UAC, el archivo ejecutable compilado sólo se podrá ejecutar en un contexto elevado (si es necesario, aparecerá el cuadro de diálogo del UAC)
@@ -333,6 +334,7 @@ El script compilado manejará los parámetros igual que el script original. Una 
 
 ### Seguridad de contraseñas
 
+<a id="password-security-stuff"></a>
 Nunca almacene contraseñas en scripts compilados.  
 Todo el script es fácilmente visible para cualquier descompilador .net.  
 ![image](https://github.com/steve02081504/ps12exe/assets/31927825/92d96e53-ba52-406f-ae8b-538891f42779)
