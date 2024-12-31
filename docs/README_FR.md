@@ -2,11 +2,11 @@
 
 > [!CAUTION]
 > Ne stockez jamais de mots de passe dans le code source !  
-> Consultez [ici](#sécurité-des-mots-de-passe) pour plus de détails.
+> Consultez [ici](#sécurité-des-mots-de-passe) pour plus de détails.  
 
 ## Introduction
 
-ps12exe est un module PowerShell qui vous permet de créer des fichiers exécutables à partir de scripts .ps1.
+ps12exe est un module PowerShell qui vous permet de créer des fichiers exécutables à partir de scripts .ps1.  
 
 [![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml)
 [![PSGallery download num](https://img.shields.io/powershellgallery/dt/ps12exe)](https://www.powershellgallery.com/packages/ps12exe)
@@ -33,7 +33,7 @@ Set-ps12exeContextMenu # Définir le menu contextuel du clic droit
 
 (Vous pouvez également cloner ce référentiel et exécuter directement `.\ps12exe.ps1`)
 
-**La migration de PS2EXE vers ps12exe est-elle difficile ? Pas de problème !**
+**La migration de PS2EXE vers ps12exe est-elle difficile ? Pas de problème !**  
 PS2EXE2ps12exe peut relier les appels de PS2EXE à ps12exe. Il vous suffit de désinstaller PS2EXE et d’installer ceci, puis de l’utiliser comme vous le feriez avec PS2EXE.
 
 ```powershell
@@ -45,7 +45,7 @@ Install-Module PS2EXE2ps12exe
 
 ### Menu contextuel
 
-Une fois que vous avez défini `Set-ps12exeContextMenu`, vous pouvez cliquer avec le bouton droit sur n'importe quel fichier ps1 pour le compiler rapidement en exe ou ouvrir ps12exeGUI pour ce fichier.
+Une fois que vous avez défini `Set-ps12exeContextMenu`, vous pouvez cliquer avec le bouton droit sur n'importe quel fichier ps1 pour le compiler rapidement en exe ou ouvrir ps12exeGUI pour ce fichier.  
 ![Image](https://github.com/steve02081504/ps12exe/assets/31927825/24e7caf7-2bd8-46aa-8e1d-ee6da44c2dcc)
 
 ### Mode GUI
@@ -151,7 +151,7 @@ Help             : Affiche cette aide.
 
 ### Gestion des erreurs
 
-Contrairement à la plupart des fonctions PowerShell, ps12exe définit la variable `$LastExitCode` pour indiquer les erreurs, mais ne garantit pas l'absence totale d'exceptions.
+Contrairement à la plupart des fonctions PowerShell, ps12exe définit la variable `$LastExitCode` pour indiquer les erreurs, mais ne garantit pas l'absence totale d'exceptions.  
 Vous pouvez utiliser quelque chose comme ceci pour vérifier si des erreurs se sont produites :
 
 ```powershell
@@ -178,7 +178,7 @@ Les différentes valeurs de `$LastExitCode` représentent différents types d'er
 
 ### Prétraitement
 
-ps12exe prétraite le script avant la compilation.
+ps12exe prétraite le script avant la compilation.  
 
 ```powershell
 # Lit le cadre de programme à partir du fichier ps12exe.cs
@@ -200,8 +200,8 @@ $LocalizeData =
 	#_endif
 ```
 
-Seules les conditions suivantes sont prises en charge pour le moment : `PSEXE` et `PSScript`.
-`PSEXE` est vrai ; `PSScript` est faux.
+Seules les conditions suivantes sont prises en charge pour le moment : `PSEXE` et `PSScript`.  
+`PSEXE` est vrai ; `PSScript` est faux.  
 
 #### `#_include <nom_de_fichier|url>`/`#_include_as_value <nom_de_valeur> <fichier|url>`
 
@@ -212,7 +212,7 @@ Seules les conditions suivantes sont prises en charge pour le moment : `PSEXE` 
 
 Inclut le contenu du fichier `<nom_de_fichier|url>` ou `<fichier|url>` dans le script. Le contenu du fichier est inséré à la position de la commande `#_include`/`#_include_as_value`.
 
-Contrairement à l'instruction `#_if`, si vous n'entourez pas le nom de fichier avec des guillemets, les commandes de prétraitement `#_include` considèrent également les espaces de fin et `#` comme faisant partie du nom de fichier.
+Contrairement à l'instruction `#_if`, si vous n'entourez pas le nom de fichier avec des guillemets, les commandes de prétraitement `#_include` considèrent également les espaces de fin et `#` comme faisant partie du nom de fichier.  
 
 ```powershell
 #_include $PSScriptRoot/super #nomdefichierbizarre.ps1
@@ -287,7 +287,7 @@ $modules | ForEach-Object{
 }
 ```
 
-Il convient de noter que le code généré ne fera qu'installer les modules, et non les importer.
+Il convient de noter que le code généré ne fera qu'installer les modules, et non les importer.  
 Veuillez utiliser `Import-Module` en conséquence.
 
 Lorsque vous devez requérir plusieurs modules, vous pouvez utiliser des espaces, des virgules ou des points-virgules, des virgules inversées comme séparateurs, et vous n'avez pas besoin d'écrire plusieurs instructions require.
@@ -298,7 +298,7 @@ Lorsque vous devez requérir plusieurs modules, vous pouvez utiliser des espaces
 
 #### `#_pragma`
 
-Les directives de prétraitement pragma n'ont aucun effet sur le contenu du script, mais modifient les paramètres utilisés pour la compilation.
+Les directives de prétraitement pragma n'ont aucun effet sur le contenu du script, mais modifient les paramètres utilisés pour la compilation.  
 Voici un exemple :
 
 ```powershell
@@ -312,7 +312,7 @@ Script prétraité -> 23 octets
 Fichier compilé écrit -> 2 560 octets
 ```
 
-Comme vous pouvez le voir, `#_pragma Console no` fait fonctionner le fichier exe généré en mode fenêtre, même si nous n'avons pas spécifié `-noConsole` lors de la compilation.
+Comme vous pouvez le voir, `#_pragma Console no` fait fonctionner le fichier exe généré en mode fenêtre, même si nous n'avons pas spécifié `-noConsole` lors de la compilation.  
 La commande pragma peut définir tous les paramètres de compilation :
 
 ```powershell
@@ -335,7 +335,7 @@ Lorsque le code est exécuté jusqu'à ce point, il quitte le processus avec le 
 
 ### Minifier
 
-Étant donné que la "compilation" de ps12exe incorpore tout le contenu du script en tant que ressource mot pour mot dans le fichier exécutable généré, si le script contient un grand nombre de chaînes de caractères inutiles, le fichier exécutable généré sera très volumineux.
+Étant donné que la "compilation" de ps12exe incorpore tout le contenu du script en tant que ressource mot pour mot dans le fichier exécutable généré, si le script contient un grand nombre de chaînes de caractères inutiles, le fichier exécutable généré sera très volumineux.  
 Vous pouvez utiliser le paramètre `-Minifyer` pour spécifier un bloc de script qui prétraitera le script avant la compilation afin d'obtenir un fichier exécutable généré plus petit.
 
 Si vous ne savez pas comment écrire un tel bloc de script, vous pouvez utiliser [psminnifyer](https://github.com/steve02081504/psminnifyer).
@@ -363,8 +363,8 @@ Les scripts compilés gèrent les paramètres comme le script d'origine. Une des
 ### Sécurité des mots de passe
 
 <a id="password-security-stuff"></a>
-Ne stockez jamais de mots de passe dans les scripts compilés !
-L'ensemble du script est facilement visible pour n'importe quel décompilateur .net.
+Ne stockez jamais de mots de passe dans les scripts compilés !  
+L'ensemble du script est facilement visible pour n'importe quel décompilateur .net.  
 ![Image](https://github.com/steve02081504/ps12exe/assets/31927825/92d96e53-ba52-406f-ae8b-538891f42779)
 
 ### Différencier l'environnement par script

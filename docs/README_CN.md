@@ -151,7 +151,7 @@ Help             : 显示此帮助信息
 
 ### 错误处理
 
-和大部分powershell函数不同，ps12exe设置`$LastExitCode`变量以表明错误，但不保证完全不抛出异常。
+和大部分powershell函数不同，ps12exe设置`$LastExitCode`变量以表明错误，但不保证完全不抛出异常。  
 你可以使用类似以下的方式检查错误的发生：
 
 ```powershell

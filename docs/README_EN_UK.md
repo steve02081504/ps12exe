@@ -33,7 +33,7 @@ Set-ps12exeContextMenu #Set the right-click menu
 
 (You can also clone the repository and run `./ps12exe.ps1` directly.)
 
-**Upgrading from PS2EXE to ps12exe? No problem!**
+**Upgrading from PS2EXE to ps12exe? No problem!**  
 PS2EXE2ps12exe can hook the PS2EXE calls into ps12exe. Just uninstall PS2EXE and install this, then use PS2EXE as usual.
 
 ```powershell
@@ -45,7 +45,7 @@ Install-Module PS2EXE2ps12exe
 
 ### Right-Click Menu
 
-Once you've run `Set-ps12exeContextMenu`, you can quickly compile any ps1 file into an exe, or open ps12exeGUI on the file, by right-clicking on it. 
+Once you've run `Set-ps12exeContextMenu`, you can quickly compile any ps1 file into an exe, or open ps12exeGUI on the file, by right-clicking on it.  
 ![image](https://github.com/steve02081504/ps12exe/assets/31927825/24e7caf7-2bd8-46aa-8e1d-ee6da44c2dcc)
 
 ### GUI Mode
@@ -86,7 +86,7 @@ Starts a web server for compiling PowerShell scripts online.
 
 ### Error Handling
 
-Unlike most proper PowerShell functions, ps12exe sets the `$LastExitCode` variable to show if it’s cocked up, but it doesn’t promise you won’t get a right old exception, yeah?
+Unlike most proper PowerShell functions, ps12exe sets the `$LastExitCode` variable to show if it’s cocked up, but it doesn’t promise you won’t get a right old exception, yeah?  
 You can have a butcher's at whether it's gone wrong like this, see:
 
 ```powershell
@@ -200,8 +200,8 @@ $LocalizeData =
 	#_endif
 ```
 
-Only the following conditions are supported: `PSEXE` and `PSScript`.
-`PSEXE` is true, `PSScript` is false.
+Only the following conditions are supported: `PSEXE` and `PSScript`.  
+`PSEXE` is true, `PSScript` is false.  
 
 #### `#_include <filename|url>`/`#_include_as_value <valuename> <file|url>`
 
@@ -298,7 +298,7 @@ When you need to require more than one module, you can use spaces, commas, or se
 
 #### `#_pragma`
 
-The pragma preprocessor directive has no effect on the content of the script, but it modifies the parameters used for compilation.
+The pragma preprocessor directive has no effect on the content of the script, but it modifies the parameters used for compilation.  
 Here's an example:
 
 ```powershell
@@ -335,8 +335,8 @@ When the code reaches this point, the process exits with the given exit code and
 
 ### Minifyer
 
-Since ps12exe's "compilation" embeds everything in the script verbatim as a resource in the resulting executable, the resulting executable will be large if the script has a lot of unnecessary strings.
-You can specify a script block with the `-Minifyer` parameter that will process the script after preprocessing, before compilation, to achieve a smaller generated executable.
+Since ps12exe's "compilation" embeds everything in the script verbatim as a resource in the resulting executable, the resulting executable will be large if the script has a lot of unnecessary strings.  
+You can specify a script block with the `-Minifyer` parameter that will process the script after preprocessing, before compilation, to achieve a smaller generated executable.  
 
 If you don't know how to write such a script block, you can use [psminnifyer](https://github.com/steve02081504/psminnifyer).
 
@@ -363,7 +363,7 @@ Compiled scripts process parameters like the original script does. One restricti
 ### Password Security
 
 <a id="password-security-stuff"></a>
-Never store passwords in your compiled script!
+Never store passwords in your compiled script!  
 The entire script is easily visible to any .net decompiler.
 
 ![image](https://github.com/steve02081504/ps12exe/assets/31927825/92d96e53-ba52-406f-ae8b-538891f42779)

@@ -33,7 +33,7 @@ Set-ps12exeContextMenu # Set the right-click menu
 
 (You can also clone this here repo and run `./ps12exe.ps1` directly.)
 
-**Upgrading from PS2EXE to ps12exe? No problem!**
+**Upgrading from PS2EXE to ps12exe? No problem!**  
 PS2EXE2ps12exe can hook the PS2EXE calls into ps12exe. Just uninstall PS2EXE, install this, and keep using PS2EXE like normal.
 
 ```powershell
@@ -45,7 +45,7 @@ Install-Module PS2EXE2ps12exe
 
 ### Right-Click Menu
 
-Once you've run `Set-ps12exeContextMenu`, you can right-click any ps1 file to quickly compile it into an exe or open ps12exeGUI with that file.
+Once you've run `Set-ps12exeContextMenu`, you can right-click any ps1 file to quickly compile it into an exe or open ps12exeGUI with that file.  
 ![image](https://github.com/steve02081504/ps12exe/assets/31927825/24e7caf7-2bd8-46aa-8e1d-ee6da44c2dcc)
 
 ### GUI Mode
@@ -151,8 +151,8 @@ Help             : Show this here help message.
 
 ### Error Handlin
 
-Unlike most PowerShell functions, ps12exe sets the `$LastExitCode` variable to show if somethin' went sideways, but it ain't guaranteein' no exceptions.
-You can check if somethin' messed up like this, see:
+Unlike most PowerShell functions, ps12exe sets the `$LastExitCode` variable to show if somethin' went sideways, but it ain't guaranteein' no exceptions.  
+You can have a butcher's at whether it's gone wrong like this, see:
 
 ```powershell
 $LastExitCodeBackup = $LastExitCode
@@ -200,8 +200,8 @@ $LocalizeData =
 	#_endif
 ```
 
-Right now, only these conditions are supported: `PSEXE` and `PSScript`.
-`PSEXE` is true; `PSScript` is false.
+Right now, only these conditions are supported: `PSEXE` and `PSScript`.  
+`PSEXE` is true; `PSScript` is false.  
 
 #### `#_include <filename|url>`/`#_include_as_value <valuename> <file|url>`
 
@@ -212,7 +212,7 @@ Right now, only these conditions are supported: `PSEXE` and `PSScript`.
 
 Includes the content of the file `<filename|url>` or `<file|url>` into the script. The file's content is inserted where the `#_include`/`#_include_as_value` command is.
 
-Unlike the `#_if` statement, if you don't put quotes around the filename, the `#_include` commands treat trailing spaces and `#` as part of the filename.
+Unlike the `#_if` statement, if you don't put quotes around the filename, the `#_include` commands treat trailing spaces and `#` as part of the filename as well.
 
 ```powershell
 #_include $PSScriptRoot/super #weird filename.ps1
@@ -238,7 +238,7 @@ $result = & "$PSScriptRoot/another.ps1" -args
 #_include_as_bytes <valuename> <file|url>
 ```
 
-Includes a file's content as a base64 string or byte array during preprocessing. The file's content itself isn't preprocessed.
+Includes a file's content as a base64 string or byte array at preprocessing time. The file content itself isn't preprocessed.
 
 Here's a simple packer example:
 
@@ -312,7 +312,7 @@ Preprocessed script -> 23 bytes
 Compiled file written -> 2560 bytes
 ```
 
-As you can see, `#_pragma Console no` makes the generated exe run in windowed mode, even if we didn't specify `-noConsole` during compilation.
+As you can see, `#_pragma Console no` makes the generated exe file run in windowed mode, even if we didn't specify `-noConsole` during compilation.
 The pragma command can set any compilation parameter:
 
 ```powershell
@@ -378,19 +378,19 @@ if ($Host.Name -eq "PSEXE") { Write-Output "ps12exe" } else { Write-Output "Some
 
 ### Script Variables
 
-Since ps12exe turns a script into an executable, `$MyInvocation` has different values than in a script.
+Since ps12exe turns a script into an executable, the variable `$MyInvocation` is set to different values than in a script.
 
 You can still use `$PSScriptRoot` to get the directory where the executable is, and the new `$PSEXEpath` to get the path of the executable itself.
 
 ### Window in Background in -noConsole Mode
 
-When an external window is opened in a script with `-noConsole` (like for `Get-Credential` or a command that needs `cmd.exe`), the next window opens in the background.
+When an external window is opened in a script with `-noConsole` mode (like for `Get-Credential` or a command that needs a `cmd.exe` shell), the next window opens in the background.
 
 This happens because when the external window closes, Windows tries to activate the parent window. Since the compiled script has no window, the parent window of the compiled script gets activated instead, usually Explorer or PowerShell's window.
 
-To fix this, `$Host.UI.RawUI.FlushInputBuffer()` opens an invisible window that can be activated. The next call of `$Host.UI.RawUI.FlushInputBuffer()` closes this window (and so on).
+To fix this, `$Host.UI.RawUI.FlushInputBuffer()` opens an invisible window that can be activated. The following call of `$Host.UI.RawUI.FlushInputBuffer()` closes this window (and so on).
 
-This example won't open a window in the background, unlike just calling `ipconfig | Out-String`:
+The following example will not open a window in the background anymore, as a single call of `ipconfig | Out-String` will do:
 
 ```powershell
 $Host.UI.RawUI.FlushInputBuffer()

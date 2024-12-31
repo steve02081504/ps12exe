@@ -152,7 +152,7 @@ Help             : Mostrar esta información de ayuda
 
 ### Manejo de Errores
 
-A diferencia de la mayoría de las funciones de PowerShell, ps12exe establece la variable `$LastExitCode` para indicar errores, pero no garantiza que no se produzcan excepciones en absoluto.
+A diferencia de la mayoría de las funciones de PowerShell, ps12exe establece la variable `$LastExitCode` para indicar errores, pero no garantiza que no se produzcan excepciones en absoluto.  
 Puedes comprobar si se ha producido un error utilizando algo similar a lo siguiente:
 
 ```powershell
@@ -215,7 +215,7 @@ Incluye el contenido del archivo `<nombre_archivo|url>` o `<archivo|url>` en el 
 
 A diferencia de la sentencia `#_if`, si no encierra el nombre del archivo entre comillas, la familia de comandos de preprocesamiento `#_include` trata el espacio final, `#`, como parte del nombre del archivo.  
 
-```powershell.
+```powershell
 #_include $PSScriptRoot/super #nombrearchivoextraño.ps1
 #_include "$PSScriptRoot/filename.ps1" #¡comentario seguro!
 ```
