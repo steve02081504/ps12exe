@@ -343,6 +343,7 @@ if (!$nested) {
 	}
 	catch {
 		$global:LastExitCode = 1
+		if ($_.Exception.Message -ne 'ScriptHalted') { Write-Error $_.Exception }
 		return
 	}
 	if ($minifyer -is [string]) {

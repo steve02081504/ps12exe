@@ -1,27 +1,33 @@
-﻿function BaseReadFile($File, $Encoding = 'UTF8') {
-	$Content = if ($File -match "^(https?|ftp)://") {
-		if ($GuestMode) {
-			if ((Invoke-WebRequest $File -Method Head -ErrorAction SilentlyContinue).Headers.'Content-Length' -gt 1mb) {
-				Write-I18n Error GuestModeFileTooLarge $File -Category LimitsExceeded
-				throw
+﻿function ShortPath($Path) {
+	$Path = $Path.Replace($PWD, '.').Replace($env:USERPROFILE, '~')
+	$Path
+}
+function BaseReadFile($File, $Encoding = 'UTF8') {
+	$Content = try {
+			if ($File -match "^(https?|ftp)://") {
+			if ($GuestMode) {
+				if ((Invoke-WebRequest $File -Method Head -ErrorAction SilentlyContinue).Headers.'Content-Length' -gt 1mb) {
+					Write-I18n Error GuestModeFileTooLarge $File -Category LimitsExceeded
+					throw
+				}
+				if ($File -match "^ftp://") {
+					Write-I18n Error GuestModeFtpNotSupported -Category ReadError
+					throw
+				}
 			}
-			if ($File -match "^ftp://") {
-				Write-I18n Error GuestModeFtpNotSupported -Category ReadError
-				throw
-			}
+			$result = (Invoke-WebRequest -Uri $File -ErrorAction SilentlyContinue).Content
+			if ($Encoding -ne 'byte') { $result = $result -replace '^[^\u0000-\u007F]+', '' }
+			$result
 		}
-		$result = (Invoke-WebRequest -Uri $File -ErrorAction SilentlyContinue).Content
-		if ($Encoding -ne 'byte') { $result = $result -replace '^[^\u0000-\u007F]+', '' }
-		$result
-	}
-	elseif (-not $GuestMode) {
-		Get-Content -LiteralPath $File -Encoding $Encoding -ErrorAction SilentlyContinue -Raw
-	}
-	Write-I18n Host ReadingFile @([System.IO.Path]::GetFileName($File), $Content.Length)
+		elseif (-not $GuestMode) {
+			Get-Content -LiteralPath $File -Encoding $Encoding -ErrorAction SilentlyContinue -Raw
+		}
+	} catch {}
 	if (-not $Content) {
-		Write-I18n Error ReadFileFailed $File -Category ReadError
+		Write-I18n Error ReadFileFailed $(ShortPath $File) -Category ReadError
 		throw
 	}
+	Write-I18n Host ReadingFile @([System.IO.Path]::GetFileName($File), $Content.Length)
 	$Content
 }
 function ReadScriptFile($File) {
@@ -83,9 +89,6 @@ function Preprocessor($Content, $FilePath) {
 		# 若是相对路径，则转换为基于$FilePath的绝对路径
 		if ($file -notmatch "^[a-zA-Z]:" -and $file -notmatch "^(https|ftp)://") {
 			$file = "$ScriptRoot/$file"
-		}
-		if (!(Test-Path $file -PathType Leaf)) {
-			return
 		}
 		$file
 	}
@@ -259,7 +262,7 @@ function Preprocessor($Content, $FilePath) {
 					$rest = $rest.Substring(0, $rest.IndexOf(' '))
 				}
 				$file = GetIncludeFilePath $rest
-				if ($file) {
+				if (Test-Path $file -PathType Leaf -ErrorAction Ignore) {
 					if (!$callargs -and !$assign -and $callopt -eq '.') {
 						return ReadScriptFile $file
 					}
