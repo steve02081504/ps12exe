@@ -148,6 +148,33 @@ Help             : Show this here help message.
 
 ## Remarks
 
+### Error Handlin
+
+Unlike most PowerShell functions, ps12exe sets the `$LastExitCode` variable to show if somethin' went sideways, but it ain't guaranteein' no exceptions.
+You can check if somethin' messed up like this, see:
+
+```powershell
+$LastExitCodeBackup = $LastExitCode
+try {
+	'"some code!"' | ps12exe
+	if ($LastExitCode -ne 0) {
+		throw "ps12exe crashed and burned with exit code $LastExitCode"
+	}
+}
+finally {
+	$LastExitCode = $LastExitCodeBackup
+}
+```
+
+Different `$LastExitCode` values tell ya what kinda screw-up happened.
+
+| Error Type | `$LastExitCode` Value |
+|---------|------------------|
+| 0 | All good, no problemo |
+| 1 | Input code's a hot mess |
+| 2 | Call's all jacked up |
+| 3 | ps12exe had a total meltdown |
+
 ### Preprocessing
 
 ps12exe pre-processes the script before compiling.

@@ -209,7 +209,7 @@ Param(
 	[Parameter(DontShow)]
 	[string]$DllExportList
 )
-$global:LastExitCode = 0
+$global:LastExitCode = 0 # 无错误
 $Verbose = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent
 $Debug = $DebugPreference -ne 'SilentlyContinue'
 $UICultureBackup = [cultureinfo]::CurrentUICulture
@@ -303,7 +303,7 @@ if (-not ($inputFile -or $Content)) {
 	Show-Help
 	Write-Host
 	Write-I18n Error NoneInput -Category InvalidArgument
-	$global:LastExitCode = 2
+	$global:LastExitCode = 2 # 调用格式错误
 	return
 }
 
@@ -321,7 +321,7 @@ if (!$nested) {
 	[System.Collections.ArrayList]$DllExportList = @()
 	if ($inputFile -and $Content) {
 		Write-I18n Error BothInputAndContentSpecified -Category InvalidArgument
-		$global:LastExitCode = 2
+		$global:LastExitCode = 2 # 调用格式错误
 		return
 	}
 	. $PSScriptRoot\src\ReadScriptFile.ps1
@@ -342,7 +342,7 @@ if (!$nested) {
 		}
 	}
 	catch {
-		$global:LastExitCode = 1
+		$global:LastExitCode = 1 # 脚本预处理失败
 		if ($_.Exception.Message -ne 'ScriptHalted') { Write-Error $_.Exception }
 		return
 	}
@@ -380,7 +380,7 @@ else {
 	$Content = Get-Content -Raw -LiteralPath $inputFile -Encoding UTF8 -ErrorAction SilentlyContinue
 	if (!$Content) {
 		Write-I18n Error TempFileMissing $inputFile -Category ResourceUnavailable
-		$global:LastExitCode = 3
+		$global:LastExitCode = 3 # 资源丢失
 		return
 	}
 	if (!$TempDir) {
@@ -400,7 +400,7 @@ $Params.GetEnumerator() | ForEach-Object {
 # 处理兼容旧版参数列表
 if ($x86 -and $x64) {
 	Write-I18n Error CombinedArg_x86_x64 -Category InvalidArgument
-	$global:LastExitCode = 2
+	$global:LastExitCode = 2 # 调用格式错误
 	return
 }
 if ($x86) { $architecture = 'x86' }
@@ -411,7 +411,7 @@ if ($runtime20) {
 	foreach ($_ in @("runtime40", "longPaths", "winFormsDPIAware")) {
 		if ($Params[$_]) {
 			Write-I18n Error "CombinedArg_Runtime20_$_" -Category InvalidArgument
-			$global:LastExitCode = 2
+			$global:LastExitCode = 2 # 调用格式错误
 			return
 		}
 	}
@@ -422,7 +422,7 @@ $Params.targetRuntime = $targetRuntime
 [void]$Params.Remove("runtime20"); [void]$Params.Remove("runtime40")
 if ($STA -and $MTA) {
 	Write-I18n Error CombinedArg_STA_MTA -Category InvalidArgument
-	$global:LastExitCode = 2
+	$global:LastExitCode = 2 # 调用格式错误
 	return
 }
 if ($STA) { $threadingModel = 'STA' }
@@ -443,7 +443,7 @@ $resourceParams.GetEnumerator() | ForEach-Object {
 }
 if ($configFile -and $noConfigFile) {
 	Write-I18n Error CombinedArg_ConfigFileYes_No -Category InvalidArgument
-	$global:LastExitCode = 2
+	$global:LastExitCode = 2 # 调用格式错误
 	return
 }
 if ($noConfigFile) { $configFile = $FALSE }
@@ -497,7 +497,7 @@ if ($SyntaxErrors) {
 		Write-Host $_.HighlightLine -ForegroundColor Red
 		Write-Host ($_.Messages -join "`n")
 	}
-	$global:LastExitCode = 1
+	$global:LastExitCode = 1 # 脚本语法错误
 	return
 }
 elseif (!$AST) {
@@ -564,7 +564,7 @@ if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerSh
 
 if ($inputFile -eq $outputFile) {
 	Write-I18n Error IdenticalInputOutput -Category InvalidArgument
-	$global:LastExitCode = 2
+	$global:LastExitCode = 2 # 调用格式错误
 	return
 }
 
@@ -576,7 +576,7 @@ if ($virtualize) {
 	foreach ($_ in @("requireAdmin", "supportOS", "longPaths")) {
 		if ($Params[$_]) {
 			Write-I18n Error "CombinedArg_Virtualize_$_" -Category InvalidArgument
-			$global:LastExitCode = 2
+			$global:LastExitCode = 2 # 调用格式错误
 			return
 		}
 	}
@@ -684,7 +684,7 @@ try {
 
 	if (!(Test-Path $outputFile)) {
 		Write-I18n Error OutputFileNotWritten -Category WriteError
-		$global:LastExitCode = 3
+		$global:LastExitCode = 3 # 无输出文件
 		return
 	}
 	else {
@@ -722,7 +722,7 @@ catch {
 	}
 	#_if PSScript
 	elseif (!$GuestMode) {
-		$global:LastExitCode = 3
+		$global:LastExitCode = 3 # 内部未知错误
 		$githubfeedback = "https://github.com/steve02081504/ps12exe/issues/new?assignees=steve02081504&labels=bug&projects=&template=bug-report.yaml"
 		$urlParams = @{
 			title                = "$_"

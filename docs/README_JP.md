@@ -148,6 +148,33 @@ Help             : このヘルプ情報を表示します
 
 ## 備考
 
+### エラー処理
+
+ほとんどのPowerShell関数とは異なり、ps12exeはエラーを示すために`$LastExitCode`変数を設定しますが、例外がまったく発生しないことを保証するものではありません。
+次のような方法でエラーが発生したかどうかを確認できます。
+
+```powershell
+$LastExitCodeBackup = $LastExitCode
+try {
+	'"some code!"' | ps12exe
+	if ($LastExitCode -ne 0) {
+		throw "ps12exeが終了コード $LastExitCode で失敗しました"
+	}
+}
+finally {
+	$LastExitCode = $LastExitCodeBackup
+}
+```
+
+`$LastExitCode`の値が異なれば、異なるエラータイプを表します。
+
+| エラータイプ | `$LastExitCode`値 |
+|---------|------------------|
+| 0 | エラーなし |
+| 1 | 入力コードエラー |
+| 2 | 呼び出しフォーマットエラー |
+| 3 | ps12exe内部エラー |
+
 ### 前処理
 
 ps12exe はコンパイル前にスクリプトを前処理します。  

@@ -146,7 +146,34 @@ Localize         : 指定本地化语言
 Help             : 显示此帮助信息
 ```
 
-### 备注
+## 备注
+
+### 错误处理
+
+和大部分powershell函数不同，ps12exe设置`$LastExitCode`变量以表明错误，但不保证完全不抛出异常。
+你可以使用类似以下的方式检查错误的发生：
+
+```powershell
+$LastExitCodeBackup = $LastExitCode
+try {
+	'"some code!"' | ps12exe
+	if ($LastExitCode -ne 0) {
+		throw "ps12exe failed with exit code $LastExitCode"
+	}
+}
+finally {
+	$LastExitCode = $LastExitCodeBackup
+}
+```
+
+不同的`$LastExitCode`值代表了不同的错误类型：
+
+| 错误类型 | `$LastExitCode`值 |
+|---------|------------------|
+| 0 | 没有错误 |
+| 1 | 输入代码错误 |
+| 2 | 调用格式错误 |
+| 3 | ps12exe内部错误 |
 
 ### 预处理
 

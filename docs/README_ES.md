@@ -147,7 +147,34 @@ Localize         : El código de idioma que desea usar
 Help             : Mostrar esta información de ayuda
 ```
 
-### Observaciones
+## Observaciones
+
+### Manejo de Errores
+
+A diferencia de la mayoría de las funciones de PowerShell, ps12exe establece la variable `$LastExitCode` para indicar errores, pero no garantiza que no se produzcan excepciones en absoluto.
+Puedes comprobar si se ha producido un error utilizando algo similar a lo siguiente:
+
+```powershell
+$LastExitCodeBackup = $LastExitCode
+try {
+	'"some code!"' | ps12exe
+	if ($LastExitCode -ne 0) {
+		throw "ps12exe falló con el código de salida $LastExitCode"
+	}
+}
+finally {
+	$LastExitCode = $LastExitCodeBackup
+}
+```
+
+Los diferentes valores de `$LastExitCode` representan diferentes tipos de errores:
+
+| Tipo de Error | Valor de `$LastExitCode` |
+|---------|------------------|
+| 0 | Sin error |
+| 1 | Error en el código de entrada |
+| 2 | Error en el formato de llamada |
+| 3 | Error interno de ps12exe |
 
 ### Preprocesamiento
 

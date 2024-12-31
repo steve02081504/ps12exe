@@ -83,6 +83,33 @@ Starts a web server for compiling PowerShell scripts online.
 
 ## Parameters
 
+### Error Handling
+
+Unlike most proper PowerShell functions, ps12exe sets the `$LastExitCode` variable to show if it’s cocked up, but it doesn’t promise you won’t get a right old exception, yeah?
+You can have a butcher's at whether it's gone wrong like this, see:
+
+```powershell
+$LastExitCodeBackup = $LastExitCode
+try {
+	'"some code!"' | ps12exe
+	if ($LastExitCode -ne 0) {
+		throw "ps12exe buggered up with exit code $LastExitCode"
+	}
+}
+finally {
+	$LastExitCode = $LastExitCodeBackup
+}
+```
+
+Different `$LastExitCode` values show you what kinda balls-up it’s made:
+
+| Error Type | `$LastExitCode` Value |
+|---------|------------------|
+| 0 | All Tickety-boo |
+| 1 | Input code is a load of old rubbish |
+| 2 | The call's all gone pear-shaped |
+| 3 | ps12exe’s had a proper mare |
+
 ### GUI Parameters
 
 ```powershell
