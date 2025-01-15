@@ -13,15 +13,6 @@ real windows executables are generated. You may use the graphical front end Win-
 Please see Remarks on project page for topics "GUI mode output formatting", "Config files", "Password security",
 "Script variables" and "Window in background in -noConsole mode".
 
-A generated executable has the following reserved parameters:
-
--debug Forces the executable to be debugged. It calls "System.Diagnostics.Debugger.Launch()".
--extract:<FILENAME> Extracts the powerShell script inside the executable and saves it as FILENAME.
-                                        The script will not be executed.
--wait At the end of the script execution it writes "Hit any key to exit..." and waits for a
-                                        key to be pressed.
--end All following options will be passed to the script inside the executable.
-                                        All preceding options are used by the executable itself.
 .PARAMETER inputFile
 Powershell script to convert to executable (file has to be UTF8 or UTF16 encoded)
 .PARAMETER outputFile
