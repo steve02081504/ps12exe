@@ -1,10 +1,10 @@
 ﻿function ShortPath($Path) {
-	$Path = $Path.Replace($PWD, '.').Replace($env:USERPROFILE, '~')
+	$Path = $Path.Replace($env:USERPROFILE, '~').Replace($PWD, '.').Replace('/./', '/')
 	$Path
 }
 function BaseReadFile($File, $Encoding = 'UTF8') {
 	$Content = try {
-			if ($File -match "^(https?|ftp)://") {
+		if ($File -match "^(https?|ftp)://") {
 			if ($GuestMode) {
 				if ((Invoke-WebRequest $File -Method Head -ErrorAction SilentlyContinue).Headers.'Content-Length' -gt 1mb) {
 					Write-I18n Error GuestModeFileTooLarge $File -Category LimitsExceeded
@@ -15,14 +15,23 @@ function BaseReadFile($File, $Encoding = 'UTF8') {
 					throw
 				}
 			}
-			$result = (Invoke-WebRequest -Uri $File -ErrorAction SilentlyContinue).Content
+			$result = (Invoke-WebRequest -Uri $File).Content
 			if ($Encoding -ne 'byte') { $result = $result -replace '^[^\u0000-\u007F]+', '' }
 			$result
 		}
 		elseif (-not $GuestMode) {
-			Get-Content -LiteralPath $File -Encoding $Encoding -ErrorAction SilentlyContinue -Raw
+			# -Encoding Byte 似乎在某些机器中不起作用：https://github.com/steve02081504/ps12exe/issues/18
+			if ($Encoding -ne 'Byte') {
+				Get-Content -LiteralPath $File -Encoding $Encoding -Raw
+			}
+			else {
+				[System.IO.File]::ReadAllBytes($File)
+			}
 		}
-	} catch {}
+	}
+	catch {
+		Write-Verbose $_
+	}
 	if (-not $Content) {
 		Write-I18n Error ReadFileFailed $(ShortPath $File) -Category ReadError
 		throw
@@ -142,7 +151,7 @@ function Preprocessor($Content, $FilePath) {
 					$Params["no$pragmaname"] = [Switch]-not $value
 				}
 			}
-			elseif ($ParamList[$pragmaname].ParameterType -eq [string] -or $ParamList[$pragmaname+"File"].ParameterType -eq [string]) {
+			elseif ($ParamList[$pragmaname].ParameterType -eq [string] -or $ParamList[$pragmaname + "File"].ParameterType -eq [string]) {
 				if ($value -match '^\"(?<value>[^\"]*)\"\s*(?!#.*)') {
 					$value = $Matches["value"].Replace('$PSScriptRoot', $ScriptRoot)
 				}
@@ -155,8 +164,8 @@ function Preprocessor($Content, $FilePath) {
 				if ($ParamList[$pragmaname].ParameterType -eq [string]) {
 					$Params[$pragmaname] = $value
 				}
-				elseif ($ParamList[$pragmaname+"File"].ParameterType -eq [string]) {
-					$Params[$pragmaname+"File"] = $value
+				elseif ($ParamList[$pragmaname + "File"].ParameterType -eq [string]) {
+					$Params[$pragmaname + "File"] = $value
 				}
 			}
 			elseif ($ParamList[$pragmaname].ParameterType) {
@@ -274,7 +283,7 @@ function Preprocessor($Content, $FilePath) {
 	}
 	$NuGetIniter = "try{Import-PackageProvider NuGet}catch{Install-PackageProvider NuGet -Scope CurrentUser -Force -ea Ignore;Import-PackageProvider NuGet -ea Ignore}"
 	$LoadModuleScript = if ($requiredModules.Count -gt 1) {
-		(PSObjectToString $requiredModules -OneLine) + '|%{if(!(gmo $_ -ListAvailable -ea SilentlyContinue)){'+$NuGetIniter+';Install-Module $_ -Scope CurrentUser -Force -ea Stop}}'
+		(PSObjectToString $requiredModules -OneLine) + '|%{if(!(gmo $_ -ListAvailable -ea SilentlyContinue)){' + $NuGetIniter + ';Install-Module $_ -Scope CurrentUser -Force -ea Stop}}'
 	}
 	elseif ($requiredModules.Count -eq 1) {
 		"if(!(gmo $requiredModules -ListAvailable -ea SilentlyContinue)){$NuGetIniter;Install-Module $requiredModules -Scope CurrentUser -Force -ea Stop}"
