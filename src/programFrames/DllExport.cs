@@ -1,87 +1,113 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
-using System.Management.Automation.Language;
-using System.Globalization;
-using System.Management.Automation.Host;
-using System.Security;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Runtime.InteropServices;
 using RGiesecke.DllExport;
-using System.Runtime.Versioning;
+using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace PSRunnerNS {
 	partial static class PSRunnerEntry {
+
+		private static readonly object _lock = new object(); // 用于线程同步
+
 		// DllInitChecker
 		[$threadingModelThread]
 		public static void DllInitChecker() {
-			if(!Inited) {
-				PSRunner.BaseInit();
-				// run pwsh code
-				System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);
+			lock (_lock) {
+				if (!PSRunner.Inited) {
+					PSRunner.BaseInit();
+					me = new PSRunner(); // 创建 PSRunner 实例
 
-				PSDataCollection<string> colInput = new PSDataCollection<string> ();
-				colInput.Complete();
+					// 执行初始化脚本（如果需要）
+					PSDataCollection<PSObject> colOutput = new PSDataCollection<PSObject>();
 
-				PSDataCollection<PSObject> colOutput = new PSDataCollection<PSObject> ();
-				colOutput.DataAdded += (object sender, DataAddedEventArgs e) => {
-					me.ui.WriteLine(((PSDataCollection<PSObject>) sender)[e.Index].ToString());
-				};
+					IAsyncResult asyncResult = me.pwsh.BeginInvoke<PSObject, PSObject>(null, colOutput);
 
-				me.pwsh.AddScript("PSEXEMainFunction|Out-String -Stream");
+					// 使用 ManualResetEvent 等待 PowerShell 执行完成
+					using (ManualResetEvent mre = new ManualResetEvent(false)) {
+						ThreadPool.QueueUserWorkItem(_ => {
+							try {
+								foreach (PSObject outputItem in colOutput) {
+									Console.WriteLine(outputItem.ToString());
+								}
 
-				me.pwsh.BeginInvoke<string, PSObject> (colInput, colOutput, null, (IAsyncResult ar) => {
-					if (ar.IsCompleted)
-						mre.Set();
-				}, null);
+								foreach (ErrorRecord errorItem in me.pwsh.Streams.Error) {
+									me.ui.WriteErrorLine(errorItem.ToString());
+								}
 
-				while (!mre.WaitOne(100))
-					if (me.ShouldExit) break;
+								if (me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed) {
+									me.ExitCode = 1;
+									me.ui.WriteErrorLine("DllInitChecker failed: " + me.pwsh.InvocationStateInfo.Reason.Message);
+								}
+							}
+							finally {
+								mre.Set();
+							}
 
-				Inited = true;
+						});
+						mre.WaitOne();
+						me.pwsh.EndInvoke(asyncResult);
+					}
 
-				if(me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed)
-					me.ui.WriteErrorLine(me.pwsh.InvocationStateInfo.Reason.Message);
-
-				mre.Dispose();
+					PSRunner.Inited = true; // 标记为已初始化
+				}
 			}
 		}
 		[DllExport("DllExportExample", CallingConvention = CallingConvention.StdCall)]
-		public static int DllExportExample(int a, int b) {
+		public static object DllExportExample(int a, int b) { // 返回类型改为 object
 			DllInitChecker();
-			if(me.ShouldExit)
-				throw new System.TypeUnloadedException(me.pwsh.InvocationStateInfo.Reason.Message);
-			//set parameters as variables in psrunspace
-			me.PSRunSpace.SessionStateProxy.SetVariable("PSEXEDLLCallIngParameters", new System.Collections.ArrayList{a, b});
-			me.pwsh.AddScript("DllExportExample @PSEXEDLLCallIngParameters");
-			System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);
+			object result = null;
+			lock (_lock) {
+				if (me.ShouldExit)
+					throw new InvalidOperationException("PSRunner is exiting."); // 更合适的异常
 
-			PSDataCollection<string> colInput = new PSDataCollection<string> ();
-			colInput.Complete();
+				//set parameters as variables in psrunspace
+				me.PSRunSpace.SessionStateProxy.SetVariable("PSEXEDLLCallIngParameters", new ArrayList { a, b });
+				me.pwsh.Commands.Clear(); // 清除之前的命令
+				me.pwsh.AddScript("DllExportExample @PSEXEDLLCallIngParameters");
 
-			PSDataCollection<PSObject> colOutput = new PSDataCollection<PSObject> ();
-			//output as return value
-			colOutput.Complete();
+				PSDataCollection<PSObject> colOutput = new PSDataCollection<PSObject>();
+				IAsyncResult asyncResult = me.pwsh.BeginInvoke<PSObject, PSObject>(null, colOutput);
 
-			me.pwsh.BeginInvoke<string, PSObject> (colInput, colOutput, null, (IAsyncResult ar) => {
-				if (ar.IsCompleted)
-					mre.Set();
-			}, null);
+				// 使用 ManualResetEvent 等待 PowerShell 执行完成
+				using (ManualResetEvent mre = new ManualResetEvent(false)) {
+					ThreadPool.QueueUserWorkItem(_ => {
+						try {
 
-			while (!mre.WaitOne(100))
-				if (me.ShouldExit) break;
+							foreach (PSObject outputItem in colOutput) {
+								Console.WriteLine(outputItem.ToString());
+							}
 
-			if(me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed)
-				throw new System.InternalErrorException(me.pwsh.InvocationStateInfo.Reason.Message);
+							foreach (ErrorRecord errorItem in me.pwsh.Streams.Error) {
+								me.ui.WriteErrorLine(errorItem.ToString());
+							}
 
-			//if only one object is in colOutput, return it
-			if(colOutput.Count == 1)
-				return colOutput[0];
-			//else return the whole collection
-			return colOutput;
+							if (me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed) {
+								throw new InvalidOperationException("DllExportExample failed: " + me.pwsh.InvocationStateInfo.Reason.Message);
+							}
+						}
+						finally {
+							mre.Set();
+						}
+					});
+
+					mre.WaitOne(); // 等待输出处理完成
+					me.pwsh.EndInvoke(asyncResult);
+				}
+
+				//处理返回值
+				if (colOutput.Count == 1) {
+					result = colOutput[0].BaseObject; //返回实际的值, 而不是PSObject
+				}
+				else if (colOutput.Count > 1) {
+					// 如果有多个输出，返回 PSObject 数组
+					result = colOutput.ToArray();
+				}
+			}
+
+			return result;
 		}
 	}
 }

@@ -1692,8 +1692,7 @@ namespace PSRunnerNS {
 				if (pf.GetCount() == 0) pf = null;
 			}
 			#else
-			if (!Console_Info.IsOutputRedirected())// Do not write progress bar when the stdout is redirected.
-			{
+			if (!Console_Info.IsOutputRedirected()) {// Do not write progress bar when the stdout is redirected.
 				// OSC sequence to turn on progress indicator
 				// https://github.com/microsoft/terminal/issues/6700
 				if(Console_Info.IsVirtualTerminalSupported()){
@@ -1917,14 +1916,17 @@ namespace PSRunnerNS {
 			}
 			#endif
 		}
-		~PSRunner() {
-			this.pwsh.Dispose();
-			this.PSRunSpace.Close();
-			this.PSRunSpace.Dispose();
-			this.host = null;
-			this.ui = null;
-		}
+		public void Dispose() {
+			if (pwsh != null) pwsh.Dispose();
+			if (PSRunSpace != null) {
+				PSRunSpace.Close();
+				PSRunSpace.Dispose();
+			}
+			host = null;
+			ui = null;
 
+			GC.SuppressFinalize(this);
+		}
 		//base init
 		public static void BaseInit() {
 			#if UNICODEEncoding && !noConsole
@@ -1965,10 +1967,6 @@ namespace PSRunnerNS {
 				};
 				#endif
 
-				me.pwsh.Streams.Error.DataAdded += (object sender, DataAddedEventArgs eventargs) => {
-					me.ui.WriteErrorLine(((PSDataCollection<ErrorRecord>) sender)[eventargs.Index].Exception.Message);
-				};
-
 				PSDataCollection<string> colInput = new PSDataCollection<string> ();
 				if (Console_Info.IsInputRedirected()) { // read standard input
 					string sItem;
@@ -1978,10 +1976,7 @@ namespace PSRunnerNS {
 				}
 				colInput.Complete();
 
-				PSDataCollection<PSObject> colOutput = new PSDataCollection<PSObject> ();
-				colOutput.DataAdded += (object sender, DataAddedEventArgs eventargs) => {
-					me.ui.WriteLine(((PSDataCollection<PSObject>) sender)[eventargs.Index].ToString());
-				};
+				PSDataCollection<PSObject> colOutput = new PSDataCollection<PSObject>();
 
 				for(int i = 0; i < args.Length; i++) {
 					if (!Regex.IsMatch(args[i], @"^(-|\$)\w*$"))
@@ -1990,15 +1985,35 @@ namespace PSRunnerNS {
 
 				me.pwsh.AddScript("$Input|PSEXEMainFunction "+String.Join(" ", args)+"|Out-String -Stream");
 
-				me.pwsh.BeginInvoke<string, PSObject> (colInput, colOutput, null, (IAsyncResult ar) => {
-					if (ar.IsCompleted)
-						mre.Set();
-				}, null);
+				// 使用 BeginInvoke 的重载，传入 colOutput
+				IAsyncResult asyncResult = me.pwsh.BeginInvoke<string, PSObject>(colInput, colOutput);
+
+				// 在单独的线程中处理输出和错误
+				System.Threading.ThreadPool.QueueUserWorkItem(_ => {
+					try {
+						foreach (PSObject outputItem in colOutput) {
+							me.ui.WriteLine(outputItem.ToString());
+						}
+
+						foreach (ErrorRecord errorItem in me.pwsh.Streams.Error) {
+							me.ui.WriteErrorLine(errorItem.ToString());
+						}
+					}
+					catch (Exception ex) {
+						me.ui.WriteErrorLine(ex.Message);
+						me.ExitCode = 1;
+					}
+					finally {
+						mre.Set(); //确保所有输出都已处理
+					}
+				});
 
 				while (!mre.WaitOne(100))
 					if (me.ShouldExit) break;
 
 				me.Inited = true;
+				me.pwsh.EndInvoke(asyncResult);
+
 				me.pwsh.Stop();
 
 				if (me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed)
@@ -2014,6 +2029,7 @@ namespace PSRunnerNS {
 				#if !Pwsh20 // bro wtf
 					mre.Dispose();
 				#endif
+				me.pwsh.Dispose();
 			}
 
 			return me.ExitCode;
