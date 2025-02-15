@@ -162,6 +162,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		ConstEvalDone = "स्थिरांकों का मूल्यांकन पूर्ण -> {0} बाइट्स"
 		ConstEvalTooLongFallback = "स्थिरांक परिणाम बहुत लंबा है, सामान्य प्रोग्राम फ्रेम पर वापस आ रहा है"
 		ConstEvalTimeoutFallback = "स्थिरांक मूल्यांकन {0} सेकंड के बाद समय समाप्त हो गया, सामान्य प्रोग्राम फ्रेम पर वापस आ रहा है"
+		ConstEvalThrowErrorFallback = "स्थिरांक परिणाम में एक त्रुटि आई, सामान्य प्रोग्राम फ्रेम पर वापस आ रहा है"
 		InvalidArchitecture = "अमान्य प्लेटफ़ॉर्म {0}, AnyCpu का उपयोग करके"
 		UnknownPragma = "अज्ञात pragma: {0}"
 		UnknownPragmaBadParameterType = "अज्ञात pragma: {0}, प्रकार {1} का विश्लेषण नहीं किया जा सकता है।"

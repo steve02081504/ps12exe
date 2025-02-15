@@ -162,6 +162,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		ConstEvalDone = "计算常量完成 -> {0}字节"
 		ConstEvalTooLongFallback = "常量结果太长，退回正常程序框架"
 		ConstEvalTimeoutFallback = "常量计算{0}秒，超时。退回正常程序框架"
+		ConstEvalThrowErrorFallback = "常量计算抛出错误，退回正常程序框架"
 		InvalidArchitecture = "无效的平台 {0}，使用 AnyCpu"
 		UnknownPragma = "未知的 pragma：{0}"
 		UnknownPragmaBadParameterType = "未知的pragma：{0}，无法分析类型{1}。"

@@ -162,6 +162,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		ConstEvalDone = "Done evaluating constants -> {0} bytes."
 		ConstEvalTooLongFallback = "Constant result is too long, falling back to the normal program frame."
 		ConstEvalTimeoutFallback = "Evaluation timed out after {0} seconds, falling back to the normal program frame."
+		ConstEvalThrowErrorFallback = "Constant result throws an error, falling back to the normal program frame."
 		InvalidArchitecture = "Invalid platform {0}, using AnyCpu."
 		UnknownPragma = "Unknown pragma: {0}"
 		UnknownPragmaBadParameterType = "Unknown pragma: {0}, as type {1} can't analyse."

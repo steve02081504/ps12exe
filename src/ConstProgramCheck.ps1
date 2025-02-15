@@ -47,26 +47,33 @@ public class ps12exeConstEvalHost : PSHost {
 	$timeoutSeconds /= 20
 
 	if ($asyncResult.IsCompleted) {
-		$RowResult = $pwsh.EndInvoke($asyncResult) | Where-Object { $_ -ne $null }
-		$ConstResult = $RowResult | ForEach-Object {
-			(($_ | Out-String) -replace '\r\n$', '').Replace('\', '\\').Replace('"', '\"').Replace("`n", "\n").Replace("`r", "\r")
-		}
-		$ConstResult = $ConstResult -join $(if ($noConsole) { '","' }else { "`n" })
-		Write-I18n Verbose ConstEvalDone $(bytesOfString $ConstResult)
-		if ($ConstResult.Length -gt 19kb) {
-			Write-I18n Verbose ConstEvalTooLongFallback
-		}
-		else {
-			#_if PSEXE #这是该脚本被ps12exe编译时使用的预处理代码
-				#_include_as_value programFrame "$PSScriptRoot/programFrames/constexpr.cs" #将constexpr.cs中的内容内嵌到该脚本中
-			#_else #否则正常读取cs文件
-				[string]$programFrame = Get-Content $PSScriptRoot/programFrames/constexpr.cs -Raw -Encoding UTF8
-			#_endif
-			$programFrame = $programFrame.Replace("`$ConstResult", $ConstResult)
-			$programFrame = $programFrame.Replace("`$ConstExitCodeResult", [ps12exeConstEvalHost]::LastExitCode)
-			if ($RowResult.Count -eq 0) {
-				$noOutput = $true
+		try {
+			$RowResult = $pwsh.EndInvoke($asyncResult) | Where-Object { $_ -ne $null }
+			$ConstResult = $RowResult | ForEach-Object {
+				(($_ | Out-String) -replace '\r\n$', '').Replace('\', '\\').Replace('"', '\"').Replace("`n", "\n").Replace("`r", "\r")
 			}
+			$ConstResult = $ConstResult -join $(if ($noConsole) { '","' }else { "`n" })
+			Write-I18n Verbose ConstEvalDone $(bytesOfString $ConstResult)
+			if ($ConstResult.Length -gt 19kb) {
+				Write-I18n Verbose ConstEvalTooLongFallback
+				$AstAnalyzeResult.IsConst = $false
+			}
+			else {
+				#_if PSEXE #这是该脚本被ps12exe编译时使用的预处理代码
+					#_include_as_value programFrame "$PSScriptRoot/programFrames/constexpr.cs" #将constexpr.cs中的内容内嵌到该脚本中
+				#_else #否则正常读取cs文件
+					[string]$programFrame = Get-Content $PSScriptRoot/programFrames/constexpr.cs -Raw -Encoding UTF8
+				#_endif
+				$programFrame = $programFrame.Replace("`$ConstResult", $ConstResult)
+				$programFrame = $programFrame.Replace("`$ConstExitCodeResult", [ps12exeConstEvalHost]::LastExitCode)
+				if ($RowResult.Count -eq 0) {
+					$noOutput = $true
+				}
+			}
+		}
+		catch {
+			Write-I18n Verbose ConstEvalThrowErrorFallback
+			$AstAnalyzeResult.IsConst = $false
 		}
 	}
 	else {

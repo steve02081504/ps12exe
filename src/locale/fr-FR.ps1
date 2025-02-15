@@ -162,6 +162,7 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 		ConstEvalDone = "Calcul de la constante terminé -> {0} octets."
 		ConstEvalTooLongFallback = "Le résultat de la constante est trop long, retour au framework de programme normal."
 		ConstEvalTimeoutFallback = "Le calcul de la constante a pris {0} secondes, délai dépassé. Retour au framework de programme normal."
+		ConstEvalThrowErrorFallback = "Une erreur s’est produite lors du calcul de la constante, retour au framework de programme normal."
 		InvalidArchitecture = "Plateforme {0} non valide, utilisation de AnyCpu."
 		UnknownPragma = "Pragma inconnu : {0}."
 		UnknownPragmaBadParameterType = "Pragma inconnu : {0}, impossible d’analyser le type {1}."

@@ -162,6 +162,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 		ConstEvalDone = "Finalización de la evaluación de constantes -> {0} bytes"
 		ConstEvalTooLongFallback = "El resultado de la constante es demasiado largo, retroceso al marco de programa normal"
 		ConstEvalTimeoutFallback = "La evaluación de la constante se agotó después de {0} segundos, retroceso al marco de programa normal"
+		ConstEvalThrowErrorFallback = "Error al evaluar la constante, retroceso al marco de programa normal"
 		InvalidArchitecture = "Plataforma inválida {0}, utilizando AnyCpu"
 		UnknownPragma = "Pragma desconocido: {0}"
 		UnknownPragmaBadParameterType = "Pragma desconocido: {0}, no se puede analizar el tipo {1}."
