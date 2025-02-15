@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '**/*.ps1'
+      - '**/*.cs'
   pull_request:
     branches: [ "master" ]
   workflow_dispatch:
