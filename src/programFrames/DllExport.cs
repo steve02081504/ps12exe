@@ -29,13 +29,10 @@ namespace PSRunnerNS {
 					using (ManualResetEvent mre = new ManualResetEvent(false)) {
 						ThreadPool.QueueUserWorkItem(_ => {
 							try {
-								foreach (PSObject outputItem in colOutput) {
+								foreach (PSObject outputItem in colOutput)
 									Console.WriteLine(outputItem.ToString());
-								}
-
-								foreach (ErrorRecord errorItem in me.pwsh.Streams.Error) {
-									me.ui.WriteErrorLine(errorItem.ToString());
-								}
+								foreach (ErrorRecord errorItem in me.pwsh.Streams.Error)
+									me.ui.WriteErrorRecord(errorItem);
 
 								if (me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed) {
 									me.ExitCode = 1;
@@ -75,18 +72,13 @@ namespace PSRunnerNS {
 				using (ManualResetEvent mre = new ManualResetEvent(false)) {
 					ThreadPool.QueueUserWorkItem(_ => {
 						try {
-
-							foreach (PSObject outputItem in colOutput) {
+							foreach (PSObject outputItem in colOutput)
 								Console.WriteLine(outputItem.ToString());
-							}
+							foreach (ErrorRecord errorItem in me.pwsh.Streams.Error)
+								me.ui.WriteErrorRecord(errorItem);
 
-							foreach (ErrorRecord errorItem in me.pwsh.Streams.Error) {
-								me.ui.WriteErrorLine(errorItem.ToString());
-							}
-
-							if (me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed) {
+							if (me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed)
 								throw new InvalidOperationException("DllExportExample failed: " + me.pwsh.InvocationStateInfo.Reason.Message);
-							}
 						}
 						finally {
 							mre.Set();
@@ -98,13 +90,10 @@ namespace PSRunnerNS {
 				}
 
 				//处理返回值
-				if (colOutput.Count == 1) {
+				if (colOutput.Count == 1)
 					result = colOutput[0].BaseObject; //返回实际的值, 而不是PSObject
-				}
-				else if (colOutput.Count > 1) {
-					// 如果有多个输出，返回 PSObject 数组
-					result = colOutput.ToArray();
-				}
+				else if (colOutput.Count > 1)
+					result = colOutput.ToArray(); // 如果有多个输出，返回 PSObject 数组
 			}
 
 			return result;

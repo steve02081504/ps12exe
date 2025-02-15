@@ -1579,15 +1579,15 @@ namespace PSRunnerNS {
 		public override void Write(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value) {
 			#if !noOutput
 			#if !noConsole
-			ConsoleColor fgc = Console.ForegroundColor, bgc = Console.BackgroundColor;
-			Console.ForegroundColor = foregroundColor;
-			Console.BackgroundColor = backgroundColor;
-			Console.Write(value);
-			Console.ForegroundColor = fgc;
-			Console.BackgroundColor = bgc;
+				ConsoleColor fgc = Console.ForegroundColor, bgc = Console.BackgroundColor;
+				Console.ForegroundColor = foregroundColor;
+				Console.BackgroundColor = backgroundColor;
+				Console.Write(value);
+				Console.ForegroundColor = fgc;
+				Console.BackgroundColor = bgc;
 			#else
-			if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
-				MessageBox.Show(value, rawUI.WindowTitle);
+				if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
+					MessageBox.Show(value, rawUI.WindowTitle);
 			#endif
 			#endif
 		}
@@ -1595,10 +1595,10 @@ namespace PSRunnerNS {
 		public override void Write(string value) {
 			#if !noOutput
 			#if !noConsole
-			Console.Write(value);
+				Console.Write(value);
 			#else
-			if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
-				MessageBox.Show(value, rawUI.WindowTitle);
+				if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
+					MessageBox.Show(value, rawUI.WindowTitle);
 			#endif
 			#endif
 		}
@@ -1607,9 +1607,9 @@ namespace PSRunnerNS {
 		public override void WriteDebugLine(string message) {
 			#if !noError
 			#if !noConsole
-			WriteLineInternal(DebugForegroundColor, DebugBackgroundColor, string.Format("DEBUG: {0}", message));
+				WriteLineInternal(DebugForegroundColor, DebugBackgroundColor, string.Format("DEBUG: {0}", message));
 			#else
-			MessageBox.Show(message, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
+				MessageBox.Show(message, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
 			#endif
 			#endif
 		}
@@ -1618,22 +1618,35 @@ namespace PSRunnerNS {
 		public override void WriteErrorLine(string value) {
 			#if !noError
 			#if !noConsole
-			if (Console_Info.IsErrorRedirected())
-				Console.Error.WriteLine(string.Format("ERROR: {0}", value));
-			else
-				WriteLineInternal(ErrorForegroundColor, ErrorBackgroundColor, string.Format("ERROR: {0}", value));
+				if (Console_Info.IsErrorRedirected())
+					Console.Error.WriteLine(string.Format("ERROR: {0}", value));
+				else
+					WriteLineInternal(ErrorForegroundColor, ErrorBackgroundColor, string.Format("ERROR: {0}", value));
 			#else
-			MessageBox.Show(value, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
+				MessageBox.Show(value, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
 			#endif
 			#endif
+		}
+
+		internal void WriteErrorRecord(ErrorRecord errorItem) {
+			// 特殊处理原生stderr导致的异常
+			if (errorItem.Exception is System.Management.Automation.RemoteException) {
+				var RemoteException = errorItem.Exception as System.Management.Automation.RemoteException;
+				if (RemoteException.SerializedRemoteException == null)
+					Console.Error.WriteLine(errorItem.Exception.Message);
+				else
+					WriteErrorLine(errorItem.ToString());
+			}
+			else
+				WriteErrorLine(errorItem.ToString());
 		}
 
 		public override void WriteLine() {
 			#if !noOutput
 			#if !noConsole
-			Console.WriteLine();
+				Console.WriteLine();
 			#else
-			MessageBox.Show("", rawUI.WindowTitle);
+				MessageBox.Show("", rawUI.WindowTitle);
 			#endif
 			#endif
 		}
@@ -1641,15 +1654,15 @@ namespace PSRunnerNS {
 		public override void WriteLine(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value) {
 			#if !noOutput
 			#if !noConsole
-			ConsoleColor fgc = Console.ForegroundColor, bgc = Console.BackgroundColor;
-			Console.ForegroundColor = foregroundColor;
-			Console.BackgroundColor = backgroundColor;
-			Console.WriteLine(value);
-			Console.ForegroundColor = fgc;
-			Console.BackgroundColor = bgc;
+				ConsoleColor fgc = Console.ForegroundColor, bgc = Console.BackgroundColor;
+				Console.ForegroundColor = foregroundColor;
+				Console.BackgroundColor = backgroundColor;
+				Console.WriteLine(value);
+				Console.ForegroundColor = fgc;
+				Console.BackgroundColor = bgc;
 			#else
-			if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
-				MessageBox.Show(value, rawUI.WindowTitle);
+				if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
+					MessageBox.Show(value, rawUI.WindowTitle);
 			#endif
 			#endif
 		}
@@ -1669,10 +1682,10 @@ namespace PSRunnerNS {
 		public override void WriteLine(string value) {
 			#if !noOutput
 			#if !noConsole
-			Console.WriteLine(value);
+				Console.WriteLine(value);
 			#else
-			if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
-				MessageBox.Show(value, rawUI.WindowTitle);
+				if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
+					MessageBox.Show(value, rawUI.WindowTitle);
 			#endif
 			#endif
 		}
@@ -1991,13 +2004,10 @@ namespace PSRunnerNS {
 				// 在单独的线程中处理输出和错误
 				System.Threading.ThreadPool.QueueUserWorkItem(_ => {
 					try {
-						foreach (PSObject outputItem in colOutput) {
+						foreach (PSObject outputItem in colOutput)
 							me.ui.WriteLine(outputItem.ToString());
-						}
-
-						foreach (ErrorRecord errorItem in me.pwsh.Streams.Error) {
-							me.ui.WriteErrorLine(errorItem.ToString());
-						}
+						foreach (ErrorRecord errorItem in me.pwsh.Streams.Error)
+							me.ui.WriteErrorRecord(errorItem);
 					}
 					catch (Exception ex) {
 						me.ui.WriteErrorLine(ex.Message);
