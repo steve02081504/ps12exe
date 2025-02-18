@@ -1,17 +1,24 @@
 param ($SyntaxErrors)
 foreach ($_ in $SyntaxErrors) {
 	$Extent = $_.Extent
-	$LineStr = $Extent.StartLineNumber.ToString()
+	if ($Extent.StartLineNumber) {
+		$LineStr = $Extent.StartLineNumber.ToString()
+	}
 	if ($Extent.StartLineNumber -ne $Extent.EndLineNumber) {
 		$LineStr += "-$($Extent.EndLineNumber)"
 	}
-	$ColumnStr = $Extent.StartColumnNumber.ToString()
+	if ($Extent.StartColumnNumber) {
+		$ColumnStr = $Extent.StartColumnNumber.ToString()
+	}
 	if ($Extent.StartColumnNumber -ne $Extent.EndColumnNumber) {
 		$ColumnStr += "-$($Extent.EndColumnNumber)"
 	}
 	$SpoceText = $Extent.StartLineNumber, $Extent.StartColumnNumber
+	if($Extent.StartScriptPosition) {
+		$FullText = $Extent.StartScriptPosition.GetFullScript()
+	}
 	@{
-		Text = $Extent.StartScriptPosition.GetFullScript()
+		Text = $FullText
 		Message = $_.Message
 		Spoce = @{
 			Line = $Extent.StartLineNumber

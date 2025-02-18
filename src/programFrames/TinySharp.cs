@@ -27,7 +27,7 @@ using AsmResolver.PE.File.Headers;
 namespace TinySharp {
 	public class Program {
 		public static Program Compile(
-			string TargetFramework, string architecture = "x64",
+			string targetRuntime, string architecture = "x64",
 			string outputValue = "Hello World!", int ExitCode = 0, bool hasOutput = true
 		) {
 			string baseFunction = "7";
@@ -192,7 +192,7 @@ namespace TinySharp {
 			image.DotNetDirectory = new DotNetDirectory {
 				EntryPoint = new MetadataToken(TableIndex.Method, hasOutput?allASCIIoutput?2u:3u:1u),
 				Metadata = new Metadata {
-					VersionString = TargetFramework == "Framework2.0" ? "v2.0." : "v4.0.",
+					VersionString = targetRuntime == "Framework2.0" ? "v2.0." : "v4.0.",
 					Streams = {
 						tablesStream,
 						blobStreamBuffer.CreateStream(),

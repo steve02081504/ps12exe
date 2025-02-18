@@ -455,10 +455,10 @@ $resourceParams.Remove('iconFile')
 # 语法检查
 if ($targetRuntime -eq 'Framework2.0') {
 	#_if PSScript
-		$SyntaxErrors = powershell -version 2.0 -OutputFormat xml -file $PSScriptRoot/src/RuntimePwsh2.0/CodeChecker.ps1 -scriptText $Content
+		$SyntaxErrors = powershell -version 2.0 -NoProfile -OutputFormat xml -file $PSScriptRoot/src/RuntimePwsh2.0/CodeChecker.ps1 -scriptText $Content
 	#_else
 		#_include_as_value Pwsh2CodeCheckerCodeStr $PSScriptRoot/src/RuntimePwsh2.0/CodeChecker.ps1
-		#_!! powershell -version 2.0 -OutputFormat xml -Command "&{$Pwsh2CodeCheckerCodeStr} -scriptText '$($Content -replace "'","''")'"
+		#_!! powershell -version 2.0 -NoProfile -OutputFormat xml -Command "&{$Pwsh2CodeCheckerCodeStr} -scriptText '$($Content -replace "'","''")'"
 	#_endif
 }
 else {
@@ -475,11 +475,14 @@ if ($SyntaxErrors) {
 		$fullText = ($errinfo.SpoceText + $errinfo.Text) -join "`n"
 		if ($fullText -ne $lastFullText) {
 			$lastFullText = $fullText
+			if (!$errinfo.SpoceText.contains($null)) {
+				$StartLine = Write-I18n Output SyntaxErrorLineStart $errinfo.SpoceText
+			}
 			$ErrMessage += [ordered]@{
 				Split = ''
-				StartLine = Write-I18n Output SyntaxErrorLineStart $errinfo.SpoceText
+				StartLine = $StartLine
 				ScriptLine = $errinfo.Text
-				HighlightLine = (" "*($errinfo.Spoce.Column-1) + '^'*([Math]::Max($errinfo.Spoce.ColumnEnd-$errinfo.Spoce.Column,1)))
+				HighlightLine = (" "*([Math]::Max(0, $errinfo.Spoce.Column-1)) + '^'*([Math]::Max($errinfo.Spoce.ColumnEnd-$errinfo.Spoce.Column,1)))
 				Messages = @()
 			}
 		}
@@ -492,9 +495,11 @@ if ($SyntaxErrors) {
 	} InputSyntaxError
 	$ErrMessage | ForEach-Object{
 		Write-Host $_.Split
-		Write-Host $_.StartLine -ForegroundColor Cyan
-		Write-Host $_.ScriptLine
-		Write-Host $_.HighlightLine -ForegroundColor Red
+		if ($_.StartLine) { Write-Host $_.StartLine -ForegroundColor Cyan }
+		if ($_.ScriptLine) {
+			Write-Host $_.ScriptLine
+			Write-Host $_.HighlightLine -ForegroundColor Red
+		}
 		Write-Host ($_.Messages -join "`n")
 	}
 	$global:LastExitCode = 1 # 脚本语法错误
@@ -554,7 +559,7 @@ function UsingWinPowershell($Boundparameters) {
 
 	Write-Debug "Starting WinPowershell ps12exe with parameters: $CallParam"
 
-	powershell -noprofile -Command "&'$PSScriptRoot\ps12exe.ps1' $CallParam -nested; exit `$LastExitCode" | Write-Host
+	powershell -NoProfile -Command "&'$PSScriptRoot\ps12exe.ps1' $CallParam -nested; exit `$LastExitCode" | Write-Host
 }
 if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerShell -and (Get-Command powershell -ErrorAction Ignore)) {
 	UsingWinPowershell $Params

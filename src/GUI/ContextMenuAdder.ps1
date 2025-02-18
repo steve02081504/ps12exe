@@ -68,7 +68,7 @@ public class ExplorerRefresher {
 '@
 
 function PwshCodeAsCommand($command) {
-	"powershell.exe -Command `"if(-Not (Get-Module -ListAvailable -Name ps12exe)){ Install-Module ps12exe -Force -Scope CurrentUser -ErrorAction Ignore }; Import-Module ps12exe -ErrorAction Stop; $command`""
+	"powershell.exe -NoProfile -Command `"if(-Not (Get-Module -ListAvailable -Name ps12exe)){ Install-Module ps12exe -Force -Scope CurrentUser -ErrorAction Ignore }; Import-Module ps12exe -ErrorAction Stop; $command`""
 }
 
 function AddCommandToContextMenu {
