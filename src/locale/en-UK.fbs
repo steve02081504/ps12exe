@@ -101,6 +101,6 @@
 	<OpenFileDialog Name="OpenCfgFileDialog" DefaultExt="psccfg" Filter="Configuration Files (*.psccfg)|*.psccfg" Title="Select a configuration file, if you'd be so kind" />
 	<SaveFileDialog Name="SaveCfgFileDialog" DefaultExt="psccfg" Filter="Configuration Files (*.psccfg)|*.psccfg" Title="Save the configuration file, old chap" />
 	<OpenFileDialog Name="OpenCompileFileDialog" DefaultExt="ps1" Filter="Powershell Files (*.ps1)|*.ps1|Powershell Data Files (*.psd1)|*.psd1" Title="Select a compilation file, my good sir" />
-	<OpenFileDialog Name="OpenOutputFileDialog" DefaultExt="exe" Filter="Executable Files (*.exe)|*.exe" Title="Select an output file, if you please" />
+	<SaveFileDialog Name="OpenOutputFileDialog" DefaultExt="exe" Filter="Executable Files (*.exe)|*.exe" Title="Select an output file, if you please" />
 	<OpenFileDialog Name="OpenIconFileDialog" DefaultExt="ico" Filter="Icon Files (*.ico)|*.ico" Title="Select an icon file, old bean" />
 </Data>

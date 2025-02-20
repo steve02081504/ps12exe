@@ -101,6 +101,6 @@
 	<OpenFileDialog Name="OpenCfgFileDialog" DefaultExt="psccfg" Filter="配置文件(*.psccfg)|*.psccfg" Title="选择配置文件" />
 	<SaveFileDialog Name="SaveCfgFileDialog" DefaultExt="psccfg" Filter="配置文件(*.psccfg)|*.psccfg" Title="保存配置文件" />
 	<OpenFileDialog Name="OpenCompileFileDialog" DefaultExt="ps1" Filter="powershell文件(*.ps1)|*.ps1|powershell数据文件(*.psd1)|*.psd1" Title="选择编译文件" />
-	<OpenFileDialog Name="OpenOutputFileDialog" DefaultExt="exe" Filter="可执行文件(*.exe)|*.exe" Title="选择输出文件" />
+	<SaveFileDialog Name="OpenOutputFileDialog" DefaultExt="exe" Filter="可执行文件(*.exe)|*.exe" Title="选择输出文件" />
 	<OpenFileDialog Name="OpenIconFileDialog" DefaultExt="ico" Filter="图标文件(*.ico)|*.ico" Title="选择图标文件" />
 </Data>

@@ -101,6 +101,6 @@
 	<OpenFileDialog Name="OpenCfgFileDialog" DefaultExt="psccfg" Filter="Archivos de configuración(*.psccfg)|*.psccfg" Title="Seleccionar archivo de configuración" />
 	<SaveFileDialog Name="SaveCfgFileDialog" DefaultExt="psccfg" Filter="Archivos de configuración(*.psccfg)|*.psccfg" Title="Guardar archivo de configuración" />
 	<OpenFileDialog Name="OpenCompileFileDialog" DefaultExt="ps1" Filter="Archivos de powershell(*.ps1)|*.ps1|Archivos de datos de powershell(*.psd1)|*.psd1" Title="Seleccionar archivo de compilación" />
-	<OpenFileDialog Name="OpenOutputFileDialog" DefaultExt="exe" Filter="Archivos ejecutables(*.exe)|*.exe" Title="Seleccionar archivo de salida" />
+	<SaveFileDialog Name="OpenOutputFileDialog" DefaultExt="exe" Filter="Archivos ejecutables(*.exe)|*.exe" Title="Seleccionar archivo de salida" />
 	<OpenFileDialog Name="OpenIconFileDialog" DefaultExt="ico" Filter="Archivos de icono(*.ico)|*.ico" Title="Seleccionar archivo de icono" />
 </Data>

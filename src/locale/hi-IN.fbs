@@ -101,6 +101,6 @@
 	<OpenFileDialog Name="OpenCfgFileDialog" DefaultExt="psccfg" Filter="कॉन्फ़िगरेशन फ़ाइल (*.psccfg)|*.psccfg" Title="कॉन्फ़िगरेशन फ़ाइल चुनें" />
 	<SaveFileDialog Name="SaveCfgFileDialog" DefaultExt="psccfg" Filter="कॉन्फ़िगरेशन फ़ाइल (*.psccfg)|*.psccfg" Title="कॉन्फ़िगरेशन फ़ाइल सहेजें" />
 	<OpenFileDialog Name="OpenCompileFileDialog" DefaultExt="ps1" Filter="पॉवरशेल फ़ाइलें (*.ps1)|*.ps1|पॉवरशेल डेटा फ़ाइलें (*.psd1)|*.psd1" Title="कंपाइल फ़ाइल चुनें" />
-	<OpenFileDialog Name="OpenOutputFileDialog" DefaultExt="exe" Filter="एक्ज़िक्यूटेबल फ़ाइलें (*.exe)|*.exe" Title="आउटपुट फ़ाइल चुनें" />
+	<SaveFileDialog Name="OpenOutputFileDialog" DefaultExt="exe" Filter="एक्ज़िक्यूटेबल फ़ाइलें (*.exe)|*.exe" Title="आउटपुट फ़ाइल चुनें" />
 	<OpenFileDialog Name="OpenIconFileDialog" DefaultExt="ico" Filter="आइकन फ़ाइलें (*.ico)|*.ico" Title="आइकन फ़ाइल चुनें" />
 </Data>
