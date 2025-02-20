@@ -224,10 +224,10 @@ function Preprocessor($Content, $FilePath) {
 			$Matches[1] + $Matches["line"]
 		}
 		elseif ($_ -match "^(\s*)#_balus\s+(?<exitcode>\d+)") {
-			'Start-Process powershell -NoProfile "sleep 1;rm `"$PSEXEpath`"" -WindowStyle hidden;exit ' + $Matches["exitcode"]
+			'Start-Process powershell @("-NoProfile";"-c";"sleep 1;rm `"$PSEXEpath`"") -WindowStyle hidden;exit ' + $Matches["exitcode"]
 		}
 		elseif ($_ -match "^(\s*)#_balus") {
-			'Start-Process powershell -NoProfile "sleep 1;rm `"$PSEXEpath`"" -WindowStyle hidden;exit 0'
+			'Start-Process powershell @("-NoProfile";"-c";"sleep 1;rm `"$PSEXEpath`"") -WindowStyle hidden;exit 0'
 		}
 		else { $_ }
 	} |
