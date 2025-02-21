@@ -70,7 +70,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 	product='<producto>'; copyright='<derechos de autor>'; trademark='<marca>'; version='<versión>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<Versión de tiempo de ejecución>']
-	[-SkipVersionCheck] [-GuestMode] [-Localize '<código de idioma>'] [-help]"
+	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-Localize '<código de idioma>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "La cadena del contenido del archivo de script de PowerShell, igual que ``-Content``."
 			inputFile		 = "La ruta o URL del archivo de script de PowerShell que desea convertir en un archivo ejecutable (el archivo debe estar codificado en UTF8 o UTF16)"
@@ -101,6 +101,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 			targetRuntime	 = "Versión de tiempo de ejecución de destino, ``'Framework4.0'`` por defecto, se admiten ``'Framework2.0'``"
 			SkipVersionCheck = "Omitir la comprobación de nuevas versiones de ps12exe"
 			GuestMode		 = "Compilación de scripts con protección adicional frente al acceso a archivos nativos"
+			PreprocessOnly	 = "Preprocesa el script de entrada y devuélvelo sin compilar"
 			Localize		 = "El código de idioma que desea usar"
 			Help			 = "Mostrar esta información de ayuda"
 		}
@@ -116,6 +117,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 		MinifyerError = "Error del minificador: {0}"
 		MinifyerFailedUsingOriginalScript = "Falló el minificador, utilizando el script original."
 		TempFileMissing = "¡No se encontró el archivo temporal {0}!"
+		PreprocessOnlyDone = "Finalización de la preprocesación del script de entrada"
 		CombinedArg_x86_x64 = "-x86 no se puede usar con -x64"
 		CombinedArg_Runtime20_Runtime40 = "-runtime20 no se puede usar con -runtime40"
 		CombinedArg_Runtime20_LongPaths = "Las rutas largas solo están disponibles con .Net 4 o superior"

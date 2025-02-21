@@ -110,7 +110,7 @@ help       : このヘルプ情報を表示します。
         product='<製品>'; copyright='<著作権>'; trademark='<商標>'; version='<バージョン>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<ランタイムバージョン>']
-        [-SkipVersionCheck] [-GuestMode] [-Localize '<言語コード>'] [-help]
+        [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-Localize '<言語コード>'] [-help]
 ```
 
 ```text
@@ -143,6 +143,7 @@ longPaths        : OS で有効になっている場合、長いパス（260 文
 targetRuntime    : ターゲット ランタイム バージョン、既定値は 'Framework4.0'、'Framework2.0' がサポートされています
 SkipVersionCheck : ps12exeの新しいバージョンの確認をスキップします
 GuestMode        : ネイティブ ファイルへのアクセスを防ぐために、スクリプトをコンパイルする際に保護を追加します
+PreprocessOnly   : 入力スクリプトをプリプロセス処理し、コンパイルせずに返します
 Localize         : 使用する言語コード
 Help             : このヘルプ情報を表示します
 ```

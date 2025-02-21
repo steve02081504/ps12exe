@@ -110,14 +110,14 @@ help       : इस मदद सूचना को दिखाएँ।
         product='<उत्पाद>'; copyright='<कॉपीराइट>'; trademark='<नामकरण>'; version='<संस्करण>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<रनटाइम संस्करण>']
-        [-SkipVersionCheck] [-GuestMode] [-Localize '<भाषा कोड>'] [-help]
+        [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-Localize '<भाषा कोड>'] [-help]
 ```
 
 ```text
-input            : PowerShell स्क्रिप्ट फ़ाइल की सामग्री का स्ट्रिंग, -Content के समान।
+input            : PowerShell स्क्रिप्ट फ़ाइल की सामग्री का स्ट्रिंग, -Content के समान
 inputFile        : जिसे आप एक्सीक्यूटेबल फ़ाइल में परिवर्तित करना चाहते हैं, उस PowerShell स्क्रिप्ट फ़ाइल का पथ या URL (फ़ाइल को UTF8 या UTF16 एन्कोड किया गया होना चाहिए)
 Content          : जिसे आप एक्सीक्यूटेबल फ़ाइल में परिवर्तित करना चाहते हैं, उस PowerShell स्क्रिप्ट की सामग्री
-outputFile       : लक्षित एक्सीक्यूटेबल फ़ाइल का नाम या फ़ोल्डर, डिफ़ॉल्ट रूप से inputFile के साथ '.exe' एक्सटेंशन के साथ।
+outputFile       : लक्षित एक्सीक्यूटेबल फ़ाइल का नाम या फ़ोल्डर, डिफ़ॉल्ट रूप से inputFile के साथ '.exe' एक्सटेंशन के साथ
 CompilerOptions  : अतिरिक्त कंपाइलर विकल्प (देखें https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)
 TempDir          : सामयिक फ़ाइलें संग्रहित करने के लिए फ़ोल्डर (डिफ़ॉल्ट रूप से रैंडम फ़ोल्डर में उत्पन्न होने वाला फ़ोल्डर)
 minifyer         : कॉम्पाइल से पहले स्क्रिप्ट को कम करने के लिए स्क्रिप्ट ब्लॉक
@@ -143,6 +143,7 @@ longPaths        : यदि ऑपरेटिंग सिस्टम पर 
 targetRuntime    : लक्ष्य रनटाइम संस्करण, डिफ़ॉल्ट रूप से 'Framework4.0', 'Framework2.0' समर्थित हैं
 SkipVersionCheck : ps12exe के नए संस्करण की जाँच छोड़ें
 GuestMode        : एक्सट्रा सुरक्षा के साथ स्क्रिप्ट को कॉम्पाइल करें, स्थानीय फ़ाइलों की पहुँच को टालें
+PreprocessOnly   : इनपुट स्क्रिप्ट को प्रीप्रोसेस करें और इसे संकलित किए बिना वापस करें।
 Localize         : स्थानीयकरण भाषा कोड की निर्दिष्टि करें
 Help             : इस मदद सूचना को दिखाएँ
 ```

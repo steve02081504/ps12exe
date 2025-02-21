@@ -2,10 +2,11 @@
 
 <#
 .SYNOPSIS
-Converts powershell scripts to standalone executables.
+Converts powershell scripts to standalone executables or preprocesses PowerShell scripts.
 .DESCRIPTION
 Converts powershell scripts to standalone executables. GUI output and input is activated with one switch,
 real windows executables are generated. You may use the graphical front end ps12exeGUI for convenience.
+Alternatively, preprocesses a PowerShell script, handling directives like `#_if`, `#_else`, `#_endif`, and `#_include`.
 
 Please see Remarks on project page for topics "GUI mode output formatting", "Config files", "Password security",
 "Script variables" and "Window in background in -noConsole mode".
@@ -104,12 +105,18 @@ Do not check for updates
 .PARAMETER help
 Display localized help message
 
+.PARAMETER PreprocessOnly
+only preprocesses the input PowerShell script and outputs the preprocessed code. No executable is generated.
+
 .EXAMPLE
 ps12exe C:\Data\MyScript.ps1
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScript.exe as console executable
 .EXAMPLE
 ps12exe -inputFile C:\Data\MyScript.ps1 -outputFile C:\Data\MyScriptGUI.exe -iconFile C:\Data\Icon.ico -noConsole -title "MyScript" -version 0.0.0.1
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScriptGUI.exe as graphical executable, icon and meta data
+.EXAMPLE
+ps12exe -inputFile C:\Data\MyScript.ps1 -PreprocessOnly
+Preprocesses C:\Data\MyScript.ps1 and outputs the preprocessed code.
 #>
 [CmdletBinding(DefaultParameterSetName = 'InputFile')]
 Param(
@@ -145,6 +152,7 @@ Param(
 	[String]$targetRuntime = 'Framework4.0',
 	[Switch]$SkipVersionCheck,
 	[Switch]$GuestMode,
+	[Switch]$PreprocessOnly,
 	#_if PSScript
 		[ArgumentCompleter({
 			Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
@@ -311,6 +319,7 @@ $Params = $PSBoundParameters
 $ParamList = $MyInvocation.MyCommand.Parameters
 $Params.Remove('Content') | Out-Null #防止回滚覆盖
 $Params.Remove('DllExportList') | Out-Null
+$Params.Remove('PreprocessOnly') | Out-Null # Remove PreprocessOnly from params for compilation step
 
 function bytesOfString([string]$str) {
 	if ($str) { [system.Text.Encoding]::UTF8.GetBytes($str).Count } else { 0 }
@@ -391,6 +400,12 @@ else {
 	}
 }
 #_endif
+
+if ($PreprocessOnly) {
+	Write-I18n Host PreprocessOnlyDone
+	$global:LastExitCode = 0
+	return $Content
+}
 
 # pragma预处理命令可能会修改参数，所以现在开始参数更新
 $Params.GetEnumerator() | ForEach-Object {

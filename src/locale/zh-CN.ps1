@@ -101,6 +101,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 			targetRuntime	 = "目标运行时版本，默认为 ``'Framework4.0'``，支持 ``'Framework2.0'``"
 			SkipVersionCheck = "跳过ps12exe的新版本检查"
 			GuestMode		 = "在额外的保护下编译脚本，避免本机文件被访问"
+			PreprocessOnly	 = "预处理输入脚本并在不编译的情况下返回它"
 			Localize		 = "指定本地化语言"
 			Help			 = "显示此帮助信息"
 		}
@@ -116,6 +117,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		MinifyerError = "压缩器错误：{0}"
 		MinifyerFailedUsingOriginalScript = "压缩器失败，使用原始脚本。"
 		TempFileMissing = "找不到临时文件{0}！"
+		PreprocessOnlyDone = "预处理完成"
 		CombinedArg_x86_x64 = "-x86 不能与 -x64 一起使用"
 		CombinedArg_Runtime20_Runtime40 = "-runtime20 不能与 -runtime40 一起使用"
 		CombinedArg_Runtime20_LongPaths = ".Net 4 或更高版本才支持长路径"

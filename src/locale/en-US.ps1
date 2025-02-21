@@ -70,7 +70,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 	product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<Runtime>']
-	[-SkipVersionCheck] [-GuestMode] [-Localize '<language code>'] [-help]"
+	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-Localize '<language code>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "String of the PowerShell script file's contents, same as ``-Content``."
 			inputFile		 = "PowerShell script file path or URL you wanna convert to an executable (file must be UTF8 or UTF16 encoded)."
@@ -101,6 +101,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 			targetRuntime	 = "Target runtime version, ``'Framework4.0'`` by default, ``'Framework2.0'`` is supported."
 			SkipVersionCheck = "Skip the check for new versions of ps12exe"
 			GuestMode		 = "Compile scripts with extra protection, preventin' native files from being accessed."
+			PreprocessOnly	 = "Preprocess the input script and return it without compiling."
 			Localize		 = "Language code."
 			Help			 = "Show this here help message."
 		}
@@ -116,6 +117,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		MinifyerError = "Minifyer error: {0}"
 		MinifyerFailedUsingOriginalScript = "Minifyer failed, using the original script."
 		TempFileMissing = "Temporary file {0} not found."
+		PreprocessOnlyDone = "Done pre-processing the input script."
 		CombinedArg_x86_x64 = "-x86 can't be combined with -x64."
 		CombinedArg_Runtime20_Runtime40 = "-runtime20 can't be combined with -runtime40."
 		CombinedArg_Runtime20_LongPaths = "Long paths are only available with .NET 4 or above."
@@ -158,7 +160,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		OutputPath = "Path: {0}"
 		ReadingScriptDone = "Done reading file {0}, startin' preprocessing..."
 		PreprocessScriptDone = "Done preprocessing file {0}."
-        ConstEvalStart = "Evaluation of constants..."
+		ConstEvalStart = "Evaluation of constants..."
 		ConstEvalDone = "Done evaluating constants -> {0} bytes."
 		ConstEvalTooLongFallback = "Constant result too long, falling back to the normal program frame."
 		ConstEvalTimeoutFallback = "Evaluation timed out after {0} seconds, falling back to the normal program frame."

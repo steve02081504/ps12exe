@@ -70,7 +70,7 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 	product='<produit>'; copyright='<copyright>'; trademark='<marque_déposée>'; version='<version>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<version_du_runtime>']
-	[-SkipVersionCheck] [-GuestMode] [-Localize '<code_de_langue>'] [-help]"
+	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-Localize '<code_de_langue>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "Chaîne de caractères du contenu du fichier de script PowerShell, identique à ``-Content``."
 			inputFile		 = "Chemin d’accès ou URL du fichier de script PowerShell que vous voulez convertir en exécutable (le fichier doit être encodé en UTF8 ou UTF16)."
@@ -101,6 +101,7 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 			targetRuntime	 = "Version de l’environnement d’exécution cible, par défaut ``'Framework4.0'``, prend en charge ``'Framework2.0'``."
 			SkipVersionCheck = "Ignorer la vérification de la nouvelle version de ps12exe."
 			GuestMode		 = "Compiler le script avec une protection supplémentaire, éviter l’accès aux fichiers natifs."
+			PreprocessOnly	 = "Prétraite le script d'entrée et le retourne sans compilation."
 			Localize		 = "Spécifier la langue de localisation."
 			Help			 = "Affiche cette aide."
 		}
@@ -116,6 +117,7 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 		MinifyerError = "Erreur du compresseur : {0}"
 		MinifyerFailedUsingOriginalScript = "Échec du compresseur, utilisation du script d’origine."
 		TempFileMissing = "Fichier temporaire introuvable {0} !"
+		PreprocessOnlyDone = "Prétraitement seulement terminé."
 		CombinedArg_x86_x64 = "-x86 ne peut pas être utilisé avec -x64"
 		CombinedArg_Runtime20_Runtime40 = "-runtime20 ne peut pas être utilisé avec -runtime40"
 		CombinedArg_Runtime20_LongPaths = "Les chemins longs ne sont pris en charge qu’avec .Net 4 ou version ultérieure."
@@ -142,7 +144,7 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 		TryUpgrade = "La dernière version est {0}, essayer de mettre à niveau ?"
 		EnterToSubmitIssue = "Appuyez sur Entrée pour soumettre un problème pour obtenir de l’aide."
 		GuestModeFileTooLarge = "Le fichier {0} est trop grand pour être lu."
-        GuestModeIconFileTooLarge = "L’icône {0} est trop grande pour être lue."
+		GuestModeIconFileTooLarge = "L’icône {0} est trop grande pour être lue."
 		GuestModeFtpNotSupported = "FTP n’est pas pris en charge en mode invité."
 		IconFileNotFound = "Fichier d’icône introuvable : {0}"
 		ReadFileFailed = "Échec de la lecture du fichier : {0}"
@@ -150,7 +152,7 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 		PreprocessMissingEndIf = "Fin de if manquante : {0}"
 		ConfigFileCreated = "Fichier de configuration créé pour l’EXE."
 		SourceFileCopied = "Nom du fichier source copié pour le débogage : {0}"
-        RoslynFailedFallback = "Échec de la compilation de Roslyn\nRetour à l’utilisation de Windows PowerShell avec CodeDom...\nVous voudrez peut-être ajouter -UseWindowsPowerShell aux paramètres à l’avenir pour ignorer ce repli\n... ou soumettre une pull request au référentiel ps12exe pour corriger ce problème !"
+		RoslynFailedFallback = "Échec de la compilation de Roslyn\nRetour à l’utilisation de Windows PowerShell avec CodeDom...\nVous voudrez peut-être ajouter -UseWindowsPowerShell aux paramètres à l’avenir pour ignorer ce repli\n... ou soumettre une pull request au référentiel ps12exe pour corriger ce problème !"
 		ReadingFile = "Lecture de {0}, {1} octets."
 		ForceX86byVirtualization = "La virtualisation d’application est activée, forçant l’utilisation de la plateforme x86."
 		TryingTinySharpCompile = "Le résultat est une constante, essayez le compilateur TinySharp..."

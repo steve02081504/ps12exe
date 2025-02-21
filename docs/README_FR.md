@@ -110,7 +110,7 @@ help       : Affiche cette aide.
         product='<produit>'; copyright='<copyright>'; trademark='<marque_déposée>'; version='<version>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<version_du_runtime>']
-        [-SkipVersionCheck] [-GuestMode] [-Localize '<code_de_langue>'] [-help]
+        [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-Localize '<code_de_langue>'] [-help]
 ```
 
 ```text
@@ -143,6 +143,7 @@ longPaths        : Active les chemins longs (> 260 caractères) si activé sur l
 targetRuntime    : Version du runtime cible, par défaut 'Framework4.0', prend également en charge 'Framework2.0'.
 SkipVersionCheck : Ignore la vérification de la nouvelle version de ps12exe.
 GuestMode        : Compile le script avec une protection supplémentaire, évite l'accès aux fichiers natifs.
+PreprocessOnly   : Prétraite le script d'entrée et le retourne sans compilation.
 Localize         : Spécifie la langue de localisation.
 Help             : Affiche cette aide.
 ```

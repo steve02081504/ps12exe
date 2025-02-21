@@ -110,7 +110,7 @@ help       : 显示此帮助信息。
         product='<产品>'; copyright='<版权>'; trademark='<水印>'; version='<版本>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<运行时版本>']
-        [-SkipVersionCheck] [-GuestMode] [-Localize '<语言代码>'] [-help]
+        [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-Localize '<语言代码>'] [-help]
 ```
 
 ```text
@@ -143,6 +143,7 @@ longPaths        : 如果在OS上启用，启用长路径（> 260个字符）（
 targetRuntime    : 目标运行时版本，默认为 'Framework4.0'，支持 'Framework2.0'
 SkipVersionCheck : 跳过ps12exe的新版本检查
 GuestMode        : 在额外的保护下编译脚本，避免本机文件被访问
+PreprocessOnly   : 预处理输入脚本并在不编译的情况下返回它
 Localize         : 指定本地化语言
 Help             : 显示此帮助信息
 ```

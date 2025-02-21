@@ -70,7 +70,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 	product='<製品>'; copyright='<著作権>'; trademark='<商標>'; version='<バージョン>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<ランタイムバージョン>']
-	[-SkipVersionCheck] [-GuestMode] [-Localize '<言語コード>'] [-help]"
+	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-Localize '<言語コード>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "PowerShell スクリプトファイルの内容の文字列で、``-Content`` と同じです"
 			inputFile		 = "実行可能ファイルに変換したい PowerShell スクリプトファイルのパスまたは URL（ファイルは UTF8 または UTF16 でエンコードされている必要があります）"
@@ -101,6 +101,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 			targetRuntime	 = "ターゲット ランタイム バージョン、既定値は ``'Framework4.0'``、``'Framework2.0'`` がサポートされています"
 			SkipVersionCheck = "ps12exeの新しいバージョンの確認をスキップします"
 			GuestMode		 = "ネイティブ ファイルへのアクセスを防ぐために、スクリプトをコンパイルする際に保護を追加します"
+			PreprocessOnly	 = "入力スクリプトをプリプロセス処理し、コンパイルせずに返します"
 			Localize		 = "使用する言語コード"
 			Help			 = "このヘルプ情報を表示します"
 		}
@@ -116,6 +117,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 		MinifyerError = "圧縮エラー：{0}"
 		MinifyerFailedUsingOriginalScript = "圧縮に失敗しました。元のスクリプトを使用します。"
 		TempFileMissing = "一時ファイル {0} が見つかりません！"
+		PreprocessOnlyDone = "入力スクリプトの前処理が完了しました"
 		CombinedArg_x86_x64 = "-x86 は -x64 と組み合わせることはできません"
 		CombinedArg_Runtime20_Runtime40 = "-runtime20 は -runtime40 と組み合わせることはできません"
 		CombinedArg_Runtime20_LongPaths = "長いパスは .Net 4 以降でのみ利用可能です"
