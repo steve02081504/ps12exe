@@ -21,20 +21,6 @@ function rlat {
 	[System.IO.File]::ReadAllText($MyInvocation.MyCommand.Path)
 }
 
-function py { pr 'Y' }
-function pn { pr 'N' }
-
-function pyn([Parameter(ValueFromPipeline = $true)]$InputObject) {
-	process {
-		if ($InputObject) {
-			pr "Yes"
-		}
-		else {
-			pr "No"
-		}
-	}
-}
-
 #endregion
 
 #region String Operations (字符串操作)
@@ -282,19 +268,13 @@ function isprime {
 	}
 }
 
-function factors {
-	[CmdletBinding()]
-	Param(
-		[Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
-		[int]$n
-	)
-	process {
-		1..[math]::Sqrt($n) | ForEach-Object {
-			if ($n % $_ -eq 0) {
-				$_
-				if ($_ -ne ($n / $_)) {
-					$n / $_
-				}
+function factors($n) {
+	$n = $(if ($input) { $n; $input }else { $n })
+	1..[math]::Sqrt($n) | ForEach-Object {
+		if ($n % $_ -eq 0) {
+			$_
+			if ($_ -ne ($n / $_)) {
+				$n / $_
 			}
 		}
 	}
@@ -304,125 +284,106 @@ function factors {
 
 #region Array/Collection Operations (数组/集合操作)
 
-function hd([Parameter(ValueFromPipeline = $true)] [object[]]$values) {
-	process {
-		$values[0]
-	}
+function hd($values) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	$values[0]
 }
 
-function tl([Parameter(ValueFromPipeline = $true)] [object[]]$values) {
-	process {
-		$values[-1]
-	}
+function tl($values) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	$values[-1]
 }
 
-function rest([Parameter(ValueFromPipeline = $true)] [object[]]$values) {
-	process {
-		$values[1..($values.Length - 1)]
-	}
+function rest($values) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	$values[1..($values.Length - 1)]
 }
 
-function take([Parameter(ValueFromPipeline = $true)] [object[]]$values, [int]$n = 1) {
-	process {
-		$values[0..($n - 1)]
-	}
+function take($values, $n = 1) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	$values[0..($n - 1)]
 }
 
-function drop([Parameter(ValueFromPipeline = $true)] [object[]]$values, [int]$n = 1) {
-	process {
-		$values[$n..($values.Length - 1)]
-	}
+function drop($values, $n = 1) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	$values[$n..($values.Length - 1)]
 }
 
-function sum([Parameter(ValueFromPipeline = $true)] [object[]]$values) {
-	process {
-		($values | Measure-Object -Sum).Sum
-	}
+function sum($values) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	($values | Measure-Object -Sum).Sum
 }
 
-function avg([Parameter(ValueFromPipeline = $true)] [object[]]$values) {
-	process {
-		($values | Measure-Object -Average).Average
-	}
+function avg($values) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	($values | Measure-Object -Average).Average
 }
 
-function min([Parameter(ValueFromPipeline = $true)] [object[]]$values) {
-	process {
-		($values | Measure-Object -Minimum).Minimum
-	}
+function min($values) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	($values | Measure-Object -Minimum).Minimum
 }
 
-function max([Parameter(ValueFromPipeline = $true)] [object[]]$values) {
-	process {
-		($values | Measure-Object -Maximum).Maximum
-	}
+function max($values) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	($values | Measure-Object -Maximum).Maximum
 }
 
-function uniq([Parameter(ValueFromPipeline = $true)] [object[]]$values) {
-	process {
-		$values | Select-Object -Unique
-	}
+function uniq($values) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	$values | Select-Object -Unique
 }
 
-function srt([Parameter(ValueFromPipeline = $true)] [object[]]$values) {
-	process {
-		$values | Sort-Object
-	}
+function srt($values) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	$values | Sort-Object
 }
 
-function rvs([Parameter(ValueFromPipeline = $true)] [object[]]$values) {
-	#注意，如果这里用$args，那么原本的数组会被改变
-	process {
-		[array]::Reverse($values)
-		$values
-	}
+function rvs($values) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	[array]::Reverse($values)
+	$values
 }
 
-function flat([Parameter(ValueFromPipeline = $true)] [object[]]$values) {
-	process {
-		$values | ForEach-Object {
-			if ($_ -is [System.Collections.IEnumerable] -and $_ -isnot [string]) {
-				flat $_
-			}
-			else {
-				$_
-			}
+function flat($values) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	$values | ForEach-Object {
+		if ($_ -is [System.Collections.IEnumerable] -and $_ -isnot [string]) {
+			flat $_
+		}
+		else {
+			$_
 		}
 	}
 }
 
-function gpby([Parameter(ValueFromPipeline = $true)] [object[]]$values, [string]$property) {
-	process {
-		$values | Group-Object -Property $property
-	}
+function gpby($values, $property) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	$values | Group-Object -Property $property
 }
 
-function ct([Parameter(ValueFromPipeline = $true)] [object[]]$values) {
-	process {
-		$values.Count
-	}
+function ct($values) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	$values.Count
 }
 
-function flt([Parameter(ValueFromPipeline = $true)] [object[]]$values, [scriptblock]$scriptblock) {
-	process {
-		$values | Where-Object -FilterScript $scriptblock
-	}
+function flt($values, $scriptblock) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	$values | Where-Object -FilterScript $scriptblock
 }
 
-function intersect([Parameter(ValueFromPipeline = $true)] [object[]]$values, [object[]]$arr2) {
-	process {
-		Compare-Object $values $arr2 -IncludeEqual -ExcludeDifferent |
-		Where-Object { $_.SideIndicator -eq '==' } |
-		ForEach-Object { $_.InputObject }
-	}
+function intersect($values, $arr2) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	Compare-Object $values $arr2 -IncludeEqual -ExcludeDifferent |
+	Where-Object { $_.SideIndicator -eq '==' } |
+	ForEach-Object { $_.InputObject }
 }
 
-function diff([Parameter(ValueFromPipeline = $true)] [object[]]$values, [object[]]$arr2) {
-	process {
-		Compare-Object $values $arr2 -ExcludeDifferent |
-		Where-Object { $_.SideIndicator -eq '<=' } |
-		ForEach-Object { $_.InputObject }
-	}
+function diff($values, $arr2) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	Compare-Object $values $arr2 -ExcludeDifferent |
+	Where-Object { $_.SideIndicator -eq '<=' } |
+	ForEach-Object { $_.InputObject }
 }
 
 function perm {
@@ -520,39 +481,36 @@ function transpose {
 	}
 }
 
-function tohash([Parameter(ValueFromPipeline = $true)] [object[]]$values) {
-	process {
-		$h = @{}
-		$values | ForEach-Object {
-			$h[$_[0]] = $_[1]
-		}
-		$h
+function tohash($values) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	$h = @{}
+	$values | ForEach-Object {
+		$h[$_[0]] = $_[1]
 	}
+	$h
 }
 
 #endregion
 
 #region Logical Operations (逻辑操作)
 
-function all([Parameter(ValueFromPipeline = $true)] [object[]]$values, [scriptblock]$scriptblock) {
-	process {
-		if ($scriptblock) {
-			!($values | Where-Object -FilterScript $scriptblock | Measure-Object).Count
-		}
-		else {
-			!($values | Where-Object -FilterScript { -not $_ } | Measure-Object).Count
-		}
+function all($values, $scriptblock) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	if ($scriptblock) {
+		!($values | Where-Object -FilterScript $scriptblock | Measure-Object).Count
+	}
+	else {
+		!($values | Where-Object -FilterScript { -not $_ } | Measure-Object).Count
 	}
 }
 
-function any([Parameter(ValueFromPipeline = $true)] [object[]]$values, [scriptblock]$scriptblock) {
-	process {
-		if ($scriptblock) {
-			($values | Where-Object -FilterScript $scriptblock | Measure-Object).Count
-		}
-		else {
-			($values | Where-Object -FilterScript { $_ } | Measure-Object).Count
-		}
+function any($values, $scriptblock) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	if ($scriptblock) {
+		($values | Where-Object -FilterScript $scriptblock | Measure-Object).Count
+	}
+	else {
+		($values | Where-Object -FilterScript { $_ } | Measure-Object).Count
 	}
 }
 
@@ -591,10 +549,9 @@ function rep {
 	}
 }
 
-function map([Parameter(ValueFromPipeline = $true)]  $values, [scriptblock]$block) {
-	process {
-		$values | ForEach-Object $block
-	}
+function map($values, $block) {
+	$values = $(if ($input) { $values; $input }else { $values })
+	$values | ForEach-Object $block
 }
 
 function reduce([Parameter(ValueFromPipeline = $true)] [object[]]$values, [scriptblock]$block, $init = $null) {
@@ -638,10 +595,6 @@ function time {
 	process {
 		Measure-Command -Expression $scriptblock
 	}
-}
-
-function exit {
-	exit
 }
 
 function up([Parameter(ValueFromPipeline = $true)]$InputObject) {
@@ -785,7 +738,7 @@ function b64d {
 #region Aliases (别名)
 Set-Alias -Name mo -Value Measure-Object
 Set-Alias -Name se -Value Select-Object
-Set-Alias -Name read -Value Read-Host  # 保留 read，因为有些时候需要交互式输入
+Set-Alias -Name rs -Value Read-Host  # 保留 rs，因为有些时候需要交互式输入
 #endregion
 
 #region 输入参数的简写
@@ -795,16 +748,13 @@ $CI = [CHAR[]]$SI
 $A = $Args
 $SA = "$A"
 $CA = [CHAR[]]$SA
+$0 = $1 = $2 = $3 = $4 = $5 = $6 = $7 = $8 = $9 = 0
 
-if ($A -and (try_parse_int $A[0] ([ref]$null))) {
+if ($A[0] -match '^\d+$') {
 	$N = [int]$A[0]
 }
 
-if ($A -and ($A | ForEach-Object { $_ -match '^\d+$' } | & {
-			process { $r = $true }
-			begin { $r = $true }
-			end { $r -and $_ }
-		})) {
+if ($($A | ? { $_ -match '^\d+$' })) {
 	$NA = $A -as [int[]]
 }
 function a_map([scriptblock]$block) {
@@ -815,51 +765,45 @@ function a_map([scriptblock]$block) {
 
 #region 数学运算
 
-function pow([Parameter(ValueFromPipeline = $true)] $InputObject, $exp = 2) {
-	process {
-		$InputObject | ForEach-Object {
-			[Math]::Pow($_, $exp)
-		}
+function pow($InputObject, $exp = 2) {
+	$InputObject = $(if ($input) { $InputObject; $input }else { $InputObject })
+	$InputObject | ForEach-Object {
+		[Math]::Pow($_, $exp)
 	}
 }
 
-function sqrt([Parameter(ValueFromPipeline = $true)] $InputObject) {
-	process {
-		$InputObject | ForEach-Object {
-			[Math]::Sqrt($_)
-		}
+function sqrt($InputObject) {
+	$InputObject = $(if ($input) { $InputObject; $input }else { $InputObject })
+	$InputObject | ForEach-Object {
+		[Math]::Sqrt($_)
 	}
 }
 
-function floor([Parameter(ValueFromPipeline = $true)] $InputObject) {
-	process {
-		$InputObject | ForEach-Object {
-			[Math]::Floor($_)
-		}
+function floor($InputObject) {
+	$InputObject = $(if ($input) { $InputObject; $input }else { $InputObject })
+	$InputObject | ForEach-Object {
+		[Math]::Floor($_)
 	}
 }
 
-function ceil([Parameter(ValueFromPipeline = $true)] $InputObject) {
-	process {
-		$InputObject | ForEach-Object {
-			[Math]::Ceiling($_)
-		}
+function ceil($InputObject) {
+	$InputObject = $(if ($input) { $InputObject; $input }else { $InputObject })
+	$InputObject | ForEach-Object {
+		[Math]::Ceiling($_)
 	}
 }
 
-function round([Parameter(ValueFromPipeline = $true)] $InputObject) {
-	process {
-		$InputObject | ForEach-Object {
-			[Math]::Round($_)
-		}
+function round($InputObject) {
+	$InputObject = $(if ($input) { $InputObject; $input }else { $InputObject })
+	$InputObject | ForEach-Object {
+		[Math]::Round($_)
 	}
 }
 
-function abs([Parameter(ValueFromPipeline = $true)] $InputObject) {
-	process {
-		$InputObject | ForEach-Object {
-			[Math]::Abs($_)
-		}
+function abs($InputObject) {
+	$InputObject = $(if ($input) { $InputObject; $input }else { $InputObject })
+	$InputObject | ForEach-Object {
+		[Math]::Abs($_)
 	}
 }
 

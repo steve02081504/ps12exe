@@ -1996,10 +1996,11 @@ namespace PSRunnerNS {
 						args[i] = "\'"+args[i].Replace("'", "''")+"\'";
 				}
 
-				me.pwsh.AddScript("$Input|PSEXEMainFunction "+String.Join(" ", args)+"|Out-String -Stream");
+				me.pwsh.Runspace.SessionStateProxy.SetVariable("PSEXEInput", colInput);
+				me.pwsh.AddScript("$PSEXEInput|PSEXEMainFunction "+String.Join(" ", args)+"|Out-String -Stream");
 
 				// 使用 BeginInvoke 的重载，传入 colOutput
-				IAsyncResult asyncResult = me.pwsh.BeginInvoke<string, PSObject>(colInput, colOutput);
+				IAsyncResult asyncResult = me.pwsh.BeginInvoke<string, PSObject>(new PSDataCollection<string> (), colOutput);
 
 				// 在单独的线程中处理输出和错误
 				System.Threading.ThreadPool.QueueUserWorkItem(_ => {
