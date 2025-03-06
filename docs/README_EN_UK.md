@@ -137,7 +137,7 @@ help       : Show this help message.
         product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<Runtime>']
-        [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-Localize '<language code>'] [-help]
+        [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<language code>'] [-help]
 ```
 
 ```text
@@ -171,6 +171,7 @@ targetRuntime    : Target runtime version ('Framework4.0' by default, 'Framework
 SkipVersionCheck : Skip the check for new versions of ps12exe
 GuestMode        : Compile scripts with additional protection, preventing native files from being accessed.
 PreprocessOnly   : Preprocess the input script and return it without compiling.
+GolfMode         : Enable golf mode, adding abbreviations and common functions.
 Localize         : The language code to use.
 Help             : Show this help message.
 ```

@@ -70,7 +70,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 	product='<उत्पाद>'; copyright='<कॉपीराइट>'; trademark='<नामकरण>'; version='<संस्करण>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<रनटाइम संस्करण>']
-	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-Localize '<भाषा कोड>'] [-help]"
+	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<भाषा कोड>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "PowerShell स्क्रिप्ट फ़ाइल की सामग्री का स्ट्रिंग, ``-Content`` के समान"
 			inputFile		 = "जिसे आप एक्सीक्यूटेबल फ़ाइल में परिवर्तित करना चाहते हैं, उस PowerShell स्क्रिप्ट फ़ाइल का पथ या URL (फ़ाइल को UTF8 या UTF16 एन्कोड किया गया होना चाहिए)"
@@ -102,6 +102,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 			SkipVersionCheck = "ps12exe के नए संस्करण की जाँच छोड़ें"
 			GuestMode		 = "एक्सट्रा सुरक्षा के साथ स्क्रिप्ट को कॉम्पाइल करें, स्थानीय फ़ाइलों की पहुँच को टालें"
 			PreprocessOnly	 = "इनपुट स्क्रिप्ट को प्रीप्रोसेस करें और इसे संकलित किए बिना वापस करें"
+			GolfMode		 = "गॉल्फ मोड सक्षम करें, संक्षिप्त रूप और सामान्य फ़ंक्शन जोड़ें"
 			Localize		 = "स्थानीयकरण भाषा कोड की निर्दिष्टि करें"
 			Help			 = "इस मदद सूचना को दिखाएँ"
 		}

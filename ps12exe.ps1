@@ -108,6 +108,9 @@ Display localized help message
 .PARAMETER PreprocessOnly
 only preprocesses the input PowerShell script and outputs the preprocessed code. No executable is generated.
 
+.PARAMETER GolfMode
+Enables golf mode, adding abbreviations and common functions to the script.
+
 .EXAMPLE
 ps12exe C:\Data\MyScript.ps1
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScript.exe as console executable
@@ -153,6 +156,7 @@ Param(
 	[Switch]$SkipVersionCheck,
 	[Switch]$GuestMode,
 	[Switch]$PreprocessOnly,
+	[Switch]$GolfMode,
 	#_if PSScript
 		[ArgumentCompleter({
 			Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
@@ -348,6 +352,14 @@ if (!$nested) {
 				Write-I18n Host PreprocessedScriptSize $(bytesOfString $NewContent)
 			}
 			$Content = $NewContent
+		}
+		if ($GolfMode) {
+			#_if PSScript
+				$GolfModeHeader = Get-Content $PSScriptRoot\src\GolfModeHeader.ps1 -Encoding UTF8 -Raw
+			#_else
+				#_include_as_value GolfModeHeader $PSScriptRoot\src\GolfModeHeader.ps1
+			#_endif
+			$Content = $GolfModeHeader + "`n" + $Content
 		}
 	}
 	catch {

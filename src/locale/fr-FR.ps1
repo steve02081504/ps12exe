@@ -70,7 +70,7 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 	product='<produit>'; copyright='<copyright>'; trademark='<marque_déposée>'; version='<version>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<version_du_runtime>']
-	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-Localize '<code_de_langue>'] [-help]"
+	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<code_de_langue>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "Chaîne de caractères du contenu du fichier de script PowerShell, identique à ``-Content``."
 			inputFile		 = "Chemin d’accès ou URL du fichier de script PowerShell que vous voulez convertir en exécutable (le fichier doit être encodé en UTF8 ou UTF16)."
@@ -102,6 +102,7 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 			SkipVersionCheck = "Ignorer la vérification de la nouvelle version de ps12exe."
 			GuestMode		 = "Compiler le script avec une protection supplémentaire, éviter l’accès aux fichiers natifs."
 			PreprocessOnly	 = "Prétraite le script d'entrée et le retourne sans compilation."
+			GolfMode		 = "Activer le mode golf, ajoute des abreviations et des fonctions courantes au script."
 			Localize		 = "Spécifier la langue de localisation."
 			Help			 = "Affiche cette aide."
 		}

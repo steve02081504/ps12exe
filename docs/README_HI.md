@@ -110,7 +110,7 @@ help       : इस मदद सूचना को दिखाएँ।
         product='<उत्पाद>'; copyright='<कॉपीराइट>'; trademark='<नामकरण>'; version='<संस्करण>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<रनटाइम संस्करण>']
-        [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-Localize '<भाषा कोड>'] [-help]
+        [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<भाषा कोड>'] [-help]
 ```
 
 ```text
@@ -144,6 +144,7 @@ targetRuntime    : लक्ष्य रनटाइम संस्करण, 
 SkipVersionCheck : ps12exe के नए संस्करण की जाँच छोड़ें
 GuestMode        : एक्सट्रा सुरक्षा के साथ स्क्रिप्ट को कॉम्पाइल करें, स्थानीय फ़ाइलों की पहुँच को टालें
 PreprocessOnly   : इनपुट स्क्रिप्ट को प्रीप्रोसेस करें और इसे संकलित किए बिना वापस करें।
+GolfMode         : गोल्फ मोड सक्षम करें, अधिकतम संख्या और सामान्य फंक्शनों को जोड़ें
 Localize         : स्थानीयकरण भाषा कोड की निर्दिष्टि करें
 Help             : इस मदद सूचना को दिखाएँ
 ```

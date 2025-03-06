@@ -111,7 +111,7 @@ help       : Mostrar esta información de ayuda.
         product='<producto>'; copyright='<derechos de autor>'; trademark='<marca>'; version='<versión>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<Versión de tiempo de ejecución>']
-        [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-Localize '<código de idioma>'] [-help]
+        [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<código de idioma>'] [-help]
 ```
 
 ```text
@@ -145,6 +145,7 @@ targetRuntime    : Versión de tiempo de ejecución de destino, 'Framework4.0' p
 SkipVersionCheck : Omitir la comprobación de nuevas versiones de ps12exe
 GuestMode        : Compilación de scripts con protección adicional frente al acceso a archivos nativos
 PreprocessOnly   : Preprocesa el script de entrada y devuélvelo sin compilar
+GolfMode         : Activar el modo golf, agregando abreviaturas y funciones comunes
 Localize         : El código de idioma que desea usar
 Help             : Mostrar esta información de ayuda
 ```

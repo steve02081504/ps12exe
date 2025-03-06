@@ -70,7 +70,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 	product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<Runtime>']
-	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-Localize '<language code>'] [-help]"
+	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<language code>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "String of the PowerShell script file's contents, same as ``-Content``."
 			inputFile		 = "PowerShell script file path or URL you wanna convert to an executable (file must be UTF8 or UTF16 encoded)."
@@ -102,6 +102,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 			SkipVersionCheck = "Skip the check for new versions of ps12exe"
 			GuestMode		 = "Compile scripts with extra protection, preventin' native files from being accessed."
 			PreprocessOnly	 = "Preprocess the input script and return it without compiling."
+			GolfMode		 = "Enable golf mode, adding abbreviations and common functions."
 			Localize		 = "Language code."
 			Help			 = "Show this here help message."
 		}
