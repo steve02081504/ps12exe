@@ -356,9 +356,11 @@ if (!$nested) {
 		$isGolf = $true
 		if ($Content -match '^C\|') { $Content = '$CI' + $Content.Substring(1) }
 		elseif ($Content -match '^S\|') { $Content = '$SI' + $Content.Substring(1) }
+		elseif ($Content -match '^N\|') { $Content = '$NI' + $Content.Substring(1) }
 		elseif ($Content -match '^\|') { $Content = '$I' + $Content }
 		elseif ($Content -match '^C%') { $Content = '$CA|' + $Content.Substring(2) }
 		elseif ($Content -match '^S%') { $Content = '$SA|' + $Content.Substring(2) }
+		elseif ($Content -match '^N%') { $Content = '$NA|' + $Content.Substring(2) }
 		elseif ($Content -match '^%') { $Content = '$A|' + $Content.Substring(1) }
 		elseif (!$GolfMode) { $isGolf = $false }
 		if ($isGolf) {

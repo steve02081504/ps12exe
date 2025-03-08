@@ -664,54 +664,6 @@ function randstr {
 	}
 }
 
-function sleep {
-	[CmdletBinding()]
-	Param(
-		[Parameter(Mandatory = $true, Position = 0)]
-		[int]$ms
-	)
-	process {
-		Start-Sleep -Milliseconds $ms
-	}
-}
-
-function dbg([Parameter(ValueFromPipeline = $true)]$InputObject) {
-	process {
-		Write-Debug ($InputObject | Out-String)
-	}
-}
-
-function try_parse_int {
-	[CmdletBinding()]
-	Param(
-		[Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
-		[string]$str,
-
-		[Parameter(Mandatory = $true, Position = 1)]
-		[ref]$result
-	)
-	process {
-		$success = [int]::TryParse($str, [ref]$result.Value)
-		return $success
-	}
-}
-
-function safe_int {
-	[CmdletBinding()]
-	Param(
-		[Parameter(Mandatory = $true, Position = 0, ValueFromPipeline = $true)]
-		[string]$s
-	)
-	process {
-		if ($s -match "^\d+$") {
-			[int]$s
-		}
-		else {
-			0
-		}
-	}
-}
-
 function b64e {
 	[CmdletBinding()]
 	Param(
@@ -745,21 +697,13 @@ Set-Alias -Name rs -Value Read-Host  # 保留 rs，因为有些时候需要交�
 $I = $Input
 $SI = "$I"
 $CI = [CHAR[]]$SI
+$NI = $I | ForEach-Object { $_ -as [int] }
 $A = $Args
 $SA = "$A"
 $CA = [CHAR[]]$SA
+$NA = $A | ForEach-Object { $_ -as [int] }
 $0 = $1 = $2 = $3 = $4 = $5 = $6 = $7 = $8 = $9 = 0
-
-if ($A[0] -match '^\d+$') {
-	$N = [int]$A[0]
-}
-
-if ($($A | ? { $_ -match '^\d+$' })) {
-	$NA = $A -as [int[]]
-}
-function a_map([scriptblock]$block) {
-	$A | ForEach-Object $block
-}
+$N = $NA[0]
 
 #endregion
 
@@ -871,7 +815,7 @@ function uniqo {
 function counts([Parameter(ValueFromPipeline = $true)] [object[]]$values) {
 	process {
 		$values | Group-Object -NoElement | ForEach-Object {
-		($_.Name, $_.Count)
+			($_.Name, $_.Count)
 		} | tohash
 	}
 }
