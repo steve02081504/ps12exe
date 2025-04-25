@@ -1,0 +1,58 @@
+{
+	"name": "ps12exe",
+	"displayName": "ps12exe",
+	"description": "",
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.99.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onLanguage:powershell"
+	],
+	"main": "./extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "ps12exe.compilePs1ToExe",
+				"title": "Compile To Exe",
+				"icon": "$(package)"
+			},
+			{
+				"command": "ps12exe.ps12exeGUI",
+				"title": "ps12exeGUI",
+				"icon": "$(notebook-render-output)"
+			}
+		],
+		"menus": {
+			"editor/context": [
+				{
+					"command": "ps12exe.compilePs1ToExe",
+					"when": "editorLangId == 'powershell'",
+					"group": "build"
+				}
+			],
+			"explorer/context": [
+				{
+					"command": "ps12exe.compilePs1ToExe",
+					"when": "resourceExtname == .ps1",
+					"group": "build"
+				},
+				{
+					"command": "ps12exe.ps12exeGUI",
+					"when": "resourceExtname == .ps1",
+					"group": "build"
+				}
+			]
+		}
+	},
+	"scripts": {
+		"test": "vscode-test"
+	},
+	"devDependencies": {
+		"@vscode/test-cli": "^0.0.10",
+		"@vscode/test-electron": "^2.4.1"
+	}
+}
