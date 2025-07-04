@@ -1962,6 +1962,52 @@ namespace PSRunnerNS {
 		// EXEMain
 		[$threadingModelThread]
 		private static int Main(string[] args) {
+
+#if forceConhost
+    if (Console_Info.IsVirtualTerminalSupported()) // We are likely in Windows Terminal or similar
+    {
+        try
+        {
+            string currentExePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            System.Collections.Generic.List<string> newArgsList = new System.Collections.Generic.List<string>();
+            bool firstForceConhostFound = false;
+            foreach (string arg in args)
+            {
+                if (arg.Equals("-forceConhost", StringComparison.OrdinalIgnoreCase) && !firstForceConhostFound)
+                {
+                    firstForceConhostFound = true;
+                    continue;
+                }
+                // Basic quoting for arguments: if an argument contains a space, wrap it in quotes.
+                if (arg.Contains(" "))
+                {
+                    newArgsList.Add("\"" + arg + "\"");
+                }
+                else
+                {
+                    newArgsList.Add(arg);
+                }
+            }
+            string newArgsString = string.Join(" ", newArgsList.ToArray());
+
+            System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo();
+            psi.FileName = "cmd.exe";
+            psi.Arguments = $"/c start \"PS2EXE Conhost\" \"{currentExePath}\" {newArgsString}";
+            psi.UseShellExecute = true;
+            // Consider psi.CreateNoWindow = true; if the cmd window flashes visibly,
+            // though 'start' usually detaches quickly.
+
+            System.Diagnostics.Process.Start(psi);
+            Environment.Exit(0);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine("PS2EXE Warning: Failed to relaunch in conhost. Continuing in current terminal. Reason: " + ex.Message);
+            // Fall through to normal execution in the current terminal
+        }
+    }
+#endif
+
 			PSRunner.BaseInit();
 			me = new PSRunner();
 			System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);

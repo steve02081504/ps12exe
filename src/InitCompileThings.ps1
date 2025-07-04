@@ -54,6 +54,7 @@ if ($noVisualStyles) { $Constants += "noVisualStyles" }
 if ($exitOnCancel) { $Constants += "exitOnCancel" }
 if ($UNICODEEncoding) { $Constants += "UNICODEEncoding" }
 if ($winFormsDPIAware) { $Constants += "winFormsDPIAware" }
+if ($forceConhost) { $Constants += "forceConhost" } # Added for forceConhost
 if ($targetRuntime -eq 'Framework2.0') { $Constants += "Pwsh20" }
 
 if (-not $TempDir) {

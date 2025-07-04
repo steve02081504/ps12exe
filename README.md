@@ -113,6 +113,7 @@ Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tre
 | 🧹 Removed exe files | Removed exe files from the code repository |
 | 🌍 Multilingual support, pure script GUI | Better multilingual support, pure script GUI, support for dark mode |
 | 📖 Separated cs files from ps1 files | Easier to read and maintain |
+| ✨ `-forceConhost` parameter | New parameter to attempt re-launching the script in a legacy `conhost.exe` window, useful for scripts requiring specific conhost behaviors (e.g., window resizing). |
 | 🚀 More improvements | And more... |
 
 see [localed readme](https://steve02081504.github.io/ps12exe/readme) for more details.

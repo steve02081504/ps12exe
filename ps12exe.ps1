@@ -111,6 +111,9 @@ only preprocesses the input PowerShell script and outputs the preprocessed code.
 .PARAMETER GolfMode
 Enables golf mode, adding abbreviations and common functions to the script.
 
+.PARAMETER forceConhost
+The resulting executable will attempt to run in a legacy conhost.exe window instead of Windows Terminal. This is useful for scripts that require specific conhost behaviors, like certain window resizing commands that Windows Terminal does not obey.
+
 .EXAMPLE
 ps12exe C:\Data\MyScript.ps1
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScript.exe as console executable
@@ -157,6 +160,7 @@ Param(
 	[Switch]$GuestMode,
 	[Switch]$PreprocessOnly,
 	[Switch]$GolfMode,
+	[Switch]$forceConhost,
 	#_if PSScript
 		[ArgumentCompleter({
 			Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
