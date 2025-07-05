@@ -415,7 +415,7 @@ function perm {
 function comb {
 	[CmdletBinding()]
 	Param(
-		[Parameter(Mandatory = $true, Position = 0)]
+		[Parameter(Position = 0)]
 		[int]$k = 1,
 
 		[Parameter(Mandatory = $true, Position = 1, ValueFromPipeline = $true)]

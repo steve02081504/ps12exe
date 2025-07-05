@@ -1,5 +1,5 @@
 param ($SyntaxErrors)
-foreach ($_ in $SyntaxErrors) {
+$SyntaxErrors | ForEach-Object {
 	$Extent = $_.Extent
 	if ($Extent.StartLineNumber) {
 		$LineStr = $Extent.StartLineNumber.ToString()

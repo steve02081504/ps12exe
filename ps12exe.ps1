@@ -445,9 +445,9 @@ if ($x64) { $architecture = 'x64' }
 $Params.architecture = $architecture
 [void]$Params.Remove("x86"); [void]$Params.Remove("x64")
 if ($runtime20) {
-	foreach ($_ in @("runtime40", "longPaths", "winFormsDPIAware")) {
-		if ($Params[$_]) {
-			Write-I18n Error "CombinedArg_Runtime20_$_" -Category InvalidArgument
+	foreach ($a in @("runtime40", "longPaths", "winFormsDPIAware")) {
+		if ($Params[$a]) {
+			Write-I18n Error "CombinedArg_Runtime20_$a" -Category InvalidArgument
 			$global:LastExitCode = 2 # 调用格式错误
 			return
 		}
@@ -615,9 +615,9 @@ if ($winFormsDPIAware) {
 }
 
 if ($virtualize) {
-	foreach ($_ in @("requireAdmin", "supportOS", "longPaths")) {
-		if ($Params[$_]) {
-			Write-I18n Error "CombinedArg_Virtualize_$_" -Category InvalidArgument
+	foreach ($a in @("requireAdmin", "supportOS", "longPaths")) {
+		if ($Params[$a]) {
+			Write-I18n Error "CombinedArg_Virtualize_$a" -Category InvalidArgument
 			$global:LastExitCode = 2 # 调用格式错误
 			return
 		}
@@ -625,9 +625,9 @@ if ($virtualize) {
 }
 
 if (!$configFile) {
-	foreach ($_ in @("longPaths", "winFormsDPIAware")) {
-		if ($Params[$_]) {
-			Write-I18n Warning "CombinedArg_NoConfigFile_$_" -Category InvalidArgument
+	foreach ($a in @("longPaths", "winFormsDPIAware")) {
+		if ($Params[$a]) {
+			Write-I18n Warning "CombinedArg_NoConfigFile_$a" -Category InvalidArgument
 			$configFile = $true
 		}
 	}

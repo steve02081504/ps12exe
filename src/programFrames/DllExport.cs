@@ -9,7 +9,6 @@ using System.Threading;
 
 namespace PSRunnerNS {
 	partial static class PSRunnerEntry {
-
 		private static readonly object _lock = new object(); // 用于线程同步
 
 		// DllInitChecker
@@ -42,7 +41,6 @@ namespace PSRunnerNS {
 							finally {
 								mre.Set();
 							}
-
 						});
 						mre.WaitOne();
 						me.pwsh.EndInvoke(asyncResult);
