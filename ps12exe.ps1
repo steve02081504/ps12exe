@@ -679,16 +679,7 @@ if ($TempDir) {
 	New-Item -ItemType Directory -Path $TempDir -ErrorAction SilentlyContinue | Out-Null
 }
 try {
-	try {
-		. $PSScriptRoot\src\InitCompileThings.ps1
-	}
-	catch {
-		if ($_.CategoryInfo.Category -eq 'ReadError' -and $_.ErrorDetails.Message -match 'IconFileNotFound') {
-			$global:LastExitCode = 1 # 脚本预处理失败
-			return
-		}
-		throw $_
-	}
+	. $PSScriptRoot\src\InitCompileThings.ps1
 	#_if PSScript
 	if (-not $noConsole -and $AstAnalyzeResult.IsConst -and -not $iconFile -and -not $requireAdmin) {
 		# TODO: GUI（MassageBoxW）、icon
@@ -767,6 +758,10 @@ catch {
 		Remove-Item $outputFile -Verbose:$FALSE
 	}
 	$_ | Write-Error -ErrorAction Continue
+	if ($_.CategoryInfo.Category -eq 'ReadError') {
+		$global:LastExitCode = 1 # 读取错误
+		return
+	}
 	if ($PSVersionTable.PSEdition -eq "Core" -and (Get-Command powershell -ErrorAction Ignore)) {
 		Write-I18n Host RoslynFailedFallback -ForegroundColor Yellow
 		UsingWinPowershell $Params
