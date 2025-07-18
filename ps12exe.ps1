@@ -758,6 +758,10 @@ catch {
 		Remove-Item $outputFile -Verbose:$FALSE
 	}
 	$_ | Write-Error -ErrorAction Continue
+	if ($_.CategoryInfo.Category -eq 'ReadError') {
+		$global:LastExitCode = 1 # 读取错误
+		return
+	}
 	if ($PSVersionTable.PSEdition -eq "Core" -and (Get-Command powershell -ErrorAction Ignore)) {
 		Write-I18n Host RoslynFailedFallback -ForegroundColor Yellow
 		UsingWinPowershell $Params
