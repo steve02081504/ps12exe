@@ -71,7 +71,8 @@ module.exports = async ({ github, context }) => {
 
 			const titlePrefix = itemType === 'Issue' ? ISSUE_TITLE_PREFIX : PR_TITLE_PREFIX
 			const newTitle = `${titlePrefix} ${item.title}`
-			const newBody = `> [!NOTE]\n> This is a synced copy. Do not edit directly.\n> **Original ${itemType}:** ${originalUrl}\n\n---\n\n${item.body || ''}`
+			const authorLogin = item.user.login;
+			const newBody = `> [!NOTE]\n> This is a synced copy. Do not edit directly.\n> **Original ${itemType}:** ${originalUrl} from @${authorLogin}\n\n---\n\n${item.body || ''}`
 
 			try {
 				await github.rest.issues.create({
