@@ -9,7 +9,7 @@ try {
         return
     }
 
-    Get-ChildItem $PSScriptRoot/../../src/bin/AsmResolver -Recurse -Filter AsmResolver.PE*.dll | ForEach-Object {
+    Get-ChildItem $PSScriptRoot/src/bin/AsmResolver -Recurse -Filter AsmResolver.PE*.dll | ForEach-Object {
         try {
             Add-Type -LiteralPath $_.FullName -ErrorVariable err
         } catch {
@@ -19,6 +19,7 @@ try {
     }
 
     $file = [AsmResolver.PE.PEImage]::FromFile($inputFile)
+	$file.Resources.Entries
     $resource = $file.Resources.Entries | Where-Object { $_.Name -eq 'main.ps1' }
 
     if ($resource) {

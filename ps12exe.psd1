@@ -67,7 +67,7 @@ All commands in this module support the `-help` option for detailed assistance i
 	# NestedModules = @()
 
 	# Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-	FunctionsToExport	   = @('ps12exe', 'ps12exeGUI', 'Set-ps12exeContextMenu', 'Start-ps12exeWebServer')
+	FunctionsToExport	   = @('ps12exe', 'exe21sp', 'ps12exeGUI', 'Set-ps12exeContextMenu', 'Start-ps12exeWebServer')
 
 	# Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 	# CmdletsToExport = @()
@@ -88,7 +88,7 @@ All commands in this module support the `-help` option for detailed assistance i
 	PrivateData			   = @{
 		PSData = @{
 			# Tags applied to this module. These help with module discovery in online galleries.
-			Tags	   = @('Executable', 'Compiler', 'ps2exe', 'exe', 'ps12exe', 'Windows')
+			Tags	   = @('Executable', 'Compiler', 'ps2exe', 'exe', 'ps12exe', 'exe21sp', 'Windows')
 
 			# A URL to the license for this module.
 			LicenseUri = 'https://github.com/steve02081504/ps12exe/blob/master/LICENSE'
