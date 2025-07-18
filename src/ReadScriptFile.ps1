@@ -223,7 +223,7 @@ function Preprocessor($Content, $FilePath) {
 		if ($_ -match "^(\s*)#_!!(?<line>.*)") {
 			$Matches[1] + $Matches["line"]
 		}
-		elseif ($_ -match "^(\s*)#_balus\s+(?<exitcode>\`\$?\w+)") {
+		elseif ($_ -match "^(\s*)#_balus\s+(?<exitcode>\$?\w+)") {
 			'Start-Process powershell @("-NoProfile";"-c";"sleep 1;rm `"$PSEXEpath`"") -WindowStyle hidden;exit ' + $Matches["exitcode"]
 		}
 		elseif ($_ -match "^(\s*)#_balus") {
