@@ -679,7 +679,16 @@ if ($TempDir) {
 	New-Item -ItemType Directory -Path $TempDir -ErrorAction SilentlyContinue | Out-Null
 }
 try {
-	. $PSScriptRoot\src\InitCompileThings.ps1
+	try {
+		. $PSScriptRoot\src\InitCompileThings.ps1
+	}
+	catch {
+		if ($_.CategoryInfo.Category -eq 'ReadError' -and $_.ErrorDetails.Message -match 'IconFileNotFound') {
+			$global:LastExitCode = 1 # 脚本预处理失败
+			return
+		}
+		throw $_
+	}
 	#_if PSScript
 	if (-not $noConsole -and $AstAnalyzeResult.IsConst -and -not $iconFile -and -not $requireAdmin) {
 		# TODO: GUI（MassageBoxW）、icon
