@@ -1166,6 +1166,7 @@ namespace PSRunnerNS {
 
 	// define IsInputRedirected(), IsOutputRedirected() and IsErrorRedirected() here since they were introduced first with .Net 4.5
 	public class Console_Info {
+		#if Pwsh20
 		private enum FileType: uint {
 			FILE_TYPE_UNKNOWN = 0x0000,
 			FILE_TYPE_DISK = 0x0001,
@@ -1173,6 +1174,7 @@ namespace PSRunnerNS {
 			FILE_TYPE_PIPE = 0x0003,
 			FILE_TYPE_REMOTE = 0x8000
 		}
+		#endif
 
 		private enum STDHandle: uint {
 			STD_INPUT_HANDLE = unchecked((uint) - 10),
@@ -1180,6 +1182,7 @@ namespace PSRunnerNS {
 			STD_ERROR_HANDLE = unchecked((uint) - 12)
 		}
 		private enum ConsoleMode: uint {
+			#if Pwsh20
 			ENABLE_ECHO_INPUT = 0x0004,
 			ENABLE_INSERT_MODE = 0x0020,
 			ENABLE_LINE_INPUT = 0x0002,
@@ -1191,43 +1194,60 @@ namespace PSRunnerNS {
 
 			ENABLE_PROCESSED_OUTPUT = 0x0001,
 			ENABLE_WRAP_AT_EOL_OUTPUT = 0x0002,
+			#endif
 			ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004,
+			#if Pwsh20
 			DISABLE_NEWLINE_AUTO_RETURN = 0x0008,
 			ENABLE_LVB_GRID_WORLDWIDE = 0x0010
+			#endif
 		}
 
 		[DllImport("Kernel32.dll")]
 		static private extern UIntPtr GetStdHandle(STDHandle stdHandle);
 
+		#if Pwsh20
 		[DllImport("Kernel32.dll")]
 		static private extern FileType GetFileType(UIntPtr hFile);
+		#endif
 		[DllImport("Kernel32.dll")]
 		static private extern bool GetConsoleMode(UIntPtr hConsoleHandle, out ConsoleMode lpConsoleMode);
 		[DllImport("Kernel32.dll")]
 		static private extern bool SetConsoleMode(UIntPtr hConsoleHandle, ConsoleMode dwMode);
 
 		static public bool IsInputRedirected() {
+			#if Pwsh20
 			UIntPtr hInput = GetStdHandle(STDHandle.STD_INPUT_HANDLE);
 			FileType fileType = GetFileType(hInput);
 			if ((fileType == FileType.FILE_TYPE_CHAR) || (fileType == FileType.FILE_TYPE_UNKNOWN))
 				return false;
 			return true;
+			#else
+			return System.Console.IsInputRedirected;
+			#endif
 		}
 
 		static public bool IsOutputRedirected() {
+			#if Pwsh20
 			UIntPtr hOutput = GetStdHandle(STDHandle.STD_OUTPUT_HANDLE);
 			FileType fileType = GetFileType(hOutput);
 			if ((fileType == FileType.FILE_TYPE_CHAR) || (fileType == FileType.FILE_TYPE_UNKNOWN))
 				return false;
 			return true;
+			#else
+			return System.Console.IsOutputRedirected;
+			#endif
 		}
 
 		static public bool IsErrorRedirected() {
+			#if Pwsh20
 			UIntPtr hError = GetStdHandle(STDHandle.STD_ERROR_HANDLE);
 			FileType fileType = GetFileType(hError);
 			if ((fileType == FileType.FILE_TYPE_CHAR) || (fileType == FileType.FILE_TYPE_UNKNOWN))
 				return false;
 			return true;
+			#else
+			return System.Console.IsErrorRedirected;
+			#endif
 		}
 		static public bool IsVirtualTerminalSupported() {
 			UIntPtr hOutput = GetStdHandle(STDHandle.STD_OUTPUT_HANDLE);
@@ -1959,9 +1979,27 @@ namespace PSRunnerNS {
 	static class PSRunnerEntry {
 		static PSRunner me;
 
+		#if conHost
+			[DllImport("kernel32.dll", SetLastError = true)][return: MarshalAs(UnmanagedType.Bool)]
+			private static extern bool AllocConsole();
+		#endif
 		// EXEMain
 		[$threadingModelThread]
 		private static int Main(string[] args) {
+			#if conHost
+			if (AllocConsole()) {
+				Console.SetIn(new System.IO.StreamReader(Console.OpenStandardInput()));
+
+				System.IO.StreamWriter streamWriter = new System.IO.StreamWriter(Console.OpenStandardOutput());
+				streamWriter.AutoFlush = true;
+				Console.SetOut(streamWriter);
+
+				System.IO.StreamWriter errorWriter = new System.IO.StreamWriter(Console.OpenStandardOutput());
+				errorWriter.AutoFlush = true;
+				Console.SetError(errorWriter);
+			}
+			else Console.Error.WriteLine("Creation of conHost failed!");
+			#endif
 			PSRunner.BaseInit();
 			me = new PSRunner();
 			System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);

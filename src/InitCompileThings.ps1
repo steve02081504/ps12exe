@@ -55,6 +55,7 @@ if ($exitOnCancel) { $Constants += "exitOnCancel" }
 if ($UNICODEEncoding) { $Constants += "UNICODEEncoding" }
 if ($winFormsDPIAware) { $Constants += "winFormsDPIAware" }
 if ($targetRuntime -eq 'Framework2.0') { $Constants += "Pwsh20" }
+if ($conHost) { $Constants += "conHost" }
 
 if (-not $TempDir) {
 	$TempDir = $TempTempDir = [System.IO.Path]::GetTempPath() + [System.IO.Path]::GetRandomFileName()
