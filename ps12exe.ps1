@@ -37,6 +37,11 @@ the resulting executable will be a Windows Forms app without a console window.
 You might want to pipe your output to Out-String to prevent a message box for every line of output
 (example: dir C:\ | Out-String)
 
+.PARAMETER conHost
+force start with conhost as console instead of Windows Terminal. If necessary a new console window
+will appear.
+Important: Disables redirection of input, output or error channel!
+
 .PARAMETER prepareDebug
 create helpful information for debugging of generated executable. See parameter -debug there
 
@@ -132,7 +137,7 @@ Param(
 	[Parameter(ParameterSetName = 'Content', Position = 0)]
 	[ValidatePattern(".*\.(exe|com|scr|bin|bat|cmd)$")]
 	[String]$outputFile = $NULL, [String]$CompilerOptions = '/o+ /debug-', [String]$TempDir = $NULL,
-	[scriptblock]$minifyer = $null, [Switch]$noConsole, [Switch]$prepareDebug, [int]$lcid,
+	[scriptblock]$minifyer = $null, [Switch]$noConsole, [Switch]$conHost, [Switch]$prepareDebug, [int]$lcid,
 	[ValidateSet('x64', 'x86', 'anycpu')]
 	[String]$architecture = 'anycpu',
 	[ValidateSet('STA', 'MTA')]
@@ -622,6 +627,12 @@ if ($virtualize) {
 			return
 		}
 	}
+}
+
+if ($noConsole -and $conHost) {
+	Write-I18n Error "CombinedArg_NoConsole_ConHost" -Category InvalidArgument
+	$global:LastExitCode = 2 # 调用格式错误
+	return
 }
 
 if (!$configFile) {
