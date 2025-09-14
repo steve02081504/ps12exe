@@ -315,7 +315,12 @@ if (-not ($inputFile -or $Content)) {
 	Show-Help
 	Write-Host
 	Write-I18n Error NoneInput -Category InvalidArgument
-	$global:LastExitCode = 2 # 调用格式错误
+	if ([System.Console]::IsOutputRedirected -or [System.Console]::IsInputRedirected -or [System.Console]::IsErrorRedirected) {
+		$global:LastExitCode = 2 # 调用格式错误
+	}
+	else {
+		& "$PSScriptRoot\src\Interact\main.ps1" -Localize $Localize # start interactive mode if no input
+	}
 	return
 }
 
