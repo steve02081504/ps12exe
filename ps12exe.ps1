@@ -268,7 +268,8 @@ function RollUp {
 				try {
 					$CousorPos.Y = $CousorPos.Y - $num
 					$Host.UI.RawUI.CursorPosition = $CousorPos
-				} catch { $Error.RemoveAt(0) }
+				}
+				catch { $Error.RemoveAt(0) }
 			}
 		}
 	}
@@ -306,9 +307,9 @@ function Write-I18n(
 		'Warning' { Write-Warning $value }
 		'Error' {
 			if (!$Exception) { $Exception = [System.Exception]::new($value) }
-			try{$Host.UI.RawUI.ForegroundColor = "Red"}catch{}
+			try { $Host.UI.RawUI.ForegroundColor = "Red" } catch {}
 			$Host.UI.WriteErrorLine($value)
-			try{$Host.UI.RawUI.ForegroundColor = $ForegroundColor}catch{}
+			try { $Host.UI.RawUI.ForegroundColor = $ForegroundColor } catch {}
 			Write-Error -Exception $Exception -Message $value -Category $Category -ErrorId $ErrorId -TargetObject $TargetObject -ErrorAction SilentlyContinue
 		}
 		'Debug' { Write-Debug $value }
@@ -326,7 +327,8 @@ function Write-I18n(
 				try {
 					$ForegroundColor = $Host.UI.RawUI.ForegroundColor
 					$Host.UI.RawUI.ForegroundColor = "Yellow"
-				} catch {}
+				}
+				catch {}
 				Write-I18n Host NewVersionAvailable $versionOnline
 				try { $Host.UI.RawUI.ForegroundColor = $ForegroundColor } catch {}
 			}
@@ -553,21 +555,21 @@ if ($SyntaxErrors) {
 				$StartLine = Write-I18n Output SyntaxErrorLineStart $errinfo.SpoceText
 			}
 			$ErrMessage += [ordered]@{
-				Split = ''
-				StartLine = $StartLine
-				ScriptLine = $errinfo.Text
-				HighlightLine = (" "*([Math]::Max(0, $errinfo.Spoce.Column-1)) + '^'*([Math]::Max($errinfo.Spoce.ColumnEnd-$errinfo.Spoce.Column,1)))
-				Messages = @()
+				Split         = ''
+				StartLine     = $StartLine
+				ScriptLine    = $errinfo.Text
+				HighlightLine = (" " * ([Math]::Max(0, $errinfo.Spoce.Column - 1)) + '^' * ([Math]::Max($errinfo.Spoce.ColumnEnd - $errinfo.Spoce.Column, 1)))
+				Messages      = @()
 			}
 		}
 		$ErrMessage[-1].Messages += $errinfo.Message
 	}
 	Write-I18n Error -Category ParserError -TargetObject @{
-		Errors = $SyntaxErrors
-		Text = ($ErrMessage | ForEach-Object{ $_.GetEnumerator() | ForEach-Object {$_.Value} }) -join "`n"
+		Errors      = $SyntaxErrors
+		Text        = ($ErrMessage | ForEach-Object { $_.GetEnumerator() | ForEach-Object { $_.Value } }) -join "`n"
 		MessageTree = $ErrMessage
 	} InputSyntaxError
-	$ErrMessage | ForEach-Object{
+	$ErrMessage | ForEach-Object {
 		Write-Host $_.Split
 		if ($_.StartLine) { Write-Host $_.StartLine -ForegroundColor Cyan }
 		if ($_.ScriptLine) {
@@ -799,10 +801,12 @@ try {
 				if ($CodeSigning.Path) {
 					if ($CodeSigning.Password) {
 						$cert = Get-PfxCertificate -FilePath $CodeSigning.Path -Password $CodeSigning.Password
-					} else {
+					}
+					else {
 						$cert = Get-PfxCertificate -FilePath $CodeSigning.Path
 					}
-				} elseif ($CodeSigning.Thumbprint) {
+				}
+				elseif ($CodeSigning.Thumbprint) {
 					$cert = Get-Item "Cert:\CurrentUser\My\$($CodeSigning.Thumbprint)" -ErrorAction SilentlyContinue
 					if (!$cert) {
 						$cert = Get-Item "Cert:\LocalMachine\My\$($CodeSigning.Thumbprint)" -ErrorAction SilentlyContinue
@@ -813,13 +817,16 @@ try {
 					$signature = Set-AuthenticodeSignature -FilePath $outputFile -Certificate $cert -TimestampServer $timestampServer -HashAlgorithm SHA256
 					if ($signature.Status -eq 'Valid') {
 						Write-I18n Host ExecutableSignedSuccessfully
-					} else {
+					}
+					else {
 						Write-I18n Warning SigningStatusNotValid $signature.Status $signature.StatusMessage
 					}
-				} else {
+				}
+				else {
 					Write-I18n Error CertificateNotFoundOrInvalidPassword
 				}
-			} catch {
+			}
+			catch {
 				Write-I18n Error SigningFailed $_.Exception.Message
 			}
 		}

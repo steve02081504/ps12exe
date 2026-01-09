@@ -2,11 +2,11 @@
 
 > [!CAUTION]
 > 不要在源代码中存储密码！  
-> 参阅[这里](#密码安全)了解更多详情。  
+> 参阅[这里](#密码安全)了解更多详情。
 
 ## 简介
 
-ps12exe是一个 PowerShell 模块，它允许你从 .ps1 脚本创建可执行文件。  
+ps12exe是一个 PowerShell 模块，它允许你从 .ps1 脚本创建可执行文件。
 
 [![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml)
 [![PSGallery download num](https://img.shields.io/powershellgallery/dt/ps12exe)](https://www.powershellgallery.com/packages/ps12exe)
@@ -174,15 +174,15 @@ finally {
 不同的`$LastExitCode`值代表了不同的错误类型：
 
 | 错误类型 | `$LastExitCode`值 |
-|---------|------------------|
-| 0 | 没有错误 |
-| 1 | 输入代码错误 |
-| 2 | 调用格式错误 |
-| 3 | ps12exe内部错误 |
+| -------- | ----------------- |
+| 0        | 没有错误          |
+| 1        | 输入代码错误      |
+| 2        | 调用格式错误      |
+| 3        | ps12exe内部错误   |
 
 ### 预处理
 
-ps12exe 会在编译前对脚本进行预处理。  
+ps12exe 会在编译前对脚本进行预处理。
 
 ```powershell
 # Read the program frame from the ps12exe.cs file
@@ -205,7 +205,7 @@ $LocalizeData =
 ```
 
 现在只支持以下条件： `PSEXE` 和 `PSScript`。  
-`PSEXE` 为 true；`PSScript` 为 false。  
+`PSEXE` 为 true；`PSScript` 为 false。
 
 #### `#_include <filename|url>`/`#_include_as_value <valuename> <file|url>`
 
@@ -214,9 +214,9 @@ $LocalizeData =
 #_include_as_value <valuename> <file|url>
 ```
 
-将文件 `<filename|url>` 或 `<file|url>` 的内容包含到脚本中。文件内容会插入到 `#_include`/`#_include_as_value` 命令的位置。  
+将文件 `<filename|url>` 或 `<file|url>` 的内容包含到脚本中。文件内容会插入到 `#_include`/`#_include_as_value` 命令的位置。
 
-与`#_if`语句不同 如果你不使用引号将文件名括起来，`#_include`系列预处理命令会将末尾的空格、`#`也视为文件名的一部分  
+与`#_if`语句不同 如果你不使用引号将文件名括起来，`#_include`系列预处理命令会将末尾的空格、`#`也视为文件名的一部分
 
 ```powershell
 #_include $PSScriptRoot/super #weird filename.ps1
@@ -225,7 +225,7 @@ $LocalizeData =
 
 使用 `#_include` 时，文件内容会经过预处理，这允许你多级包含文件。
 
-`#_include_as_value` 会将文件内容作为字符串值插入脚本。文件内容不会被预处理。  
+`#_include_as_value` 会将文件内容作为字符串值插入脚本。文件内容不会被预处理。
 
 在大多数情况下你不需要使用 `#_if` 和 `#_include` 预处理命令来使得脚本在转换为exe后子脚本被正确包含，ps12exe会自动处理类似以下这些情况并认为目标脚本应当被包含处理：
 
@@ -340,7 +340,7 @@ pragma命令可以设置任何编译参数：
 ### Minifyer
 
 由于ps12exe的"编译"会将脚本中的所有内容作为资源逐字嵌入到生成的可执行文件中，因此如果脚本中有大量无用字符串，生成的可执行文件就会很大。  
-你可以使用 `-Minifyer` 参数指定一个脚本块，它将在编译前对脚本进行预处理，以获得更小的生成可执行文件。  
+你可以使用 `-Minifyer` 参数指定一个脚本块，它将在编译前对脚本进行预处理，以获得更小的生成可执行文件。
 
 如果不知道如何编写这样的脚本块，可以使用 [psminnifyer](https://github.com/steve02081504/psminnifyer)。
 
@@ -350,7 +350,7 @@ pragma命令可以设置任何编译参数：
 
 ### 未实现的 cmdlet 列表
 
-ps12exe 的基本输入/输出命令必须用 C# 重写。未实现的有控制台模式下的 *`Write-Progress`*（工作量太大）和 *`Start-Transcript`*/*`Stop-Transcript`* （微软没有适当的参考实现）。
+ps12exe 的基本输入/输出命令必须用 C# 重写。未实现的有控制台模式下的 _`Write-Progress`_（工作量太大）和 _`Start-Transcript`_/_`Stop-Transcript`_ （微软没有适当的参考实现）。
 
 ### GUI 模式输出格式
 
@@ -371,9 +371,9 @@ ps12exe 可以创建配置文件，文件名为`生成的可执行文件 + ".con
 整个脚本对任何 .net 反编译器来说轻松可见。  
 ![图片](https://github.com/steve02081504/ps12exe/assets/31927825/92d96e53-ba52-406f-ae8b-538891f42779)
 
-### 按脚本区分环境  
+### 按脚本区分环境
 
-你可以通过 `$Host.Name` 判断脚本是在编译后的 exe 中运行还是在脚本中运行。  
+你可以通过 `$Host.Name` 判断脚本是在编译后的 exe 中运行还是在脚本中运行。
 
 ```powershell
 if ($Host.Name -eq "PSEXE") { Write-Output "ps12exe" } else { Write-Output "Some other host" }
@@ -405,30 +405,30 @@ $Host.UI.RawUI.FlushInputBuffer()
 
 ### 快速比对 🏁
 
-| 比对内容 | ps12exe | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
-| --- | --- | --- |
-| 纯脚本仓库 📦 | ✔️除了图片和依赖全是文本文件 | ❌含有有开源协议的exe文件 |
-| 生成hello world所需要的命令 🌍 | 😎`'"Hello World!"' \| ps12exe` | 🤔`echo "Hello World!" *> a.ps1; PS2EXE a.ps1; rm a.ps1` |
-| 生成的hello world可执行文件大小 💾 | 🥰1024 bytes | 😨25088 bytes |
-| GUI多语言支持 🌐 | ✔️ | ❌ |
-| 编译时的语法检查 ✔️ | ✔️ | ❌ |
-| 预处理功能 🔄 | ✔️ | ❌ |
-| `-extract`等特殊参数解析 🧹 | 🗑️已删除 | 🥲需要修改源代码 |
-| PR欢迎程度 🤝 | 🥰欢迎！ | 🤷14个PR，其中13个被关闭 |
+| 比对内容                           | ps12exe                         | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
+| ---------------------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 纯脚本仓库 📦                      | ✔️除了图片和依赖全是文本文件    | ❌含有有开源协议的exe文件                                                                                       |
+| 生成hello world所需要的命令 🌍     | 😎`'"Hello World!"' \| ps12exe` | 🤔`echo "Hello World!" *> a.ps1; PS2EXE a.ps1; rm a.ps1`                                                        |
+| 生成的hello world可执行文件大小 💾 | 🥰1024 bytes                    | 😨25088 bytes                                                                                                   |
+| GUI多语言支持 🌐                   | ✔️                              | ❌                                                                                                              |
+| 编译时的语法检查 ✔️                | ✔️                              | ❌                                                                                                              |
+| 预处理功能 🔄                      | ✔️                              | ❌                                                                                                              |
+| `-extract`等特殊参数解析 🧹        | 🗑️已删除                        | 🥲需要修改源代码                                                                                                |
+| PR欢迎程度 🤝                      | 🥰欢迎！                        | 🤷14个PR，其中13个被关闭                                                                                        |
 
 ### 详细比较 🔍
 
 相较于[`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5)，本项目带来了以下改进：
 
-| 改进内容 | 描述 |
-| --- | --- |
-| ✔️ 编译时的语法检查 | 在编译时进行语法检查，提高代码质量 |
-| 🔄 强大的预处理功能 | 在编译前预处理脚本，无需再复制粘贴所有内容到脚本中 |
-| 🛠️ `-CompilerOptions`参数 | 新增参数，让你能进一步定制生成的可执行文件 |
-| 📦️ `-Minifyer`参数 | 在编译前预处理脚本，生成更小的可执行文件 |
-| 🌐 支持从URL编译脚本和包含文件 | 支持从URL下载图标 |
-| 🖥️ `-noConsole`参数优化 | 优化了选项处理和窗口标题显示，你现在可以通过设置自定义弹出窗口的标题 |
-| 🧹 移除了exe文件 | 从代码仓库中移除了exe文件 |
-| 🌍 多语言支持、纯脚本GUI | 更好的多语言支持、纯脚本GUI，支持深色模式 |
-| 📖 将cs文件从ps1文件中分离 | 更易于阅读和维护 |
-| 🚀 更多改进 | 还有更多... |
+| 改进内容                       | 描述                                                                 |
+| ------------------------------ | -------------------------------------------------------------------- |
+| ✔️ 编译时的语法检查            | 在编译时进行语法检查，提高代码质量                                   |
+| 🔄 强大的预处理功能            | 在编译前预处理脚本，无需再复制粘贴所有内容到脚本中                   |
+| 🛠️ `-CompilerOptions`参数      | 新增参数，让你能进一步定制生成的可执行文件                           |
+| 📦️ `-Minifyer`参数            | 在编译前预处理脚本，生成更小的可执行文件                             |
+| 🌐 支持从URL编译脚本和包含文件 | 支持从URL下载图标                                                    |
+| 🖥️ `-noConsole`参数优化        | 优化了选项处理和窗口标题显示，你现在可以通过设置自定义弹出窗口的标题 |
+| 🧹 移除了exe文件               | 从代码仓库中移除了exe文件                                            |
+| 🌍 多语言支持、纯脚本GUI       | 更好的多语言支持、纯脚本GUI，支持深色模式                            |
+| 📖 将cs文件从ps1文件中分离     | 更易于阅读和维护                                                     |
+| 🚀 更多改进                    | 还有更多...                                                          |

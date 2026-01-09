@@ -4,9 +4,10 @@
 . $PSScriptRoot/VirtualTerminal.ps1
 function Showuseage($Usage) {
 	$Usage -replace '(?<!\w)\-(\w+)', "$($VirtualTerminal.Colors.BrightYellow)-`$1$($VirtualTerminal.Colors.Reset)"`
-	-replace "'([^']+)'", "$($VirtualTerminal.Colors.BrightMagenta)'`$1'$($VirtualTerminal.Colors.Reset)"`
-	-replace '(\w+)=', "$($VirtualTerminal.Colors.BrightGreen)`$1$($VirtualTerminal.Colors.Reset)="`
-	-replace '\[([a-zA-Z]+)', "[$($VirtualTerminal.Colors.BrightGreen)`$1$($VirtualTerminal.Colors.Reset)"`
+		-replace "'([^']+)'", "$($VirtualTerminal.Colors.BrightMagenta)'`$1'$($VirtualTerminal.Colors.Reset)"`
+		-replace '(\w+)=', "$($VirtualTerminal.Colors.BrightGreen)`$1$($VirtualTerminal.Colors.Reset)="`
+		-replace '\[([a-zA-Z]+)', "[$($VirtualTerminal.Colors.BrightGreen)`$1$($VirtualTerminal.Colors.Reset)"`
+
 }
 function ShowParamsHelp($ParamsHelpData) {
 	# 对于所有的键

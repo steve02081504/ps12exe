@@ -2,11 +2,11 @@
 
 > [!CAUTION]
 > Ne stockez jamais de mots de passe dans le code source !  
-> Consultez [ici](#sécurité-des-mots-de-passe) pour plus de détails.  
+> Consultez [ici](#sécurité-des-mots-de-passe) pour plus de détails.
 
 ## Introduction
 
-ps12exe est un module PowerShell qui vous permet de créer des fichiers exécutables à partir de scripts .ps1.  
+ps12exe est un module PowerShell qui vous permet de créer des fichiers exécutables à partir de scripts .ps1.
 
 [![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml)
 [![PSGallery download num](https://img.shields.io/powershellgallery/dt/ps12exe)](https://www.powershellgallery.com/packages/ps12exe)
@@ -173,16 +173,16 @@ finally {
 
 Les différentes valeurs de `$LastExitCode` représentent différents types d'erreurs :
 
-| Type d'erreur | Valeur de `$LastExitCode` |
-|---------|------------------|
-| 0 | Pas d'erreur |
-| 1 | Erreur dans le code d'entrée |
-| 2 | Erreur de format d'appel |
-| 3 | Erreur interne ps12exe |
+| Type d'erreur | Valeur de `$LastExitCode`    |
+| ------------- | ---------------------------- |
+| 0             | Pas d'erreur                 |
+| 1             | Erreur dans le code d'entrée |
+| 2             | Erreur de format d'appel     |
+| 3             | Erreur interne ps12exe       |
 
 ### Prétraitement
 
-ps12exe prétraite le script avant la compilation.  
+ps12exe prétraite le script avant la compilation.
 
 ```powershell
 # Lit le cadre de programme à partir du fichier ps12exe.cs
@@ -205,7 +205,7 @@ $LocalizeData =
 ```
 
 Seules les conditions suivantes sont prises en charge pour le moment : `PSEXE` et `PSScript`.  
-`PSEXE` est vrai ; `PSScript` est faux.  
+`PSEXE` est vrai ; `PSScript` est faux.
 
 #### `#_include <nom_de_fichier|url>`/`#_include_as_value <nom_de_valeur> <fichier|url>`
 
@@ -216,7 +216,7 @@ Seules les conditions suivantes sont prises en charge pour le moment : `PSEXE` 
 
 Inclut le contenu du fichier `<nom_de_fichier|url>` ou `<fichier|url>` dans le script. Le contenu du fichier est inséré à la position de la commande `#_include`/`#_include_as_value`.
 
-Contrairement à l'instruction `#_if`, si vous n'entourez pas le nom de fichier avec des guillemets, les commandes de prétraitement `#_include` considèrent également les espaces de fin et `#` comme faisant partie du nom de fichier.  
+Contrairement à l'instruction `#_if`, si vous n'entourez pas le nom de fichier avec des guillemets, les commandes de prétraitement `#_include` considèrent également les espaces de fin et `#` comme faisant partie du nom de fichier.
 
 ```powershell
 #_include $PSScriptRoot/super #nomdefichierbizarre.ps1
@@ -350,7 +350,7 @@ Si vous ne savez pas comment écrire un tel bloc de script, vous pouvez utiliser
 
 ### Liste des cmdlets non implémentées
 
-Les commandes d'entrée/sortie de base de ps12exe doivent être réécrites en C#. Celles qui ne sont pas implémentées sont *`Write-Progress`* en mode console (trop de travail) et *`Start-Transcript`*/*`Stop-Transcript`* (Microsoft n'a pas d'implémentation de référence appropriée).
+Les commandes d'entrée/sortie de base de ps12exe doivent être réécrites en C#. Celles qui ne sont pas implémentées sont _`Write-Progress`_ en mode console (trop de travail) et _`Start-Transcript`_/_`Stop-Transcript`_ (Microsoft n'a pas d'implémentation de référence appropriée).
 
 ### Format de sortie du mode GUI
 
@@ -405,30 +405,30 @@ $Host.UI.RawUI.FlushInputBuffer()
 
 ### Comparaison rapide 🏁
 
-| Comparaison | ps12exe | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
-| --- | --- | --- |
-| Référentiel de script pur 📦 | ✔️ Tous les fichiers sont des fichiers texte sauf les images et les dépendances | ❌ Contient des fichiers exe avec des licences open source |
-| Commande requise pour générer hello world 🌍 | 😎`'"Bonjour le monde !"' \| ps12exe` | 🤔`echo "Bonjour le monde !" *> a.ps1; PS2EXE a.ps1; rm a.ps1` |
-| Taille du fichier exécutable hello world généré 💾 | 🥰1 024 octets | 😨25 088 octets |
-| Prise en charge multilingue de l'interface graphique 🌐 | ✔️ | ❌ |
-| Vérification de la syntaxe lors de la compilation ✔️ | ✔️ | ❌ |
-| Fonction de prétraitement 🔄 | ✔️ | ❌ |
-| Analyse des paramètres spéciaux tels que `-extract` 🧹 | 🗑️ Supprimé | 🥲 Nécessite la modification du code source |
-| Degré d'accueil des PR 🤝 | 🥰 Bienvenue ! | 🤷 14 PR dont 13 fermées |
+| Comparaison                                             | ps12exe                                                                         | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Référentiel de script pur 📦                            | ✔️ Tous les fichiers sont des fichiers texte sauf les images et les dépendances | ❌ Contient des fichiers exe avec des licences open source                                                      |
+| Commande requise pour générer hello world 🌍            | 😎`'"Bonjour le monde !"' \| ps12exe`                                           | 🤔`echo "Bonjour le monde !" *> a.ps1; PS2EXE a.ps1; rm a.ps1`                                                  |
+| Taille du fichier exécutable hello world généré 💾      | 🥰1 024 octets                                                                  | 😨25 088 octets                                                                                                 |
+| Prise en charge multilingue de l'interface graphique 🌐 | ✔️                                                                              | ❌                                                                                                              |
+| Vérification de la syntaxe lors de la compilation ✔️    | ✔️                                                                              | ❌                                                                                                              |
+| Fonction de prétraitement 🔄                            | ✔️                                                                              | ❌                                                                                                              |
+| Analyse des paramètres spéciaux tels que `-extract` 🧹  | 🗑️ Supprimé                                                                     | 🥲 Nécessite la modification du code source                                                                     |
+| Degré d'accueil des PR 🤝                               | 🥰 Bienvenue !                                                                  | 🤷 14 PR dont 13 fermées                                                                                        |
 
 ### Comparaison détaillée 🔍
 
 Par rapport à [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5), ce projet apporte les améliorations suivantes :
 
-| Amélioration | Description |
-| --- | --- |
-| ✔️ Vérification de la syntaxe lors de la compilation | Effectue la vérification de la syntaxe lors de la compilation pour améliorer la qualité du code |
-| 🔄 Puissantes fonctions de prétraitement | Prétraite les scripts avant la compilation, plus besoin de copier-coller tout le contenu dans le script |
-| 🛠️ Paramètre `-CompilerOptions` | Ajout d'un nouveau paramètre qui vous permet de personnaliser davantage le fichier exécutable généré |
-| 📦️ Paramètre `-Minifyer` | Prétraite les scripts avant la compilation afin de générer des fichiers exécutables plus petits |
-| 🌐 Prise en charge de la compilation de scripts et de l'inclusion de fichiers depuis des URL | Prise en charge du téléchargement d'icônes depuis une URL |
-| 🖥️ Optimisation du paramètre `-noConsole` | Optimisation du traitement des options et de l'affichage du titre de la fenêtre, vous pouvez maintenant définir le titre des fenêtres popup personnalisées |
-| 🧹 Suppression du fichier exe | Suppression des fichiers exe du référentiel de code |
-| 🌍 Prise en charge multilingue, interface graphique en pur script | Meilleure prise en charge multilingue, interface graphique en pur script, prise en charge du mode sombre |
-| 📖 Séparation du fichier cs du fichier ps1 | Plus facile à lire et à entretenir |
-| 🚀 Plus d'améliorations | Et bien plus encore... |
+| Amélioration                                                                                 | Description                                                                                                                                                |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ✔️ Vérification de la syntaxe lors de la compilation                                         | Effectue la vérification de la syntaxe lors de la compilation pour améliorer la qualité du code                                                            |
+| 🔄 Puissantes fonctions de prétraitement                                                     | Prétraite les scripts avant la compilation, plus besoin de copier-coller tout le contenu dans le script                                                    |
+| 🛠️ Paramètre `-CompilerOptions`                                                              | Ajout d'un nouveau paramètre qui vous permet de personnaliser davantage le fichier exécutable généré                                                       |
+| 📦️ Paramètre `-Minifyer`                                                                    | Prétraite les scripts avant la compilation afin de générer des fichiers exécutables plus petits                                                            |
+| 🌐 Prise en charge de la compilation de scripts et de l'inclusion de fichiers depuis des URL | Prise en charge du téléchargement d'icônes depuis une URL                                                                                                  |
+| 🖥️ Optimisation du paramètre `-noConsole`                                                    | Optimisation du traitement des options et de l'affichage du titre de la fenêtre, vous pouvez maintenant définir le titre des fenêtres popup personnalisées |
+| 🧹 Suppression du fichier exe                                                                | Suppression des fichiers exe du référentiel de code                                                                                                        |
+| 🌍 Prise en charge multilingue, interface graphique en pur script                            | Meilleure prise en charge multilingue, interface graphique en pur script, prise en charge du mode sombre                                                   |
+| 📖 Séparation du fichier cs du fichier ps1                                                   | Plus facile à lire et à entretenir                                                                                                                         |
+| 🚀 Plus d'améliorations                                                                      | Et bien plus encore...                                                                                                                                     |

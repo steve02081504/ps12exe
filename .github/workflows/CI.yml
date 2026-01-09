@@ -6,7 +6,7 @@ on:
       - '**/*.ps1'
       - '**/*.cs'
   pull_request:
-    branches: [ "master" ]
+    branches: ['master']
   workflow_dispatch:
 
 jobs:

@@ -2,11 +2,11 @@
 
 > [!CAUTION]
 > ¡No almacene contraseñas en el código fuente!  
-> Consulte [aquí](#seguridad-de-contraseñas) para obtener más detalles.  
+> Consulte [aquí](#seguridad-de-contraseñas) para obtener más detalles.
 
 ## Introducción
 
-ps12exe es un módulo de PowerShell que permite crear ejecutables a partir de scripts .ps1.  
+ps12exe es un módulo de PowerShell que permite crear ejecutables a partir de scripts .ps1.
 
 [![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml)
 [![PSGallery download num](https://img.shields.io/powershellgallery/dt/ps12exe)](https://www.powershellgallery.com/packages/ps12exe)
@@ -72,7 +72,7 @@ Compila `"¡Hola Mundo!"` en un archivo ejecutable para ser enviado a `.\a.exe`.
 ps12exe https://raw.githubusercontent.com/steve02081504/ps12exe/master/src/GUI/Main.ps1
 ```
 
-Compila ``Main.ps1`` desde Internet en un archivo ejecutable para su salida en `.\Main.exe`.
+Compila `Main.ps1` desde Internet en un archivo ejecutable para su salida en `.\Main.exe`.
 
 ### Servicio web autoalojado
 
@@ -174,16 +174,16 @@ finally {
 
 Los diferentes valores de `$LastExitCode` representan diferentes tipos de errores:
 
-| Tipo de Error | Valor de `$LastExitCode` |
-|---------|------------------|
-| 0 | Sin error |
-| 1 | Error en el código de entrada |
-| 2 | Error en el formato de llamada |
-| 3 | Error interno de ps12exe |
+| Tipo de Error | Valor de `$LastExitCode`       |
+| ------------- | ------------------------------ |
+| 0             | Sin error                      |
+| 1             | Error en el código de entrada  |
+| 2             | Error en el formato de llamada |
+| 3             | Error interno de ps12exe       |
 
 ### Preprocesamiento
 
-ps12exe preprocesa el script antes de compilarlo.  
+ps12exe preprocesa el script antes de compilarlo.
 
 ```powershell
 # Lee el marco del programa desde el archivo ps12exe.cs
@@ -206,7 +206,7 @@ $LocalizeData =
 ```
 
 Ahora sólo se soportan las siguientes condiciones: `PSEXE` y `PSScript`.  
-`PSEXE` es verdadero; `PSScript` es falso.  
+`PSEXE` es verdadero; `PSScript` es falso.
 
 #### `#_include <nombre_archivo|url>`/`#_include_as_value <valuename> <archivo|url>`
 
@@ -215,9 +215,9 @@ Ahora sólo se soportan las siguientes condiciones: `PSEXE` y `PSScript`.
 #_include_as_value <nombre_valor> <archivo|url>
 ```
 
-Incluye el contenido del archivo `<nombre_archivo|url>` o `<archivo|url>` en el script. El contenido del archivo se inserta en la ubicación del comando `#_include`/`#_include_as_value`.  
+Incluye el contenido del archivo `<nombre_archivo|url>` o `<archivo|url>` en el script. El contenido del archivo se inserta en la ubicación del comando `#_include`/`#_include_as_value`.
 
-A diferencia de la sentencia `#_if`, si no encierra el nombre del archivo entre comillas, la familia de comandos de preprocesamiento `#_include` trata el espacio final, `#`, como parte del nombre del archivo.  
+A diferencia de la sentencia `#_if`, si no encierra el nombre del archivo entre comillas, la familia de comandos de preprocesamiento `#_include` trata el espacio final, `#`, como parte del nombre del archivo.
 
 ```powershell
 #_include $PSScriptRoot/super #nombrearchivoextraño.ps1
@@ -226,7 +226,7 @@ A diferencia de la sentencia `#_if`, si no encierra el nombre del archivo entre 
 
 Cuando se utiliza `#_include`, el contenido del fichero se preprocesa, lo que permite incluir ficheros a varios niveles.
 
-`#_include_as_value` inserta el contenido del archivo en el script como un valor de cadena. El contenido del archivo no se preprocesa.  
+`#_include_as_value` inserta el contenido del archivo en el script como un valor de cadena. El contenido del archivo no se preprocesa.
 
 En la mayoría de los casos no necesita usar los comandos de preprocesamiento `#_if` y `#_include` para hacer que los scripts incluyan correctamente los sub-scripts después de la conversión a exe. ps12exe maneja automáticamente casos como los siguientes y asume que el script destino debe ser incluido:
 
@@ -341,7 +341,7 @@ Cuando el código llega a este punto, el proceso sale con el código de salida d
 ### Minifyer
 
 Dado que la "compilación" de ps12exe incrusta todo en el script textualmente como un recurso en el ejecutable resultante, si el script tiene muchas cadenas inútiles, el ejecutable resultante será muy grande.  
-Puede utilizar el parámetro `-Minifyer` para especificar un bloque de script que preprocesará el script antes de la compilación para obtener un ejecutable generado más pequeño.  
+Puede utilizar el parámetro `-Minifyer` para especificar un bloque de script que preprocesará el script antes de la compilación para obtener un ejecutable generado más pequeño.
 
 Si no sabe cómo escribir un bloque de script de este tipo, puede utilizar [psminnifyer](https://github.com/steve02081504/psminnifyer).
 
@@ -351,7 +351,7 @@ Si no sabe cómo escribir un bloque de script de este tipo, puede utilizar [psmi
 
 ### Lista de cmdlets no implementados
 
-Los comandos básicos de entrada/salida de ps12exe deben ser reescritos en C#. Los no implementados son *`Write-Progress`* en modo consola (demasiado trabajo) y *`Start-Transcript`*/*`Stop-Transcript`* (Microsoft no tiene una implementación de referencia adecuada).
+Los comandos básicos de entrada/salida de ps12exe deben ser reescritos en C#. Los no implementados son _`Write-Progress`_ en modo consola (demasiado trabajo) y _`Start-Transcript`_/_`Stop-Transcript`_ (Microsoft no tiene una implementación de referencia adecuada).
 
 ### Formato de salida en modo GUI
 
@@ -372,9 +372,9 @@ Nunca almacene contraseñas en scripts compilados.
 Todo el script es fácilmente visible para cualquier descompilador .net.  
 ![image](https://github.com/steve02081504/ps12exe/assets/31927825/92d96e53-ba52-406f-ae8b-538891f42779)
 
-### Distinguir entornos por script  
+### Distinguir entornos por script
 
-Puedes saber si un script se está ejecutando en un exe compilado o en un script por `$Host.Name`.  
+Puedes saber si un script se está ejecutando en un exe compilado o en un script por `$Host.Name`.
 
 ```powershell
 if ($Host.Name -eq "PSEXE") { Write-Output "ps12exe" } else { Write-Output "Algún otro host" }
@@ -406,30 +406,30 @@ $Host.UI.RawUI.FlushInputBuffer()
 
 ### Comparación Rápida 🏁
 
-| Aspecto | ps12exe | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
-| --- | --- | --- |
-| Repositorio de solo scripts 📦 | ✔️ Solo archivos de texto, excepto imágenes y dependencias | ❌ Contiene archivos ejecutables con licencia de código abierto |
-| Comando para generar "Hello World" 🌍 | 😎`'"Hello World!"' \| ps12exe` | 🤔`echo "Hello World!" *> a.ps1; PS2EXE a.ps1; rm a.ps1` |
-| Tamaño del archivo ejecutable "Hello World" 💾 | 🥰 1024 bytes | 😨 25088 bytes |
-| Soporte multilingüe en la GUI 🌐 | ✔️ | ❌ |
-| Verificación de sintaxis en tiempo de compilación ✔️ | ✔️ | ❌ |
-| Función de preprocesamiento 🔄 | ✔️ | ❌ |
-| `-extract` y otros parámetros especiales de análisis sintáctico 🧹 | 🗑️ Eliminado | 🥲 Requiere modificación del código fuente |
-| PR welcome level 🤝 | 🥰 ¡Bienvenido! | 🤷 14 PRs, 13 de los cuales fueron cerrados |
+| Aspecto                                                            | ps12exe                                                    | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
+| ------------------------------------------------------------------ | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Repositorio de solo scripts 📦                                     | ✔️ Solo archivos de texto, excepto imágenes y dependencias | ❌ Contiene archivos ejecutables con licencia de código abierto                                                 |
+| Comando para generar "Hello World" 🌍                              | 😎`'"Hello World!"' \| ps12exe`                            | 🤔`echo "Hello World!" *> a.ps1; PS2EXE a.ps1; rm a.ps1`                                                        |
+| Tamaño del archivo ejecutable "Hello World" 💾                     | 🥰 1024 bytes                                              | 😨 25088 bytes                                                                                                  |
+| Soporte multilingüe en la GUI 🌐                                   | ✔️                                                         | ❌                                                                                                              |
+| Verificación de sintaxis en tiempo de compilación ✔️               | ✔️                                                         | ❌                                                                                                              |
+| Función de preprocesamiento 🔄                                     | ✔️                                                         | ❌                                                                                                              |
+| `-extract` y otros parámetros especiales de análisis sintáctico 🧹 | 🗑️ Eliminado                                               | 🥲 Requiere modificación del código fuente                                                                      |
+| PR welcome level 🤝                                                | 🥰 ¡Bienvenido!                                            | 🤷 14 PRs, 13 de los cuales fueron cerrados                                                                     |
 
 ### Comparación Compleja 🔍
 
 En comparación con [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5), este proyecto presenta las siguientes mejoras:
 
-| Mejoras | Descripción |
-| --- | --- |
-| ✔️ Verificación de sintaxis en tiempo de compilación | Realiza una verificación de sintaxis durante la compilación para mejorar la calidad del código |
-| 🔄 Potente función de preprocesamiento | Realiza un preprocesamiento del script antes de la compilación, evitando la necesidad de copiar y pegar todo el contenido en el script |
-| 🛠️ Parámetro `-CompilerOptions` | Permite una mayor personalización del archivo ejecutable generado |
-| 📦️ Parámetro `-Minifyer` | Realiza un preprocesamiento antes de la compilación para generar un archivo ejecutable más pequeño |
-| 🌐 Soporte para compilar scripts y archivos de inclusión desde URL | Admite la descarga de iconos desde una URL |
-| 🖥️ Optimización del parámetro `-noConsole` | Mejora el manejo de opciones y la visualización del título de la ventana emergente personalizada |
-| 🧹 Eliminación del archivo exe | Se eliminó el archivo exe del repositorio de código |
-| 🌍 Soporte multilingüe y GUI de solo script | Mejora el soporte multilingüe y la GUI de solo script, incluyendo el modo oscuro |
-| 📖 Separación de archivos cs de archivos ps1 | Facilita la lectura y el mantenimiento |
-| 🚀 Otras mejoras | ¡Y muchas más! |
+| Mejoras                                                            | Descripción                                                                                                                            |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| ✔️ Verificación de sintaxis en tiempo de compilación               | Realiza una verificación de sintaxis durante la compilación para mejorar la calidad del código                                         |
+| 🔄 Potente función de preprocesamiento                             | Realiza un preprocesamiento del script antes de la compilación, evitando la necesidad de copiar y pegar todo el contenido en el script |
+| 🛠️ Parámetro `-CompilerOptions`                                    | Permite una mayor personalización del archivo ejecutable generado                                                                      |
+| 📦️ Parámetro `-Minifyer`                                          | Realiza un preprocesamiento antes de la compilación para generar un archivo ejecutable más pequeño                                     |
+| 🌐 Soporte para compilar scripts y archivos de inclusión desde URL | Admite la descarga de iconos desde una URL                                                                                             |
+| 🖥️ Optimización del parámetro `-noConsole`                         | Mejora el manejo de opciones y la visualización del título de la ventana emergente personalizada                                       |
+| 🧹 Eliminación del archivo exe                                     | Se eliminó el archivo exe del repositorio de código                                                                                    |
+| 🌍 Soporte multilingüe y GUI de solo script                        | Mejora el soporte multilingüe y la GUI de solo script, incluyendo el modo oscuro                                                       |
+| 📖 Separación de archivos cs de archivos ps1                       | Facilita la lectura y el mantenimiento                                                                                                 |
+| 🚀 Otras mejoras                                                   | ¡Y muchas más!                                                                                                                         |

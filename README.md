@@ -2,11 +2,11 @@
 
 > [!CAUTION]
 > Do not store passwords in source code!  
-> See [localed readme](https://steve02081504.github.io/ps12exe/readme#password-security-stuff) for more details.  
+> See [localed readme](https://steve02081504.github.io/ps12exe/readme#password-security-stuff) for more details.
 
 ## Introduction
 
-ps12exe is a PowerShell module that allows you to create an executable file from a .ps1 script.  
+ps12exe is a PowerShell module that allows you to create an executable file from a .ps1 script.
 
 [![CI](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml/badge.svg)](https://github.com/steve02081504/ps12exe/actions/workflows/CI.yml)
 [![PSGallery download num](https://img.shields.io/powershellgallery/dt/ps12exe)](https://www.powershellgallery.com/packages/ps12exe)
@@ -87,32 +87,32 @@ Starts a web server that can be used to compile powerShell scripts online.
 
 ### Quick Comparison 🏁
 
-| Comparison Content | ps12exe | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
-| --- | --- | --- |
-| Pure script repository 📦 | ✔️ All text files except images & dependencies | ❌ Contains exe files with open source license |
-| Command to generate hello world 🌍 | 😎`'"Hello World!"' \| ps12exe` | 🤔`echo "Hello World!" *> a.ps1; PS2EXE a.ps1; rm a.ps1` |
-| Size of the generated hello world executable file 💾 | 🥰1024 bytes | 😨25088 bytes |
-| GUI multilingual support 🌐 | ✔️ | ❌ |
-| Syntax check during compilation ✔️ | ✔️ | ❌ |
-| Preprocessing feature 🔄 | ✔️ | ❌ |
-| `-extract` and other special parameter parsing 🧹 | 🗑️ Removed | 🥲 Requires source code modification |
-| PR welcome level 🤝 | 🥰 Welcome! | 🤷 14 PRs, 13 of which were closed |
+| Comparison Content                                   | ps12exe                                        | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
+| ---------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Pure script repository 📦                            | ✔️ All text files except images & dependencies | ❌ Contains exe files with open source license                                                                  |
+| Command to generate hello world 🌍                   | 😎`'"Hello World!"' \| ps12exe`                | 🤔`echo "Hello World!" *> a.ps1; PS2EXE a.ps1; rm a.ps1`                                                        |
+| Size of the generated hello world executable file 💾 | 🥰1024 bytes                                   | 😨25088 bytes                                                                                                   |
+| GUI multilingual support 🌐                          | ✔️                                             | ❌                                                                                                              |
+| Syntax check during compilation ✔️                   | ✔️                                             | ❌                                                                                                              |
+| Preprocessing feature 🔄                             | ✔️                                             | ❌                                                                                                              |
+| `-extract` and other special parameter parsing 🧹    | 🗑️ Removed                                     | 🥲 Requires source code modification                                                                            |
+| PR welcome level 🤝                                  | 🥰 Welcome!                                    | 🤷 14 PRs, 13 of which were closed                                                                              |
 
 ### Detailed Comparison 🔍
 
 Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5), this project brings the following improvements:
 
-| Improvement Content | Description |
-| --- | --- |
-| ✔️ Syntax check during compilation | Syntax check during compilation to improve code quality |
-| 🔄 Powerful preprocessing feature | Preprocess the script before compilation, no need to copy and paste all content into the script |
-| 🛠️ `-CompilerOptions` parameter | New parameter, allowing you to further customize the generated executable file |
-| 📦️ `-Minifyer` parameter | Preprocess the script before compilation to generate a smaller executable file |
-| 🌐 Support for compiling scripts and included files from URL | Support for downloading icons from URL |
-| 🖥️ Optimization of `-noConsole` parameter | Optimized option handling and window title display, you can now set the title of the custom pop-up window |
-| 🧹 Removed exe files | Removed exe files from the code repository |
-| 🌍 Multilingual support, pure script GUI | Better multilingual support, pure script GUI, support for dark mode |
-| 📖 Separated cs files from ps1 files | Easier to read and maintain |
-| 🚀 More improvements | And more... |
+| Improvement Content                                          | Description                                                                                               |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| ✔️ Syntax check during compilation                           | Syntax check during compilation to improve code quality                                                   |
+| 🔄 Powerful preprocessing feature                            | Preprocess the script before compilation, no need to copy and paste all content into the script           |
+| 🛠️ `-CompilerOptions` parameter                              | New parameter, allowing you to further customize the generated executable file                            |
+| 📦️ `-Minifyer` parameter                                    | Preprocess the script before compilation to generate a smaller executable file                            |
+| 🌐 Support for compiling scripts and included files from URL | Support for downloading icons from URL                                                                    |
+| 🖥️ Optimization of `-noConsole` parameter                    | Optimized option handling and window title display, you can now set the title of the custom pop-up window |
+| 🧹 Removed exe files                                         | Removed exe files from the code repository                                                                |
+| 🌍 Multilingual support, pure script GUI                     | Better multilingual support, pure script GUI, support for dark mode                                       |
+| 📖 Separated cs files from ps1 files                         | Easier to read and maintain                                                                               |
+| 🚀 More improvements                                         | And more...                                                                                               |
 
 see [localed readme](https://steve02081504.github.io/ps12exe/readme) for more details.

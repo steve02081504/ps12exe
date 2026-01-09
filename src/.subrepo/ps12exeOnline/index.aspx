@@ -45,7 +45,7 @@
 'Hello 世界！👾'
 </textarea>
 		<br />
-		<asp:Button runat="server" ID="compileButton" OnClick="compileCode" Text="cum out"/>
+		<asp:Button runat="server" ID="compileButton" OnClick="compileCode" Text="cum out" />
 	</form>
 	<script type="text/javascript">
 		const userInput = document.getElementById("inputText")

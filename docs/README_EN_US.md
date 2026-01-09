@@ -2,7 +2,7 @@
 
 > [!CAUTION]
 > Don't store passwords in the source code, you hear?  
-> See [this section](#password-security) for more details.  
+> See [this section](#password-security) for more details.
 
 ## Introduction
 
@@ -173,12 +173,12 @@ finally {
 
 Different `$LastExitCode` values tell ya what kinda screw-up happened.
 
-| Error Type | `$LastExitCode` Value |
-|---------|------------------|
-| 0 | All good, no problemo |
-| 1 | Input code's a hot mess |
-| 2 | Call's all jacked up |
-| 3 | ps12exe had a total meltdown |
+| Error Type | `$LastExitCode` Value        |
+| ---------- | ---------------------------- |
+| 0          | All good, no problemo        |
+| 1          | Input code's a hot mess      |
+| 2          | Call's all jacked up         |
+| 3          | ps12exe had a total meltdown |
 
 ### Preprocessing
 
@@ -205,7 +205,7 @@ $LocalizeData =
 ```
 
 Right now, only these conditions are supported: `PSEXE` and `PSScript`.  
-`PSEXE` is true; `PSScript` is false.  
+`PSEXE` is true; `PSScript` is false.
 
 #### `#_include <filename|url>`/`#_include_as_value <valuename> <file|url>`
 
@@ -350,7 +350,7 @@ If you don't know how to write one of those script blocks, you can use [psminnif
 
 ### List of Cmdlets Not Implemented
 
-The basic input/output commands had to be rewritten in C# for ps12exe. Not implemented are *`Write-Progress`* in console mode (too much work, man), and *`Start-Transcript`*/*`Stop-Transcript`* (no good reference implementation by Microsoft).
+The basic input/output commands had to be rewritten in C# for ps12exe. Not implemented are _`Write-Progress`_ in console mode (too much work, man), and _`Start-Transcript`_/_`Stop-Transcript`_ (no good reference implementation by Microsoft).
 
 ### GUI Mode Output Formatting
 
@@ -406,30 +406,30 @@ $Host.UI.RawUI.FlushInputBuffer()
 
 ### Quick Comparison
 
-| Comparison | ps12exe | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
-| --- | --- | --- |
-| Pure script repo 📦 | ✔️ All text files except images & dependencies | ❌ Contains exe files with an open source license |
-| Command to generate hello world 🌍 | 😎`'"Hello World!"' \| ps12exe` | 🤔`echo "Hello World!" *> a.ps1; PS2EXE a.ps1; rm a.ps1` |
-| Size of the generated hello world executable 💾 | 🥰1024 bytes | 😨25088 bytes |
-| GUI multilingual support 🌐 | ✔️ | ❌ |
-| Syntax check during compilation ✔️ | ✔️ | ❌ |
-| Preprocessing 🔄 | ✔️ | ❌ |
-| `-extract` and other special parameter parsing 🧹 | 🗑️ Removed | 🥲 Requires modifying the source code |
-| PR welcome level 🤝 | 🥰 Welcome! | 🤷 14 PRs, 13 closed |
+| Comparison                                        | ps12exe                                        | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
+| ------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Pure script repo 📦                               | ✔️ All text files except images & dependencies | ❌ Contains exe files with an open source license                                                               |
+| Command to generate hello world 🌍                | 😎`'"Hello World!"' \| ps12exe`                | 🤔`echo "Hello World!" *> a.ps1; PS2EXE a.ps1; rm a.ps1`                                                        |
+| Size of the generated hello world executable 💾   | 🥰1024 bytes                                   | 😨25088 bytes                                                                                                   |
+| GUI multilingual support 🌐                       | ✔️                                             | ❌                                                                                                              |
+| Syntax check during compilation ✔️                | ✔️                                             | ❌                                                                                                              |
+| Preprocessing 🔄                                  | ✔️                                             | ❌                                                                                                              |
+| `-extract` and other special parameter parsing 🧹 | 🗑️ Removed                                     | 🥲 Requires modifying the source code                                                                           |
+| PR welcome level 🤝                               | 🥰 Welcome!                                    | 🤷 14 PRs, 13 closed                                                                                            |
 
 ### Detailed Comparison
 
 Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5), this project has these improvements:
 
-| Improvement | Description |
-| --- | --- |
-| ✔️ Syntax check during compilation | Syntax check during compilation to improve code quality, you know? |
-| 🔄 Powerful preprocessing | Preprocess the script before compilation, no need to copy and paste everything into the script |
-| 🛠️ `-CompilerOptions` parameter | New parameter to let you further customize the generated executable |
-| 📦️ `-Minifyer` parameter | Preprocess the script before compilation to generate a smaller executable |
-| 🌐 Support for compiling scripts and included files from URLs | Support for downloading icons from URLs |
-| 🖥️ Optimization of `-noConsole` parameter | Optimized option handling and window title display; you can now set the title of the custom pop-up |
-| 🧹 Removed exe files | Removed exe files from the code repo |
-| 🌍 Multilingual support, pure script GUI | Better multilingual support, pure script GUI, supports dark mode |
-| 📖 Separated cs files from ps1 files | Easier to read and maintain, ya see? |
-| 🚀 More improvements | And a whole bunch more... |
+| Improvement                                                   | Description                                                                                        |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| ✔️ Syntax check during compilation                            | Syntax check during compilation to improve code quality, you know?                                 |
+| 🔄 Powerful preprocessing                                     | Preprocess the script before compilation, no need to copy and paste everything into the script     |
+| 🛠️ `-CompilerOptions` parameter                               | New parameter to let you further customize the generated executable                                |
+| 📦️ `-Minifyer` parameter                                     | Preprocess the script before compilation to generate a smaller executable                          |
+| 🌐 Support for compiling scripts and included files from URLs | Support for downloading icons from URLs                                                            |
+| 🖥️ Optimization of `-noConsole` parameter                     | Optimized option handling and window title display; you can now set the title of the custom pop-up |
+| 🧹 Removed exe files                                          | Removed exe files from the code repo                                                               |
+| 🌍 Multilingual support, pure script GUI                      | Better multilingual support, pure script GUI, supports dark mode                                   |
+| 📖 Separated cs files from ps1 files                          | Easier to read and maintain, ya see?                                                               |
+| 🚀 More improvements                                          | And a whole bunch more...                                                                          |

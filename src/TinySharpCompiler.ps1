@@ -14,7 +14,8 @@ Get-ChildItem $PSScriptRoot\bin\AsmResolver -Recurse -Filter *.dll | ForEach-Obj
 	$Refs += $_.FullName
 	try {
 		Add-Type -LiteralPath $_.FullName -ErrorVariable $null
-	} catch {
+	}
+	catch {
 		$_.Exception.LoaderExceptions | Out-String | Write-Verbose
 		$Error.Remove($_)
 	}

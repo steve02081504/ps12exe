@@ -1,4 +1,4 @@
-param ($SyntaxErrors,$CodeContent,$Localize)
+param ($SyntaxErrors, $CodeContent, $Localize)
 $result = & $PSScriptRoot/SyntaxErrorDataBuilder.ps1 $SyntaxErrors
 
 #_if PSScript

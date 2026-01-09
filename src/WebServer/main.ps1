@@ -40,10 +40,10 @@ param (
 	$MaxScriptFileSize = 2mb,
 	$CacheDir = "$PSScriptRoot/outputs",
 	#_if PSScript
-	[ArgumentCompleter({
-		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-		. "$PSScriptRoot\..\LocaleArgCompleter.ps1" @PSBoundParameters
-	})]
+		[ArgumentCompleter({
+			Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+			. "$PSScriptRoot\..\LocaleArgCompleter.ps1" @PSBoundParameters
+		})]
 	#_endif
 	[string]$Localize,
 	[switch]$help
@@ -150,7 +150,7 @@ function HandleWebCompileRequest($userInput, $context, $Localize) {
 				Write-Host $e -ForegroundColor Red
 			}
 			$Response.ContentType = "text/plain"
-			$buffer = [System.Text.Encoding]::UTF8.GetBytes(($e,$e.TargetObject.Text -join "`n"))
+			$buffer = [System.Text.Encoding]::UTF8.GetBytes(($e, $e.TargetObject.Text -join "`n"))
 		}
 		else {
 			$buffer = [System.IO.File]::ReadAllBytes($compiledExePath)

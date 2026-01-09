@@ -145,7 +145,7 @@ $Script:refs.CompileButton.add_Click({
 			"$($Script:LocalizeData.ErrorHead) $($e.Exception.Message)"
 		}
 		else {
-			($e,$e.TargetObject.Text) -join "`n"
+			($e, $e.TargetObject.Text) -join "`n"
 		}
 		[System.Windows.Forms.MessageBox]::Show([string]$Message, $Script:LocalizeData.CompileResult, [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
 		return

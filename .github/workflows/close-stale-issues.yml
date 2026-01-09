@@ -13,7 +13,7 @@
 name: 'Close inactive issues'
 on:
   schedule:
-    - cron: "30 6 * * 4"
+    - cron: '30 6 * * 4'
   workflow_dispatch:
 jobs:
   close-issues:
@@ -26,12 +26,12 @@ jobs:
           exempt-issue-labels: 'blocker,enhancement,regression'
           days-before-stale: 60
           days-before-close: 30
-          stale-issue-label: "stale"
-          stale-pr-label: "stale"
+          stale-issue-label: 'stale'
+          stale-pr-label: 'stale'
           ignore-updates: true
           remove-stale-when-updated: false
           stale-issue-message: '这个问题是**陈旧的**因为它已经开放了60天而没有活动。请删除`stale`标签或添加评论，否则这个问题将在30天内被关闭。'
-          stale-pr-message:    '这个PR是**陈旧的**因为它已经开放了60天而没有任何活动。请删除`stale`标签或添加评论，否则该PR将在30天内被关闭。'
+          stale-pr-message: '这个PR是**陈旧的**因为它已经开放了60天而没有任何活动。请删除`stale`标签或添加评论，否则该PR将在30天内被关闭。'
           close-issue-message: '这个问题被关闭是因为它已经停滞了30天而没有任何活动。请随时重新开放。'
-          close-pr-message:    '这个PR被关闭是因为它已经停滞了30天而没有任何活动。请随时重新开放。'
+          close-pr-message: '这个PR被关闭是因为它已经停滞了30天而没有任何活动。请随时重新开放。'
           repo-token: ${{ secrets.BOT_TOKEN }}

@@ -1,4 +1,4 @@
-param ($Content,$Localize)
+param ($Content, $Localize)
 
 [cultureinfo]::CurrentUICulture = $Localize
 

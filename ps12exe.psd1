@@ -1,27 +1,27 @@
 ﻿@{
 	# Script module or binary module file associated with this manifest.
-	RootModule			   = 'ps12exe.psm1'
+	RootModule             = 'ps12exe.psm1'
 
 	# Version number of this module.
-	ModuleVersion		   = '0.0.0'
+	ModuleVersion          = '0.0.0'
 
 	# Supported PSEditions
 	# CompatiblePSEditions = @()
 
 	# ID used to uniquely identify this module
-	GUID				   = '0bdadd0c-4365-422a-b7d4-62c2ea6d2d14'
+	GUID                   = '0bdadd0c-4365-422a-b7d4-62c2ea6d2d14'
 
 	# Author of this module
-	Author				   = 'steve02081504'
+	Author                 = 'steve02081504'
 
 	# Company or vendor of this module
-	CompanyName			   = 'Unknown'
+	CompanyName            = 'Unknown'
 
 	# Copyright statement for this module
-	Copyright			   = '(c) steve02081504.'
+	Copyright              = '(c) steve02081504.'
 
 	# Description of the functionality provided by this module
-	Description			   = @'
+	Description            = @'
 better pwsh code 2 exe repo:
 - Use `ps12exe a.ps1` to convert `a.ps1` into `a.exe`;
 - Use `ps12exeGUI` for a graphical interface that simplifies compilation;
@@ -32,7 +32,7 @@ All commands in this module support the `-help` option for detailed assistance i
 '@
 
 	# Minimum version of the PowerShell engine required by this module
-	PowerShellVersion	   = '5.0'
+	PowerShellVersion      = '5.0'
 
 	# Name of the PowerShell host required by this module
 	# PowerShellHostName = ''
@@ -68,7 +68,7 @@ All commands in this module support the `-help` option for detailed assistance i
 	# NestedModules = @()
 
 	# Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-	FunctionsToExport	   = @('ps12exe', 'ps12exeGUI', 'Set-ps12exeContextMenu', 'Start-ps12exeWebServer', 'Enter-ps12exeInteract')
+	FunctionsToExport      = @('ps12exe', 'ps12exeGUI', 'Set-ps12exeContextMenu', 'Start-ps12exeWebServer', 'Enter-ps12exeInteract')
 
 	# Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 	# CmdletsToExport = @()
@@ -86,10 +86,10 @@ All commands in this module support the `-help` option for detailed assistance i
 	# ModuleList = @()
 
 	# Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
-	PrivateData			   = @{
+	PrivateData            = @{
 		PSData = @{
 			# Tags applied to this module. These help with module discovery in online galleries.
-			Tags	   = @('Executable', 'Compiler', 'ps2exe', 'exe', 'ps12exe', 'Windows')
+			Tags       = @('Executable', 'Compiler', 'ps2exe', 'exe', 'ps12exe', 'Windows')
 
 			# A URL to the license for this module.
 			LicenseUri = 'https://github.com/steve02081504/ps12exe/blob/master/LICENSE'
@@ -98,7 +98,7 @@ All commands in this module support the `-help` option for detailed assistance i
 			ProjectUri = 'https://github.com/steve02081504/ps12exe'
 
 			# A URL to an icon representing this module.
-			IconUri	   = 'https://raw.githubusercontent.com/steve02081504/ps12exe/master/img/icon.ico'
+			IconUri    = 'https://raw.githubusercontent.com/steve02081504/ps12exe/master/img/icon.ico'
 
 			# ReleaseNotes of this module
 			# ReleaseNotes = ''

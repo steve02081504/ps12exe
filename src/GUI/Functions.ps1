@@ -100,7 +100,8 @@ function Set-UIData {
 		}
 		$Script:refs.CertificateThumbprintTextBox.Text = $UIData.CodeSigning.Thumbprint
 		$Script:refs.TimestampServerTextBox.Text = $UIData.CodeSigning.TimestampServer
-	} else {
+	}
+	else {
 		$Script:refs.EnableCodeSigningCheckBox.Checked = $false
 		$Script:refs.CertificatePathTextBox.Text = ""
 		$Script:refs.CertificatePasswordTextBox.Text = ""

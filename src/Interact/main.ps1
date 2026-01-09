@@ -124,7 +124,7 @@ try {
 							Write-I18n "[!]" $I18n.IconDoesNotExist -SymbolColor Red
 						}
 					}
-					
+
 					if ($isValid) {
 						$icon = $iconInput
 						$resourceParams.iconFile = $icon
@@ -224,7 +224,7 @@ try {
 							Write-I18n "[!]" $I18n.CertificateDoesNotExist -SymbolColor Red
 						}
 					}
-					
+
 					if ($isValid) {
 						$certPath = $certPathInput
 						$codeSigningParams.Path = $certPath
@@ -271,7 +271,8 @@ try {
 				$codeSigningParamsStr = $codeSigningParams.GetEnumerator() | ForEach-Object {
 					if ($_.Key -eq 'Password') {
 						"$($_.Key)='$($_.Value -replace "'", "''")'"
-					} else {
+					}
+					else {
 						"$($_.Key)='$($_.Value -replace "'", "''")'"
 					}
 				} | Join-String -Separator '; '

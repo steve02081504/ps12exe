@@ -8,7 +8,8 @@ param (
 Get-ChildItem $PSScriptRoot\bin\AsmResolver -Recurse -Filter AsmResolver.PE*.dll | ForEach-Object {
 	try {
 		Add-Type -LiteralPath $_.FullName -ErrorVariable $null
-	} catch {
+	}
+	catch {
 		$_.Exception.LoaderExceptions | Out-String | Write-Verbose
 		$Error.Remove($_)
 	}
