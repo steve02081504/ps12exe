@@ -108,6 +108,7 @@ help       : このヘルプ情報を表示します。
         [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
         [-resourceParams @{iconFile='<ファイル名|url>'; title='<タイトル>'; description='<説明>'; company='<会社>';
         product='<製品>'; copyright='<著作権>'; trademark='<商標>'; version='<バージョン>'}]
+        [-CodeSigning @{Path='<PFXファイルパス>'; Password='<PFXパスワード>'; Thumbprint='<証明書指紋>'; TimestampServer='<時刻同期サーバー>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<ランタイムバージョン>']
         [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<言語コード>'] [-help]
@@ -129,6 +130,7 @@ noConsole        : 生成された実行可能ファイルは、コンソール�
 UNICODEEncoding  : コンソールモードで出力を UNICODE でエンコードします
 credentialGUI    : コンソールモードで GUI プロンプトを使用して資格情報を求めます
 resourceParams   : コンパイルされた実行可能ファイルのリソースパラメータを含むハッシュテーブル
+CodeSigning      : コード署名パラメータを含むハッシュテーブル
 configFile       : 設定ファイル（<outputfile>.exe.config）を書き込みます
 noOutput         : 生成された実行可能ファイルは、標準出力（詳細情報や情報チャネルを含む）を生成しません
 noError          : 生成された実行可能ファイルは、エラー出力（警告情報やデバッグ情報を含む）を生成しません

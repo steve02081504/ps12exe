@@ -33,6 +33,22 @@
 		supportOS        = $Script:refs.MoreOSFeaturesCheckBox.Checked
 		virtualize       = $Script:refs.EnableVirtualizationCheckBox.Checked
 		longPaths        = $Script:refs.LongPathSupportCheckBox.Checked
+		CodeSigning      = if ($Script:refs.EnableCodeSigningCheckBox.Checked) {
+			$codeSigning = @{}
+			if ($Script:refs.CertificatePathTextBox.Text) {
+				$codeSigning.Path = $Script:refs.CertificatePathTextBox.Text
+				if ($Script:refs.CertificatePasswordTextBox.Text) {
+					$codeSigning.Password = ConvertTo-SecureString $Script:refs.CertificatePasswordTextBox.Text -AsPlainText -Force
+				}
+			}
+			if ($Script:refs.CertificateThumbprintTextBox.Text) {
+				$codeSigning.Thumbprint = $Script:refs.CertificateThumbprintTextBox.Text
+			}
+			if ($Script:refs.TimestampServerTextBox.Text) {
+				$codeSigning.TimestampServer = $Script:refs.TimestampServerTextBox.Text
+			}
+			if ($codeSigning.Count -gt 0) { $codeSigning } else { $null }
+		} else { $null }
 	}
 }
 function Set-UIData {
@@ -74,6 +90,23 @@ function Set-UIData {
 	$Script:refs.MoreOSFeaturesCheckBox.Checked = $UIData.supportOS
 	$Script:refs.EnableVirtualizationCheckBox.Checked = $UIData.virtualize
 	$Script:refs.LongPathSupportCheckBox.Checked = $UIData.longPaths
+	if ($UIData.CodeSigning) {
+		$Script:refs.EnableCodeSigningCheckBox.Checked = $true
+		$Script:refs.CertificatePathTextBox.Text = $UIData.CodeSigning.Path
+		if ($UIData.CodeSigning.Password) {
+			$BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($UIData.CodeSigning.Password)
+			$Script:refs.CertificatePasswordTextBox.Text = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+			[System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+		}
+		$Script:refs.CertificateThumbprintTextBox.Text = $UIData.CodeSigning.Thumbprint
+		$Script:refs.TimestampServerTextBox.Text = $UIData.CodeSigning.TimestampServer
+	} else {
+		$Script:refs.EnableCodeSigningCheckBox.Checked = $false
+		$Script:refs.CertificatePathTextBox.Text = ""
+		$Script:refs.CertificatePasswordTextBox.Text = ""
+		$Script:refs.CertificateThumbprintTextBox.Text = ""
+		$Script:refs.TimestampServerTextBox.Text = ""
+	}
 }
 
 function Get-ps12exeArgs {
@@ -90,8 +123,21 @@ function Get-ps12exeArgs {
 				$UIData.resourceParams.$_ = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfigFile -ChildPath $UIData.resourceParams.$_))
 			}
 		}
+		# 处理 CodeSigning 中的 Path 相对路径
+		if ($UIData.CodeSigning -and $UIData.CodeSigning.Path -and -not [System.IO.Path]::IsPathRooted($UIData.CodeSigning.Path)) {
+			$UIData.CodeSigning.Path = [System.IO.Path]::GetFullPath((Join-Path -Path (Split-Path $ConfigFile -Parent) -ChildPath $UIData.CodeSigning.Path))
+		}
 	}
 	$UIData.GetEnumerator() | Where-Object { $_.Value -eq '' } | ForEach-Object { $result.Remove($_.Key) }
+	# 清理 CodeSigning hashtable 中的空值
+	if ($result.CodeSigning) {
+		$result.CodeSigning.GetEnumerator() | Where-Object { $_.Value -eq '' -or $_.Value -eq $null } | ForEach-Object {
+			$result.CodeSigning.Remove($_.Key)
+		}
+		if ($result.CodeSigning.Count -eq 0) {
+			$result.Remove('CodeSigning')
+		}
+	}
 	$result
 }
 function SetCfgFile([string]$ConfigFile) {

@@ -108,6 +108,7 @@ help       : Affiche cette aide.
         [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
         [-resourceParams @{iconFile='<nom_de_fichier|url>'; title='<titre>'; description='<description>'; company='<société>';
         product='<produit>'; copyright='<copyright>'; trademark='<marque_déposée>'; version='<version>'}]
+        [-CodeSigning @{Path='<chemin du fichier PFX>'; Password='<mot de passe PFX>'; Thumbprint='<empreinte du certificat>'; TimestampServer='<serveur d'horodatage>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<version_du_runtime>']
         [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<code_de_langue>'] [-help]
@@ -129,6 +130,7 @@ noConsole        : Le fichier exécutable généré sera une application Windows
 UNICODEEncoding  : Encode la sortie en UNICODE en mode console.
 credentialGUI    : Utilise une invite GUI pour les informations d'identification en mode console.
 resourceParams   : Table de hachage contenant les paramètres de ressource du fichier exécutable compilé.
+CodeSigning      : Table de hachage contenant les paramètres de signature de code pour le fichier exécutable compilé.
 configFile       : Écrit un fichier de configuration (<fichier_de_sortie>.exe.config).
 noOutput         : Le fichier exécutable généré ne produira pas de sortie standard (y compris les flux détaillés et d'informations).
 noError          : Le fichier exécutable généré ne produira pas de sortie d'erreur (y compris les flux d'avertissement et de débogage).

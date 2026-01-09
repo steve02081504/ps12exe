@@ -68,6 +68,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 	[-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
 	[-resourceParams @{iconFile='<फ़ाइल नाम|url>'; title='<शीर्षक>'; description='<सारांश>'; company='<कंपनी>';
 	product='<उत्पाद>'; copyright='<कॉपीराइट>'; trademark='<नामकरण>'; version='<संस्करण>'}]
+	[-CodeSigning @{Path='<PFX फ़ाइल पथ>'; Password='<PFX पासवर्ड>'; Thumbprint='<प्रमाणपत्र फ़िंगरप्रिंट>'; TimestampServer='<समय चिह्न सर्वर>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<रनटाइम संस्करण>']
 	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<भाषा कोड>'] [-help]"
@@ -87,6 +88,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 			UNICODEEncoding	 = "कंसोल मोड में आउटपुट को यूनिकोड में कोड करें"
 			credentialGUI	 = "कंसोल मोड में GUI क्रेडेंशल का उपयोग करें"
 			resourceParams	 = "कॉम्पाइल की गई एक्सीक्यूटेबल फ़ाइल के संसाधन पैरामीटर शामिल करें"
+			CodeSigning		 = "कोड साइनिंग पैरामीटर शामिल होने वाले हैं"
 			configFile		 = "एक कॉन्फ़िगरेशन फ़ाइल लिखें (``<आउटपुटफ़ाइल>.exe.config``)"
 			noOutput		 = "निर्मित एक्सीक्यूटेबल फ़ाइल में स्टैंडर्ड आउटपुट (सहित विस्तारित और सूचना चैनल) नहीं बनेगा"
 			noError			 = "निर्मित एक्सीक्यूटेबल फ़ाइल में त्रुटि आउटपुट (सहित चेतावनी और डीबग चैनल) नहीं बनेगा"
@@ -148,6 +150,15 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		GuestModeIconFileTooLarge				  = "आइकन {0} पढ़ने के लिए बहुत बड़ा है।"
 		GuestModeFtpNotSupported				  = "FTP को GuestMode में समर्थित नहीं किया जाता है।"
 		IconFileNotFound						  = "आइकन फ़ाइल नहीं मिली: {0}"
+		ConvertingImageToIcon					  = "छवि को आइकन प्रारूप में बदल रहा है..."
+		ImageConvertedToIcon					  = "छवि को आइकन में बदल दिया गया: {0}"
+		ImageConversionFailed					  = "छवि रूपांतरण विफल: {0}"
+		PleaseUseIcoFile						  = "कृपया {0} के बजाय .ico फ़ाइल का उपयोग करें"
+		SigningExecutable						  = "निष्पादन योग्य पर हस्ताक्षर कर रहा है..."
+		ExecutableSignedSuccessfully			  = "निष्पादन योग्य सफलतापूर्वक हस्ताक्षरित।"
+		SigningStatusNotValid					  = "हस्ताक्षर स्थिति मान्य नहीं है: {0} - {1}"
+		CertificateNotFoundOrInvalidPassword	  = "प्रमाणपत्र नहीं मिला या अमान्य पासवर्ड।"
+		SigningFailed							  = "हस्ताक्षर विफल: {0}"
 		ReadFileFailed							  = "फ़ाइल को पढ़ने में विफल: {0}"
 		PreprocessUnknownIfCondition			  = "अज्ञात स्थिति: {0}`nमान लिया गया फाल्स।"
 		PreprocessMissingEndIf					  = "endif की कमी: {0}"
@@ -182,7 +193,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 	InteractI18nData	   = @{
 		ModeName				 = "इंटरैक्टिव"
 		Welcome					 = "इंटरैक्टिव मो�� में प्रवेश किया। बाहर निकलने के लिए Ctrl+C दबाएं।"
-		EnterInputFile			 = "कृपया इनपुट फ़ाइल पथ दर्ज करें:"
+		EnterInputFile			 = "कृपया इनपुट फ़ाइल पथ या URL दर्ज करें:"
 		Prompt					 = " >> "
 		ExitMessage				 = "इंटरैक्टिव मोड से बाहर निकल रहा है।"
 		InvalidInputFile		 = "कृपया एक वैध PS1 फ़ाइल पथ दर्ज करें।"
@@ -193,9 +204,9 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		AddAdditionalInfo		 = "अतिरिक्त जानकारी (आइकन, संस्करण, आदि) जोड़ें?"
 		AdditionalInfoPrompt	 = "[Y/N]"
 		CollectingInfo			 = "अतिरिक्त जानकारी एक��्र कर रहा है। यदि आवश्यक न हो तो खाली छोड़ दें।"
-		IconPath				 = "आइकन फ़ाइल पथ (.ico):"
+		IconPath				 = "आइकन फ़ाइल पथ या URL (.ico, .png, .jpg, .jpeg, .bmp आदि समर्थित, छोड़ने के लिए खाली छोड़ें):"
 		InvalidIconExtension	 = "फ़ाइल में '.ico' एक्सटेंशन होना चाहिए। अनदेखा किया गया।"
-		IconDoesNotExist		 = "आइकन फ़ाइल मौजूद नहीं है। अनदेखा किया गया।"
+		IconDoesNotExist		 = "आइकन फ़ाइल मौजूद नहीं है, कृपया पुनः दर्ज करें।"
 		EnterTitle				 = "शीर्षक"
 		EnterDescription		 = "विवरण"
 		EnterCompany			 = "कंपनी का नाम"
@@ -208,6 +219,14 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		SkippingAdditionalInfo	 = "अतिरिक्त जानकारी छोड़ दी गई।"
 		CompileAsGui			 = "GUI एप्लिकेशन (बिना कंसोल के) के रूप में कंपाइल करें?"
 		RequireAdmin			 = "व्यवस्थापक विशेषाधिकारों की आवश्यकता है?"
+		EnableCodeSigning		 = "कोड हस्ताक्षर सक्षम करें?"
+		EnterCertificatePath	 = "प्रमाणपत्र पथ या URL (.pfx, छोड़ने के लिए खाली छोड़ें):"
+		InvalidCertificateExtension = "प्रमाणपत्र फ़ाइल .pfx प्रारूप में होनी चाहिए, कृपया पुनः दर्ज करें।"
+		CertificateDoesNotExist	 = "प्रमाणपत्र फ़ाइल मौजूद नहीं है, कृपया पुनः दर्ज करें।"
+		EnterCertificatePassword = "प्रमाणपत्र पासवर्ड (छोड़ने के लिए खाली छोड़ें):"
+		EnterCertificateThumbprint = "प्रमाणपत्र अंगूठे का निशान (छोड़ने के लिए खाली छोड़ें):"
+		EnterTimestampServer	 = "टाइमस्टैम्प सर्वर (डिफ़ॉल्ट के लिए खाली छोड़ें):"
+		SkippingCodeSigning		 = "कोड हस्ताक्षर छोड़ा जा रहा है।"
 		BuildingCommand			 = "कमांड तैयार किया जा रहा है..."
 		ExecutingCommand		 = "कमांड निष्पादित किया जा रहा है..."
 		CompileSuccess			 = "फ़ाइल सफलतापूर्वक संकलित हुई"

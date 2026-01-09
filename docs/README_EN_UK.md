@@ -135,6 +135,7 @@ help       : Show this help message.
         [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
         [-resourceParams @{iconFile='<filename|url>'; title='<title>'; description='<description>'; company='<company>';
         product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}]
+        [-CodeSigning @{Path='<PFX file path>'; Password='<PFX password>'; Thumbprint='<certificate thumbprint>'; TimestampServer='<timestamp server>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<Runtime>']
         [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<language code>'] [-help]
@@ -156,6 +157,7 @@ noConsole        : The resulting executable will be a Windows Forms app without 
 UNICODEEncoding  : Encode output as UNICODE in console mode.
 credentialGUI    : Use a GUI for prompting credentials in console mode.
 resourceParams   : A hashtable that contains resource parameters for the compiled executable.
+CodeSigning      : A hashtable containing code signing options for the compiled executable.
 configFile       : Write a config file (<outputfile>.exe.config).
 noOutput         : The resulting executable will generate no standard output (including verbose and information channels).
 noError          : The resulting executable will generate no error output (including warning and debug channels).

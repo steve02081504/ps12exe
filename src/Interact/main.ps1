@@ -41,13 +41,38 @@ try {
 			if (-not $inputFile) {
 				Write-I18n "[!]" $I18n.InvalidInputFile -SymbolColor Red
 			}
-			elseif (-not (Test-Path $inputFile -PathType Leaf)) {
-				Write-I18n "[!]" $I18n.FileDoesNotExist -SymbolColor Red
-				$inputFile = ''
+			elseif ($inputFile -match "^(https?|ftp)://") {
+				# URL: Use HEAD request to verify file exists
+				try {
+					$null = Invoke-WebRequest -Uri $inputFile -Method Head -ErrorAction Stop
+					# For URLs, extension check is optional (URL may not have extension)
+					# But if it has extension before query string or fragment, it should be valid
+					$urlWithoutQuery = $inputFile -replace '[?#].*$', ''
+					if ($urlWithoutQuery -match "\.(ps1|psd1|tmp)$") {
+						# Valid URL with valid extension
+					}
+					elseif ($urlWithoutQuery -match "\.[^./]+$") {
+						# URL has extension but not valid
+						Write-I18n "[!]" $I18n.InvalidExtension -SymbolColor Red
+						$inputFile = ''
+					}
+					# If no extension, accept it (URL might work without extension)
+				}
+				catch {
+					Write-I18n "[!]" $I18n.FileDoesNotExist -SymbolColor Red
+					$inputFile = ''
+				}
 			}
-			elseif ($inputFile -notmatch "\.(ps1|psd1|tmp)$") {
-				Write-I18n "[!]" $I18n.InvalidExtension -SymbolColor Red
-				$inputFile = ''
+			else {
+				# Local file path
+				if (-not (Test-Path $inputFile -PathType Leaf)) {
+					Write-I18n "[!]" $I18n.FileDoesNotExist -SymbolColor Red
+					$inputFile = ''
+				}
+				elseif ($inputFile -notmatch "\.(ps1|psd1|tmp)$") {
+					Write-I18n "[!]" $I18n.InvalidExtension -SymbolColor Red
+					$inputFile = ''
+				}
 			}
 		} while (-not $inputFile)
 		$cmdParams.Add("-inputFile `"$inputFile`"") | Out-Null
@@ -73,20 +98,44 @@ try {
 			$resourceParams = @{}
 
 			# Icon
-			Write-I18n "[*]" $I18n.IconPath -SymbolColor Green
-			Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
-			$icon = Read-Host
-			if ($icon) {
-				if ($icon -notmatch '\.ico$') {
-					Write-I18n "[-]" $I18n.InvalidIconExtension -SymbolColor Red
-				}
-				elseif (-not (Test-Path $icon)) {
-					Write-I18n "[-]" $I18n.IconDoesNotExist -SymbolColor Red
+			$icon = ''
+			do {
+				Write-I18n "[*]" $I18n.IconPath -SymbolColor Green
+				Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
+				$iconInput = Read-Host
+				if ($iconInput) {
+					$isValid = $false
+					if ($iconInput -match "^(https?|ftp)://") {
+						# URL: Use HEAD request to verify file exists
+						try {
+							$null = Invoke-WebRequest -Uri $iconInput -Method Head -ErrorAction Stop
+							$isValid = $true
+						}
+						catch {
+							Write-I18n "[!]" $I18n.IconDoesNotExist -SymbolColor Red
+						}
+					}
+					else {
+						# Local file path
+						if (Test-Path $iconInput -PathType Leaf) {
+							$isValid = $true
+						}
+						else {
+							Write-I18n "[!]" $I18n.IconDoesNotExist -SymbolColor Red
+						}
+					}
+					
+					if ($isValid) {
+						$icon = $iconInput
+						$resourceParams.iconFile = $icon
+						break
+					}
 				}
 				else {
-					$resourceParams.iconFile = $icon
+					# User chose to skip icon by leaving blank
+					break
 				}
-			}
+			} while ($true)
 
 			# Other resources
 			$resourcePrompts = @{
@@ -137,6 +186,100 @@ try {
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 		if (IsEnable(Read-Host)) {
 			$cmdParams.Add("-requireAdmin") | Out-Null
+		}
+
+		# Code signing
+		Write-I18n "[?]" $I18n.EnableCodeSigning $I18n.AdditionalInfoPrompt -SymbolColor Blue -SequenceColor DarkGray
+		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
+		if (IsEnable(Read-Host)) {
+			$codeSigningParams = @{}
+
+			# Certificate Path
+			$certPath = ''
+			do {
+				Write-I18n "[*]" $I18n.EnterCertificatePath -SymbolColor Green
+				Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
+				$certPathInput = Read-Host
+				if ($certPathInput) {
+					$isValid = $false
+					if ($certPathInput -notmatch '\.pfx$') {
+						Write-I18n "[!]" $I18n.InvalidCertificateExtension -SymbolColor Red
+					}
+					elseif ($certPathInput -match "^(https?|ftp)://") {
+						# URL: Use HEAD request to verify file exists
+						try {
+							$null = Invoke-WebRequest -Uri $certPathInput -Method Head -ErrorAction Stop
+							$isValid = $true
+						}
+						catch {
+							Write-I18n "[!]" $I18n.CertificateDoesNotExist -SymbolColor Red
+						}
+					}
+					else {
+						# Local file path
+						if (Test-Path $certPathInput -PathType Leaf) {
+							$isValid = $true
+						}
+						else {
+							Write-I18n "[!]" $I18n.CertificateDoesNotExist -SymbolColor Red
+						}
+					}
+					
+					if ($isValid) {
+						$certPath = $certPathInput
+						$codeSigningParams.Path = $certPath
+
+						# Certificate Password
+						Write-I18n "[*]" $I18n.EnterCertificatePassword -SymbolColor Green
+						Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
+						$certPassword = Read-Host -AsSecureString
+						if ($certPassword) {
+							$BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($certPassword)
+							$codeSigningParams.Password = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
+							[System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
+						}
+						break
+					}
+				}
+				else {
+					# User chose to skip certificate path by leaving blank
+					break
+				}
+			} while ($true)
+
+			# Certificate Thumbprint
+			Write-I18n "[*]" $I18n.EnterCertificateThumbprint -SymbolColor Green
+			Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
+			$thumbprint = Read-Host
+			if ($thumbprint) {
+				$codeSigningParams.Thumbprint = $thumbprint
+			}
+
+			# Timestamp Server
+			Write-I18n "[*]" $I18n.EnterTimestampServer -SymbolColor Green
+			Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
+			$timestampServer = Read-Host
+			if ($timestampServer) {
+				$codeSigningParams.TimestampServer = $timestampServer
+			}
+			else {
+				# Use default timestamp server
+				$codeSigningParams.TimestampServer = "http://timestamp.digicert.com"
+			}
+
+			if ($codeSigningParams.Count -gt 0) {
+				$codeSigningParamsStr = $codeSigningParams.GetEnumerator() | ForEach-Object {
+					if ($_.Key -eq 'Password') {
+						"$($_.Key)='$($_.Value -replace "'", "''")'"
+					} else {
+						"$($_.Key)='$($_.Value -replace "'", "''")'"
+					}
+				} | Join-String -Separator '; '
+				$cmdParams.Add("-CodeSigning @{$codeSigningParamsStr}") | Out-Null
+			}
+		}
+		else {
+			Write-I18n "[~]" $I18n.SkippingCodeSigning -SymbolColor Gray
 		}
 
 		# Build and execute command

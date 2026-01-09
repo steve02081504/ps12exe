@@ -68,6 +68,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 	[-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
 	[-resourceParams @{iconFile='<filename|url>'; title='<title>'; description='<description>'; company='<company>';
 	product='<product>'; copyright='<copyright>'; trademark='<trademark>'; version='<version>'}]
+	[-CodeSigning @{Path='<PFX file path>'; Password='<PFX password>'; Thumbprint='<certificate thumbprint>'; TimestampServer='<timestamp server>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<Runtime>']
 	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<language code>'] [-help]"
@@ -87,6 +88,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 			UNICODEEncoding	 = "Encode output as UNICODE in console mode."
 			credentialGUI	 = "Use a GUI for prompting credentials in console mode."
 			resourceParams	 = "A hashtable that contains resource parameters for the compiled executable."
+			CodeSigning		 = "A hashtable containing code signing options for the compiled executable."
 			configFile		 = "Write a config file (``<outputfile>.exe.config``)."
 			noOutput		 = "The resulting executable will generate no standard output (including verbose and information channels)."
 			noError			 = "The resulting executable will generate no error output (including warning and debug channels)."
@@ -148,6 +150,15 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		GuestModeIconFileTooLarge				  = "The icon {0} is too large to read."
 		GuestModeFtpNotSupported				  = "FTP is not supported in GuestMode."
 		IconFileNotFound						  = "Icon file not found: {0}"
+		ConvertingImageToIcon					  = "Converting image to icon format..."
+		ImageConvertedToIcon					  = "Image converted to icon: {0}"
+		ImageConversionFailed					  = "Image conversion failed: {0}"
+		PleaseUseIcoFile						  = "Please use a .ico file instead of {0}"
+		SigningExecutable						  = "Signing executable..."
+		ExecutableSignedSuccessfully			  = "Executable signed successfully."
+		SigningStatusNotValid					  = "Signing status not valid: {0} - {1}"
+		CertificateNotFoundOrInvalidPassword	  = "Certificate not found or invalid password."
+		SigningFailed							  = "Signing failed: {0}"
 		ReadFileFailed							  = "Failed to read the file: {0}"
 		PreprocessUnknownIfCondition			  = "Unknown condition: {0}`nassuming false."
 		PreprocessMissingEndIf					  = "Missing end of if statement: {0}"
@@ -182,7 +193,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 	InteractI18nData	   = @{
 		ModeName				 = "Interactive Session"
 		Welcome					 = "Welcome to the interactive session. You may press Ctrl+C to withdraw at any time."
-		EnterInputFile			 = "Kindly provide the path to the input file, if you please:"
+		EnterInputFile			 = "Kindly provide the path or URL to the input file, if you please:"
 		Prompt					 = " >> "
 		ExitMessage				 = "Very well. Concluding the interactive session."
 		InvalidInputFile		 = "I do beg your pardon, but that does not appear to be a valid PS1 file path."
@@ -193,9 +204,9 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		AddAdditionalInfo		 = "Would you care to embellish the executable with additional details?"
 		AdditionalInfoPrompt	 = "[Y/N]"
 		CollectingInfo			 = "Gathering particulars. Should you wish to omit an item, simply leave the field vacant."
-		IconPath				 = "Icon file path (.ico):"
+		IconPath				 = "Icon file path or URL (supports .ico, .png, .jpg, .jpeg, .bmp, etc., leave blank to skip):"
 		InvalidIconExtension	 = "An icon must be a '.ico' file, I'm afraid. This selection shall be disregarded."
-		IconDoesNotExist		 = "Icon file does not exist. Ignored."
+		IconDoesNotExist		 = "Icon file does not exist, please re-enter."
 		EnterTitle				 = "Title"
 		EnterDescription		 = "Description"
 		EnterCompany			 = "Company Name"
@@ -208,6 +219,14 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		SkippingAdditionalInfo	 = "Very well, we shall proceed without the extra fineries."
 		CompileAsGui			 = "Compile as GUI application (no console)?"
 		RequireAdmin			 = "Require administrator privileges?"
+		EnableCodeSigning		 = "Would you care to enable code signing?"
+		EnterCertificatePath	 = "Certificate path or URL (.pfx, leave blank to skip):"
+		InvalidCertificateExtension = "Certificate file must be .pfx format, please re-enter."
+		CertificateDoesNotExist	 = "Certificate file does not exist, please re-enter."
+		EnterCertificatePassword = "Certificate password (leave blank to skip):"
+		EnterCertificateThumbprint = "Certificate thumbprint (leave blank to skip):"
+		EnterTimestampServer	 = "Timestamp server (leave blank for default):"
+		SkippingCodeSigning		 = "Very well, we shall proceed without code signing."
 		BuildingCommand			 = "Preparing the compilation instructions..."
 		ExecutingCommand		 = "Executing command..."
 		CompileSuccess			 = "Splendid! The file has been compiled successfully."

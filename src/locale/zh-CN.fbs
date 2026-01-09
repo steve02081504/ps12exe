@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Data>
-	<Form Name="MainForm" Size="928,651" Tag="VisualStyle,DPIAware" Text="ps12exe GUI">
-		<GroupBox Name="InputsGroupBox" Location="8,1" Size="766,573">
+	<Form Name="MainForm" Size="938,750" Tag="VisualStyle,DPIAware" Text="ps12exe GUI">
+		<GroupBox Name="InputsGroupBox" Location="8,1" Size="773,682">
 			<GroupBox Name="BaseIOGroupBox" Location="5,13" Size="626,102">
 				<Label Name="CompileFileLabel" Location="6,17" Size="611,36" Text="编译文件">
-					<TextBox Name="CompileFileTextBox" AllowDrop="True" ImeMode="Disable" Location="0,13" Size="551,22" />
+					<TextBox Name="CompileFileTextBox" AllowDrop="True" Location="0,13" Size="551,22" />
 					<Button Name="CompileFileButton" Location="552,10" Size="59,26" Text="..." />
 				</Label>
 				<Label Name="OutputFileLabel" Location="5,56" Size="613,37" Text="输出文件">
@@ -50,7 +50,7 @@
 				<CheckBox Name="SingleThreadCheckBox" AutoCheck="False" Checked="True" CheckState="Checked" Location="10,27" Size="72,21" Text="单线程" />
 				<CheckBox Name="MultiThreadCheckBox" Location="10,54" Size="73,25" Text="多线程" />
 			</GroupBox>
-			<GroupBox Name="ResourceParamsGroupBox" Location="17,359" Size="710,206" Text="资源参数">
+			<GroupBox Name="ResourceParamsGroupBox" Location="6,353" Size="710,206" Text="资源参数">
 				<Label Name="IconFileLabel" Location="18,22" Size="318,36" Text="图标文件">
 					<TextBox Name="IconFileTextBox" AllowDrop="True" Location="0,14" Size="279,22" />
 					<Button Name="IconFileButton" Location="280,13" Size="38,23" Text="..." />
@@ -77,6 +77,22 @@
 					<TextBox Name="VersionTextBox" Location="-1,17" Size="357,22" />
 				</Label>
 			</GroupBox>
+			<GroupBox Name="CodeSigningGroupBox" Location="5,560" Size="712,109" Text="代码签名">
+				<CheckBox Name="EnableCodeSigningCheckBox" Location="560,10" Size="120,23" Text="启用代码签名" />
+				<Label Name="CertificatePathLabel" Location="14,19" Size="328,40" Text="证书路径 (PFX)">
+					<TextBox Name="CertificatePathTextBox" AllowDrop="True" Location="-1,17" Size="284,22" />
+					<Button Name="CertificatePathButton" Location="288,15" Size="40,26" Text="..." />
+				</Label>
+				<Label Name="CertificatePasswordLabel" Location="352,19" Size="348,40" Text="密码">
+					<TextBox Name="CertificatePasswordTextBox" Location="-1,17" PasswordChar="*" Size="356,22" />
+				</Label>
+				<Label Name="CertificateThumbprintLabel" Location="14,64" Size="336,40" Text="指纹">
+					<TextBox Name="CertificateThumbprintTextBox" Location="-1,17" Size="332,22" />
+				</Label>
+				<Label Name="TimestampServerLabel" Location="352,64" Size="348,40" Text="时间戳服务器">
+					<TextBox Name="TimestampServerTextBox" Location="-1,17" Size="356,22" Text="http://timestamp.digicert.com" />
+				</Label>
+			</GroupBox>
 			<GroupBox Name="OptionsSplitterPanel" Location="385,119" Size="230,228">
 				<GroupBox Name="ConsoleOptionsSplitterPanel" Location="8,14" Size="206,75" Text="控制台应用选项">
 					<CheckBox Name="UnicodeEncodingCheckBox" Location="11,19" Size="187,28" Text="强制输出流以Unicode编码" />
@@ -93,8 +109,8 @@
 		<Button Name="LoadCfgButton" Location="797,11" Size="83,26" Text="加载配置" />
 		<Button Name="SaveCfgButton" Location="797,42" Size="85,27" Text="保存配置" />
 		<Button Name="SaveCfg2OtherFileButton" Location="798,86" Size="85,31" Text="配置另存为" />
-		<Button Name="CompileButton" Location="802,561" Size="81,27" Text="编译" />
-		<Label Name="CfgFileLabel" Location="7,582" Size="778,21" Text="未选中配置文件" />
+		<Button Name="CompileButton" Location="802,630" Size="81,27" Text="编译" />
+		<Label Name="CfgFileLabel" Location="9,683" Size="778,23" Text="未选中配置文件" />
 		<Button Name="DarkModeSetButton" BackgroundImageLayout="Stretch" Location="802,472" Size="51,51" />
 		<Button Name="BGMSetButton" BackgroundImageLayout="Stretch" Location="802,411" Size="51,51" />
 	</Form>
@@ -103,4 +119,5 @@
 	<OpenFileDialog Name="OpenCompileFileDialog" DefaultExt="ps1" Filter="powershell文件(*.ps1)|*.ps1|powershell数据文件(*.psd1)|*.psd1" Title="选择编译文件" />
 	<SaveFileDialog Name="OpenOutputFileDialog" DefaultExt="exe" Filter="可执行文件(*.exe)|*.exe" Title="选择输出文件" />
 	<OpenFileDialog Name="OpenIconFileDialog" DefaultExt="ico" Filter="图标文件(*.ico)|*.ico" Title="选择图标文件" />
+	<OpenFileDialog Name="OpenCertificateFileDialog" DefaultExt="pfx" Filter="证书文件(*.pfx)|*.pfx|所有文件(*.*)|*.*" Title="选择证书文件" />
 </Data>

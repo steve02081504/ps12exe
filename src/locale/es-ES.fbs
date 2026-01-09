@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Data>
-	<Form Name="MainForm" Size="928,651" Tag="VisualStyle,DPIAware" Text="ps12exe GUI">
-		<GroupBox Name="InputsGroupBox" Location="8,1" Size="766,573">
+	<Form Name="MainForm" Size="938,750" Tag="VisualStyle,DPIAware" Text="ps12exe GUI">
+		<GroupBox Name="InputsGroupBox" Location="8,1" Size="773,682">
 			<GroupBox Name="BaseIOGroupBox" Location="5,13" Size="626,102">
 				<Label Name="CompileFileLabel" Location="6,17" Size="611,36" Text="Archivo de compilación">
 					<TextBox Name="CompileFileTextBox" AllowDrop="True" Location="0,13" Size="551,22" />
@@ -77,6 +77,22 @@
 					<TextBox Name="VersionTextBox" Location="-1,17" Size="357,22" />
 				</Label>
 			</GroupBox>
+			<GroupBox Name="CodeSigningGroupBox" Location="17,562" Size="712,109" Text="Firma de código">
+				<CheckBox Name="EnableCodeSigningCheckBox" Location="520,10" Size="184,23" Text="Habilitar firma de código" />
+				<Label Name="CertificatePathLabel" Location="14,19" Size="328,40" Text="Ruta del certificado (PFX)">
+					<TextBox Name="CertificatePathTextBox" AllowDrop="True" Location="-1,17" Size="284,22" />
+					<Button Name="CertificatePathButton" Location="288,15" Size="40,26" Text="..." />
+				</Label>
+				<Label Name="CertificatePasswordLabel" Location="352,19" Size="348,40" Text="Contraseña">
+					<TextBox Name="CertificatePasswordTextBox" Location="-1,17" PasswordChar="*" Size="356,22" />
+				</Label>
+				<Label Name="CertificateThumbprintLabel" Location="14,64" Size="336,40" Text="Huella digital">
+					<TextBox Name="CertificateThumbprintTextBox" Location="-1,17" Size="332,22" />
+				</Label>
+				<Label Name="TimestampServerLabel" Location="352,64" Size="348,40" Text="Servidor de marca de tiempo">
+					<TextBox Name="TimestampServerTextBox" Location="-1,17" Size="356,22" Text="http://timestamp.digicert.com" />
+				</Label>
+			</GroupBox>
 			<GroupBox Name="OptionsSplitterPanel" Location="385,119" Size="230,228">
 				<GroupBox Name="ConsoleOptionsSplitterPanel" Location="8,14" Size="206,75" Text="Opciones de aplicación de consola">
 					<CheckBox Name="UnicodeEncodingCheckBox" Location="11,19" Size="187,28" Text="Forzar la codificación Unicode en el flujo de salida" />
@@ -93,8 +109,8 @@
 		<Button Name="LoadCfgButton" Location="797,11" Size="83,26" Text="Cargar configuración" />
 		<Button Name="SaveCfgButton" Location="797,42" Size="85,27" Text="Guardar configuración" />
 		<Button Name="SaveCfg2OtherFileButton" Location="798,86" Size="85,31" Text="Guardar configuración como" />
-		<Button Name="CompileButton" Location="802,561" Size="81,27" Text="Compilar" />
-		<Label Name="CfgFileLabel" Location="7,582" Size="778,21" Text="No se ha seleccionado ningún archivo de configuración" />
+		<Button Name="CompileButton" Location="802,630" Size="81,27" Text="Compilar" />
+		<Label Name="CfgFileLabel" Location="9,683" Size="778,23" Text="No se ha seleccionado ningún archivo de configuración" />
 		<Button Name="DarkModeSetButton" BackgroundImageLayout="Stretch" Location="802,472" Size="51,51" />
 		<Button Name="BGMSetButton" BackgroundImageLayout="Stretch" Location="802,411" Size="51,51" />
 	</Form>
@@ -103,4 +119,5 @@
 	<OpenFileDialog Name="OpenCompileFileDialog" DefaultExt="ps1" Filter="Archivos de powershell(*.ps1)|*.ps1|Archivos de datos de powershell(*.psd1)|*.psd1" Title="Seleccionar archivo de compilación" />
 	<SaveFileDialog Name="OpenOutputFileDialog" DefaultExt="exe" Filter="Archivos ejecutables(*.exe)|*.exe" Title="Seleccionar archivo de salida" />
 	<OpenFileDialog Name="OpenIconFileDialog" DefaultExt="ico" Filter="Archivos de icono(*.ico)|*.ico" Title="Seleccionar archivo de icono" />
+	<OpenFileDialog Name="OpenCertificateFileDialog" DefaultExt="pfx" Filter="Archivos de certificado(*.pfx)|*.pfx|Todos los archivos(*.*)|*.*" Title="Seleccionar archivo de certificado" />
 </Data>

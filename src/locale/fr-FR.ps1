@@ -68,6 +68,7 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 	[-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
 	[-resourceParams @{iconFile='<nom_de_fichier|url>'; title='<titre>'; description='<description>'; company='<société>';
 	product='<produit>'; copyright='<copyright>'; trademark='<marque_déposée>'; version='<version>'}]
+	[-CodeSigning @{Path='<chemin_du_fichier_PFX>'; Password='<mot_de_passe_PFX>'; Thumbprint='<empreinte_numérique_de_certificat>'; TimestampServer='<serveur_de_timestamp>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<version_du_runtime>']
 	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<code_de_langue>'] [-help]"
@@ -87,6 +88,7 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 			UNICODEEncoding	 = "Encoder la sortie en UNICODE en mode console."
 			credentialGUI	 = "Utiliser une interface graphique pour demander les informations d’identification en mode console."
 			resourceParams	 = "Table de hachage contenant les paramètres de ressource du fichier exécutable compilé."
+			CodeSigning		 = "Table de hachage contenant les paramètres de signature de code pour le fichier exécutable compilé."
 			configFile		 = "Écrire un fichier de configuration (``<fichier_de_sortie>.exe.config``)."
 			noOutput		 = "Le fichier exécutable généré ne produira pas de sortie standard (y compris les flux détaillés et d’informations)."
 			noError			 = "Le fichier exécutable généré ne produira pas de sortie d’erreur (y compris les flux d’avertissements et de débogage)."
@@ -182,7 +184,7 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 	InteractI18nData	   = @{
 		ModeName				 = "Interactif"
 		Welcome					 = "Vous êtes en mode interactif. Appuyez sur Ctrl+C à tout moment pour quitter."
-		EnterInputFile			 = "Veuillez entrer le chemin du fichier d'entrée :"
+		EnterInputFile			 = "Veuillez entrer le chemin ou l'URL du fichier d'entrée :"
 		Prompt					 = " >> "
 		ExitMessage				 = "Quitter le mode interactif."
 		InvalidInputFile		 = "Le chemin du fichier PS1 n'est pas valide. Veuillez réessayer :"
@@ -193,9 +195,9 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 		AddAdditionalInfo		 = "Ajouter des informations supplémentaires (icône, version, etc.) ?"
 		AdditionalInfoPrompt	 = "[Y/N]"
 		CollectingInfo			 = "Collecte d'informations supplémentaires. Laisser vide si non nécessaire."
-		IconPath				 = "Chemin du fichier d'icône (.ico) :"
+		IconPath				 = "Chemin du fichier d'icône ou URL (prend en charge .ico, .png, .jpg, .jpeg, .bmp, etc., laisser vide pour ignorer) :"
 		InvalidIconExtension	 = "Le fichier doit être au format '.ico'. L'icône sera ignorée."
-		IconDoesNotExist		 = "Le fichier d'icône n'existe pas. Fichier ignoré."
+		IconDoesNotExist		 = "Le fichier d'icône n'existe pas, veuillez réessayer."
 		EnterTitle				 = "Titre"
 		EnterDescription		 = "Description"
 		EnterCompany			 = "Nom de l'entreprise"
@@ -208,6 +210,14 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 		SkippingAdditionalInfo	 = "Informations supplémentaires ignorées."
 		CompileAsGui			 = "Compiler en tant qu'application graphique (sans console) ?"
 		RequireAdmin			 = "Requiert les privilèges administrateur ?"
+		EnableCodeSigning		 = "Activer la signature de code ?"
+		EnterCertificatePath	 = "Chemin du certificat ou URL (.pfx, laisser vide pour ignorer) :"
+		InvalidCertificateExtension = "Le fichier de certificat doit être au format .pfx, veuillez réessayer."
+		CertificateDoesNotExist	 = "Le fichier de certificat n'existe pas, veuillez réessayer."
+		EnterCertificatePassword = "Mot de passe du certificat (laisser vide pour ignorer) :"
+		EnterCertificateThumbprint = "Empreinte du certificat (laisser vide pour ignorer) :"
+		EnterTimestampServer	 = "Serveur d'horodatage (laisser vide pour la valeur par défaut) :"
+		SkippingCodeSigning		 = "Signature de code ignorée."
 		BuildingCommand			 = "Préparation de la commande..."
 		ExecutingCommand		 = "Exécution de la commande..."
 		CompileSuccess			 = "Fichier compilé avec succès"

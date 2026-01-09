@@ -111,6 +111,15 @@ only preprocesses the input PowerShell script and outputs the preprocessed code.
 .PARAMETER GolfMode
 Enables golf mode, adding abbreviations and common functions to the script.
 
+.PARAMETER CodeSigning
+A hashtable containing code signing options for the compiled executable. Supported keys:
+- Path: Path to PFX certificate file
+- Password: SecureString password for the PFX file
+- Thumbprint: Certificate thumbprint from Windows Certificate Store
+- TimestampServer: Timestamp server URL (default: http://timestamp.digicert.com)
+
+Either Path or Thumbprint must be specified.
+
 .EXAMPLE
 ps12exe C:\Data\MyScript.ps1
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScript.exe as console executable
@@ -120,6 +129,12 @@ Compiles C:\Data\MyScript.ps1 to C:\Data\MyScriptGUI.exe as graphical executable
 .EXAMPLE
 ps12exe -inputFile C:\Data\MyScript.ps1 -PreprocessOnly
 Preprocesses C:\Data\MyScript.ps1 and outputs the preprocessed code.
+.EXAMPLE
+ps12exe -inputFile C:\Data\MyScript.ps1 -outputFile C:\Data\MyScript.exe -CodeSigning @{Path="C:\Cert\mycert.pfx"; Password=(ConvertTo-SecureString "password" -AsPlainText -Force); TimestampServer="http://timestamp.digicert.com"}
+Compiles C:\Data\MyScript.ps1 and signs it with a PFX certificate.
+.EXAMPLE
+ps12exe -inputFile C:\Data\MyScript.ps1 -outputFile C:\Data\MyScript.exe -CodeSigning @{Thumbprint="ABC123DEF456"}
+Compiles C:\Data\MyScript.ps1 and signs it with a certificate from Windows Certificate Store.
 #>
 [CmdletBinding(DefaultParameterSetName = 'InputFile')]
 Param(
@@ -137,7 +152,24 @@ Param(
 	[String]$architecture = 'anycpu',
 	[ValidateSet('STA', 'MTA')]
 	[String]$threadingModel = 'STA',
+	[ArgumentCompleter({
+		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+		$validKeys = @('iconFile', 'title', 'description', 'company', 'product', 'copyright', 'trademark', 'version')
+		if (-not $wordToComplete) { return "@{}" }
+		$wordToComplete = $wordToComplete.Trim('"', "'", ' ', '`t', '{', '}')
+		if ($wordToComplete -match '=') { return }
+		$validKeys | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object { "$_=" }
+	})]
 	[HashTable]$resourceParams = @{},
+	[ArgumentCompleter({
+		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+		if (-not $wordToComplete) { return "@{}" }
+		$validKeys = @('Path', 'Password', 'Thumbprint', 'TimestampServer')
+		$wordToComplete = $wordToComplete.Trim('"', "'", ' ', '`t', '{', '}')
+		if ($wordToComplete -match '=') { return }
+		$validKeys | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object { "$_=" }
+	})]
+	[Hashtable]$CodeSigning,
 	[Switch]$UNICODEEncoding,
 	[Switch]$credentialGUI,
 	[Switch]$configFile,
@@ -755,6 +787,41 @@ try {
 				Copy-Item -Path $_ -Destination $dstSrc -Force
 			}
 			$cr.TempFiles | Remove-Item -Verbose:$FALSE -Force -ErrorAction SilentlyContinue
+		}
+
+		# 代码签名逻辑
+		if ($CodeSigning) {
+			Write-I18n Host SigningExecutable
+			try {
+				$cert = $null
+				$timestampServer = if ($CodeSigning.TimestampServer) { $CodeSigning.TimestampServer } else { "http://timestamp.digicert.com" }
+
+				if ($CodeSigning.Path) {
+					if ($CodeSigning.Password) {
+						$cert = Get-PfxCertificate -FilePath $CodeSigning.Path -Password $CodeSigning.Password
+					} else {
+						$cert = Get-PfxCertificate -FilePath $CodeSigning.Path
+					}
+				} elseif ($CodeSigning.Thumbprint) {
+					$cert = Get-Item "Cert:\CurrentUser\My\$($CodeSigning.Thumbprint)" -ErrorAction SilentlyContinue
+					if (!$cert) {
+						$cert = Get-Item "Cert:\LocalMachine\My\$($CodeSigning.Thumbprint)" -ErrorAction SilentlyContinue
+					}
+				}
+
+				if ($cert) {
+					$signature = Set-AuthenticodeSignature -FilePath $outputFile -Certificate $cert -TimestampServer $timestampServer -HashAlgorithm SHA256
+					if ($signature.Status -eq 'Valid') {
+						Write-I18n Host ExecutableSignedSuccessfully
+					} else {
+						Write-I18n Warning SigningStatusNotValid $signature.Status $signature.StatusMessage
+					}
+				} else {
+					Write-I18n Error CertificateNotFoundOrInvalidPassword
+				}
+			} catch {
+				Write-I18n Error SigningFailed $_.Exception.Message
+			}
 		}
 	}
 }

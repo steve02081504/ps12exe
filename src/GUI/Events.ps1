@@ -1,4 +1,9 @@
-﻿# enter和esc键绑定
+﻿# 工具
+function CallAndUse([scriptblock]$Scriptblock) {
+	. $Scriptblock
+	$Scriptblock
+}
+# enter和esc键绑定
 $Script:refs.CancelButton = New-Object Windows.Forms.Button
 $Script:refs.MainForm.CancelButton = $Script:refs.CancelButton
 $Script:refs.CancelButton.add_Click({
@@ -45,6 +50,11 @@ AutoFixer $Script:refs.MainForm.Controls
 		Button  = $Script:refs.IconFileButton
 		Dialog  = $OpenIconFileDialog
 		Control = $Script:refs.IconFileTextBox
+	},
+	@{
+		Button  = $Script:refs.CertificatePathButton
+		Dialog  = $OpenCertificateFileDialog
+		Control = $Script:refs.CertificatePathTextBox
 	}
 ) | ForEach-Object {
 	$Button = $_.Button; $Dialog = $_.Dialog; $Control = $_.Control
@@ -54,7 +64,7 @@ AutoFixer $Script:refs.MainForm.Controls
 	}.GetNewClosure())
 }
 # 允许将文件拖放到文本框中
-@($Script:refs.CompileFileTextBox, $Script:refs.OutputFileTextBox, $Script:refs.IconFileTextBox) | ForEach-Object {
+@($Script:refs.CompileFileTextBox, $Script:refs.OutputFileTextBox, $Script:refs.IconFileTextBox, $Script:refs.CertificatePathTextBox) | ForEach-Object {
 	$_.add_DragEnter({
 		if ($_.Data.GetDataPresent([Windows.Forms.DataFormats]::FileDrop)) {
 			$_.Effect = [Windows.Forms.DragDropEffects]::Copy
@@ -69,11 +79,7 @@ AutoFixer $Script:refs.MainForm.Controls
 	})
 }
 
-$Script:refs.ConsoleAppCheckBox.add_CheckedChanged((.{
-	param ($Scriptblock)
-	. $Scriptblock
-	$Scriptblock
-} {
+$Script:refs.ConsoleAppCheckBox.add_CheckedChanged((CallAndUse {
 	# 禁用控制台应用选项或窗口应用选项
 	$Script:refs.ConsoleOptionsSplitterPanel.Controls | ForEach-Object {
 		$_.Enabled = $Script:refs.ConsoleAppCheckBox.Checked
@@ -112,6 +118,15 @@ $ThreadCheckBoxs | ForEach-Object {
 		}
 	})
 }
+# 代码签名启用/禁用逻辑
+$Script:refs.EnableCodeSigningCheckBox.add_CheckedChanged((CallAndUse {
+	$enabled = $Script:refs.EnableCodeSigningCheckBox.Checked
+	$Script:refs.CertificatePathTextBox.Enabled = $enabled
+	$Script:refs.CertificatePathButton.Enabled = $enabled
+	$Script:refs.CertificatePasswordTextBox.Enabled = $enabled
+	$Script:refs.CertificateThumbprintTextBox.Enabled = $enabled
+	$Script:refs.TimestampServerTextBox.Enabled = $enabled
+}))
 $Script:refs.CompileButton.add_Click({
 	$Params = Get-ps12exeArgs
 	if ($Script:ConfigFile) {

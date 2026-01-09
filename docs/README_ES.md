@@ -109,6 +109,7 @@ help       : Mostrar esta información de ayuda.
         [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
         [-resourceParams @{iconFile='<nombre de archivo|url>'; title='<título>'; description='<descripción>'; company='<compañía>';
         product='<producto>'; copyright='<derechos de autor>'; trademark='<marca>'; version='<versión>'}]
+        [-CodeSigning @{Path='<ruta del archivo PFX>'; Password='<contraseña PFX>'; Thumbprint='<huella digital del certificado>'; TimestampServer='<servidor de marca de tiempo>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<Versión de tiempo de ejecución>']
         [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<código de idioma>'] [-help]
@@ -130,6 +131,7 @@ noConsole        : El archivo ejecutable generado será una aplicación de Windo
 UNICODEEncoding  : Codificar la salida como UNICODE en el modo de consola
 credentialGUI    : Usar un GUI para solicitar credenciales en el modo de consola
 resourceParams   : Una tabla hash que contiene los parámetros de recursos del archivo ejecutable compilado
+CodeSigning      : Tabla hash que contiene los parámetros de firma de código para el archivo ejecutable compilado
 configFile       : Escribir un archivo de configuración (<outputfile>.exe.config)
 noOutput         : El archivo ejecutable generado no producirá salida estándar (incluyendo los canales detallado e informativo)
 noError          : El archivo ejecutable generado no producirá salida de error (incluyendo los canales de advertencia y depuración)

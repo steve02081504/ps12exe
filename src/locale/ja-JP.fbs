@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Data>
-	<Form Name="MainForm" Size="928,651" Tag="VisualStyle,DPIAware" Text="ps12exe GUI">
-		<GroupBox Name="InputsGroupBox" Location="8,1" Size="766,573">
+	<Form Name="MainForm" Size="938,750" Tag="VisualStyle,DPIAware" Text="ps12exe GUI">
+		<GroupBox Name="InputsGroupBox" Location="8,1" Size="773,682">
 			<GroupBox Name="BaseIOGroupBox" Location="5,13" Size="626,102">
 				<Label Name="CompileFileLabel" Location="6,17" Size="611,36" Text="コンパイルファイル">
 					<TextBox Name="CompileFileTextBox" AllowDrop="True" Location="0,13" Size="551,22" />
@@ -77,6 +77,22 @@
 					<TextBox Name="VersionTextBox" Location="-1,17" Size="357,22" />
 				</Label>
 			</GroupBox>
+			<GroupBox Name="CodeSigningGroupBox" Location="16,565" Size="712,109" Text="コード署名">
+				<CheckBox Name="EnableCodeSigningCheckBox" Location="544,10" Size="152,23" Text="コード署名を有効にする" />
+				<Label Name="CertificatePathLabel" Location="14,19" Size="328,40" Text="証明書パス (PFX)">
+					<TextBox Name="CertificatePathTextBox" AllowDrop="True" Location="-1,17" Size="284,22" />
+					<Button Name="CertificatePathButton" Location="288,15" Size="40,26" Text="..." />
+				</Label>
+				<Label Name="CertificatePasswordLabel" Location="352,19" Size="348,40" Text="パスワード">
+					<TextBox Name="CertificatePasswordTextBox" Location="-1,17" PasswordChar="*" Size="356,22" />
+				</Label>
+				<Label Name="CertificateThumbprintLabel" Location="14,64" Size="336,40" Text="拇印">
+					<TextBox Name="CertificateThumbprintTextBox" Location="-1,17" Size="332,22" />
+				</Label>
+				<Label Name="TimestampServerLabel" Location="352,64" Size="348,40" Text="タイムスタンプサーバー">
+					<TextBox Name="TimestampServerTextBox" Location="-1,17" Size="356,22" Text="http://timestamp.digicert.com" />
+				</Label>
+			</GroupBox>
 			<GroupBox Name="OptionsSplitterPanel" Location="385,119" Size="230,228">
 				<GroupBox Name="ConsoleOptionsSplitterPanel" Location="8,14" Size="206,75" Text="コンソールアプリケーションオプション">
 					<CheckBox Name="UnicodeEncodingCheckBox" Location="11,19" Size="187,28" Text="出力ストリームをUnicodeで強制的にエンコード" />
@@ -94,7 +110,7 @@
 		<Button Name="SaveCfgButton" Location="797,42" Size="85,27" Text="設定を保存" />
 		<Button Name="SaveCfg2OtherFileButton" Location="798,86" Size="85,31" Text="設定を別名で保存" />
 		<Button Name="CompileButton" Location="802,561" Size="81,27" Text="コンパイル" />
-		<Label Name="CfgFileLabel" Location="7,582" Size="778,21" Text="未選択の設定ファイル" />
+		<Label Name="CfgFileLabel" Location="8,685" Size="778,21" Text="未選択の設定ファイル" />
 		<Button Name="DarkModeSetButton" BackgroundImageLayout="Stretch" Location="802,472" Size="51,51" />
 		<Button Name="BGMSetButton" BackgroundImageLayout="Stretch" Location="802,411" Size="51,51" />
 	</Form>
@@ -103,4 +119,5 @@
 	<OpenFileDialog Name="OpenCompileFileDialog" DefaultExt="ps1" Filter="powershellファイル(*.ps1)|*.ps1|powershellデータファイル(*.psd1)|*.psd1" Title="コンパイルファイルを選択" />
 	<SaveFileDialog Name="OpenOutputFileDialog" DefaultExt="exe" Filter="実行可能ファイル(*.exe)|*.exe" Title="出力ファイルを選択" />
 	<OpenFileDialog Name="OpenIconFileDialog" DefaultExt="ico" Filter="アイコンファイル(*.ico)|*.ico" Title="アイコンファイルを選択" />
+	<OpenFileDialog Name="OpenCertificateFileDialog" DefaultExt="pfx" Filter="証明書ファイル(*.pfx)|*.pfx|すべてのファイル(*.*)|*.*" Title="証明書ファイルを選択" />
 </Data>

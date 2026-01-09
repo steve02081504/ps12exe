@@ -65,6 +65,32 @@ $TempDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPa
 $Content | Set-Content $TempDir\main.ps1 -Encoding UTF8 -NoNewline
 if ($iconFile -match "^(https?|ftp)://") {
 	try {
+		# 首先尝试从URL中获取文件扩展名
+		$urlExtension = [System.IO.Path]::GetExtension([System.Uri]$iconFile).ToLower()
+
+		# 如果URL中没有扩展名，尝试从Content-Type获取
+		if (!$urlExtension) {
+			$headResponse = Invoke-WebRequest $iconFile -Method Head -ErrorAction SilentlyContinue
+			if ($headResponse) {
+				$contentType = $headResponse.Headers.'Content-Type'
+				if ($contentType) {
+					# 从Content-Type映射到文件扩展名
+					switch -Regex ($contentType) {
+						"image/png" { $urlExtension = ".png" }
+						"image/jpeg|image/jpg" { $urlExtension = ".jpg" }
+						"image/gif" { $urlExtension = ".gif" }
+						"image/bmp" { $urlExtension = ".bmp" }
+						"image/x-icon|image/vnd.microsoft.icon|image/ico" { $urlExtension = ".ico" }
+						"image/svg" { $urlExtension = ".svg" }
+						default { $urlExtension = ".ico" }  # 默认使用.ico
+					}
+				}
+			}
+		}
+
+		# 如果仍然没有扩展名，默认使用.ico
+		if (!$urlExtension) { $urlExtension = ".ico" }
+
 		if ($GuestMode) {
 			if ((Invoke-WebRequest $iconFile -Method Head -ErrorAction SilentlyContinue).Headers.'Content-Length' -gt 1mb) {
 				Write-I18n Error GuestModeIconFileTooLarge $iconFile -Category LimitsExceeded
@@ -75,13 +101,14 @@ if ($iconFile -match "^(https?|ftp)://") {
 				throw
 			}
 		}
-		Invoke-WebRequest -ErrorAction Stop -Uri $iconFile -OutFile $TempDir\icon.ico
+		$downloadedIconPath = "$TempDir\icon$urlExtension"
+		Invoke-WebRequest -ErrorAction Stop -Uri $iconFile -OutFile $downloadedIconPath
+		$iconFile = $downloadedIconPath
 	}
 	catch {
 		Write-I18n Error IconFileNotFound $iconFile -Category ReadError
 		throw
 	}
-	$iconFile = "$TempDir\icon.ico"
 }
 elseif ($iconFile) {
 	# retrieve absolute path independent if path is given relative oder absolute
@@ -90,5 +117,101 @@ elseif ($iconFile) {
 	if (!(Test-Path $iconFile -PathType Leaf)) {
 		Write-I18n Error IconFileNotFound $iconFile -Category ReadError
 		throw
+	}
+}
+
+if ($iconFile) {
+	# 自动图片转换：检测非 .ico 后缀并自动转换
+	$iconExtension = [System.IO.Path]::GetExtension($iconFile).ToLower()
+	if ($iconExtension -ne ".ico") {
+		Write-I18n Host ConvertingImageToIcon
+		$sourceImage = $null
+		$iconStream = $null
+		$writer = $null
+
+		try {
+			Add-Type -AssemblyName System.Drawing
+
+			$sourceImage = [System.Drawing.Image]::FromFile($iconFile)
+			$tempIcoPath = [System.IO.Path]::Combine($TempDir, "converted_icon_$([Guid]::NewGuid().ToString()).ico")
+
+			$sizes = @(16, 32, 48, 256)
+			$iconStream = New-Object System.IO.MemoryStream
+			$writer = New-Object System.IO.BinaryWriter($iconStream)
+
+			$writer.Write([UInt16]0)  # Reserved
+			$writer.Write([UInt16]1)  # Type (ICO)
+			$writer.Write([UInt16]$sizes.Count)  # Number of images
+
+			$directoryOffset = $iconStream.Position
+			$imageDataOffset = $directoryOffset + (16 * $sizes.Count)
+
+			$imageData = @()
+			foreach ($size in $sizes) {
+				$bitmap = $null
+				$graphics = $null
+				$pngStream = $null
+
+				try {
+					$bitmap = New-Object System.Drawing.Bitmap($size, $size)
+					$graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+					$graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+					$graphics.DrawImage($sourceImage, 0, 0, $size, $size)
+
+					$pngStream = New-Object System.IO.MemoryStream
+					$bitmap.Save($pngStream, [System.Drawing.Imaging.ImageFormat]::Png)
+					$pngBytes = $pngStream.ToArray()
+
+					$imageData += @{
+						Size   = $size
+						Data   = $pngBytes
+						Offset = $imageDataOffset
+						Length = $pngBytes.Length
+					}
+					$imageDataOffset += $pngBytes.Length
+				}
+				finally {
+					if ($graphics) { $graphics.Dispose() }
+					if ($pngStream) { $pngStream.Dispose() }
+					if ($bitmap) { $bitmap.Dispose() }
+				}
+			}
+
+			foreach ($imgData in $imageData) {
+				$size = $imgData.Size
+				$width = if ($size -eq 256) { 0 } else { $size }
+				$height = if ($size -eq 256) { 0 } else { $size }
+
+				$writer.Write([Byte]$width)
+				$writer.Write([Byte]$height)
+				$writer.Write([Byte]0)
+				$writer.Write([Byte]0)
+				$writer.Write([UInt16]1)
+				$writer.Write([UInt16]32)
+				$writer.Write([UInt32]$imgData.Length)
+				$writer.Write([UInt32]$imgData.Offset)
+			}
+
+			foreach ($imgData in $imageData) {
+				$writer.Write($imgData.Data)
+			}
+
+			$writer.Flush()
+			[System.IO.File]::WriteAllBytes($tempIcoPath, $iconStream.ToArray())
+
+			$iconFile = $tempIcoPath
+			Write-I18n Host ImageConvertedToIcon $iconFile
+
+		}
+		catch {
+			Write-I18n Warning ImageConversionFailed $_.Exception.Message
+			Write-I18n Warning PleaseUseIcoFile $iconExtension
+			# 转换失败时继续使用原文件，但可能会在后续步骤中失败
+		}
+		finally {
+			if ($writer) { $writer.Dispose() }
+			if ($iconStream) { $iconStream.Dispose() }
+			if ($sourceImage) { $sourceImage.Dispose() }
+		}
 	}
 }

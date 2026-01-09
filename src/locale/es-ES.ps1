@@ -68,6 +68,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 	[-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
 	[-resourceParams @{iconFile='<nombre de archivo|url>'; title='<título>'; description='<descripción>'; company='<compañía>';
 	product='<producto>'; copyright='<derechos de autor>'; trademark='<marca>'; version='<versión>'}]
+	[-CodeSigning @{Path='<ruta_del_archivo_PFX>'; Password='<contraseña_PFX>'; Thumbprint='<huella_digital_del_certificado>'; TimestampServer='<servidor_de_marca_de_tiempo>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<Versión de tiempo de ejecución>']
 	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<código de idioma>'] [-help]"
@@ -87,6 +88,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 			UNICODEEncoding	 = "Codificar la salida como UNICODE en el modo de consola"
 			credentialGUI	 = "Usar un GUI para solicitar credenciales en el modo de consola"
 			resourceParams	 = "Una tabla hash que contiene los parámetros de recursos del archivo ejecutable compilado"
+			CodeSigning		 = "Tabla hash que contiene los parámetros de firma de código para el archivo ejecutable compilado"
 			configFile		 = "Escribir un archivo de configuración (``<outputfile>.exe.config``)"
 			noOutput		 = "El archivo ejecutable generado no producirá salida estándar (incluyendo los canales detallado e informativo)"
 			noError			 = "El archivo ejecutable generado no producirá salida de error (incluyendo los canales de advertencia y depuración)"
@@ -148,6 +150,15 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 		GuestModeIconFileTooLarge				  = "El icono {0} es demasiado grande para leerlo."
 		GuestModeFtpNotSupported				  = "FTP no es compatible en modo invitado."
 		IconFileNotFound						  = "No se encontró el archivo de icono: {0}"
+		ConvertingImageToIcon					  = "Convirtiendo imagen a formato de icono..."
+		ImageConvertedToIcon					  = "Imagen convertida a icono: {0}"
+		ImageConversionFailed					  = "Error en la conversión de imagen: {0}"
+		PleaseUseIcoFile						  = "Por favor use un archivo .ico en lugar de {0}"
+		SigningExecutable						  = "Firmando ejecutable..."
+		ExecutableSignedSuccessfully			  = "Ejecutable firmado exitosamente."
+		SigningStatusNotValid					  = "Estado de firma no válido: {0} - {1}"
+		CertificateNotFoundOrInvalidPassword	  = "Certificado no encontrado o contraseña inválida."
+		SigningFailed							  = "Error al firmar: {0}"
 		ReadFileFailed							  = "Falló la lectura del archivo: {0}"
 		PreprocessUnknownIfCondition			  = "Condición desconocida: {0}`nSe asume que es falso."
 		PreprocessMissingEndIf					  = "Falta el final de la declaración if: {0}"
@@ -182,7 +193,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 	InteractI18nData	   = @{
 		ModeName				 = "Interactivo"
 		Welcome					 = "Has entrado en modo interactivo. Pulsa Ctrl+C para salir."
-		EnterInputFile			 = "Introduce la ruta del archivo de entrada:"
+		EnterInputFile			 = "Introduce la ruta o URL del archivo de entrada:"
 		Prompt					 = " >> "
 		ExitMessage				 = "Saliendo del modo interactivo."
 		InvalidInputFile		 = "La ruta del archivo PS1 no es válida. Inténtalo de nuevo:"
@@ -193,9 +204,9 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 		AddAdditionalInfo		 = "¿Quieres añadir información adicional (icono, versión, etc.)?"
 		AdditionalInfoPrompt	 = "[Y/N]"
 		CollectingInfo			 = "Recopilando información adicional. Dejar en blanco si no es necesario."
-		IconPath				 = "Ruta del archivo de icono (.ico):"
+		IconPath				 = "Ruta del archivo de icono o URL (admite .ico, .png, .jpg, .jpeg, .bmp, etc., dejar en blanco para omitir):"
 		InvalidIconExtension	 = "El archivo debe tener la extensión '.ico'. Se ha ignorado."
-		IconDoesNotExist		 = "El archivo de icono no existe. Se ha ignorado."
+		IconDoesNotExist		 = "El archivo de icono no existe, por favor vuelva a ingresar."
 		EnterTitle				 = "Título"
 		EnterDescription		 = "Descripción"
 		EnterCompany			 = "Nombre de la empresa"
@@ -208,6 +219,14 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 		SkippingAdditionalInfo	 = "Vale, se omite la información adicional."
 		CompileAsGui			 = "¿Compilar como aplicación GUI (sin consola)?"
 		RequireAdmin			 = "¿Requerir privilegios de administrador?"
+		EnableCodeSigning		 = "¿Habilitar la firma de código?"
+		EnterCertificatePath	 = "Ruta del certificado o URL (.pfx, dejar en blanco para omitir):"
+		InvalidCertificateExtension = "El archivo de certificado debe ser formato .pfx, por favor vuelva a ingresar."
+		CertificateDoesNotExist	 = "El archivo de certificado no existe, por favor vuelva a ingresar."
+		EnterCertificatePassword = "Contraseña del certificado (dejar en blanco para omitir):"
+		EnterCertificateThumbprint = "Huella digital del certificado (dejar en blanco para omitir):"
+		EnterTimestampServer	 = "Servidor de marca de tiempo (dejar en blanco para el valor predeterminado):"
+		SkippingCodeSigning		 = "Omitiendo la firma de código."
 		BuildingCommand			 = "Generando el comando..."
 		ExecutingCommand		 = "Ejecutando el comando..."
 		CompileSuccess			 = "Archivo compilado correctamente"

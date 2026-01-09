@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Data>
-	<Form Name="MainForm" Size="928,651" Tag="VisualStyle,DPIAware" Text="ps12exe GUI">
-		<GroupBox Name="InputsGroupBox" Location="8,1" Size="766,573">
+	<Form Name="MainForm" Size="938,750" Tag="VisualStyle,DPIAware" Text="ps12exe GUI">
+		<GroupBox Name="InputsGroupBox" Location="8,1" Size="773,682">
 			<GroupBox Name="BaseIOGroupBox" Location="5,13" Size="626,102">
 				<Label Name="CompileFileLabel" Location="6,17" Size="611,36" Text="Input File">
 					<TextBox Name="CompileFileTextBox" AllowDrop="True" Location="0,13" Size="551,22" />
@@ -77,6 +77,22 @@
 					<TextBox Name="VersionTextBox" Location="3,16" Size="357,22" />
 				</Label>
 			</GroupBox>
+			<GroupBox Name="CodeSigningGroupBox" Location="18,565" Size="712,109" Text="Code Signing">
+				<CheckBox Name="EnableCodeSigningCheckBox" Location="552,10" Size="152,23" Text="Enable Code Signing" />
+				<Label Name="CertificatePathLabel" Location="14,19" Size="328,40" Text="Certificate Path (PFX)">
+					<TextBox Name="CertificatePathTextBox" AllowDrop="True" Location="-1,17" Size="284,22" />
+					<Button Name="CertificatePathButton" Location="288,15" Size="40,26" Text="..." />
+				</Label>
+				<Label Name="CertificatePasswordLabel" Location="352,19" Size="348,40" Text="Password">
+					<TextBox Name="CertificatePasswordTextBox" Location="-1,17" PasswordChar="*" Size="356,22" />
+				</Label>
+				<Label Name="CertificateThumbprintLabel" Location="14,64" Size="336,40" Text="Thumbprint">
+					<TextBox Name="CertificateThumbprintTextBox" Location="-1,17" Size="332,22" />
+				</Label>
+				<Label Name="TimestampServerLabel" Location="352,64" Size="348,40" Text="Timestamp Server">
+					<TextBox Name="TimestampServerTextBox" Location="-1,17" Size="356,22" Text="http://timestamp.digicert.com" />
+				</Label>
+			</GroupBox>
 			<GroupBox Name="OptionsSplitterPanel" Location="385,119" Size="230,228">
 				<GroupBox Name="ConsoleOptionsSplitterPanel" Location="8,14" Size="206,75" Text="Console App Options">
 					<CheckBox Name="UnicodeEncodingCheckBox" Location="11,19" Size="187,28" Text="Force Unicode Encoding" />
@@ -93,14 +109,15 @@
 		<Button Name="LoadCfgButton" Location="801,13" Size="78,35" Text="Load Config" />
 		<Button Name="SaveCfgButton" Location="801,50" Size="78,34" Text="Save Config" />
 		<Button Name="SaveCfg2OtherFileButton" Location="801,94" Size="77,42" Text="Save Config As" />
-		<Button Name="CompileButton" Location="807,558" Size="75,30" Text="Compile" />
-		<Label Name="CfgFileLabel" Location="8,582" Size="778,22" Text="No config file selected yet, man." />
-		<Button Name="DarkModeSetButton" BackgroundImageLayout="Stretch" Location="807,474" Size="51,51" />
-		<Button Name="BGMSetButton" BackgroundImageLayout="Stretch" Location="807,411" Size="51,51" />
+		<Button Name="CompileButton" Location="802,630" Size="81,27" Text="Compile" />
+		<Label Name="CfgFileLabel" Location="9,683" Size="778,23" Text="No config file selected yet, man." />
+		<Button Name="DarkModeSetButton" BackgroundImageLayout="Stretch" Location="802,472" Size="51,51" />
+		<Button Name="BGMSetButton" BackgroundImageLayout="Stretch" Location="802,411" Size="51,51" />
 	</Form>
 	<OpenFileDialog Name="OpenCfgFileDialog" DefaultExt="psccfg" Filter="Configuration Files (*.psccfg)|*.psccfg" Title="Select a config file, if you would" />
 	<SaveFileDialog Name="SaveCfgFileDialog" DefaultExt="psccfg" Filter="Configuration Files (*.psccfg)|*.psccfg" Title="Save the config file, dude" />
 	<OpenFileDialog Name="OpenCompileFileDialog" DefaultExt="ps1" Filter="Powershell Files (*.ps1)|*.ps1|Powershell Data Files (*.psd1)|*.psd1" Title="Select a compilation file, my man" />
 	<SaveFileDialog Name="OpenOutputFileDialog" DefaultExt="exe" Filter="Executable Files (*.exe)|*.exe" Title="Select an output file, if you please" />
 	<OpenFileDialog Name="OpenIconFileDialog" DefaultExt="ico" Filter="Icon Files (*.ico)|*.ico" Title="Select an icon file, dude" />
+	<OpenFileDialog Name="OpenCertificateFileDialog" DefaultExt="pfx" Filter="Certificate Files (*.pfx)|*.pfx|All Files (*.*)|*.*" Title="Select a certificate file, dude" />
 </Data>

@@ -68,6 +68,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 	[-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
 	[-resourceParams @{iconFile='<ファイル名|url>'; title='<タイトル>'; description='<説明>'; company='<会社>';
 	product='<製品>'; copyright='<著作権>'; trademark='<商標>'; version='<バージョン>'}]
+	[-CodeSigning @{Path='<PFXファイルパス>'; Password='<PFXパスワード>'; Thumbprint='<証明書指紋>'; TimestampServer='<時刻同期サーバー>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<ランタイムバージョン>']
 	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<言語コード>'] [-help]"
@@ -87,6 +88,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 			UNICODEEncoding	 = "コンソールモードで出力を UNICODE でエンコードします"
 			credentialGUI	 = "コンソールモードで GUI プロンプトを使用して資格情報を求めます"
 			resourceParams	 = "コンパイルされた実行可能ファイルのリソースパラメータを含むハッシュテーブル"
+			CodeSigning		 = "コード署名パラメータを含むハッシュテーブル"
 			configFile		 = "設定ファイル（``<outputfile>.exe.config``）を書き込みます"
 			noOutput		 = "生成された実行可能ファイルは、標準出力（詳細情報や情報チャネルを含む）を生成しません"
 			noError			 = "生成された実行可能ファイルは、エラー出力（警告情報やデバッグ情報を含む）を生成しません"
@@ -148,6 +150,15 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 		GuestModeIconFileTooLarge				  = "アイコン {0} は大きすぎて読み取れません。"
 		GuestModeFtpNotSupported				  = "ゲストモードでは FTP はサポートされていません。"
 		IconFileNotFound						  = "アイコンファイルが見つかりません：{0}"
+		ConvertingImageToIcon					  = "画像をアイコン形式に変換中..."
+		ImageConvertedToIcon					  = "画像をアイコンに変換しました：{0}"
+		ImageConversionFailed					  = "画像の変換に失敗しました：{0}"
+		PleaseUseIcoFile						  = "{0} の代わりに .ico ファイルを使用してください"
+		SigningExecutable						  = "実行可能ファイルに署名中..."
+		ExecutableSignedSuccessfully			  = "実行可能ファイルの署名が成功しました。"
+		SigningStatusNotValid					  = "署名ステータスが無効です：{0} - {1}"
+		CertificateNotFoundOrInvalidPassword	  = "証明書が見つからないか、パスワードが無効です。"
+		SigningFailed							  = "署名に失敗しました：{0}"
 		ReadFileFailed							  = "ファイルの読み取りに失敗しました：{0}"
 		PreprocessUnknownIfCondition			  = "未知の条件：{0}`nfalse と仮定します。"
 		PreprocessMissingEndIf					  = "endif がありません：{0}"
@@ -182,7 +193,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 	InteractI18nData	   = @{
 		ModeName				 = "インタラクティブ"
 		Welcome					 = "インタラクティブモードに入りました。Ctrl+Cを押して終了します。"
-		EnterInputFile			 = "入力ファイルのパスを入力してください:"
+		EnterInputFile			 = "入力ファイルのパスまたはURLを入力してください:"
 		Prompt					 = " >> "
 		ExitMessage				 = "インタラクティブモードを終了します..."
 		InvalidInputFile		 = "有効なPS1ファイルのパスを入力してください。"
@@ -193,9 +204,9 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 		AddAdditionalInfo		 = "追加情報 (アイコン、バージョンなど) を追加しますか？"
 		AdditionalInfoPrompt	 = "[Y/N]"
 		CollectingInfo			 = "追加情報を収集しています。不要な場合は、何も入力せず Enter を押してください。"
-		IconPath				 = "アイコンファイルのパス (.ico):"
+		IconPath				 = "アイコンファイルのパスまたはURL (.ico, .png, .jpg, .jpeg, .bmp などをサポート、空白でスキップ):"
 		InvalidIconExtension	 = "ファイルは'.ico'の拡張子である必要があります。無視します。"
-		IconDoesNotExist		 = "アイコンファイルが存在しません。無視します。"
+		IconDoesNotExist		 = "アイコンファイルが存在しません。再入力してください。"
 		EnterTitle				 = "タイトル"
 		EnterDescription		 = "説明"
 		EnterCompany			 = "会社名"
@@ -208,6 +219,14 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 		SkippingAdditionalInfo	 = "追加情報はスキップしました。"
 		CompileAsGui			 = "GUIアプリケーションとしてコンパイルしますか (コンソールなし)？"
 		RequireAdmin			 = "管理者権限が必要ですか？"
+		EnableCodeSigning		 = "コード署名を有効にしますか？"
+		EnterCertificatePath	 = "証明書パスまたはURL (.pfx、空白でスキップ):"
+		InvalidCertificateExtension = "証明書ファイルは .pfx 形式である必要があります。再入力してください。"
+		CertificateDoesNotExist	 = "証明書ファイルが存在しません。再入力してください。"
+		EnterCertificatePassword = "証明書パスワード (空白でスキップ):"
+		EnterCertificateThumbprint = "証明書拇印 (空白でスキップ):"
+		EnterTimestampServer	 = "タイムスタンプサーバー (空白でデフォルト):"
+		SkippingCodeSigning		 = "コード署名をスキップしました。"
 		BuildingCommand			 = "コマンドを生成中..."
 		ExecutingCommand		 = "コマンドを実行中..."
 		CompileSuccess			 = "ファイルは正常にコンパイルされました。"

@@ -108,6 +108,7 @@ help       : इस मदद सूचना को दिखाएँ।
         [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
         [-resourceParams @{iconFile='<फ़ाइल नाम|url>'; title='<शीर्षक>'; description='<सारांश>'; company='<कंपनी>';
         product='<उत्पाद>'; copyright='<कॉपीराइट>'; trademark='<नामकरण>'; version='<संस्करण>'}]
+        [-CodeSigning @{Path='<PFX फ़ाइल पथ>'; Password='<PFX पासवर्ड>'; Thumbprint='<प्रमाणपत्र फ़िंगरप्रिंट>'; TimestampServer='<समय चिह्न सर्वर>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<रनटाइम संस्करण>']
         [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<भाषा कोड>'] [-help]
@@ -129,6 +130,7 @@ noConsole        : निर्मित एक्सीक्यूटेबल
 UNICODEEncoding  : कंसोल मोड में आउटपुट को यूनिकोड में कोड करें
 credentialGUI    : कंसोल मोड में GUI क्रेडेंशल का उपयोग करें
 resourceParams   : कॉम्पाइल की गई एक्सीक्यूटेबल फ़ाइल के संसाधन पैरामीटर शामिल करें
+CodeSigning      : संकलित निष्पादन योग्य फ़ाइल के लिए कोड हस्ताक्षर विकल्प शामिल करने वाली हैश तालिका
 configFile       : एक कॉन्फ़िगरेशन फ़ाइल लिखें (<आउटपुटफ़ाइल>.exe.config)
 noOutput         : निर्मित एक्सीक्यूटेबल फ़ाइल में स्टैंडर्ड आउटपुट (सहित विस्तारित और सूचना चैनल) नहीं बनेगा
 noError          : निर्मित एक्सीक्यूटेबल फ़ाइल में त्रुटि आउटपुट (सहित चेतावनी और डीबग चैनल) नहीं बनेगा

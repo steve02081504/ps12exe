@@ -8,6 +8,9 @@ Get-ChildItem -Path $repoPath -Recurse -Filter '*.fbs' | ForEach-Object {
 	do {
 		$res = $XmlDoc.Data.ChildNodes | Where-Object { $_.Name -notmatch '(Form|Dialog)$' } | ForEach-Object { $_.ParentNode.RemoveChild($_) }
 	} while ($res)
+	$XmlDoc.SelectNodes('//*[@ImeMode]') | ForEach-Object {
+		$_.RemoveAttribute('ImeMode')
+	}
 	$XmlDoc.Save($XmlWriter)
 	$XmlWriter.WriteRaw("`n")
 	$XmlWriter.Flush()

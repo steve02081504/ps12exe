@@ -68,6 +68,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 	[-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
 	[-resourceParams @{iconFile='<文件名|url>'; title='<标题>'; description='<简介>'; company='<公司>';
 	product='<产品>'; copyright='<版权>'; trademark='<水印>'; version='<版本>'}]
+	[-CodeSigning @{Path='<PFX文件路径>'; Password='<PFX密码>'; Thumbprint='<证书指纹>'; TimestampServer='<时间戳服务器>'}]
 	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<运行时版本>']
 	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<语言代码>'] [-help]"
@@ -87,6 +88,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 			UNICODEEncoding	 = "在控制台模式下将输出编码为UNICODE"
 			credentialGUI	 = "在控制台模式下使用GUI提示凭据"
 			resourceParams	 = "包含编译的可执行文件的资源参数的哈希表"
+			CodeSigning		 = "包含代码签名参数的哈希表"
 			configFile		 = "写一个配置文件（``<outputfile>.exe.config``）"
 			noOutput		 = "生成的可执行文件将不生成标准输出（包括详细和信息通道）"
 			noError			 = "生成的可执行文件将不生成错误输出（包括警告和调试通道）"
@@ -148,6 +150,15 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		GuestModeIconFileTooLarge				  = "图标{0}太大，无法读取。"
 		GuestModeFtpNotSupported				  = "访客模式不支持FTP。"
 		IconFileNotFound						  = "找不到图标文件：{0}"
+		ConvertingImageToIcon					  = "正在将图片转换为图标格式..."
+		ImageConvertedToIcon					  = "图片已转换为图标：{0}"
+		ImageConversionFailed					  = "图片转换失败：{0}"
+		PleaseUseIcoFile						  = "请使用 .ico 文件代替 {0}"
+		SigningExecutable						  = "正在签名可执行文件..."
+		ExecutableSignedSuccessfully			  = "可执行文件签名成功。"
+		SigningStatusNotValid					  = "签名状态无效：{0} - {1}"
+		CertificateNotFoundOrInvalidPassword	  = "证书未找到或密码无效。"
+		SigningFailed							  = "签名失败：{0}"
 		ReadFileFailed							  = "读取文件失败：{0}"
 		PreprocessUnknownIfCondition			  = "未知条件：{0}`n假定为 false."
 		PreprocessMissingEndIf					  = "缺少endif：{0}"
@@ -182,7 +193,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 	InteractI18nData	   = @{
 		ModeName				 = "交互式"
 		Welcome					 = "欢迎使用交互模式。可随时按 Ctrl+C 退出。"
-		EnterInputFile			 = "请输入输入文件路径："
+		EnterInputFile			 = "请输入输入文件路径或URL："
 		Prompt					 = " >> "
 		ExitMessage				 = "已退出交互模式。"
 		InvalidInputFile		 = "不是有效的 PS1 文件路径，请重新输入："
@@ -193,9 +204,9 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		AddAdditionalInfo		 = "是否添加附加信息 (图标、版本等)？"
 		AdditionalInfoPrompt	 = "[Y/N]"
 		CollectingInfo			 = "请输入附加信息 (留空则跳过)。"
-		IconPath				 = "图标文件路径 (.ico)："
+		IconPath				 = "图标文件路径或URL (支持 .ico, .png, .jpg, .jpeg, .bmp 等，留空则跳过)："
 		InvalidIconExtension	 = "图标文件必须为 .ico 格式。此项已忽略。"
-		IconDoesNotExist		 = "图标文件不存在。已忽略。"
+		IconDoesNotExist		 = "图标文件不存在，请重新输入。"
 		EnterTitle				 = "标题"
 		EnterDescription		 = "描述"
 		EnterCompany			 = "公司名称"
@@ -208,6 +219,14 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		SkippingAdditionalInfo	 = "已跳过附加信息。"
 		CompileAsGui			 = "是否作为 GUI 应用程序编译 (无控制台)？"
 		RequireAdmin			 = "是否需要管理员权限？"
+		EnableCodeSigning		 = "是否启用代码签名？"
+		EnterCertificatePath	 = "证书路径或URL (.pfx，留空则跳过)："
+		InvalidCertificateExtension = "证书文件必须为 .pfx 格式，请重新输入。"
+		CertificateDoesNotExist	 = "证书文件不存在，请重新输入。"
+		EnterCertificatePassword = "证书密码 (留空则跳过)："
+		EnterCertificateThumbprint = "证书指纹 (留空则跳过)："
+		EnterTimestampServer	 = "时间戳服务器 (留空则使用默认值)："
+		SkippingCodeSigning		 = "已跳过代码签名。"
 		BuildingCommand			 = "正在生成命令..."
 		ExecutingCommand		 = "正在执行命令..."
 		CompileSuccess			 = "文件编译成功。"

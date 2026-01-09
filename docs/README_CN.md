@@ -108,6 +108,7 @@ help       : 显示此帮助信息。
         [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
         [-resourceParams @{iconFile='<文件名|url>'; title='<标题>'; description='<简介>'; company='<公司>';
         product='<产品>'; copyright='<版权>'; trademark='<水印>'; version='<版本>'}]
+        [-CodeSigning @{Path='<PFX文件路径>'; Password='<PFX密码>'; Thumbprint='<证书指纹>'; TimestampServer='<时间戳服务器>'}]
         [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
         [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<运行时版本>']
         [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<语言代码>'] [-help]
@@ -129,6 +130,7 @@ noConsole        : 生成的可执行文件将是一个没有控制台窗口的W
 UNICODEEncoding  : 在控制台模式下将输出编码为UNICODE
 credentialGUI    : 在控制台模式下使用GUI提示凭据
 resourceParams   : 包含编译的可执行文件的资源参数的哈希表
+CodeSigning      : 包含代码签名参数的哈希表
 configFile       : 写一个配置文件（<outputfile>.exe.config）
 noOutput         : 生成的可执行文件将不生成标准输出（包括详细和信息通道）
 noError          : 生成的可执行文件将不生成错误输出（包括警告和调试通道）

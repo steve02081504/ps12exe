@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Data>
-	<Form Name="MainForm" Size="928,651" Tag="VisualStyle,DPIAware" Text="ps12exe GUI">
-		<GroupBox Name="InputsGroupBox" Location="8,1" Size="766,573">
+	<Form Name="MainForm" Size="938,750" Tag="VisualStyle,DPIAware" Text="ps12exe GUI">
+		<GroupBox Name="InputsGroupBox" Location="8,1" Size="773,682">
 			<GroupBox Name="BaseIOGroupBox" Location="5,13" Size="626,102">
 				<Label Name="CompileFileLabel" Location="6,17" Size="611,36" Text="कंपाइल फ़ाइल">
 					<TextBox Name="CompileFileTextBox" AllowDrop="True" Location="0,13" Size="551,22" />
@@ -77,6 +77,22 @@
 					<TextBox Name="VersionTextBox" Location="3,16" Size="357,22" />
 				</Label>
 			</GroupBox>
+			<GroupBox Name="CodeSigningGroupBox" Location="16,564" Size="712,109" Text="कोड हस्ताक्षर">
+				<CheckBox Name="EnableCodeSigningCheckBox" Location="560,10" Size="144,23" Text="कोड हस्ताक्षर सक्षम करें" />
+				<Label Name="CertificatePathLabel" Location="14,19" Size="328,40" Text="प्रमाणपत्र पथ (PFX)">
+					<TextBox Name="CertificatePathTextBox" AllowDrop="True" Location="-1,17" Size="284,22" />
+					<Button Name="CertificatePathButton" Location="288,15" Size="40,26" Text="..." />
+				</Label>
+				<Label Name="CertificatePasswordLabel" Location="352,19" Size="348,40" Text="पासवर्ड">
+					<TextBox Name="CertificatePasswordTextBox" Location="-1,17" PasswordChar="*" Size="356,22" />
+				</Label>
+				<Label Name="CertificateThumbprintLabel" Location="14,64" Size="336,40" Text="अंगूठे का निशान">
+					<TextBox Name="CertificateThumbprintTextBox" Location="-1,17" Size="332,22" />
+				</Label>
+				<Label Name="TimestampServerLabel" Location="352,64" Size="348,40" Text="टाइमस्टैम्प सर्वर">
+					<TextBox Name="TimestampServerTextBox" Location="-1,17" Size="356,22" Text="http://timestamp.digicert.com" />
+				</Label>
+			</GroupBox>
 			<GroupBox Name="OptionsSplitterPanel" Location="385,119" Size="230,228">
 				<GroupBox Name="ConsoleOptionsSplitterPanel" Location="8,14" Size="206,75" Text="कंसोल ऐप्लिकेशन विकल्प">
 					<CheckBox Name="UnicodeEncodingCheckBox" Location="11,19" Size="187,28" Text="यूनिकोड एनकोडिंग के साथ आउटपुट स्ट्रीम बाध्य करें" />
@@ -94,7 +110,7 @@
 		<Button Name="SaveCfgButton" Location="801,50" Size="78,34" Text="कॉन्फ़िगरेशन सहेजें" />
 		<Button Name="SaveCfg2OtherFileButton" Location="801,94" Size="77,42" Text="कॉन्फ़िगरेशन को अलग से सहेजें" />
 		<Button Name="CompileButton" Location="807,558" Size="75,30" Text="कंपाइल" />
-		<Label Name="CfgFileLabel" Location="8,582" Size="778,22" Text="कॉन्फ़िगरेशन फ़ाइल नहीं चुनी गई" />
+		<Label Name="CfgFileLabel" Location="7,685" Size="778,22" Text="कॉन्फ़िगरेशन फ़ाइल नहीं चुनी गई" />
 		<Button Name="DarkModeSetButton" BackgroundImageLayout="Stretch" Location="807,474" Size="51,51" />
 		<Button Name="BGMSetButton" BackgroundImageLayout="Stretch" Location="807,411" Size="51,51" />
 	</Form>
@@ -103,4 +119,5 @@
 	<OpenFileDialog Name="OpenCompileFileDialog" DefaultExt="ps1" Filter="पॉवरशेल फ़ाइलें (*.ps1)|*.ps1|पॉवरशेल डेटा फ़ाइलें (*.psd1)|*.psd1" Title="कंपाइल फ़ाइल चुनें" />
 	<SaveFileDialog Name="OpenOutputFileDialog" DefaultExt="exe" Filter="एक्ज़िक्यूटेबल फ़ाइलें (*.exe)|*.exe" Title="आउटपुट फ़ाइल चुनें" />
 	<OpenFileDialog Name="OpenIconFileDialog" DefaultExt="ico" Filter="आइकन फ़ाइलें (*.ico)|*.ico" Title="आइकन फ़ाइल चुनें" />
+	<OpenFileDialog Name="OpenCertificateFileDialog" DefaultExt="pfx" Filter="प्रमाणपत्र फ़ाइलें (*.pfx)|*.pfx|सभी फ़ाइलें (*.*)|*.*" Title="प्रमाणपत्र फ़ाइल चुनें" />
 </Data>
