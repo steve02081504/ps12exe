@@ -285,8 +285,13 @@ try {
 
 		# Build and execute command
 		Write-I18n "[~]" $I18n.BuildingCommand -SymbolColor Gray
-		$scriptPath = Join-Path $PSScriptRoot '..\..\ps12exe.ps1'
-		$command = "& `"$scriptPath`" " + ($cmdParams -join ' ')
+		if (Get-Command ps12exe -ErrorAction SilentlyContinue) {
+			$command = "ps12exe " + ($cmdParams -join ' ')
+		}
+		else {
+			$scriptPath = Join-Path $PSScriptRoot '..\..\ps12exe.ps1'
+			$command = "& `"$scriptPath`" " + ($cmdParams -join ' ')
+		}
 
 		Write-I18n "[~]" $I18n.ExecutingCommand -SymbolColor Gray
 		Write-Host $command
@@ -312,7 +317,6 @@ try {
 	}
 
 	Write-I18n "[/]" $I18n.Exiting -SymbolColor Yellow
-	[System.Console]::ReadKey() > $null
 }
 finally {
 	$Host.UI.RawUI.WindowTitle = $OldTitle
