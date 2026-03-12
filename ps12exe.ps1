@@ -681,6 +681,7 @@ $resourceParamKeys | ForEach-Object {
 
 
 . $PSScriptRoot\src\AstAnalyze.ps1
+. $PSScriptRoot\src\TaskbarProgress.ps1
 $AstAnalyzeResult = AstAnalyze $Ast
 Write-Debug "AstAnalyzeResult: $(($AstAnalyzeResult|ConvertTo-Json) -split "\r?\n" -ne '' -join "`n")"
 $CommandNames = (Get-Command).Name + (Get-Alias).Name
@@ -718,12 +719,15 @@ if ($TempDir) {
 	New-Item -ItemType Directory -Path $TempDir -ErrorAction SilentlyContinue | Out-Null
 }
 try {
+	Write-TaskbarProgress -Percent 0
 	. $PSScriptRoot\src\InitCompileThings.ps1
+	Write-TaskbarProgress -Percent 10
 	#_if PSScript
 	if (-not $noConsole -and $AstAnalyzeResult.IsConst -and -not $iconFile -and -not $requireAdmin) {
 		# TODO: GUI（MassageBoxW）、icon
 		Write-I18n Verbose TryingTinySharpCompile
 		Write-I18n Host CompilingFile
+		Write-TaskbarProgress -Percent 20
 
 		try {
 			. $PSScriptRoot\src\TinySharpCompiler.ps1
@@ -739,6 +743,7 @@ try {
 	try {
 		if (!$TinySharpSuccess) {
 			Write-I18n Host CompilingFile
+			Write-TaskbarProgress -Percent 25
 			if ($targetRuntime -eq 'Framework2.0') { $TargetFramework = ".NETFramework,Version=v2.0" }
 			if ($PSVersionTable.PSEdition -eq "Core") {
 				# unfinished!
@@ -756,9 +761,11 @@ try {
 			}
 		}
 		RollUp
+		Write-TaskbarProgress -Percent 70
 	}
 	catch {
 		RollUp
+		Write-TaskbarProgressError
 		Write-I18n Host CompilationFailed -ForegroundColor Red
 		throw $_
 	}
@@ -771,11 +778,13 @@ try {
 	else {
 		#_if PSScript
 		if (-not $TinySharpSuccess) {
+			Write-TaskbarProgress -Percent 75
 			& $PSScriptRoot\src\ExeSinker.ps1 $outputFile -removeResources:$(
 				$NoResource -and $AstAnalyzeResult.IsConst -and -not $requireAdmin
 			) -removeVersionInfo:$($resourceParams.Count -eq 0)
 		}
 		#_endif
+		Write-TaskbarProgressClear
 		Write-I18n Host CompiledFileSize $((Get-Item $outputFile).Length)
 		Write-I18n Verbose OutputPath $outputFile
 		if ($configFile) {
@@ -827,12 +836,14 @@ try {
 				}
 			}
 			catch {
+				Write-TaskbarProgressError
 				Write-I18n Error SigningFailed $_.Exception.Message
 			}
 		}
 	}
 }
 catch {
+	Write-TaskbarProgressError
 	if (Test-Path $outputFile) {
 		Remove-Item $outputFile -Verbose:$FALSE
 	}
@@ -882,6 +893,7 @@ $($_ | Format-List | Out-String)
 	#_endif
 }
 finally {
+	Write-TaskbarProgressClear
 	if ($TempTempDir) {
 		Remove-Item $TempTempDir -Recurse -Force -ErrorAction SilentlyContinue
 	}

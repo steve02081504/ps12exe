@@ -1,8 +1,9 @@
-param ($Localize)
+﻿param ($Localize)
 
 #_if PSScript
 # Load localization data
 . "$PSScriptRoot\..\predicate.ps1"
+. "$PSScriptRoot\..\TaskbarProgress.ps1"
 $LocalizeData = . "$PSScriptRoot\..\LocaleLoader.ps1" -Localize $Localize
 $I18n = $LocalizeData.InteractI18nData
 
@@ -31,6 +32,7 @@ try {
 
 	while ($true) {
 		$cmdParams = [System.Collections.ArrayList]::new()
+		Write-TaskbarProgress -Percent 0
 
 		# Input file prompt
 		$inputFile = ''
@@ -76,6 +78,7 @@ try {
 			}
 		} while (-not $inputFile)
 		$cmdParams.Add("-inputFile `"$inputFile`"") | Out-Null
+		Write-TaskbarProgress -Percent 15
 
 		# Output file prompt
 		$outputFile = ''
@@ -89,6 +92,7 @@ try {
 			}
 			$cmdParams.Add("-outputFile `"$outputFile`"") | Out-Null
 		}
+		Write-TaskbarProgress -Percent 30
 
 		# Additional information prompt
 		Write-I18n "[?]" $I18n.AddAdditionalInfo $I18n.AdditionalInfoPrompt -SymbolColor Blue -SequenceColor DarkGray
@@ -174,6 +178,7 @@ try {
 		else {
 			Write-I18n "[~]" $I18n.SkippingAdditionalInfo -SymbolColor Gray
 		}
+		Write-TaskbarProgress -Percent 50
 
 		# Other options
 		Write-I18n "[?]" $I18n.CompileAsGui $I18n.AdditionalInfoPrompt -SymbolColor Blue -SequenceColor DarkGray
@@ -181,12 +186,14 @@ try {
 		if (IsEnable(Read-Host)) {
 			$cmdParams.Add("-noConsole") | Out-Null
 		}
+		Write-TaskbarProgress -Percent 60
 
 		Write-I18n "[?]" $I18n.RequireAdmin $I18n.AdditionalInfoPrompt -SymbolColor Blue -SequenceColor DarkGray
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 		if (IsEnable(Read-Host)) {
 			$cmdParams.Add("-requireAdmin") | Out-Null
 		}
+		Write-TaskbarProgress -Percent 70
 
 		# Code signing
 		Write-I18n "[?]" $I18n.EnableCodeSigning $I18n.AdditionalInfoPrompt -SymbolColor Blue -SequenceColor DarkGray
@@ -282,6 +289,7 @@ try {
 		else {
 			Write-I18n "[~]" $I18n.SkippingCodeSigning -SymbolColor Gray
 		}
+		Write-TaskbarProgress -Percent 85
 
 		# Build and execute command
 		Write-I18n "[~]" $I18n.BuildingCommand -SymbolColor Gray
@@ -295,17 +303,22 @@ try {
 
 		Write-I18n "[~]" $I18n.ExecutingCommand -SymbolColor Gray
 		Write-Host $command
+		Write-TaskbarProgress -Percent 90
 
 		try {
+			Write-TaskbarProgress
 			Invoke-Expression $command
 			if ($LASTEXITCODE -eq 0) {
+				Write-TaskbarProgressClear
 				Write-I18n "[+]" $I18n.CompileSuccess -SymbolColor Green
 			}
 			else {
+				Write-TaskbarProgressError
 				Write-I18n "[!]" ($I18n.CompileFailed -f $LASTEXITCODE) -SymbolColor Red
 			}
 		}
 		catch {
+			Write-TaskbarProgressError
 			Write-I18n "[!]" ($I18n.CompileFailedException -f $_.Exception.Message) -SymbolColor Red
 		}
 
@@ -319,6 +332,7 @@ try {
 	Write-I18n "[/]" $I18n.Exiting -SymbolColor Yellow
 }
 finally {
+	Write-TaskbarProgressClear
 	$Host.UI.RawUI.WindowTitle = $OldTitle
 }
 #_else
