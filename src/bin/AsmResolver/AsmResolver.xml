@@ -1,0 +1,3595 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>AsmResolver</name>
+    </assembly>
+    <members>
+        <member name="T:AsmResolver.ByteArrayEqualityComparer">
+            <summary>
+            Provides an implementation to compare byte arrays for equality.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.ByteArrayEqualityComparer.Instance">
+            <summary>
+            Gets the singleton instance of this comparer.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.ByteArrayEqualityComparer.Equals(System.Byte[],System.Byte[])">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.ByteArrayEqualityComparer.GetHashCode(System.Byte[])">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.ByteArrayEqualityComparer.Compare(System.Byte[],System.Byte[])">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.Collections.BitList">
+            <summary>
+            Represents a bit vector that can be resized dynamically.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.#ctor">
+            <summary>
+            Creates a new bit list.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.#ctor(System.Int32)">
+            <summary>
+            Creates a new bit list.
+            </summary>
+            <param name="capacity">The initial number of bits that the buffer should at least be able to store.</param>
+        </member>
+        <member name="P:AsmResolver.Collections.BitList.Count">
+            <inheritdoc cref="P:System.Collections.Generic.ICollection`1.Count" />
+        </member>
+        <member name="P:AsmResolver.Collections.BitList.IsReadOnly">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.Collections.BitList.Item(System.Int32)">
+            <inheritdoc cref="P:System.Collections.Generic.IList`1.Item(System.Int32)" />
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.Add(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.Clear">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.Contains(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.CopyTo(System.Boolean[],System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.Remove(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.IndexOf(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.Insert(System.Int32,System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.RemoveAt(System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.EnsureCapacity(System.Int32)">
+            <summary>
+            Ensures the provided number of bits can be stored in the bit list.
+            </summary>
+            <param name="capacity">The number of bits to store in the list.</param>
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.GetEnumerator">
+            <summary>
+            Returns an enumerator for all bits in the bit vector.
+            </summary>
+            <returns>The enumerator.</returns>
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.System#Collections#Generic#IEnumerable{System#Boolean}#GetEnumerator">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.System#Collections#IEnumerable#GetEnumerator">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.Collections.BitList.Enumerator">
+            <summary>
+            Represents an enumerator that iterates over all bits in a bit list.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.Enumerator.#ctor(AsmResolver.Collections.BitList)">
+            <summary>
+            Creates a new bit enumerator.
+            </summary>
+            <param name="list">The list to enumerate.</param>
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.Enumerator.MoveNext">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.Enumerator.Reset">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.Collections.BitList.Enumerator.Current">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.Collections.BitList.Enumerator.System#Collections#IEnumerator#Current">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.BitList.Enumerator.Dispose">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.Collections.IOwnedCollectionElement`1">
+            <summary>
+            Represents an element in a collection owned by a single object.
+            </summary>
+            <typeparam name="TOwner">The type of the object that owns the collection.</typeparam>
+        </member>
+        <member name="P:AsmResolver.Collections.IOwnedCollectionElement`1.Owner">
+            <summary>
+            Gets or sets the owner of the collection.
+            </summary>
+            <remarks>
+            This property should not be assigned directly.
+            </remarks>
+        </member>
+        <member name="T:AsmResolver.Collections.LazyList`1">
+            <summary>
+            Provides a base for lists that are lazy initialized.
+            </summary>
+            <typeparam name="TItem">The type of elements the list stores.</typeparam>
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.#ctor">
+            <summary>
+            Creates a new, empty, uninitialized list.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.#ctor(System.Int32)">
+            <summary>
+            Creates a new, empty, uninitialized list.
+            </summary>
+            <param name="capacity">The initial number of elements the list can store.</param>
+        </member>
+        <member name="P:AsmResolver.Collections.LazyList`1.Item(System.Int32)">
+            <inheritdoc cref="P:System.Collections.Generic.IList`1.Item(System.Int32)" />
+        </member>
+        <member name="P:AsmResolver.Collections.LazyList`1.Count">
+            <inheritdoc cref="P:System.Collections.Generic.ICollection`1.Count" />
+        </member>
+        <member name="P:AsmResolver.Collections.LazyList`1.Capacity">
+            <summary>
+            Gets or sets the total number of elements the list can contain before it has to resize its internal buffer.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Collections.LazyList`1.IsReadOnly">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.Collections.LazyList`1.IsInitialized">
+            <summary>
+            Gets a value indicating the list is initialized or not.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Collections.LazyList`1.Items">
+            <summary>
+            Gets the underlying list.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.Initialize">
+            <summary>
+            Initializes the list. This method is called in a thread-safe manner.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.PostInitialize">
+            <summary>
+            Performs any final adjustments to the collection after all initial items were added to the underlying list.
+            </summary>
+            <remarks>
+            Upon calling this method, the <see cref="P:AsmResolver.Collections.LazyList`1.IsInitialized"/> has already been set to <c>true</c>, but the
+            initialization lock has not been released yet. This means that any element in the list is guaranteed
+            to be still in its initial state. It is therefore safe to access elements, as well as adding or removing
+            items from <see cref="P:AsmResolver.Collections.LazyList`1.Items"/>.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.Add(`0)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.AddRange(System.Collections.Generic.IEnumerable{`0})">
+            <summary>
+            Appends the elements of a collection to the end of the <see cref="T:AsmResolver.Collections.LazyList`1"/>.
+            </summary>
+            <param name="items">The items to append.</param>
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.Clear">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.Contains(`0)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.CopyTo(`0[],System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.Remove(`0)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.IndexOf(`0)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.Insert(System.Int32,`0)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.InsertRange(System.Int32,System.Collections.Generic.IEnumerable{`0})">
+            <summary>
+            Inserts the elements of a collection into the <see cref="T:AsmResolver.Collections.LazyList`1"/> at the provided index.
+            </summary>
+            <param name="index">The starting index to insert the items in.</param>
+            <param name="items">The items to insert.</param>
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.RemoveAt(System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.OnSetItem(System.Int32,`0)">
+            <summary>
+            The method that gets called upon replacing an item in the list.
+            </summary>
+            <param name="index">The index that is being replaced.</param>
+            <param name="item">The new item.</param>
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.OnInsertItem(System.Int32,`0)">
+            <summary>
+            The method that gets called upon inserting a new item in the list.
+            </summary>
+            <param name="index">The index where the item is inserted at.</param>
+            <param name="item">The new item.</param>
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.OnInsertRange(System.Int32,System.Collections.Generic.IEnumerable{`0})">
+            <summary>
+            The method that gets called upon inserting a collection of new items in the list.
+            </summary>
+            <param name="index">The index where the item is inserted at.</param>
+            <param name="items">The new items.</param>
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.OnRemoveItem(System.Int32)">
+            <summary>
+            The method that gets called upon removing an item.
+            </summary>
+            <param name="index">The index of the element to remove.</param>
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.OnClearItems">
+            <summary>
+            The method that gets called upon clearing the entire list.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.GetEnumerator">
+            <summary>
+            Returns an enumerator that enumerates the lazy list.
+            </summary>
+            <returns>The enumerator.</returns>
+            <remarks>
+            This enumerator only ensures the list is initialized upon calling the <see cref="M:AsmResolver.Collections.LazyList`1.Enumerator.MoveNext"/> method.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.System#Collections#Generic#IEnumerable{TItem}#GetEnumerator">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.System#Collections#IEnumerable#GetEnumerator">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.Collections.LazyList`1.Enumerator">
+            <summary>
+            Represents an enumerator that enumerates all items in a lazy initialized list.
+            </summary>
+            <remarks>
+            The enumerator only initializes the list when it is needed. If no calls to <see cref="M:AsmResolver.Collections.LazyList`1.Enumerator.MoveNext"/> were
+            made, and the lazy list was not initialized yet, it will remain uninitialized.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.Enumerator.#ctor(AsmResolver.Collections.LazyList{`0})">
+            <summary>
+            Creates a new instance of the enumerator.
+            </summary>
+            <param name="list">The list to enumerate.</param>
+        </member>
+        <member name="P:AsmResolver.Collections.LazyList`1.Enumerator.Current">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.Collections.LazyList`1.Enumerator.System#Collections#IEnumerator#Current">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.Enumerator.MoveNext">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.Enumerator.Reset">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.LazyList`1.Enumerator.Dispose">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.Collections.OneToManyRelation`2">
+            <summary>
+            Represents a one-to-many relation, where an object is mapped to a collection of other objects.
+            </summary>
+            <typeparam name="TKey">The type of objects to map.</typeparam>
+            <typeparam name="TValue">The type of objects to map to.</typeparam>
+        </member>
+        <member name="M:AsmResolver.Collections.OneToManyRelation`2.#ctor">
+            <summary>
+            Creates a new, empty one-to-many relation mapping.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Collections.OneToManyRelation`2.#ctor(System.Int32)">
+            <summary>
+            Creates a new, empty one-to-many relation mapping.
+            </summary>
+            <param name="capacity">The initial number of elements the relation can store.</param>
+        </member>
+        <member name="M:AsmResolver.Collections.OneToManyRelation`2.Add(`0,`1)">
+            <summary>
+            Registers a relation between two objects.
+            </summary>
+            <param name="key">The first object.</param>
+            <param name="value">The second object to map to.</param>
+            <returns><c>true</c> if the key value pair was successfully registered. <c>false</c> if there already exists
+            a key that maps to the provided value.</returns>
+        </member>
+        <member name="M:AsmResolver.Collections.OneToManyRelation`2.GetValues(`0)">
+            <summary>
+            Gets a collection of values the provided key maps to.
+            </summary>
+            <param name="key">The key.</param>
+            <returns>The values.</returns>
+        </member>
+        <member name="M:AsmResolver.Collections.OneToManyRelation`2.GetKey(`1)">
+            <summary>
+            Gets the key that maps to the provided value.
+            </summary>
+            <param name="value">The value.</param>
+            <returns>The key.</returns>
+        </member>
+        <member name="T:AsmResolver.Collections.OneToManyRelation`2.ValueSet">
+            <summary>
+            Represents a collection of values assigned to a single key in a one-to-many relation.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.Collections.OneToManyRelation`2.ValueSet.Empty">
+            <summary>
+            Represents the empty value set.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Collections.OneToManyRelation`2.ValueSet.Count">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.Collections.OneToManyRelation`2.ValueSet.IsReadOnly">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.OneToManyRelation`2.ValueSet.Add(`1)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.OneToManyRelation`2.ValueSet.Clear">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.OneToManyRelation`2.ValueSet.Contains(`1)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.OneToManyRelation`2.ValueSet.CopyTo(`1[],System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.OneToManyRelation`2.ValueSet.Remove(`1)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.OneToManyRelation`2.ValueSet.GetEnumerator">
+            <summary>
+            Gets an enumerator that enumerates all values in the collection.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Collections.OneToManyRelation`2.ValueSet.System#Collections#Generic#IEnumerable{TValue}#GetEnumerator">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.OneToManyRelation`2.ValueSet.System#Collections#IEnumerable#GetEnumerator">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.Collections.OneToManyRelation`2.ValueSet.Enumerator">
+            <summary>
+            Represents an enumerator that enumerates all items in a value collection.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Collections.OneToManyRelation`2.ValueSet.Enumerator.Current">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.Collections.OneToManyRelation`2.ValueSet.Enumerator.System#Collections#IEnumerator#Current">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.OneToManyRelation`2.ValueSet.Enumerator.MoveNext">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.OneToManyRelation`2.ValueSet.Enumerator.Reset">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.OneToManyRelation`2.ValueSet.Enumerator.Dispose">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.Collections.OneToOneRelation`2">
+            <summary>
+            Describes a one-to-one relation between two object types, with an efficient lookup time for both keys and values.
+            </summary>
+            <typeparam name="TKey">The first object type.</typeparam>
+            <typeparam name="TValue">The second object type.</typeparam>
+        </member>
+        <member name="M:AsmResolver.Collections.OneToOneRelation`2.#ctor">
+            <summary>
+            Creates a new, empty one-to-one mapping.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Collections.OneToOneRelation`2.#ctor(System.Int32)">
+            <summary>
+            Creates a new, empty one-to-one mapping.
+            </summary>
+            <param name="capacity">The initial number of elements the relation can store.</param>
+        </member>
+        <member name="M:AsmResolver.Collections.OneToOneRelation`2.Add(`0,`1)">
+            <summary>
+            Registers a one-to-one relation between two objects.
+            </summary>
+            <param name="key">The first object.</param>
+            <param name="value">The second object to map to.</param>
+            <returns><c>true</c> if the key value pair was successfully registered. <c>false</c> if the key or
+            value already existed.</returns>
+        </member>
+        <member name="M:AsmResolver.Collections.OneToOneRelation`2.GetValue(`0)">
+            <summary>
+            Gets the value that was assigned to the provided key.
+            </summary>
+            <param name="key">The key.</param>
+            <returns>The value.</returns>
+        </member>
+        <member name="M:AsmResolver.Collections.OneToOneRelation`2.GetKey(`1)">
+            <summary>
+            Gets the key to which the provided value was assigned.
+            </summary>
+            <param name="value">The value.</param>
+            <returns>The key.</returns>
+        </member>
+        <member name="M:AsmResolver.Collections.OneToOneRelation`2.GetKeys">
+            <summary>
+            Gets all keys stored in the one-to-one mapping.
+            </summary>
+            <returns>The keys.</returns>
+        </member>
+        <member name="M:AsmResolver.Collections.OneToOneRelation`2.GetValues">
+            <summary>
+            Gets all values stored in the one-to-one mapping.
+            </summary>
+            <returns>The values.</returns>
+        </member>
+        <member name="T:AsmResolver.Collections.OwnedCollection`2">
+            <summary>
+            Represents an indexed collection where each element is owned by some object, and prevents the element from being
+            added to any other instance of the collection.
+            </summary>
+            <typeparam name="TOwner">The type of the owner object.</typeparam>
+            <typeparam name="TItem">The type of elements to store.</typeparam>
+        </member>
+        <member name="M:AsmResolver.Collections.OwnedCollection`2.#ctor(`0)">
+            <summary>
+            Creates a new empty collection that is owned by an object.
+            </summary>
+            <param name="owner">The owner of the collection.</param>
+        </member>
+        <member name="M:AsmResolver.Collections.OwnedCollection`2.#ctor(`0,System.Int32)">
+            <summary>
+            Creates a new empty collection that is owned by an object.
+            </summary>
+            <param name="owner">The owner of the collection.</param>
+            <param name="capacity">The initial number of elements the collection can store.</param>
+        </member>
+        <member name="P:AsmResolver.Collections.OwnedCollection`2.Owner">
+            <summary>
+            Gets the owner of the collection.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Collections.OwnedCollection`2.AssertNotNullAndHasNoOwner(`1)">
+            <summary>
+            Verifies that the provided item is not null and not added to another list.
+            </summary>
+            <param name="item">The item to verify.</param>
+            <exception cref="T:System.ArgumentNullException">Occurs when the item is null.</exception>
+            <exception cref="T:System.ArgumentException">Occurs when the item is already owned by another collection.</exception>
+        </member>
+        <member name="M:AsmResolver.Collections.OwnedCollection`2.Initialize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.OwnedCollection`2.OnSetItem(System.Int32,`1)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.OwnedCollection`2.OnInsertItem(System.Int32,`1)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.OwnedCollection`2.OnInsertRange(System.Int32,System.Collections.Generic.IEnumerable{`1})">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.OwnedCollection`2.OnRemoveItem(System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.OwnedCollection`2.OnClearItems">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.Collections.ReferenceTable">
+            <summary>
+            Represents a table of references that can be written as one block of contiguous bytes.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Collections.ReferenceTable.#ctor(AsmResolver.Collections.ReferenceTableAttributes)">
+            <summary>
+            Creates a new reference table.
+            </summary>
+            <param name="attributes">The attributes describing the shape of the table.</param>
+        </member>
+        <member name="P:AsmResolver.Collections.ReferenceTable.Attributes">
+            <summary>
+            Gets the attributes describing the shape of the table.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Collections.ReferenceTable.ReferenceType">
+            <summary>
+            Gets the type of reference that is stored in the table.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Collections.ReferenceTable.IsOffsetTable">
+            <summary>
+            Gets a value indicating whether the table contains offsets.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Collections.ReferenceTable.IsRvaTable">
+            <summary>
+            Gets a value indicating whether the table contains RVAs.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Collections.ReferenceTable.IsVaTable">
+            <summary>
+            Gets a value indicating whether the table contains VAs.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Collections.ReferenceTable.ReferenceSize">
+            <summary>
+            Gets the size in bytes that each reference occupies in the table.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Collections.ReferenceTable.IsAdaptive">
+            <summary>
+            Gets a value indicating whether the size of a single reference changes depending on whether
+            this table is put in a 32 or 64 bit application.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Collections.ReferenceTable.Is32BitTable">
+            <summary>
+            Gets a value indicating whether the size of a single reference in the table is 32 bits.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Collections.ReferenceTable.Is64BitTable">
+            <summary>
+            Gets a value indicating whether the size of a single reference in the table is 64 bits.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Collections.ReferenceTable.IsZeroTerminated">
+            <summary>
+            Gets a value indicating whether the table ends with a zero entry.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Collections.ReferenceTable.Offset">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.Collections.ReferenceTable.Rva">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.Collections.ReferenceTable.CanUpdateOffsets">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.ReferenceTable.UpdateOffsets(AsmResolver.RelocationParameters@)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.ReferenceTable.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.ReferenceTable.GetVirtualSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.ReferenceTable.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.Collections.ReferenceTableAttributes">
+            <summary>
+            Provides members describing the shape of a reference table.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.Collections.ReferenceTableAttributes.Offset">
+            <summary>
+            Indicates the table contains offsets.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.Collections.ReferenceTableAttributes.Rva">
+            <summary>
+            Indicates the table contains RVAs.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.Collections.ReferenceTableAttributes.Va">
+            <summary>
+            Indicates the table contains VAs.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.Collections.ReferenceTableAttributes.ReferenceTypeMask">
+            <summary>
+            Provides a bit-mask for obtaining the type of references stored in the table.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.Collections.ReferenceTableAttributes.Adaptive">
+            <summary>
+            Indicates the table changes in size depending on whether it is put in a 32-bit or 64-bit application.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.Collections.ReferenceTableAttributes.Force32Bit">
+            <summary>
+            Indicates the table always uses 32 bits for every entry.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.Collections.ReferenceTableAttributes.Force64Bit">
+            <summary>
+            Indicates the table always uses 64 bits for every entry.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.Collections.ReferenceTableAttributes.SizeMask">
+            <summary>
+            Provides a bit-mask for obtaining the size of each reference stored in the table.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.Collections.ReferenceTableAttributes.ZeroTerminated">
+            <summary>
+            Indicates the table ends with an extra zero item.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.Collections.RefList`1">
+            <summary>
+            Provides an implementation of a collection for which the raw elements can be accessed by-reference.
+            This allows for dynamically sized lists that work on mutable structs.
+            </summary>
+            <typeparam name="T">The type of elements to store.</typeparam>
+            <remarks>
+            This list should be regarded as a mutable array that is not thread-safe.
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.Collections.RefList`1.DefaultCapacity">
+            <summary>
+            Gets the default capacity of a ref-list.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.#ctor">
+            <summary>
+            Creates a new empty list with the default capacity.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.#ctor(System.Int32)">
+            <summary>
+            Creates a new empty list with the provided capacity.
+            </summary>
+            <param name="capacity">The capacity of the list.</param>
+        </member>
+        <member name="P:AsmResolver.Collections.RefList`1.Count">
+            <inheritdoc cref="P:System.Collections.Generic.ICollection`1.Count" />
+        </member>
+        <member name="P:AsmResolver.Collections.RefList`1.Capacity">
+            <summary>
+            Gets or sets the total number of elements that the underlying array can store.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Collections.RefList`1.Version">
+            <summary>
+            Gets a number indicating the current version of the list.
+            </summary>
+            <remarks>
+            This number is incremented each time the underlying array is resized or when an element is replaced.
+            It can also be used to verify that the reference returned by <see cref="M:AsmResolver.Collections.RefList`1.GetElementRef(System.Int32,System.Int32@)"/> is
+            still referencing an element in the current array.
+            </remarks>
+        </member>
+        <member name="P:AsmResolver.Collections.RefList`1.System#Collections#Generic#ICollection{T}#IsReadOnly">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.Collections.RefList`1.System#Collections#ICollection#IsSynchronized">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.Collections.RefList`1.System#Collections#ICollection#SyncRoot">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.Collections.RefList`1.Item(System.Int32)">
+            <summary>
+            Gets or sets an individual element within the list.
+            </summary>
+            <param name="index">The index of the element to access.</param>
+            <exception cref="T:System.IndexOutOfRangeException">
+            Occurs when <paramref name="index"/> is not a valid index within the array.
+            </exception>
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.GetElementRef(System.Int32)">
+            <summary>
+            Gets an element within the list by reference.
+            </summary>
+            <param name="index">The index of the element to access.</param>
+            <returns>A reference to the element.</returns>
+            <exception cref="T:System.IndexOutOfRangeException">
+            Occurs when <paramref name="index"/> is not a valid index within the array.
+            </exception>
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.GetElementRef(System.Int32,System.Int32@)">
+            <summary>
+            Gets an element within the list by reference.
+            </summary>
+            <param name="index">The index of the element to access.</param>
+            <param name="version">The version of the list upon obtaining the reference.</param>
+            <returns>A reference to the element.</returns>
+            <exception cref="T:System.IndexOutOfRangeException">
+            Occurs when <paramref name="index"/> is not a valid index within the array.
+            </exception>
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.Add(`0@)">
+            <summary>
+            Adds an element to the end of the list.
+            </summary>
+            <param name="item">The element.</param>
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.System#Collections#Generic#ICollection{T}#Add(`0)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.Clear">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.System#Collections#Generic#ICollection{T}#Contains(`0)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.Contains(`0@)">
+            <summary>
+            Determines whether an item is present in the reference list.
+            </summary>
+            <param name="item">The item.</param>
+            <returns><c>true</c> if the element is present, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.CopyTo(`0[],System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.CopyTo(System.Array,System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.Remove(`0@)">
+            <summary>
+            Removes an element from the list.
+            </summary>
+            <param name="item">The element to remove.</param>
+            <returns><c>true</c> if the element was removed successfully, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.System#Collections#Generic#ICollection{T}#Remove(`0)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.IndexOf(`0@)">
+            <summary>
+            Determines the first index within the list that contains the provided element.
+            </summary>
+            <param name="item">The element to search.</param>
+            <returns>The index, or -1 if the element is not present in the list.</returns>
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.Insert(System.Int32,`0@)">
+            <summary>
+            Inserts an element into the list at the provided index.
+            </summary>
+            <param name="index">The index to insert into.</param>
+            <param name="item">The element to insert.</param>
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.System#Collections#Generic#IList{T}#Insert(System.Int32,`0)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.IndexOf(`0)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.RemoveAt(System.Int32)">
+            <summary>
+            Removes a single element from the list at the provided index.
+            </summary>
+            <param name="index">The index of the element to remove.</param>
+            <exception cref="T:System.ArgumentOutOfRangeException">Occurs when the provided index is invalid.</exception>
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.GetEnumerator">
+            <summary>
+            Returns an enumerator that iterates all elements in the list.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.System#Collections#Generic#IEnumerable{T}#GetEnumerator">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.System#Collections#IEnumerable#GetEnumerator">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.Collections.RefList`1.Enumerator">
+            <summary>
+            Provides an implementation for an enumerator that iterates elements in a ref-list.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.Enumerator.#ctor(AsmResolver.Collections.RefList{`0})">
+            <summary>
+            Creates a new instance of a ref-list enumerator.
+            </summary>
+            <param name="list">The list to enumerate.</param>
+        </member>
+        <member name="P:AsmResolver.Collections.RefList`1.Enumerator.Current">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.Collections.RefList`1.Enumerator.System#Collections#IEnumerator#Current">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.Enumerator.MoveNext">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.Enumerator.Reset">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Collections.RefList`1.Enumerator.System#IDisposable#Dispose">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.DataSegment">
+            <summary>
+            Provides an implementation of a segment using a byte array to represent its contents.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.DataSegment.FromReader(AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Puts the remaining data of the provided input stream into a new data segment.
+            </summary>
+            <param name="reader">The input stream to read from.</param>
+            <returns>The data segment containing the remaining data.</returns>
+        </member>
+        <member name="M:AsmResolver.DataSegment.FromReader(AsmResolver.IO.BinaryStreamReader@,System.Int32)">
+            <summary>
+            Reads a single data segment at the current position of the provided input stream.
+            </summary>
+            <param name="reader">The input stream to read from.</param>
+            <param name="count">The number of bytes to read.</param>
+            <returns>The read data segment.</returns>
+        </member>
+        <member name="M:AsmResolver.DataSegment.#ctor(System.Byte[])">
+            <summary>
+            Creates a new data segment using the provided byte array as contents.
+            </summary>
+            <param name="data">The data to store.</param>
+        </member>
+        <member name="P:AsmResolver.DataSegment.Data">
+            <summary>
+            Gets the data that is stored in the segment.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.DataSegment.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.DataSegment.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.DataSegment.CreateReader(System.UInt64,System.UInt32)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.DataSourceSegment">
+            <summary>
+            Represents a segment that originates from a slice of a <see cref="T:AsmResolver.IO.IDataSource"/>.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.DataSourceSegment.#ctor(AsmResolver.IO.IDataSource,System.UInt64,System.UInt32,System.UInt32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.DataSourceSegment.UpdateOffsets(AsmResolver.RelocationParameters@)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.DataSourceSegment.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.DataSourceSegment.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.DataSourceSegment.CreateReader(System.UInt64,System.UInt32)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.DiagnosticBag">
+            <summary>
+            Provides a container for collecting exceptions during a process.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.DiagnosticBag.Exceptions">
+            <summary>
+            Gets a collection of all the exceptions that were thrown during the process.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.DiagnosticBag.HasErrors">
+            <summary>
+            Gets a value indicating whether the diagnostic bag contains any errors.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.DiagnosticBag.IsFatal">
+            <summary>
+            Gets a value indicating whether the process had thrown an exception that was fatal and could not be
+            recovered from.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.DiagnosticBag.MarkAsFatal">
+            <summary>
+            Marks the process to have failed.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.DiagnosticBag.RegisterException(System.Exception)">
+            <summary>
+            Registers an error in the diagnostic bag.
+            </summary>
+            <param name="exception">The error.</param>
+        </member>
+        <member name="T:AsmResolver.EmptyErrorListener">
+            <summary>
+            Provides an empty implementation of the <see cref="T:AsmResolver.IErrorListener"/> that silently consumes all reported errors.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.EmptyErrorListener.Instance">
+            <summary>
+            Gets the singleton instance of the <see cref="T:AsmResolver.EmptyErrorListener"/> class.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.EmptyErrorListener.MarkAsFatal">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.EmptyErrorListener.RegisterException(System.Exception)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.IErrorListener">
+            <summary>
+            Provides a mechanism for capturing errors that occur during a process.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IErrorListener.MarkAsFatal">
+            <summary>
+            Marks the process to have failed.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IErrorListener.RegisterException(System.Exception)">
+            <summary>
+            Registers an error.
+            </summary>
+            <param name="exception">The error.</param>
+        </member>
+        <member name="T:AsmResolver.ErrorListenerExtensions">
+            <summary>
+            Provides extension methods for instances of the <see cref="T:AsmResolver.IErrorListener"/> interface.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.ErrorListenerExtensions.BadImage(AsmResolver.IErrorListener,System.String)">
+            <summary>
+            Registers an instance of a <see cref="T:System.BadImageFormatException"/> class.
+            </summary>
+            <param name="self">The error listener.</param>
+            <param name="message">The message of the error.</param>
+        </member>
+        <member name="M:AsmResolver.ErrorListenerExtensions.NotSupported(AsmResolver.IErrorListener,System.String)">
+            <summary>
+            Registers an instance of a <see cref="T:System.NotSupportedException"/> class.
+            </summary>
+            <param name="self">The error listener.</param>
+            <param name="message">The message of the error.</param>
+        </member>
+        <member name="M:AsmResolver.ErrorListenerExtensions.RegisterExceptionAndReturnDefault``1(AsmResolver.IErrorListener,System.Exception)">
+            <summary>
+            Registers an error, and returns a default value for the provided type.
+            </summary>
+            <param name="self">The error listener.</param>
+            <param name="exception">The error.</param>
+            <typeparam name="T">The type of value to return.</typeparam>
+        </member>
+        <member name="M:AsmResolver.ErrorListenerExtensions.NotSupportedAndReturn``1(AsmResolver.IErrorListener)">
+            <summary>
+            Registers a NotSupportedException, and returns a default value for the provided type.
+            </summary>
+            <param name="self">The error listener.</param>
+            <typeparam name="T">The type of value to return.</typeparam>
+        </member>
+        <member name="M:AsmResolver.ErrorListenerExtensions.NotSupportedAndReturn``1(AsmResolver.IErrorListener,System.String)">
+            <summary>
+            Registers a NotSupportedException, and returns a default value for the provided type.
+            </summary>
+            <param name="self">The error listener.</param>
+            <param name="message">The message of the error.</param>
+            <typeparam name="T">The type of value to return.</typeparam>
+        </member>
+        <member name="M:AsmResolver.ErrorListenerExtensions.BadImageAndReturn``1(AsmResolver.IErrorListener,System.String)">
+            <summary>
+            Registers a BadImage, and returns a default value for the provided type.
+            </summary>
+            <param name="self">The error listener.</param>
+            <param name="message">The message of the error.</param>
+            <typeparam name="T">The type of value to return.</typeparam>
+        </member>
+        <member name="T:AsmResolver.IndexSize">
+            <summary>
+            Provides possible values for the size of an index.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.IndexSize.Short">
+            <summary>
+            Indicates the index is 16-bits wide.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.IndexSize.Long">
+            <summary>
+            Indicates the index is 32-bits wide.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.IOffsetConverter">
+            <summary>
+            Provides members for converting virtual addresses to file offsets and vice versa.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IOffsetConverter.FileOffsetToRva(System.UInt64)">
+            <summary>
+            Converts a file offset to the virtual address when it is loaded into memory.
+            </summary>
+            <param name="fileOffset">The file offset to convert.</param>
+            <returns>The virtual address, relative to the image base.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">Occurs when the file offset falls outside of the range of the convertible file offsets.</exception>
+        </member>
+        <member name="M:AsmResolver.IOffsetConverter.RvaToFileOffset(System.UInt32)">
+            <summary>
+            Converts a virtual address to the physical file offset.
+            </summary>
+            <param name="rva">The virtual address, relative to the image base, to convert.</param>
+            <returns>The file offset.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">Occurs when the virtual address falls outside of the range of the convertible addresses.</exception>
+        </member>
+        <member name="T:AsmResolver.IOffsetProvider">
+            <summary>
+            Defines file offset and virtual address of a specific structure or segment in a binary file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IOffsetProvider.Offset">
+            <summary>
+            Gets the physical starting offset of the segment.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IOffsetProvider.Rva">
+            <summary>
+            Gets the virtual address relative to the beginning of the section that the segment is located in.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.IO.BinaryStreamReader">
+            <summary>
+            Provides methods for reading binary data from a data source.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.#ctor(System.Byte[])">
+            <summary>
+            Creates a new binary stream reader on the provided data source.
+            </summary>
+            <param name="data">The data to read from.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.#ctor(System.IO.Stream)">
+            <summary>
+            Creates a new binary stream reader on the provided data source.
+            </summary>
+            <param name="stream">The stream to read from.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.#ctor(AsmResolver.IO.IDataSource)">
+            <summary>
+            Creates a new binary stream reader on the provided data source.
+            </summary>
+            <param name="dataSource">The object to get the data from.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.#ctor(AsmResolver.IO.IDataSource,System.UInt64,System.UInt32,System.UInt32)">
+            <summary>
+            Creates a new binary stream reader on the provided data source.
+            </summary>
+            <param name="dataSource">The object to get the data from.</param>
+            <param name="offset">The raw offset to start at.</param>
+            <param name="rva">The relative virtual address associated to the offset.</param>
+            <param name="length">The maximum number of bytes to read.</param>
+            <exception cref="T:System.ArgumentNullException">Occurs when <paramref name="dataSource"/> is <c>null</c>.</exception>
+            <exception cref="T:System.ArgumentOutOfRangeException">Occurs when <paramref name="offset"/> is not a valid offset.</exception>
+            <exception cref="T:System.IO.EndOfStreamException">Occurs when too many bytes are specified by <paramref name="length"/>.</exception>
+        </member>
+        <member name="P:AsmResolver.IO.BinaryStreamReader.DataSource">
+            <summary>
+            Gets the data source the reader is reading from.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.BinaryStreamReader.StartOffset">
+            <summary>
+            Gets the raw offset this reader started from.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.BinaryStreamReader.StartRva">
+            <summary>
+            Gets the relative virtual address this reader started from.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.BinaryStreamReader.Length">
+            <summary>
+            Gets the number of bytes that can be read by the reader.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.BinaryStreamReader.EndOffset">
+            <summary>
+            Gets the raw address indicating the end of the stream.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.BinaryStreamReader.EndRva">
+            <summary>
+            Gets the relative virtual address indicating the end of the stream.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.BinaryStreamReader.Offset">
+            <summary>
+            Gets or sets the current raw offset to read from.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.BinaryStreamReader.RelativeOffset">
+            <summary>
+            Gets or sets the current offset relative to the beginning of <see cref="P:AsmResolver.IO.BinaryStreamReader.StartOffset"/> to read from.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.BinaryStreamReader.RemainingLength">
+            <summary>
+            Gets the remaining number of bytes that can be read from the stream.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.BinaryStreamReader.Rva">
+            <summary>
+            Gets or sets the current virtual address (relative to the image base) to read from.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.BinaryStreamReader.IsValid">
+            <summary>
+            Gets a value indicating whether the reader is in a valid state.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.CanRead(System.UInt32)">
+            <summary>
+            Determines whether the provided number of bytes can be read from the current position.
+            </summary>
+            <param name="count">The number of bytes to read.</param>
+            <returns><c>true</c> if the provided number of byte can be read, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.PeekByte">
+            <summary>
+            Peeks a single byte from the input stream.
+            </summary>
+            <returns>The read byte, or <c>-1</c> if no byte could be read.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadByte">
+            <summary>
+            Reads a single byte from the input stream, and advances the current offset by one.
+            </summary>
+            <returns>The consumed value.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadUInt16">
+            <summary>
+            Reads a single unsigned 16-bit integer from the input stream, and advances the current offset by two.
+            </summary>
+            <returns>The consumed value.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadUInt32">
+            <summary>
+            Reads a single unsigned 32-bit integer from the input stream, and advances the current offset by four.
+            </summary>
+            <returns>The consumed value.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadUInt64">
+            <summary>
+            Reads a single unsigned 64-bit integer from the input stream, and advances the current offset by eight.
+            </summary>
+            <returns>The consumed value.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadSByte">
+            <summary>
+            Reads a single signed byte from the input stream, and advances the current offset by one.
+            </summary>
+            <returns>The consumed value.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadInt16">
+            <summary>
+            Reads a single signed 16-bit integer from the input stream, and advances the current offset by two.
+            </summary>
+            <returns>The consumed value.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadInt32">
+            <summary>
+            Reads a single signed 32-bit integer from the input stream, and advances the current offset by four.
+            </summary>
+            <returns>The consumed value.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadInt64">
+            <summary>
+            Reads a single signed 64-bit integer from the input stream, and advances the current offset by eight.
+            </summary>
+            <returns>The consumed value.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadSingle">
+            <summary>
+            Reads a single signed 32-bit single precision floating point number from the input stream, and advances the
+            current offset by four.
+            </summary>
+            <returns>The consumed value.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadDouble">
+            <summary>
+            Reads a single signed 64-bit double precision floating point number from the input stream, and advances the
+            current offset by four.
+            </summary>
+            <returns>The consumed value.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadDecimal">
+            <summary>
+            Reads a single 128-bit decimal value from the input stream, and advances the current offset by 16.
+            </summary>
+            <returns>The consumed value.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadBytes(System.Int32)">
+            <summary>
+            Attempts to read the provided amount of bytes from the input stream.
+            </summary>
+            <param name="count">The number of bytes to read.</param>
+            <returns>The bytes.</returns>
+            <exception cref="T:System.IO.EndOfStreamException">
+            Occurs when more bytes were attempted to be read than there were available.
+            </exception>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadBytes(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Attempts to read the provided amount of bytes from the input stream.
+            </summary>
+            <param name="buffer">The buffer that receives the read bytes.</param>
+            <param name="index">The index into the buffer to start writing into.</param>
+            <param name="count">The number of bytes to read.</param>
+            <returns>The number of bytes that were read.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadSegment(System.UInt32)">
+            <summary>
+            Creates a segment containing data from the input data source, starting at the current position of the input
+            stream. The reader then advances the current offset by the provided number of bytes.
+            </summary>
+            <param name="count">The number of bytes the segment should contain.</param>
+            <returns>The read segment.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadToEnd">
+            <summary>
+            Consumes the remainder of the input stream.
+            </summary>
+            <returns>The remaining bytes.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadBytesUntil(System.Byte)">
+            <summary>
+            Reads bytes from the input stream until the provided delimiter byte is reached.
+            </summary>
+            <param name="delimiter">The delimiter byte to stop at.</param>
+            <returns>The read bytes, including the delimiter if it was found.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadBytesUntil(System.Byte,System.Boolean)">
+            <summary>
+            Reads bytes from the input stream until the provided delimiter byte is reached.
+            </summary>
+            <param name="delimiter">The delimiter byte to stop at.</param>
+            <param name="includeDelimiterInReturn">
+            <c>true</c> if the final delimiter should be included in the return value, <c>false</c> otherwise.
+            </param>
+            <returns>The read bytes.</returns>
+            <remarks>
+            This function always consumes the delimiter from the input stream if it is present, regardless of the value
+            of <paramref name="includeDelimiterInReturn"/>.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.AdvanceUntil(System.Byte,System.Boolean)">
+            <summary>
+            Advances the reader until the provided delimiter byte is reached.
+            </summary>
+            <param name="delimiter">The delimiter byte to stop at.</param>
+            <param name="consumeDelimiter">
+            <c>true</c> if the final delimiter should be consumed if available, <c>false</c> otherwise.
+            </param>
+            <returns><c>true</c> if the delimiter byte was found and consumed, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadAsciiString">
+            <summary>
+            Reads a null-terminated ASCII string from the input stream.
+            </summary>
+            <returns>The read ASCII string, excluding the null terminator.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadUnicodeString">
+            <summary>
+            Reads a zero-terminated Unicode string from the stream.
+            </summary>
+            <returns>The string that was read from the stream.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadUtf8String">
+            <summary>
+            Reads a null-terminated UTF-8 string from the input stream.
+            </summary>
+            <returns>The read UTF-8 string, excluding the null terminator.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadNativeInt(System.Boolean)">
+            <summary>
+            Reads either a 32-bit or a 64-bit number from the input stream.
+            </summary>
+            <param name="is32Bit">Indicates the integer to be read is 32-bit or 64-bit.</param>
+            <returns>The read number, zero extended if necessary.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadCompressedUInt32">
+            <summary>
+            Reads a compressed unsigned integer from the stream.
+            </summary>
+            <returns>The unsigned integer that was read from the stream.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadCompressedInt32">
+            <summary>
+            Reads a compressed unsigned integer from the stream.
+            </summary>
+            <returns>The signed integer that was read from the stream.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.TryReadCompressedUInt32(System.UInt32@)">
+            <summary>
+            Tries to reads a compressed unsigned integer from the stream.
+            </summary>
+            <param name="value">The unsigned integer that was read from the stream.</param>
+            <returns><c>True</c> if the method succeeded, false otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.TryReadCompressedInt32(System.Int32@)">
+            <summary>
+            Tries to reads a compressed signed integer from the stream.
+            </summary>
+            <param name="value">The signed integer that was read from the stream.</param>
+            <returns><c>True</c> if the method succeeded, false otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.Read7BitEncodedInt32">
+            <summary>
+            Reads a 7-bit encoded 32-bit integer from the stream.
+            </summary>
+            <returns>The integer.</returns>
+            <exception cref="T:System.FormatException">Occurs when an invalid 7-bit encoding was encountered.</exception>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadIndex(AsmResolver.IndexSize)">
+            <summary>
+            Reads a short or a long index from the stream.
+            </summary>
+            <param name="size">The size of the index to read.</param>
+            <returns>The index, zero extended to 32 bits if necessary.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException"></exception>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadSerString">
+            <summary>
+            Reads a serialized UTF8 string from the stream.
+            </summary>
+            <returns>The string that was read from the stream.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadBinaryFormatterString">
+            <summary>
+            Reads a serialized UTF-8 string that is prefixed by a 7-bit encoded length header.
+            </summary>
+            <returns>The string.</returns>
+            <exception cref="T:System.FormatException">Occurs when the 7-bit encoded header is invalid.</exception>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ReadBinaryFormatterString(System.Text.Encoding)">
+            <summary>
+            Reads a serialized string that is prefixed by a 7-bit encoded length header.
+            </summary>
+            <param name="encoding">The encoding to use for decoding the bytes into a string.</param>
+            <returns>The string.</returns>
+            <exception cref="T:System.FormatException">Occurs when the 7-bit encoded header is invalid.</exception>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.Align(System.UInt32)">
+            <summary>
+            Aligns the reader to a specified boundary.
+            </summary>
+            <param name="alignment">The boundary to use.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.AlignRelative(System.UInt32)">
+            <summary>
+            Aligns the reader to a specified boundary.
+            </summary>
+            <param name="alignment">The boundary to use.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.Fork">
+            <summary>
+            Creates an exact copy of the reader.
+            </summary>
+            <returns>The copied reader.</returns>
+            <remarks>This method does not copy the underlying buffer.</remarks>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ForkAbsolute(System.UInt64)">
+            <summary>
+            Creates a copy of the reader, and moves the offset of the copied reader to the provided file offset.
+            </summary>
+            <param name="offset">The file offset.</param>
+            <returns>The new reader.</returns>
+            <remarks>This method does not copy the underlying buffer.</remarks>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ForkAbsolute(System.UInt64,System.UInt32)">
+            <summary>
+            Creates a copy of the reader, moves the offset of the copied reader to the provided file offset, and resizes
+            the copied reader to the provided number of bytes.
+            </summary>
+            <param name="offset">The file offset.</param>
+            <param name="size">The number of bytes to read.</param>
+            <returns>The new reader.</returns>
+            <remarks>This method does not copy the underlying buffer.</remarks>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ForkRelative(System.UInt32)">
+            <summary>
+            Creates a copy of the reader, and moves to the provided relative offset of the copied reader.
+            </summary>
+            <param name="relativeOffset">The displacement.</param>
+            <returns>The new reader.</returns>
+            <remarks>This method does not copy the underlying buffer.</remarks>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ForkRelative(System.UInt32,System.UInt32)">
+            <summary>
+            Creates a copy of the reader, moves the copied reader to the provided relative offset, and resizes the
+            copied reader to the provided number of bytes.
+            </summary>
+            <param name="relativeOffset">The displacement.</param>
+            <param name="size">The number of bytes to read.</param>
+            <returns>The new reader.</returns>
+            <remarks>This method does not copy the underlying buffer.</remarks>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.ChangeSize(System.UInt32)">
+            <summary>
+            Resizes the current reader to a new number of bytes.
+            </summary>
+            <param name="newSize">The new number of bytes.</param>
+            <exception cref="T:System.IO.EndOfStreamException">
+            Occurs when the provided size reaches outside of the input stream's length.
+            </exception>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamReader.WriteToOutput(AsmResolver.IO.BinaryStreamWriter)">
+            <summary>
+            Consumes and copies the remainder of the contents to the provided output stream.
+            </summary>
+            <param name="writer">The output stream.</param>
+        </member>
+        <member name="T:AsmResolver.IO.BinaryStreamWriter">
+            <summary>
+            Provides methods for writing data to an output stream.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.#ctor(System.IO.Stream)">
+            <summary>
+            Creates a new binary stream writer using the provided output stream.
+            </summary>
+            <param name="stream">The stream to write to.</param>
+        </member>
+        <member name="P:AsmResolver.IO.BinaryStreamWriter.BaseStream">
+            <summary>
+            Gets the stream this writer writes to.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.BinaryStreamWriter.Offset">
+            <summary>
+            Gets or sets the current position of the
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.BinaryStreamWriter.Length">
+            <summary>
+            Gets or sets the current length of the stream.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteBytes(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Writes a buffer of data to the stream.
+            </summary>
+            <param name="buffer">The buffer to write to the stream.</param>
+            <param name="startIndex">The index to start reading from the buffer.</param>
+            <param name="count">The amount of bytes of the buffer to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteByte(System.Byte)">
+            <summary>
+            Writes a single byte to the stream.
+            </summary>
+            <param name="value">The byte to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteUInt16(System.UInt16)">
+            <summary>
+            Writes an unsigned 16-bit integer to the stream.
+            </summary>
+            <param name="value">The unsigned 16-bit integer to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteUInt32(System.UInt32)">
+            <summary>
+            Writes an unsigned 32-bit integer to the stream.
+            </summary>
+            <param name="value">The unsigned 32-bit integer to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteUInt64(System.UInt64)">
+            <summary>
+            Writes an unsigned 64-bit integer to the stream.
+            </summary>
+            <param name="value">The unsigned 64-bit integer to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteSByte(System.SByte)">
+            <summary>
+            Writes an signed byte to the stream.
+            </summary>
+            <param name="value">The signed byte to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteInt16(System.Int16)">
+            <summary>
+            Writes a signed 16-bit integer to the stream.
+            </summary>
+            <param name="value">The signed 16-bit integer to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteInt32(System.Int32)">
+            <summary>
+            Writes a signed 32-bit integer to the stream.
+            </summary>
+            <param name="value">The signed 32-bit integer to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteInt64(System.Int64)">
+            <summary>
+            Writes a signed 64-bit integer to the stream.
+            </summary>
+            <param name="value">The signed 64-bit integer to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteSingle(System.Single)">
+            <summary>
+            Writes a 32-bit floating point number to the stream.
+            </summary>
+            <param name="value">The 32-bit floating point number to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteDouble(System.Double)">
+            <summary>
+            Writes a 64-bit floating point number to the stream.
+            </summary>
+            <param name="value">The 64-bit floating point number to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteDecimal(System.Decimal)">
+            <summary>
+            Writes a 128-bit decimal value to the stream.
+            </summary>
+            <param name="value">The 128-bit decimal value to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteNativeInt(System.UInt64,System.Boolean)">
+            <summary>
+            Writes either a 32-bit or a 64-bit number to the output stream.
+            </summary>
+            <param name="value">The value to write.</param>
+            <param name="is32Bit">Indicates the integer to be written is 32-bit or 64-bit.</param>
+            <returns>The read number, zero extended if necessary.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteBytes(System.Byte[])">
+            <summary>
+            Writes a buffer of data to the stream.
+            </summary>
+            <param name="buffer">The data to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteZeroes(System.Int32)">
+            <summary>
+            Writes a specified number of zero bytes to the stream.
+            </summary>
+            <param name="count">The number of zeroes to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteAsciiString(System.String)">
+            <summary>
+            Writes an ASCII string to the stream.
+            </summary>
+            <param name="value">The string to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.Align(System.UInt32)">
+            <summary>
+            Aligns the writer to a specified boundary.
+            </summary>
+            <param name="align">The boundary to use.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.AlignRelative(System.UInt32,System.UInt64)">
+            <summary>
+            Aligns the writer to a specified boundary, relative to the provided start offset..
+            </summary>
+            <param name="align">The boundary to use.</param>
+            <param name="startOffset">The starting offset to consider the alignment boundaries from.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteIndex(System.UInt32,AsmResolver.IndexSize)">
+            <summary>
+            Writes a single index to the output stream.
+            </summary>
+            <param name="value">The index to write.</param>
+            <param name="size"></param>
+            <exception cref="T:System.ArgumentOutOfRangeException"></exception>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteCompressedUInt32(System.UInt32)">
+            <summary>
+            Compresses and writes an unsigned integer to the stream.
+            </summary>
+            <param name="value">The value to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteCompressedInt32(System.Int32)">
+            <summary>
+            Compresses and writes a signed integer to the stream.
+            </summary>
+            <param name="value">The value to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.Write7BitEncodedInt32(System.Int32)">
+            <summary>
+            Writes a single 7-bit encoded 32-bit integer to the output stream.
+            </summary>
+            <param name="value">The value to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteSerString(System.String)">
+            <summary>
+            Writes an UTF8 string to the stream.
+            </summary>
+            <param name="value">The string to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteBinaryFormatterString(System.String)">
+            <summary>
+            Writes a serialized string using the UTF-8 encoding that is prefixed by a 7-bit encoded length header.
+            </summary>
+            <param name="value">The string to write.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteBinaryFormatterString(System.String,System.Text.Encoding)">
+            <summary>
+            Writes a serialized string that is prefixed by a 7-bit encoded length header.
+            </summary>
+            <param name="value">The string to write.</param>
+            <param name="encoding">The encoding to use.</param>
+        </member>
+        <member name="M:AsmResolver.IO.BinaryStreamWriter.WriteSerString(AsmResolver.Utf8String)">
+            <summary>
+            Writes an UTF8 string to the stream.
+            </summary>
+            <param name="value">The string to write.</param>
+        </member>
+        <member name="T:AsmResolver.IO.ByteArrayDataSource">
+            <summary>
+            Provides a <see cref="T:AsmResolver.IO.IDataSource"/> wrapper around a raw byte array.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.ByteArrayDataSource.#ctor(System.Byte[])">
+            <summary>
+            Creates a new instance of the <see cref="T:AsmResolver.IO.ByteArrayDataSource"/> class.
+            </summary>
+            <param name="data">The raw data to read from.</param>
+        </member>
+        <member name="M:AsmResolver.IO.ByteArrayDataSource.#ctor(System.Byte[],System.UInt64)">
+            <summary>
+            Creates a new instance of the <see cref="T:AsmResolver.IO.ByteArrayDataSource"/> class.
+            </summary>
+            <param name="data">The raw data to read from.</param>
+            <param name="baseAddress">The base address to use.</param>
+        </member>
+        <member name="P:AsmResolver.IO.ByteArrayDataSource.BaseAddress">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.IO.ByteArrayDataSource.Item(System.UInt64)">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.IO.ByteArrayDataSource.Length">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.ByteArrayDataSource.CreateReader(System.Byte[])">
+            <summary>
+            Constructs a new binary stream reader on the provided byte array.
+            </summary>
+            <param name="data">The byte array to read.</param>
+            <returns>The stream reader.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.ByteArrayDataSource.IsValidAddress(System.UInt64)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.ByteArrayDataSource.ReadBytes(System.UInt64,System.Byte[],System.Int32,System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.IO.ByteArrayFileService">
+            <summary>
+            Provides an implementation of a <see cref="T:AsmResolver.IO.IFileService"/> that uses instances of
+            <see cref="T:AsmResolver.IO.ByteArrayInputFile"/> to represent opened files, and keeps track of any of the instances
+            it creates.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.ByteArrayFileService.GetOpenedFiles">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.ByteArrayFileService.OpenFile(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.ByteArrayFileService.OpenBytesAsFile(System.String,System.Byte[])">
+            <summary>
+            Assigns a file path to a byte array and opens it.
+            </summary>
+            <param name="filePath">The file path.</param>
+            <param name="contents">The contents of the file.</param>
+            <returns>The opened file.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.ByteArrayFileService.InvalidateFile(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.ByteArrayFileService.System#IDisposable#Dispose">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.IO.ByteArrayInputFile">
+            <summary>
+            Represents a file for which the data is represented by a byte array.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.ByteArrayInputFile.#ctor(System.String)">
+            <summary>
+            Creates a new file for the provided file path.
+            </summary>
+            <param name="filePath">The file path.</param>
+        </member>
+        <member name="M:AsmResolver.IO.ByteArrayInputFile.#ctor(System.Byte[])">
+            <summary>
+            Creates a new file for the provided raw contents.
+            </summary>
+            <param name="contents">The raw contents of the file.</param>
+        </member>
+        <member name="M:AsmResolver.IO.ByteArrayInputFile.#ctor(System.String,System.Byte[],System.UInt64)">
+            <summary>
+            Creates a new file for the provided file path and raw contents.
+            </summary>
+            <param name="filePath">The file path.</param>
+            <param name="data">The byte array to read from.</param>
+            <param name="baseAddress">The base address to use.</param>
+        </member>
+        <member name="P:AsmResolver.IO.ByteArrayInputFile.FilePath">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.IO.ByteArrayInputFile.Length">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.IO.ByteArrayInputFile.BaseAddress">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.ByteArrayInputFile.CreateReader(System.UInt64,System.UInt32,System.UInt32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.ByteArrayInputFile.System#IDisposable#Dispose">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.IO.DataSourceExtensions">
+            <summary>
+            Provides extension methods for <see cref="T:AsmResolver.IO.IDataSource"/>.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.IO.DataSourceSlice">
+            <summary>
+            Represents a data source that only exposes a part (slice) of another data source.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.DataSourceSlice.#ctor(AsmResolver.IO.IDataSource,System.UInt64,System.UInt64)">
+            <summary>
+            Creates a new data source slice.
+            </summary>
+            <param name="source">The original data source to slice.</param>
+            <param name="start">The starting address.</param>
+            <param name="length">The number of bytes.</param>
+            <exception cref="T:System.ArgumentOutOfRangeException">
+            Occurs when <paramref name="start"/> and/or <paramref name="length"/> result in addresses that are invalid
+            in the original data source.
+            </exception>
+        </member>
+        <member name="P:AsmResolver.IO.DataSourceSlice.BaseAddress">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.IO.DataSourceSlice.Length">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.IO.DataSourceSlice.Item(System.UInt64)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.DataSourceSlice.IsValidAddress(System.UInt64)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.DataSourceSlice.ReadBytes(System.UInt64,System.Byte[],System.Int32,System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.IO.DisplacedDataSource">
+            <summary>
+            Represents a data source that was moved in memory to a different address.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.DisplacedDataSource.#ctor(AsmResolver.IO.IDataSource,System.Int64)">
+            <summary>
+            Creates a new displace data source.
+            </summary>
+            <param name="dataSource">The original data source that was moved.</param>
+            <param name="displacement">The number of bytes the data source was shifted by.</param>
+            <exception cref="T:System.ArgumentNullException">Occurs when <paramref name="dataSource"/> is <c>null</c>.</exception>
+        </member>
+        <member name="P:AsmResolver.IO.DisplacedDataSource.BaseAddress">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.IO.DisplacedDataSource.Item(System.UInt64)">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.IO.DisplacedDataSource.Length">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.DisplacedDataSource.IsValidAddress(System.UInt64)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.DisplacedDataSource.ReadBytes(System.UInt64,System.Byte[],System.Int32,System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.IO.IDataSource">
+            <summary>
+            Provides members for reading data from a data source.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.IDataSource.BaseAddress">
+            <summary>
+            Gets the first byte address of the data source that is accessible.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.IDataSource.Item(System.UInt64)">
+            <summary>
+            Reads a single byte at the provided address.
+            </summary>
+            <param name="address">The address to read from.</param>
+        </member>
+        <member name="P:AsmResolver.IO.IDataSource.Length">
+            <summary>
+            Gets the number of bytes accessible in the data source.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.IDataSource.IsValidAddress(System.UInt64)">
+            <summary>
+            Determines whether the provided address is a valid address in the data source.
+            </summary>
+            <param name="address">The address to verify.</param>
+            <returns><c>true</c> if the address is valid, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.IDataSource.ReadBytes(System.UInt64,System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Reads a block of data from the data source.
+            </summary>
+            <param name="address">The starting address to read from.</param>
+            <param name="buffer">The buffer that receives the read bytes.</param>
+            <param name="index">The index into the buffer to start writing at.</param>
+            <param name="count">The number of bytes to read.</param>
+            <returns>The number of bytes that were read.</returns>
+        </member>
+        <member name="T:AsmResolver.IO.IFileService">
+            <summary>
+            Provides members for opening and managing files for reading.
+            </summary>
+            <remarks>
+            The file service is the owner of any of the <see cref="T:AsmResolver.IO.IInputFile"/> objects it produces. Disposing an
+            instance of this interface results in all files opened by this service to be closed and disposed as well.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.IO.IFileService.GetOpenedFiles">
+            <summary>
+            Gets a collection of files currently opened by this file service.
+            </summary>
+            <returns>The paths of the files that were opened.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.IFileService.OpenFile(System.String)">
+            <summary>
+            Opens a file at the provided file path.
+            </summary>
+            <param name="filePath">The path to the file to open.</param>
+            <returns>The opened file.</returns>
+        </member>
+        <member name="M:AsmResolver.IO.IFileService.InvalidateFile(System.String)">
+            <summary>
+            If the provided file path was opened by this file service, closes the provided file and removes it from
+            the cache.
+            </summary>
+            <param name="filePath">The path of the file to close.</param>
+        </member>
+        <member name="T:AsmResolver.IO.IInputFile">
+            <summary>
+            Represents a file from which binary data can be read.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.IInputFile.FilePath">
+            <summary>
+            Gets the path to the file on the disk, or null if this file was created from memory.
+            </summary>
+            <remarks>
+            If this value is <c>null</c>, then the file fully resides in memory.
+            </remarks>
+        </member>
+        <member name="P:AsmResolver.IO.IInputFile.Length">
+            <summary>
+            Gets the maximum length a single binary stream reader produced by this factory can have.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.IInputFile.BaseAddress">
+            <summary>
+            Gets the base address of the data in this input.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.IInputFile.CreateReader(System.UInt64,System.UInt32,System.UInt32)">
+            <summary>
+            Creates a new binary reader at the provided address.
+            </summary>
+            <param name="address">The raw address to start reading from.</param>
+            <param name="rva">The virtual address (relative to the image base) that is associated to the raw address.</param>
+            <param name="length">The number of bytes to read.</param>
+            <returns>The created reader.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">Occurs if <paramref name="address"/> is not a valid address.</exception>
+            <exception cref="T:System.IO.EndOfStreamException">Occurs if <paramref name="length"/> is too long.</exception>
+        </member>
+        <member name="T:AsmResolver.IO.IOExtensions">
+            <summary>
+            Provides extension methods to various I/O related interfaces.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.IOExtensions.CreateReader(AsmResolver.IO.IInputFile)">
+            <summary>
+            Creates a binary reader for the entire address space.
+            </summary>
+            <param name="factory">The factory to use.</param>
+            <returns>The constructed reader.</returns>
+        </member>
+        <member name="T:AsmResolver.IO.MemoryMappedFileService">
+            <summary>
+            Provides an implementation of the <see cref="T:AsmResolver.IO.IFileService"/> interface, which maps any requested file into
+            memory, and keeps track of any of the instances it creates.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.MemoryMappedFileService.GetOpenedFiles">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.MemoryMappedFileService.OpenFile(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.MemoryMappedFileService.InvalidateFile(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.MemoryMappedFileService.Dispose">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.IO.MemoryMappedInputFile">
+            <summary>
+            Represents an input file that is mapped in memory.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.MemoryMappedInputFile.#ctor(System.String)">
+            <summary>
+            Creates a new reader factory for the provided file.
+            </summary>
+            <param name="filePath">The path to the file to read.</param>
+        </member>
+        <member name="P:AsmResolver.IO.MemoryMappedInputFile.FilePath">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.IO.MemoryMappedInputFile.Length">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.IO.MemoryMappedInputFile.BaseAddress">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.MemoryMappedInputFile.CreateReader(System.UInt64,System.UInt32,System.UInt32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.MemoryMappedInputFile.Dispose">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.IO.MemoryStreamWriterPool">
+            <summary>
+            Provides a pool of reusable instances of <see cref="T:AsmResolver.IO.BinaryStreamWriter"/> that are meant to be used for
+            constructing byte arrays.
+            </summary>
+            <remarks>
+            This class is thread-safe. All threads are allowed to rent and return writers from this pool simultaneously.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.IO.MemoryStreamWriterPool.Rent">
+            <summary>
+            Rents a single binary stream writer.
+            </summary>
+            <returns>The writer.</returns>
+        </member>
+        <member name="T:AsmResolver.IO.MemoryStreamWriterPool.RentedWriter">
+            <summary>
+            Represents a single instance of a <see cref="T:AsmResolver.IO.BinaryStreamWriter"/> that is rented by a writer pool.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.MemoryStreamWriterPool.RentedWriter.Pool">
+            <summary>
+            Gets the pool the writer was rented from.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.MemoryStreamWriterPool.RentedWriter.Writer">
+            <summary>
+            Gets the writer instance.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.MemoryStreamWriterPool.RentedWriter.GetData">
+            <summary>
+            Gets the data that was written to the temporary stream.
+            </summary>
+            <returns>The data</returns>
+        </member>
+        <member name="M:AsmResolver.IO.MemoryStreamWriterPool.RentedWriter.Dispose">
+            <summary>
+            Returns the stream writer to the pool.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.IO.StreamDataSource">
+            <summary>
+            Provides a <see cref="T:AsmResolver.IO.IDataSource"/> wrapper around a raw <see cref="T:System.IO.Stream"/>.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.StreamDataSource.#ctor(System.IO.Stream)">
+            <summary>
+            Creates a new instance of the <see cref="T:AsmResolver.IO.StreamDataSource"/> class.
+            </summary>
+            <param name="stream">The <see cref="T:System.IO.Stream"/> to read from.</param>
+        </member>
+        <member name="M:AsmResolver.IO.StreamDataSource.#ctor(System.IO.Stream,System.UInt64)">
+            <summary>
+            Creates a new instance of the <see cref="T:AsmResolver.IO.StreamDataSource"/> class.
+            </summary>
+            <param name="stream">The <see cref="T:System.IO.Stream"/> to read from.</param>
+            <param name="baseAddress">The base address to use.</param>
+        </member>
+        <member name="P:AsmResolver.IO.StreamDataSource.BaseAddress">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.IO.StreamDataSource.Item(System.UInt64)">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.IO.StreamDataSource.Length">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.StreamDataSource.IsValidAddress(System.UInt64)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.StreamDataSource.ReadBytes(System.UInt64,System.Byte[],System.Int32,System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.IO.UncachedFileService">
+            <summary>
+            Provides a basic singleton implementation of a <see cref="T:AsmResolver.IO.IFileService"/> that produces instances of the
+            <see cref="T:AsmResolver.IO.ByteArrayInputFile"/> class, and does no tracking and caching of any of the opened files.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.IO.UncachedFileService.Instance">
+            <summary>
+            Gets the singleton instance of the file service.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.UncachedFileService.AsmResolver#IO#IFileService#GetOpenedFiles">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.UncachedFileService.OpenFile(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.UncachedFileService.AsmResolver#IO#IFileService#InvalidateFile(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.UncachedFileService.System#IDisposable#Dispose">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.IO.UnmanagedDataSource">
+            <summary>
+            Represents a data source that obtains its data from a block of unmanaged memory.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.UnmanagedDataSource.#ctor(System.IntPtr,System.UInt64)">
+            <summary>
+            Creates a new instance of the <see cref="T:AsmResolver.IO.UnmanagedDataSource"/> class.
+            </summary>
+            <param name="basePointer">The base pointer to start reading from.</param>
+            <param name="length">The total length of the data source.</param>
+        </member>
+        <member name="M:AsmResolver.IO.UnmanagedDataSource.#ctor(System.Void*,System.UInt64)">
+            <summary>
+            Creates a new instance of the <see cref="T:AsmResolver.IO.UnmanagedDataSource"/> class.
+            </summary>
+            <param name="basePointer">The base pointer to start reading from.</param>
+            <param name="length">The total length of the data source.</param>
+        </member>
+        <member name="P:AsmResolver.IO.UnmanagedDataSource.BaseAddress">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.IO.UnmanagedDataSource.Item(System.UInt64)">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.IO.UnmanagedDataSource.Length">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.UnmanagedDataSource.IsValidAddress(System.UInt64)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.UnmanagedDataSource.ReadBytes(System.UInt64,System.Byte[],System.Int32,System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.IO.ZeroesDataSource">
+            <summary>
+            Implements a data source that reads zero bytes.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IO.ZeroesDataSource.#ctor(System.UInt64)">
+            <summary>
+            Creates a new zeroes data source.
+            </summary>
+            <param name="length">The number of zero bytes.</param>
+        </member>
+        <member name="M:AsmResolver.IO.ZeroesDataSource.#ctor(System.UInt64,System.UInt64)">
+            <summary>
+            Creates a new zeroes data source.
+            </summary>
+            <param name="baseAddress">The base address of the segment.</param>
+            <param name="length">The number of zero bytes.</param>
+        </member>
+        <member name="P:AsmResolver.IO.ZeroesDataSource.BaseAddress">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.IO.ZeroesDataSource.Item(System.UInt64)">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.IO.ZeroesDataSource.Length">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.ZeroesDataSource.IsValidAddress(System.UInt64)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.IO.ZeroesDataSource.ReadBytes(System.UInt64,System.Byte[],System.Int32,System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.IReadableSegment">
+            <summary>
+            Represents a segment with contents that is readable by a binary stream reader.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IReadableSegment.CreateReader(System.UInt64,System.UInt32)">
+            <summary>
+            Creates a new binary reader that reads the raw contents of the segment.
+            </summary>
+            <param name="fileOffset">The starting file offset of the reader.</param>
+            <param name="size">The number of bytes to read.</param>
+            <returns>The created binary reader.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">Occurs when <paramref name="fileOffset"/> is not within the range of the segment.</exception>
+            <exception cref="T:System.IO.EndOfStreamException">Occurs when <paramref name="size"/> indicates a too large length.</exception>
+        </member>
+        <member name="T:AsmResolver.Extensions">
+            <summary>
+            Provides various extensions to AsmResolver related types.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Extensions.CreateReader(AsmResolver.IReadableSegment)">
+            <summary>
+            Creates a new binary reader that reads the raw contents of the segment.
+            </summary>
+            <param name="segment">The segment to read from.</param>
+            <returns>The created binary reader.</returns>
+        </member>
+        <member name="M:AsmResolver.Extensions.CreateReader(AsmResolver.IReadableSegment,System.UInt64)">
+            <summary>
+            Creates a new binary reader that reads the raw contents of the segment.
+            </summary>
+            <returns>The created binary reader.</returns>
+            <param name="segment">The segment to read from.</param>
+            <param name="fileOffset">The starting file offset of the reader.</param>
+        </member>
+        <member name="M:AsmResolver.Extensions.ToArray(AsmResolver.IReadableSegment)">
+            <summary>
+            Reads the segment and puts the data in a byte array.
+            </summary>
+            <param name="segment">The segment to read.</param>
+            <returns>The byte array that was read.</returns>
+        </member>
+        <member name="M:AsmResolver.Extensions.Align(System.UInt32,System.UInt32)">
+            <summary>
+            Rounds the provided unsigned integer up to the nearest multiple of the provided alignment.
+            </summary>
+            <param name="value">The value to align.</param>
+            <param name="alignment">The alignment. Must be a power of 2.</param>
+            <returns>The aligned value.</returns>
+        </member>
+        <member name="M:AsmResolver.Extensions.Align(System.UInt64,System.UInt64)">
+            <summary>
+            Rounds the provided unsigned integer up to the nearest multiple of the provided alignment.
+            </summary>
+            <param name="value">The value to align.</param>
+            <param name="alignment">The alignment. Must be a power of 2.</param>
+            <returns>The aligned value.</returns>
+        </member>
+        <member name="M:AsmResolver.Extensions.GetCompressedSize(System.UInt32)">
+            <summary>
+            Computes the number of bytes the provided integer would require after compressing it using the integer
+            compression as specified in ECMA-335.
+            </summary>
+            <param name="value">The integer to determine the compressed size of.</param>
+            <returns>The number of bytes the value would require.</returns>
+        </member>
+        <member name="M:AsmResolver.Extensions.Get7BitEncodedSize(System.UInt32)">
+            <summary>
+            Computes the number of bytes the provided integer would require after compressing it using the integer
+            compression using the 7-bit encoding.
+            </summary>
+            <param name="value">The integer to determine the compressed size of.</param>
+            <returns>The number of bytes the value would require.</returns>
+        </member>
+        <member name="M:AsmResolver.Extensions.GetBinaryFormatterSize(System.String)">
+            <summary>
+            Computes the number of bytes required to represent the provided string as a binary formatted string.
+            </summary>
+            <param name="value">The string to measure.</param>
+            <returns>The number of bytes.</returns>
+        </member>
+        <member name="M:AsmResolver.Extensions.GetBinaryFormatterSize(System.String,System.Text.Encoding)">
+            <summary>
+            Computes the number of bytes required to represent the provided string as a binary formatted string.
+            </summary>
+            <param name="value">The string to measure.</param>
+            <param name="encoding">The encoding to use.</param>
+            <returns>The number of bytes.</returns>
+        </member>
+        <member name="M:AsmResolver.Extensions.CreateEscapedString(System.String)">
+            <summary>
+            Converts a string into an escaped string literal.
+            </summary>
+            <param name="literal">The string to convert.</param>
+            <returns>The escaped string.</returns>
+        </member>
+        <member name="M:AsmResolver.Extensions.ToReference(AsmResolver.ISegment)">
+            <summary>
+            Constructs a reference to the start of the segment.
+            </summary>
+            <param name="segment">The segment to reference.</param>
+            <returns>The reference.</returns>
+        </member>
+        <member name="M:AsmResolver.Extensions.ToReference(AsmResolver.ISegment,System.Int32)">
+            <summary>
+            Constructs a reference to an offset within the segment.
+            </summary>
+            <param name="segment">The segment to reference.</param>
+            <param name="additive">The offset within the segment to reference.</param>
+            <returns>The reference.</returns>
+        </member>
+        <member name="M:AsmResolver.Extensions.WriteIntoArray(AsmResolver.ISegment)">
+            <summary>
+            Serializes the segment by calling <see cref="M:AsmResolver.IWritable.Write(AsmResolver.IO.BinaryStreamWriter)"/> and writes the result into a byte array.
+            </summary>
+            <param name="segment">The segment to serialize to </param>
+            <returns>The resulting byte array.</returns>
+        </member>
+        <member name="M:AsmResolver.Extensions.WriteIntoArray(AsmResolver.ISegment,AsmResolver.IO.MemoryStreamWriterPool)">
+            <summary>
+            Serializes the segment by calling <see cref="M:AsmResolver.IWritable.Write(AsmResolver.IO.BinaryStreamWriter)"/> and writes the result into a byte array.
+            </summary>
+            <param name="segment">The segment to serialize to </param>
+            <param name="pool">The memory stream writer pool to rent temporary writers from.</param>
+            <returns>The resulting byte array.</returns>
+        </member>
+        <member name="M:AsmResolver.Extensions.AsPatchedSegment(AsmResolver.ISegment)">
+            <summary>
+            Wraps the provided segment into a <see cref="T:AsmResolver.Patching.PatchedSegment"/>, making it eligible for applying
+            post-serialization patches.
+            </summary>
+            <param name="segment">The segment to wrap.</param>
+            <returns>
+            The wrapped segment, or <paramref name="segment"/> if it is already an instance of
+            <see cref="T:AsmResolver.Patching.PatchedSegment"/>.
+            </returns>
+        </member>
+        <member name="M:AsmResolver.Extensions.AsPatchedSegment(AsmResolver.ISegment,System.Boolean)">
+            <summary>
+            Wraps the provided segment into a <see cref="T:AsmResolver.Patching.PatchedSegment"/>, making it eligible for applying
+            post-serialization patches.
+            </summary>
+            <param name="segment">The segment to wrap.</param>
+            <param name="alwaysCreateNew">
+            Indicates whether the segment should always be wrapped into a new instance of <see cref="T:AsmResolver.Patching.PatchedSegment"/>,
+            regardless of whether <paramref name="segment"/> is already an instance of
+            <see cref="T:AsmResolver.Patching.PatchedSegment"/> or not.
+            </param>
+            <returns>
+            The wrapped segment, or <paramref name="segment"/> if it is already an instance of
+            <see cref="T:AsmResolver.Patching.PatchedSegment"/> and <paramref name="alwaysCreateNew"/> is set to <c>true</c>.
+            </returns>
+        </member>
+        <member name="T:AsmResolver.ISegment">
+            <summary>
+            Represents a single chunk of data residing in a file or memory space.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.ISegment.CanUpdateOffsets">
+            <summary>
+            Determines whether this structure can be relocated to another offset or virtual address.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.ISegment.GetVirtualSize">
+            <summary>
+            Computes the number of bytes the segment will contain when it is mapped into memory.
+            </summary>
+            <returns>The number of bytes.</returns>
+        </member>
+        <member name="M:AsmResolver.ISegment.UpdateOffsets(AsmResolver.RelocationParameters@)">
+            <summary>
+            Assigns a new file and virtual offset to the segment and all its sub-components.
+            </summary>
+            <param name="parameters">The parameters containing the new offset information for the segment.</param>
+        </member>
+        <member name="T:AsmResolver.ISegmentReference">
+            <summary>
+            Represents a reference to a segment in a binary file, such as the beginning of a function or method body, or
+            a reference to a chunk of initialization data of a field.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.ISegmentReference.CanRead">
+            <summary>
+            Gets a value indicating whether the referenced segment can be read using a binary reader.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.ISegmentReference.IsBounded">
+            <summary>
+            Gets a value indicating whether the referenced segment is bounded to a fixed size.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.ISegmentReference.CreateReader">
+            <summary>
+            Creates a binary reader starting at the beginning of the segment.
+            </summary>
+            <returns>The binary reader.</returns>
+            <remarks>
+            When <see cref="P:AsmResolver.ISegmentReference.CanRead"/> is <c>false</c>, it is not guaranteed this method will succeed.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.ISegmentReference.GetSegment">
+            <summary>
+            Obtains the segment referenced by this reference.
+            </summary>
+            <returns>The segment.</returns>
+            <exception cref="T:System.InvalidOperationException">Occurs when the segment could not be obtained.</exception>
+            <remarks>
+            When <see cref="P:AsmResolver.ISegmentReference.IsBounded"/> is <c>false</c>, it is not guaranteed this method will succeed.
+            </remarks>
+        </member>
+        <member name="T:AsmResolver.ISegmentReferenceFactory">
+            <summary>
+            Provides members for resolving virtual addresses to a segment in a binary file.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.ISegmentReferenceFactory.GetReferenceToRva(System.UInt32)">
+            <summary>
+            Resolves the provided virtual address to a segment reference.
+            </summary>
+            <param name="rva">The virtual address of the segment.</param>
+            <returns>The reference to the segment.</returns>
+        </member>
+        <member name="T:AsmResolver.ISymbol">
+            <summary>
+            Represents objects that can be referenced by a virtual address.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.ISymbol.GetReference">
+            <summary>
+            Gets a reference the object.
+            </summary>
+            <returns>The object.</returns>
+        </member>
+        <member name="T:AsmResolver.IWritable">
+            <summary>
+            Represents a structure that can be serialized to an output stream.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.IWritable.GetPhysicalSize">
+            <summary>
+            Computes the number of bytes that the structure contains.
+            </summary>
+            <returns>The number of bytes.</returns>
+        </member>
+        <member name="M:AsmResolver.IWritable.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <summary>
+            Serializes the structure to an output stream.
+            </summary>
+            <param name="writer">The output stream to write the data to.</param>
+        </member>
+        <member name="T:AsmResolver.LazyVariable`1">
+            <summary>
+            Represents a variable that can be lazily initialized and/or assigned a new value.
+            </summary>
+            <typeparam name="TValue">The type of the values that the variable stores.</typeparam>
+            <remarks>
+            For performance reasons, this class locks on itself for thread synchronization. Therefore, consumers
+            should not lock instances of this class as a lock object to avoid dead-locks.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.LazyVariable`1.#ctor(`0)">
+            <summary>
+            Creates a new lazy variable and initialize it with a constant.
+            </summary>
+            <param name="value">The value to initialize the variable with.</param>
+        </member>
+        <member name="M:AsmResolver.LazyVariable`1.#ctor(System.Func{`0})">
+            <summary>
+            Creates a new lazy variable and delays the initialization of the default value.
+            </summary>
+            <param name="getValue">The method to execute when initializing the default value.</param>
+        </member>
+        <member name="P:AsmResolver.LazyVariable`1.IsInitialized">
+            <summary>
+            Gets a value indicating the value has been initialized.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.LazyVariable`1.Value">
+            <summary>
+            Gets or sets the value of the variable.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.LazyVariable`2">
+            <summary>
+            Represents a variable that can be lazily initialized and/or assigned a new value.
+            </summary>
+            <typeparam name="TOwner">The type of the owner of the variable.</typeparam>
+            <typeparam name="TValue">The type of the values that the variable stores.</typeparam>
+            <remarks>
+            For performance reasons, this class locks on itself for thread synchronization. Therefore, consumers
+            should not lock instances of this class as a lock object to avoid dead-locks.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.LazyVariable`2.#ctor(`1)">
+            <summary>
+            Creates a new lazy variable and initialize it with a constant.
+            </summary>
+            <param name="value">The value to initialize the variable with.</param>
+        </member>
+        <member name="M:AsmResolver.LazyVariable`2.#ctor(System.Func{`0,`1})">
+            <summary>
+            Creates a new lazy variable and delays the initialization of the default value.
+            </summary>
+            <param name="getValue">The method to execute when initializing the default value.</param>
+        </member>
+        <member name="P:AsmResolver.LazyVariable`2.IsInitialized">
+            <summary>
+            Gets a value indicating the value has been initialized.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.LazyVariable`2.GetValue(`0)">
+            <summary>
+            Obtains the value stored in the variable, initializing the variable if necessary.
+            </summary>
+            <param name="owner">The owner of the variable.</param>
+            <returns>The value.</returns>
+        </member>
+        <member name="M:AsmResolver.LazyVariable`2.SetValue(`1)">
+            <summary>
+            Assigns a new value to the variable.
+            </summary>
+            <param name="value">The new value.</param>
+        </member>
+        <member name="T:AsmResolver.OffsetRange">
+            <summary>
+            Represents an offset range determined by a start and end offset.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.OffsetRange.op_Implicit(System.ValueTuple{System.UInt64,System.UInt64})~AsmResolver.OffsetRange">
+            <summary>
+            Converts a value tuple of unsigned integers to an offset range.
+            </summary>
+            <param name="tuple">The tuple to convert.</param>
+            <returns>The constructed offset range.</returns>
+        </member>
+        <member name="M:AsmResolver.OffsetRange.#ctor(System.UInt64,System.UInt64)">
+            <summary>
+            Creates a new offset range.
+            </summary>
+            <param name="start">The start offset.</param>
+            <param name="end">The end offset, this offset is exclusive.</param>
+            <exception cref="T:System.ArgumentException">Occurs when the provided start offset is bigger than the end offset.</exception>
+        </member>
+        <member name="P:AsmResolver.OffsetRange.Start">
+            <summary>
+            Gets the start offset.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.OffsetRange.End">
+            <summary>
+            Gets the end offset. This offset is exclusive.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.OffsetRange.Length">
+            <summary>
+            Gets the length of the range.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.OffsetRange.IsEmpty">
+            <summary>
+            Gets a value indicating whether the range is empty.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.OffsetRange.Contains(System.UInt64)">
+            <summary>
+            Determines whether the provided offset falls within the range.
+            </summary>
+            <param name="offset">The offset.</param>
+            <returns><c>true</c> if the offset falls within the range, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.OffsetRange.Contains(AsmResolver.OffsetRange)">
+            <summary>
+            Determines whether the provided range is a subset of the range.
+            </summary>
+            <param name="range">The range.</param>
+            <returns><c>true</c> if the range is a subset, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.OffsetRange.Intersects(AsmResolver.OffsetRange)">
+            <summary>
+            Obtains the intersection between two ranges.
+            </summary>
+            <param name="other">The other range.</param>
+            <returns>The intersection.</returns>
+        </member>
+        <member name="M:AsmResolver.OffsetRange.Intersect(AsmResolver.OffsetRange)">
+            <summary>
+            Determines whether the current range intersects with the provided range.
+            </summary>
+            <param name="other">The other range.</param>
+            <returns><c>true</c> if the range intersects, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.OffsetRange.Exclude(AsmResolver.OffsetRange)">
+            <summary>
+            Determines the resulting ranges after excluding the provided range.
+            </summary>
+            <param name="other">The range to exclude.</param>
+            <returns>The resulting ranges.</returns>
+        </member>
+        <member name="M:AsmResolver.OffsetRange.Deconstruct(System.UInt64@,System.UInt64@)">
+            <summary>
+            Deconstructs an offset range into its individual components.
+            </summary>
+            <param name="start">The start offset.</param>
+            <param name="end">The exclusive end offset.</param>
+        </member>
+        <member name="M:AsmResolver.OffsetRange.ToString">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.Patching.BytesPatch">
+            <summary>
+            Patches an instance of <see cref="T:AsmResolver.ISegment"/> with a sequence of bytes.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Patching.BytesPatch.#ctor(System.UInt32,System.Byte[])">
+            <summary>
+            Creates a new bytes patch.
+            </summary>
+            <param name="relativeOffset">The offset to start writing at.</param>
+            <param name="newData">The new data.</param>
+        </member>
+        <member name="P:AsmResolver.Patching.BytesPatch.RelativeOffset">
+            <summary>
+            Gets the offset relative to the start of the segment to start writing at.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Patching.BytesPatch.NewData">
+            <summary>
+            Gets the data to write.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Patching.BytesPatch.UpdateOffsets(AsmResolver.RelocationParameters@)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Patching.BytesPatch.Apply(AsmResolver.Patching.PatchContext@)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.Patching.IPatch">
+            <summary>
+            Provides a mechanism for patching an instance of <see cref="T:AsmResolver.ISegment"/> after it was serialized into its
+            binary representation.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Patching.IPatch.UpdateOffsets(AsmResolver.RelocationParameters@)">
+            <summary>
+            Assigns a new file and virtual offset to the segment and all its sub-components.
+            </summary>
+            <param name="parameters">The parameters containing the new offset information for the segment.</param>
+        </member>
+        <member name="M:AsmResolver.Patching.IPatch.Apply(AsmResolver.Patching.PatchContext@)">
+            <summary>
+            Applies the patch.
+            </summary>
+            <param name="context">The context in which to</param>
+        </member>
+        <member name="T:AsmResolver.Patching.PatchContext">
+            <summary>
+            Provides members describing the context in which a patch may be situated in.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Patching.PatchContext.#ctor(AsmResolver.ISegment,System.UInt64,System.UInt64,AsmResolver.IO.BinaryStreamWriter)">
+            <summary>
+            Creates a new instance of the <see cref="T:AsmResolver.Patching.PatchContext"/> structure.
+            </summary>
+            <param name="segment">The segment to be patched.</param>
+            <param name="imageBase">The image base to assume while patching.</param>
+            <param name="writerBase">The offset the writer actually started writing the segment at.</param>
+            <param name="writer">The object responsible for writing the patches.</param>
+        </member>
+        <member name="P:AsmResolver.Patching.PatchContext.Segment">
+            <summary>
+            Gets the segment to be patched.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Patching.PatchContext.ImageBase">
+            <summary>
+            Gets the image base that is assumed while patching.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Patching.PatchContext.WriterBase">
+            <summary>
+            Gets the actual offset the writer started writing the segment at.
+            </summary>
+            <remarks>
+            This property is in most cases equivalent to <c>Segment.Offset</c>. However, callers may be calling
+            <see cref="M:AsmResolver.Patching.PatchedSegment.Write(AsmResolver.IO.BinaryStreamWriter)"/> with a <see cref="T:AsmResolver.IO.BinaryStreamWriter"/> that is not writing the entire
+            enclosing file (e.g., when calling <see cref="M:AsmResolver.Extensions.WriteIntoArray(AsmResolver.ISegment)"/>).
+            Implementations of <see cref="T:AsmResolver.Patching.IPatch"/> should therefore always prefer <see cref="P:AsmResolver.Patching.PatchContext.WriterBase"/> over
+            <c>Segment.Offset</c> when adjusting the current offset of <see cref="P:AsmResolver.Patching.PatchContext.Writer"/>.
+            </remarks>
+        </member>
+        <member name="P:AsmResolver.Patching.PatchContext.Writer">
+            <summary>
+            Gets the object responsible for writing the patches.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.Patching.PatchedSegment">
+            <summary>
+            Provides a wrapper around an instance of a <see cref="T:AsmResolver.ISegment"/> that patches its binary representation
+            while it is being serialized to an output stream.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Patching.PatchedSegment.#ctor(AsmResolver.ISegment)">
+            <summary>
+            Wraps a segment into a new instance of the <see cref="T:AsmResolver.Patching.PatchedSegment"/> class.
+            </summary>
+            <param name="contents">The segment to patch.</param>
+        </member>
+        <member name="P:AsmResolver.Patching.PatchedSegment.Contents">
+            <summary>
+            Gets the original segment that is being patched.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Patching.PatchedSegment.Patches">
+            <summary>
+            Gets a list of patches to apply to the segment.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Patching.PatchedSegment.Offset">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.Patching.PatchedSegment.Rva">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.Patching.PatchedSegment.CanUpdateOffsets">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Patching.PatchedSegment.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Patching.PatchedSegment.GetVirtualSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Patching.PatchedSegment.UpdateOffsets(AsmResolver.RelocationParameters@)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Patching.PatchedSegment.CreateReader(System.UInt64,System.UInt32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Patching.PatchedSegment.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Patching.PatchedSegment.Patch(AsmResolver.Patching.IPatch)">
+            <summary>
+            Adds a patch to the list of patches to apply.
+            </summary>
+            <param name="patch">The patch to apply.</param>
+            <returns>The current <see cref="T:AsmResolver.Patching.PatchedSegment"/> instance.</returns>
+        </member>
+        <member name="M:AsmResolver.Patching.PatchedSegment.Patch(System.UInt32,System.Byte[])">
+            <summary>
+            Adds a bytes patch to the list of patches to apply.
+            </summary>
+            <param name="relativeOffset">The offset to start patching at, relative to the start of the segment.</param>
+            <param name="newData">The new data to write.</param>
+            <returns>The current <see cref="T:AsmResolver.Patching.PatchedSegment"/> instance.</returns>
+        </member>
+        <member name="M:AsmResolver.Patching.PatchedSegment.Patch(System.UInt32,AsmResolver.ISegment)">
+            <summary>
+            Adds a segment patch to the list of patches to apply.
+            </summary>
+            <param name="relativeOffset">The offset to start patching at, relative to the start of the base segment.</param>
+            <param name="newSegment">The new segment to write.</param>
+            <returns>The current <see cref="T:AsmResolver.Patching.PatchedSegment"/> instance.</returns>
+        </member>
+        <member name="T:AsmResolver.Patching.SegmentPatch">
+            <summary>
+            Patches an instance of <see cref="T:AsmResolver.ISegment"/> with the contents of a file segment.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Patching.SegmentPatch.#ctor(System.UInt32,AsmResolver.ISegment)">
+            <summary>
+            Creates a new segment patch.
+            </summary>
+            <param name="relativeOffset">The offset to start writing at.</param>
+            <param name="segment">The new segment.</param>
+        </member>
+        <member name="P:AsmResolver.Patching.SegmentPatch.RelativeOffset">
+            <summary>
+            Gets the offset relative to the start of the segment to start writing at.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Patching.SegmentPatch.Segment">
+            <summary>
+            Gets the data to write.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Patching.SegmentPatch.UpdateOffsets(AsmResolver.RelocationParameters@)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Patching.SegmentPatch.Apply(AsmResolver.Patching.PatchContext@)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.RelativeReference">
+            <summary>
+            Represents a pointer or reference that is relative to the beginning of another segment or structure.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.RelativeReference.#ctor(AsmResolver.IOffsetProvider,System.Int32)">
+            <summary>
+            Creates a new relative reference.
+            </summary>
+            <param name="base">The segment the reference is relative to.</param>
+            <param name="additive">The number of bytes to skip after the beginning of the segment.</param>
+        </member>
+        <member name="P:AsmResolver.RelativeReference.Base">
+            <summary>
+            Gets the segment or structure that this reference is relative to.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.RelativeReference.Additive">
+            <summary>
+            Gets the number of bytes to skip after the beginning of the segment indicated by <see cref="P:AsmResolver.RelativeReference.Base"/>.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.RelativeReference.Offset">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.RelativeReference.Rva">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.RelativeReference.CanRead">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.RelativeReference.IsBounded">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.RelativeReference.CreateReader">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.RelativeReference.GetSegment">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.RelativeReference.ToString">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.RelocationParameters">
+            <summary>
+            Provides parameters for relocating a segment to a new offset-rva pair.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.RelocationParameters.#ctor(System.UInt64,System.UInt32)">
+            <summary>
+            Creates new relocation parameters.
+            </summary>
+            <param name="offset">The new offset of the segment.</param>
+            <param name="rva">The new virtual address of the segment, relative to the image base.</param>
+        </member>
+        <member name="M:AsmResolver.RelocationParameters.#ctor(System.UInt64,System.UInt64,System.UInt32,System.Boolean)">
+            <summary>
+            Creates new relocation parameters.
+            </summary>
+            <param name="imageBase">The base address of the image the segment is located in.</param>
+            <param name="offset">The new offset of the segment.</param>
+            <param name="rva">The new virtual address of the segment, relative to the image base.</param>
+            <param name="is32Bit"><c>true</c> if the image is targeting 32-bit images, <c>false</c> for 64-bit images.</param>
+        </member>
+        <member name="P:AsmResolver.RelocationParameters.ImageBase">
+            <summary>
+            Gets the image base that is assumed when relocating the segment.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.RelocationParameters.Offset">
+            <summary>
+            Gets the new physical offset of the segment.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.RelocationParameters.Rva">
+            <summary>
+            Gets the new virtual address of the segment, relative to the image base.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.RelocationParameters.Is32Bit">
+            <summary>
+            Gets a value indicating whether the image is targeting 32-bit machines.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.RelocationParameters.Is64Bit">
+            <summary>
+            Gets a value indicating whether the image is targeting 64-bit machines.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.RelocationParameters.WithOffsetRva(System.UInt64,System.UInt32)">
+            <summary>
+            Copies the current relocation parameters, and assigns a new offset and relative virtual address.
+            </summary>
+            <param name="offset">The new offset.</param>
+            <param name="rva">The new relative virtual address.</param>
+        </member>
+        <member name="M:AsmResolver.RelocationParameters.Align(System.UInt32)">
+            <summary>
+            Aligns the current offset and virtual address to the nearest multiple of the provided alignment.
+            </summary>
+            <param name="alignment">The alignment.</param>
+        </member>
+        <member name="M:AsmResolver.RelocationParameters.WithAdvance(System.UInt32)">
+            <summary>
+            Advances the current offset and virtual address by the provided byte count.
+            </summary>
+            <param name="count">The number of bytes to advance with.</param>
+            <returns>The new relocation parameters.</returns>
+        </member>
+        <member name="M:AsmResolver.RelocationParameters.Advance(System.UInt32)">
+            <summary>
+            Advances the current offset and virtual address by the provided byte count.
+            </summary>
+            <param name="count">The number of bytes to advance with.</param>
+            <returns>The new relocation parameters.</returns>
+        </member>
+        <member name="M:AsmResolver.RelocationParameters.Advance(System.UInt32,System.UInt32)">
+            <summary>
+            Advances the current offset and virtual address by the provided byte count.
+            </summary>
+            <param name="physicalCount">The number of bytes to advance the physical offset with.</param>
+            <param name="virtualCount">The number of bytes to advance the virtual address with.</param>
+        </member>
+        <member name="M:AsmResolver.RelocationParameters.ToString">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.SegmentBase">
+            <summary>
+            Provides a base for a segment in a file that can be relocated.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.SegmentBase.Offset">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.SegmentBase.Rva">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.SegmentBase.CanUpdateOffsets">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.SegmentBase.UpdateOffsets(AsmResolver.RelocationParameters@)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.SegmentBase.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.SegmentBase.GetVirtualSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.SegmentBase.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.SegmentBuilder">
+            <summary>
+            Represents a collection of segments concatenated (and aligned) after each other.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.SegmentBuilder.Count">
+            <summary>
+            Gets the number of sub segments that are stored into the segment.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.SegmentBuilder.Offset">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.SegmentBuilder.Rva">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.SegmentBuilder.CanUpdateOffsets">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.SegmentBuilder.IsEmpty">
+            <summary>
+            Gets a value indicating whether the collection of concatenated segments is empty.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.SegmentBuilder.Add(AsmResolver.ISegment)">
+            <summary>
+            Adds the provided segment with no alignment.
+            </summary>
+            <param name="segment">The segment to add.</param>
+        </member>
+        <member name="M:AsmResolver.SegmentBuilder.Add(AsmResolver.ISegment,System.UInt32)">
+            <summary>
+            Adds the provided segment to the offset that is the next multiple of the provided alignment.
+            </summary>
+            <param name="segment">The segment to add.</param>
+            <param name="alignment">The alignment of the segment.</param>
+        </member>
+        <member name="M:AsmResolver.SegmentBuilder.UpdateOffsets(AsmResolver.RelocationParameters@)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.SegmentBuilder.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.SegmentBuilder.GetVirtualSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.SegmentBuilder.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.SegmentBuilder.GetEnumerator">
+            <summary>
+            Returns an object that enumerates all segments in the segment builder.
+            </summary>
+            <returns>The enumerator.</returns>
+        </member>
+        <member name="T:AsmResolver.SegmentReference">
+            <summary>
+            Provides a base implementation for a reference to a segment in a binary file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.SegmentReference.Null">
+            <summary>
+            Represents the null reference.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.SegmentReference.#ctor(AsmResolver.ISegment)">
+            <summary>
+            Creates a new reference to the provided segment.
+            </summary>
+            <param name="segment">The segment to reference.</param>
+        </member>
+        <member name="P:AsmResolver.SegmentReference.Offset">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.SegmentReference.Rva">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.SegmentReference.IsBounded">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.SegmentReference.CanRead">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.SegmentReference.Segment">
+            <summary>
+            Gets the referenced segment.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.SegmentReference.CreateReader">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.SegmentReference.ToString">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.Shims.ArrayShim">
+            <summary>
+            Provides compatibility shims for the <see cref="T:System.Array"/> class for builds that target older .NET framework versions.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Shims.ArrayShim.Empty``1">
+            <summary>
+            Obtains a singleton instance of an empty array of the provided type.
+            </summary>
+            <typeparam name="T">The type to get the empty array for.</typeparam>
+            <returns>The empty array.</returns>
+        </member>
+        <member name="M:AsmResolver.Shims.ArrayShim.Contains``1(``0[],``0)">
+            <summary>
+            Determines whether the provided element exists in the array.
+            </summary>
+            <param name="self">The array to search in.</param>
+            <param name="value">The value to search.</param>
+            <typeparam name="T">The type of elements stored in the array.</typeparam>
+            <returns><c>true</c> if the element exists, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="T:AsmResolver.Shims.PathShim">
+            <summary>
+            Provides compatibility shims for the <see cref="T:System.IO.Path"/> class for builds that target older .NET framework versions.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Shims.PathShim.Combine(System.String,System.String)">
+            <summary>
+            Combines two strings into a path.
+            </summary>
+            <param name="path1">The first path.</param>
+            <param name="path2">The second path.</param>
+            <returns>The combined paths.</returns>
+        </member>
+        <member name="M:AsmResolver.Shims.PathShim.Combine(System.String,System.String,System.String)">
+            <summary>
+            Combines three strings into a path.
+            </summary>
+            <param name="path1">The first path.</param>
+            <param name="path2">The second path.</param>
+            <param name="path3">The third path.</param>
+            <returns>The combined paths.</returns>
+        </member>
+        <member name="T:AsmResolver.Shims.RuntimeInformationShim">
+            <summary>
+            Provides compatibility shims for the RuntimeInformation class for builds that target older .NET framework versions.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Shims.RuntimeInformationShim.IsRunningOnWindows">
+            <summary>
+            Gets a value indicating whether the current runtime runs on the Microsoft Windows operating system.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Shims.RuntimeInformationShim.IsRunningOnUnix">
+            <summary>
+            Gets a value indicating whether the current runtime runs on a Unix-based operating system.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Shims.RuntimeInformationShim.FrameworkDescription">
+            <summary>
+            Gets the name of the current runtime.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.Shims.StringShim">
+            <summary>
+            Provides compatibility shims for the <see cref="T:System.String"/> class for builds that target older .NET framework versions.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Shims.StringShim.Join``1(System.String,System.Collections.Generic.IEnumerable{``0})">
+            <summary>
+            Concatenates the members of a collection, using the specified separator between each member.
+            </summary>
+            <param name="separator">
+            The string to use as a separator. separator is included in the returned string only if values has more than one
+            element.
+            </param>
+            <param name="items">A collection that contains the objects to concatenate.</param>
+            <typeparam name="T">The type of the members of values.</typeparam>
+            <returns>
+            A string that consists of the elements of values delimited by the separator string. -or-
+            <see cref="F:System.String.Empty" /> if values has no elements.
+            </returns>
+        </member>
+        <member name="T:AsmResolver.Shims.VersionShim">
+            <summary>
+            Provides compatibility shims for the <see cref="T:System.Version"/> class for builds that target older .NET framework versions.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Shims.VersionShim.Parse(System.String)">
+            <summary>
+            Parses a version string.
+            </summary>
+            <param name="s">The version string</param>
+            <returns>The version</returns>
+        </member>
+        <member name="M:AsmResolver.Shims.VersionShim.TryParse(System.String,System.Version@)">
+            <summary>
+            Tries to convert the string representation of a version number to an equivalent Version object, and
+            returns a value that indicates whether the conversion succeeded.
+            </summary>
+            <param name="s">A string that contains a version number to convert.</param>
+            <param name="version">
+            When this method returns, contains the Version equivalent of the number that is contained in input, if the
+            conversion succeeded. If input is null, Empty, or if the conversion fails, result is null when the method
+            returns.
+            </param>
+            <returns>true if the input parameter was converted successfully; otherwise, false.</returns>
+        </member>
+        <member name="T:AsmResolver.Symbol">
+            <summary>
+            Represents a simple symbol that maps a name to a memory address.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Symbol.#ctor(AsmResolver.ISegmentReference)">
+            <summary>
+            Creates a new symbol.
+            </summary>
+            <param name="address">The address of the symbol.</param>
+        </member>
+        <member name="P:AsmResolver.Symbol.Address">
+            <summary>
+            Gets the address of the symbol.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Symbol.GetReference">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Symbol.ToString">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.ThrowErrorListener">
+            <summary>
+            Provides a singleton implementation for the <see cref="T:AsmResolver.IErrorListener"/> interface, that throws
+            every reported exception.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.ThrowErrorListener.Instance">
+            <summary>
+            Gets the singleton instance of the <see cref="T:AsmResolver.ThrowErrorListener"/> class.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.ThrowErrorListener.MarkAsFatal">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.ThrowErrorListener.RegisterException(System.Exception)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.Utf8String">
+            <summary>
+            Represents an immutable UTF-8 encoded string. This class supports preserving invalid UTF-8 code sequences.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.Utf8String.Empty">
+            <summary>
+            Represents the empty UTF-8 string.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.Utf8String.#ctor(System.Byte[])">
+            <summary>
+            Creates a new UTF-8 string from the provided raw data.
+            </summary>
+            <param name="data">The raw UTF-8 data.</param>
+        </member>
+        <member name="M:AsmResolver.Utf8String.#ctor(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Creates a new UTF-8 string from the provided raw data.
+            </summary>
+            <param name="data">The raw UTF-8 data.</param>
+            <param name="index">The starting index to read from.</param>
+            <param name="count">The number of bytes to read..</param>
+        </member>
+        <member name="M:AsmResolver.Utf8String.#ctor(System.String)">
+            <summary>
+            Creates a new UTF-8 string from the provided <see cref="T:System.String"/>.
+            </summary>
+            <param name="value">The string value to encode as UTF-8.</param>
+        </member>
+        <member name="P:AsmResolver.Utf8String.Value">
+            <summary>
+            Gets the string value represented by the UTF-8 bytes.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Utf8String.ByteCount">
+            <summary>
+            Gets the number of bytes used by the string.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Utf8String.Length">
+            <summary>
+            Gets the number of characters in the string.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.Utf8String.Item(System.Int32)">
+            <summary>
+            Gets a single character in the string.
+            </summary>
+            <param name="index">The character index.</param>
+        </member>
+        <member name="M:AsmResolver.Utf8String.GetBytes">
+            <summary>
+            Gets the raw UTF-8 bytes of the string.
+            </summary>
+            <returns>The bytes.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.GetBytes(System.Byte[],System.Int32,System.Int32)">
+            <summary>
+            Obtains the raw UTF-8 bytes of the string, and writes it into the provided buffer.
+            </summary>
+            <param name="buffer">The output buffer to receive the bytes in.</param>
+            <param name="index">The index into the output buffer to start writing at.</param>
+            <param name="length">The number of bytes to write.</param>
+            <returns>The actual number of bytes that were written.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.GetBytesUnsafe">
+            <summary>
+            Gets the underlying byte array of this string.
+            </summary>
+            <remarks>
+            This method should only be used if performance is critical. Modifying the returning array
+            <strong>will</strong> change the internal state of the string.
+            </remarks>
+            <returns>The bytes.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.CreateUnsafe(System.Byte[])">
+            <summary>
+            Creates a Utf8String given an underlying byte array.
+            </summary>
+            <param name="data">The underlying array to use in the Utf8String.</param>
+            /// <remarks>
+            This method should only be used if performance is critical. Modifying the given array
+            <strong>will</strong> change the internal state of the string.
+            </remarks>
+            <returns>The created Utf8String.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.Concat(AsmResolver.Utf8String)">
+            <summary>
+            Produces a new string that is the concatenation of the current string and the provided string.
+            </summary>
+            <param name="other">The other string to append.</param>
+            <returns>The new string.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.Concat(System.String)">
+            <summary>
+            Produces a new string that is the concatenation of the current string and the provided string.
+            </summary>
+            <param name="other">The other string to append..</param>
+            <returns>The new string.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.Concat(System.Byte[])">
+            <summary>
+            Produces a new string that is the concatenation of the current string and the provided byte array.
+            </summary>
+            <param name="other">The byte array to append.</param>
+            <returns>The new string.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.IndexOf(System.Char)">
+            <summary>
+            Gets the zero-based index of the first occurrence of the provided character in the string.
+            </summary>
+            <param name="needle">The character to search.</param>
+            <returns>The index, or -1 if the character is not present.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.IndexOf(System.Char,System.Int32)">
+            <summary>
+            Gets the zero-based index of the first occurrence of the provided character in the string.
+            </summary>
+            <param name="needle">The character to search.</param>
+            <param name="startIndex">The index to start searching at.</param>
+            <returns>The index, or -1 if the character is not present.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.IndexOf(System.String)">
+            <summary>
+            Gets the zero-based index of the first occurrence of the provided string in the string.
+            </summary>
+            <param name="needle">The string to search.</param>
+            <returns>The index, or -1 if the string is not present.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.IndexOf(System.String,System.Int32)">
+            <summary>
+            Gets the zero-based index of the first occurrence of the provided string in the string.
+            </summary>
+            <param name="needle">The string to search.</param>
+            <param name="startIndex">The index to start searching at.</param>
+            <returns>The index, or -1 if the string is not present.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.IndexOf(System.String,System.StringComparison)">
+            <summary>
+            Gets the zero-based index of the first occurrence of the provided string in the string.
+            </summary>
+            <param name="needle">The string to search.</param>
+            <param name="comparison">The comparison algorithm to use.</param>
+            <returns>The index, or -1 if the string is not present.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.IndexOf(System.String,System.Int32,System.StringComparison)">
+            <summary>
+            Gets the zero-based index of the first occurrence of the provided string in the string.
+            </summary>
+            <param name="needle">The string to search.</param>
+            <param name="startIndex">The index to start searching at.</param>
+            <param name="comparison">The comparison algorithm to use.</param>
+            <returns>The index, or -1 if the string is not present.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.LastIndexOf(System.Char)">
+            <summary>
+            Gets the zero-based index of the last occurrence of the provided character in the string.
+            </summary>
+            <param name="needle">The character to search.</param>
+            <returns>The index, or -1 if the character is not present.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.LastIndexOf(System.Char,System.Int32)">
+            <summary>
+            Gets the zero-based index of the last occurrence of the provided character in the string.
+            </summary>
+            <param name="needle">The character to search.</param>
+            <param name="startIndex">The index to start searching at.</param>
+            <returns>The index, or -1 if the character is not present.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.LastIndexOf(System.String)">
+            <summary>
+            Gets the zero-based index of the last occurrence of the provided string in the string.
+            </summary>
+            <param name="needle">The string to search.</param>
+            <returns>The index, or -1 if the string is not present.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.LastIndexOf(System.String,System.Int32)">
+            <summary>
+            Gets the zero-based index of the first occurrence of the provided string in the string.
+            </summary>
+            <param name="needle">The string to search.</param>
+            <param name="startIndex">The index to start searching at.</param>
+            <returns>The index, or -1 if the string is not present.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.LastIndexOf(System.String,System.StringComparison)">
+            <summary>
+            Gets the zero-based index of the last occurrence of the provided string in the string.
+            </summary>
+            <param name="needle">The string to search.</param>
+            <param name="comparison">The comparison algorithm to use.</param>
+            <returns>The index, or -1 if the string is not present.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.LastIndexOf(System.String,System.Int32,System.StringComparison)">
+            <summary>
+            Gets the zero-based index of the last occurrence of the provided string in the string.
+            </summary>
+            <param name="needle">The string to search.</param>
+            <param name="startIndex">The index to start searching at.</param>
+            <param name="comparison">The comparison algorithm to use.</param>
+            <returns>The index, or -1 if the string is not present.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.Contains(System.String)">
+            <summary>
+            Determines whether the string contains the provided string.
+            </summary>
+            <param name="needle">The string to search.</param>
+            <returns><c>true</c> if the string is present, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.IsNullOrEmpty(AsmResolver.Utf8String)">
+            <summary>
+            Determines whether the provided string is <c>null</c> or the empty string.
+            </summary>
+            <param name="value">The string to verify.</param>
+            <returns><c>true</c> if the string is <c>null</c> or empty, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.Equals(AsmResolver.Utf8String)">
+            <summary>
+            Determines whether two strings are considered equal.
+            </summary>
+            <param name="other">The other string.</param>
+            <returns><c>true</c> if the strings are considered equal, <c>false</c> otherwise.</returns>
+            <remarks>
+            This operation performs a byte-level comparison of the two strings.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.Utf8String.Equals(System.Byte[])">
+            <inheritdoc />
+            <remarks>
+            This operation performs a byte-level comparison of the two strings.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.Utf8String.Equals(System.String)">
+            <inheritdoc />
+            <remarks>
+            This operation performs a byte-level comparison of the two strings.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.Utf8String.CompareTo(AsmResolver.Utf8String)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Utf8String.GetEnumerator">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Utf8String.System#Collections#IEnumerable#GetEnumerator">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Utf8String.Equals(System.Object)">
+            <inheritdoc />
+            <remarks>
+            This operation performs a byte-level comparison of the two strings.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.Utf8String.GetHashCode">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Utf8String.ToString">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.Utf8String.op_Implicit(AsmResolver.Utf8String)~System.String">
+            <summary>
+            Converts a <see cref="T:AsmResolver.Utf8String"/> into a <see cref="T:System.String"/>.
+            </summary>
+            <param name="value">The UTF-8 string value to convert.</param>
+            <returns>The string.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.op_Implicit(System.String)~AsmResolver.Utf8String">
+            <summary>
+            Converts a <see cref="T:System.String"/> into an <see cref="T:AsmResolver.Utf8String"/>.
+            </summary>
+            <param name="value">The string value to convert.</param>
+            <returns>The new UTF-8 encoded string.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.op_Implicit(System.Byte[])~AsmResolver.Utf8String">
+            <summary>
+            Converts a raw sequence of bytes into an <see cref="T:AsmResolver.Utf8String"/>.
+            </summary>
+            <param name="data">The raw data to convert.</param>
+            <returns>The new UTF-8 encoded string.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.op_Equality(AsmResolver.Utf8String,AsmResolver.Utf8String)">
+            <summary>
+            Determines whether two UTF-8 encoded strings are considered equal.
+            </summary>
+            <param name="a">The first string.</param>
+            <param name="b">The second string.</param>
+            <returns><c>true</c> if the strings are considered equal, <c>false</c> otherwise.</returns>
+            <remarks>
+            This operation performs a byte-level comparison of the two strings.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.Utf8String.op_Inequality(AsmResolver.Utf8String,AsmResolver.Utf8String)">
+            <summary>
+            Determines whether two UTF-8 encoded strings are not considered equal.
+            </summary>
+            <param name="a">The first string.</param>
+            <param name="b">The second string.</param>
+            <returns><c>true</c> if the strings are not considered equal, <c>false</c> otherwise.</returns>
+            <remarks>
+            This operation performs a byte-level comparison of the two strings.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.Utf8String.op_Equality(AsmResolver.Utf8String,System.String)">
+            <summary>
+            Determines whether an UTF-8 encoded string is considered equal to the provided <see cref="T:System.String"/>.
+            </summary>
+            <param name="a">The first string.</param>
+            <param name="b">The second string.</param>
+            <returns><c>true</c> if the strings are considered equal, <c>false</c> otherwise.</returns>
+            <remarks>
+            This operation performs a string-level comparison.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.Utf8String.op_Inequality(AsmResolver.Utf8String,System.String)">
+            <summary>
+            Determines whether an UTF-8 encoded string is not equal to the provided <see cref="T:System.String"/>.
+            </summary>
+            <param name="a">The first string.</param>
+            <param name="b">The second string.</param>
+            <returns><c>true</c> if the strings are not considered equal, <c>false</c> otherwise.</returns>
+            <remarks>
+            This operation performs a string-level comparison.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.Utf8String.op_Equality(AsmResolver.Utf8String,System.Byte[])">
+            <summary>
+            Determines whether the underlying bytes of an UTF-8 encoded string is equal to the provided byte array.
+            </summary>
+            <param name="a">The UTF-8 string.</param>
+            <param name="b">The byte array.</param>
+            <returns><c>true</c> if the byte arrays are considered equal, <c>false</c> otherwise.</returns>
+            <remarks>
+            This operation performs a byte-level comparison.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.Utf8String.op_Inequality(AsmResolver.Utf8String,System.Byte[])">
+            <summary>
+            Determines whether the underlying bytes of an UTF-8 encoded string is not equal to the provided byte array.
+            </summary>
+            <param name="a">The UTF-8 string.</param>
+            <param name="b">The byte array.</param>
+            <returns><c>true</c> if the byte arrays are not considered equal, <c>false</c> otherwise.</returns>
+            <remarks>
+            This operation performs a byte-level comparison.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.Utf8String.op_Addition(AsmResolver.Utf8String,AsmResolver.Utf8String)">
+            <summary>
+            Concatenates two UTF-8 encoded strings together.
+            </summary>
+            <param name="a">The first string.</param>
+            <param name="b">The second string.</param>
+            <returns>The newly produced string.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.op_Addition(AsmResolver.Utf8String,System.String)">
+            <summary>
+            Concatenates two UTF-8 encoded strings together.
+            </summary>
+            <param name="a">The first string.</param>
+            <param name="b">The second string.</param>
+            <returns>The newly produced string.</returns>
+        </member>
+        <member name="M:AsmResolver.Utf8String.op_Addition(AsmResolver.Utf8String,System.Byte[])">
+            <summary>
+            Concatenates an UTF-8 encoded string together with a byte array.
+            </summary>
+            <param name="a">The string.</param>
+            <param name="b">The byte array.</param>
+            <returns>The newly produced string.</returns>
+        </member>
+        <member name="T:AsmResolver.VirtualAddress">
+            <summary>
+            Represents a (relative) virtual address in a file.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.VirtualAddress.#ctor(System.UInt32)">
+            <summary>
+            Wraps a relative virtual address into a <see cref="T:AsmResolver.ISegmentReference"/> object.
+            </summary>
+            <param name="rva"></param>
+        </member>
+        <member name="P:AsmResolver.VirtualAddress.Rva">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.VirtualAddress.CanRead">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.VirtualAddress.ToString">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.VirtualAddressFactory">
+            <summary>
+            Provides an implementation of a reference factory that constructs <see cref="T:AsmResolver.VirtualAddress"/> objects.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.VirtualAddressFactory.Instance">
+            <summary>
+            Gets the default instance of this factory.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.VirtualAddressFactory.GetReferenceToRva(System.UInt32)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.VirtualSegment">
+            <summary>
+            Represents a segment of code or data that might be resized at runtime.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.VirtualSegment.#ctor(AsmResolver.ISegment,System.UInt32)">
+            <summary>
+            Creates a new segment that is expanded at runtime to the provided virtual size.
+            </summary>
+            <param name="physicalContents">The physical contents of the segment.</param>
+            <param name="virtualSize">The new size at runtime.</param>
+        </member>
+        <member name="P:AsmResolver.VirtualSegment.PhysicalContents">
+            <summary>
+            Gets or sets the physical contents of the segment as it is stored on the disk.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.VirtualSegment.VirtualSize">
+            <summary>
+            Gets or sets the size of the segment after it is mapped into memory at runtime.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.VirtualSegment.Offset">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.VirtualSegment.Rva">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.VirtualSegment.CanUpdateOffsets">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.VirtualSegment.IsReadable">
+            <summary>
+            Gets a value indicating whether the physical contents of this segment is readable by a binary reader.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.VirtualSegment.UpdateOffsets(AsmResolver.RelocationParameters@)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.VirtualSegment.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.VirtualSegment.GetVirtualSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.VirtualSegment.CreateReader(System.UInt64,System.UInt32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.VirtualSegment.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.ZeroesSegment">
+            <summary>
+            Represents a segment containing zero bytes.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.ZeroesSegment.#ctor(System.UInt32)">
+            <summary>
+            Creates a new zeroes-filled segment.
+            </summary>
+            <param name="size">The number of zero bytes.</param>
+        </member>
+        <member name="P:AsmResolver.ZeroesSegment.Size">
+            <summary>
+            Gets the number of zero bytes that are stored in this segment.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.ZeroesSegment.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.ZeroesSegment.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.ZeroesSegment.CreateReader(System.UInt64,System.UInt32)">
+            <inheritdoc />
+        </member>
+    </members>
+</doc>

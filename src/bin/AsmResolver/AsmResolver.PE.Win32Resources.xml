@@ -1,0 +1,1144 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>AsmResolver.PE.Win32Resources</name>
+    </assembly>
+    <members>
+        <member name="T:AsmResolver.PE.Win32Resources.Icon.IconEntry">
+            <summary>
+            Represents a single icon entry in an icon group.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconEntry.#ctor">
+            <summary>
+            Initializes an empty icon entry.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconEntry.#ctor(System.UInt16,System.UInt32)">
+            <summary>
+            Creates a new icon entry with the provided identifier and language specifier.
+            </summary>
+            <param name="id">The identifier of the icon.</param>
+            <param name="lcid">The language identifier.</param>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconEntry.Id">
+            <summary>
+            Gets or sets the identifier of the icon.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconEntry.Lcid">
+            <summary>
+            Gets or sets the language identifier of the icon.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconEntry.Width">
+            <summary>
+            Gets or sets the width of the icon in pixels. A width of 0 indicates 256 pixels.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconEntry.Height">
+            <summary>
+            Gets or sets the height of the icon in pixels. A width of 0 indicates 256 pixels.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconEntry.ColorCount">
+            <summary>
+            Gets or sets the number of colors in the color palette. Should be 0 if the image does not use a color palette.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconEntry.Reserved">
+            <summary>
+            Reserved, should be zero.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconEntry.Planes">
+            <summary>
+            When the icon is in ICO format: Gets or sets the number of color planes. Should be 0 or 1.
+            When the icon is in CUR format: Gets or sets the horizontal coordinates of the hotspot in number of pixels from
+            the left.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconEntry.BitsPerPixel">
+            <summary>
+            When the icon is in ICO format: Gets or sets the number of bits per pixel.
+            When the icon is in CUR format: Gets or sets the vertical coordinates of the hotspot in number of pixels from
+            the top.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconEntry.PixelData">
+            <summary>
+            Gets or sets the raw pixel data of the icon.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconEntry.GetPixelData">
+            <summary>
+            Obtains the raw pixel data of the icon.
+            </summary>
+            <returns>The data.</returns>
+            <remarks>
+            This method is called upon initialization of the <see cref="P:AsmResolver.PE.Win32Resources.Icon.IconEntry.PixelData"/> property.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconEntry.Write(AsmResolver.PE.Win32Resources.ResourceDirectory,AsmResolver.IO.BinaryStreamWriter)">
+            <summary>
+            Serializes the icon entry to the provided output stream and inserts the icon pixel data into the provided
+            icons resource directory.
+            </summary>
+            <param name="entryDirectory">The icon entry directory to insert into.</param>
+            <param name="writer">The output stream.</param>
+            <exception cref="T:System.ArgumentException">Occurs when there is already an icon added with the same ID.</exception>
+            <exception cref="T:System.ArgumentNullException">Occurs when <see cref="P:AsmResolver.PE.Win32Resources.Icon.IconEntry.PixelData"/> is <c>nulL</c>.</exception>
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Icon.IconGroup">
+            <summary>
+            Represents a single icon group.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconGroup.#ctor(System.UInt32,System.UInt32)">
+            <summary>
+            Creates a new icon group.
+            </summary>
+            <param name="id">The identifier of the icon group.</param>
+            <param name="lcid">The language specifier of the icon group.</param>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconGroup.#ctor(System.String,System.UInt32)">
+            <summary>
+            Creates a new icon group.
+            </summary>
+            <param name="name">The identifier of the icon group.</param>
+            <param name="lcid">The language specifier of the icon group.</param>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconGroup.Id">
+            <summary>
+            Gets or sets the identifier of the icon.
+            </summary>
+            <remarks>
+            This value has no meaning if <see cref="P:AsmResolver.PE.Win32Resources.Icon.IconGroup.Name"/> is not <c>null</c>.
+            </remarks>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconGroup.Name">
+            <summary>
+            Gets or sets the name of the icon. When <c>null</c>, <see cref="P:AsmResolver.PE.Win32Resources.Icon.IconGroup.Id"/> is used instead.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconGroup.Lcid">
+            <summary>
+            Gets or sets the language specifier of the group.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconGroup.Reserved">
+            <summary>
+            Reserved, should be zero.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconGroup.Type">
+            <summary>
+            Gets or sets the type of icon that is stored in the group.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconGroup.Icons">
+            <summary>
+            Gets the icons stored in the group.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconGroup.GetIcons">
+            <summary>
+            Obtains the icons stored in the group.
+            </summary>
+            <returns>The icons.</returns>
+            <remarks>
+            This method is called upon initialization of the <see cref="P:AsmResolver.PE.Win32Resources.Icon.IconGroup.Icons"/> property.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconGroup.Write(AsmResolver.PE.Win32Resources.ResourceDirectory,AsmResolver.IO.BinaryStreamWriter)">
+            <summary>
+            Serializes the icon group and inserts all icons in the group into the provided resource directory.
+            </summary>
+            <param name="entryDirectory">The icon entry directory.</param>
+            <param name="writer">The output stream.</param>
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Icon.IconResource">
+            <summary>
+            Provides a high level view on icon and cursor resources stored in a PE image.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconResource.#ctor(AsmResolver.PE.Win32Resources.Icon.IconType)">
+            <summary>
+            Creates a new icon resource of the provided icon type.
+            </summary>
+            <param name="type">The icon type.</param>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconResource.Type">
+            <summary>
+            Gets the icon type the resource is storing.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Icon.IconResource.Groups">
+            <summary>
+            Gets the icon groups stored in the resource.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconResource.FromDirectory(AsmResolver.PE.Win32Resources.ResourceDirectory,AsmResolver.PE.Win32Resources.Icon.IconType)">
+            <summary>
+            Reads icons from the provided root resource directory of a PE image.
+            </summary>
+            <param name="rootDirectory">The root resource directory.</param>
+            <param name="type">The icon type.</param>
+            <returns>The resource, or <c>null</c> if no resource of the provided type was present.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconResource.GetGroup(System.UInt32)">
+            <summary>
+            Gets an icon group by its numeric identifier.
+            </summary>
+            <param name="id">The identifier.</param>
+            <returns>The group.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">Occurs when the group was not present.</exception>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconResource.GetGroup(System.String)">
+            <summary>
+            Gets an icon group by its string identifier.
+            </summary>
+            <param name="name">The identifier.</param>
+            <returns>The group.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">Occurs when the group was not present.</exception>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconResource.GetGroup(System.UInt32,System.UInt32)">
+            <summary>
+            Gets an icon group by its numeric identifier.
+            </summary>
+            <param name="id">The identifier.</param>
+            <param name="lcid">The language identifier.</param>
+            <returns>The group.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">Occurs when the group was not present.</exception>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconResource.GetGroup(System.String,System.UInt32)">
+            <summary>
+            Gets an icon group by its string identifier.
+            </summary>
+            <param name="name">The identifier.</param>
+            <param name="lcid">The language identifier.</param>
+            <returns>The group.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">Occurs when the group was not present.</exception>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconResource.TryGetGroup(System.UInt32,AsmResolver.PE.Win32Resources.Icon.IconGroup@)">
+            <summary>
+            Attempts to get an icon group by its numeric identifier.
+            </summary>
+            <param name="id">The identifier.</param>
+            <param name="group">The group, or <c>null</c> if none was found.</param>
+            <returns><c>true</c> if the group was found, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconResource.TryGetGroup(System.UInt32,System.UInt32,AsmResolver.PE.Win32Resources.Icon.IconGroup@)">
+            <summary>
+            Attempts to get an icon group by its numeric identifier and language specifier.
+            </summary>
+            <param name="id">The identifier.</param>
+            <param name="lcid">The language identifier.</param>
+            <param name="group">The group, or <c>null</c> if none was found.</param>
+            <returns><c>true</c> if the group was found, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconResource.TryGetGroup(System.String,AsmResolver.PE.Win32Resources.Icon.IconGroup@)">
+            <summary>
+            Attempts to get an icon group by its string identifier.
+            </summary>
+            <param name="name">The identifier.</param>
+            <param name="group">The group, or <c>null</c> if none was found.</param>
+            <returns><c>true</c> if the group was found, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconResource.TryGetGroup(System.String,System.UInt32,AsmResolver.PE.Win32Resources.Icon.IconGroup@)">
+            <summary>
+            Attempts to get an icon group by its string identifier and language specifier.
+            </summary>
+            <param name="name">The identifier.</param>
+            <param name="lcid">The language identifier.</param>
+            <param name="group">The group, or <c>null</c> if none was found.</param>
+            <returns><c>true</c> if the group was found, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.IconResource.InsertIntoDirectory(AsmResolver.PE.Win32Resources.ResourceDirectory)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Icon.IconType">
+            <summary>
+            Provides members describing all possible icon resources that can be stored in a PE image.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Icon.IconType.Icon">
+            <summary>
+            Indicates the icons stored in the group are ICO files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Icon.IconType.Cursor">
+            <summary>
+            Indicates the icons stored in the group are CUR files.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Icon.SerializedIconEntry">
+            <summary>
+            Provides a lazy-initialized implementation of <see cref="T:AsmResolver.PE.Win32Resources.Icon.IconEntry"/> that reads from an existing resource.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.SerializedIconEntry.#ctor(System.UInt32,AsmResolver.PE.Win32Resources.ResourceDirectory,AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Reads an icon entry from the provided input stream and corresponding icons directory.
+            </summary>
+            <param name="lcid">The language specifier.</param>
+            <param name="iconsDirectory">The icons directory.</param>
+            <param name="reader">The input stream.</param>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.SerializedIconEntry.GetPixelData">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Icon.SerializedIconGroup">
+            <summary>
+            Provides a lazy-initialized implementation of <see cref="T:AsmResolver.PE.Win32Resources.Icon.IconGroup"/> that reads its icons from an existing resource.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.SerializedIconGroup.#ctor(System.UInt32,System.UInt32,AsmResolver.PE.Win32Resources.ResourceDirectory,AsmResolver.IO.BinaryStreamReader)">
+            <summary>
+            Reads an icon group from the provided icon directory and input stream.
+            </summary>
+            <param name="id">The group identifier.</param>
+            <param name="lcid">The group language identifier.</param>
+            <param name="iconDirectory">The directory containing the individual icons.</param>
+            <param name="reader">The input stream.</param>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Icon.SerializedIconGroup.GetIcons">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.IWin32Resource">
+            <summary>
+            Provides a high level view of a native win32 resource that can be stored in the resources data directory of a
+            portable executable (PE) image.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.IWin32Resource.InsertIntoDirectory(AsmResolver.PE.Win32Resources.ResourceDirectory)">
+            <summary>
+            Serializes the win32 resource to the provided root win32 resource data directory.
+            </summary>
+            <param name="rootDirectory">The root directory to submit the changes to.</param>
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Version.FileFlags">
+            <summary>
+            Provides members describing the attributes of the file in a version resource.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileFlags.Debug">
+            <summary>
+            Indicates  the file contains debugging information or is compiled with debugging features enabled. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileFlags.PreRelease">
+            <summary>
+            Indicates the file is a development version and not a commercially released product. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileFlags.Patched">
+            <summary>
+            Indicates the file has been modified and is not identical to the original shipping file of the
+            same version number. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileFlags.PrivateBuild">
+            <summary>
+            Indicates the file was not built using standard release procedures. If this flag is set, the
+            StringFileInfo structure should contain a PrivateBuild entry. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileFlags.InfoInferred">
+            <summary>
+            Indicates the file's version structure was created dynamically; therefore, some of the members
+            in this structure may be empty or incorrect. This flag should never be set in a file's
+            VS_VERSIONINFO data. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileFlags.SpecialBuild">
+            <summary>
+            Indicates the file was built by the original company using standard release procedures but is a
+            variation of the normal file of the same version number. If this flag is set, the StringFileInfo
+            structure should contain a SpecialBuild entry. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileFlags.ValidBitMask">
+            <summary>
+            Provides a bitmask for all valid known bits that can be set.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Version.FileOS">
+            <summary>
+            Provides members describing the operating system for which the file is designed.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileOS.Unknown">
+            <summary>
+            Indicates the operating system for which the file was designed is unknown to the system. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileOS.Windows16">
+            <summary>
+            Indicates the file was designed for 16-bit Windows. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileOS.PresentationManager16">
+            <summary>
+            Indicates the file was designed for 16-bit Presentation Manager. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileOS.PresentationManager32">
+            <summary>
+            Indicates the file was designed for 32-bit Presentation Manager. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileOS.Windows32">
+            <summary>
+            Indicates the file was designed for 32-bit Windows. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileOS.Dos">
+            <summary>
+            Indicates the file was designed for MS-DOS. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileOS.OS216">
+            <summary>
+            Indicates the file was designed for 16-bit OS/2. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileOS.OS232">
+            <summary>
+            Indicates the file was designed for 16-bit OS/2. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileOS.NT">
+            <summary>
+            Indicates the file was designed for Windows NT. 
+            </summary>
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Version.FileSubType">
+            <summary>
+            Provides members describing the function of the file.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileSubType.Unknown">
+            <summary>
+            Indicates the file type is unknown to the system. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileSubType.DriverPrinter">
+            <summary>
+            Indicates the file contains a printer driver. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileSubType.DriverKeyboard">
+            <summary>
+            Indicates the file contains a keyboard driver. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileSubType.DriverLanguage">
+            <summary>
+            Indicates the file contains a language driver. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileSubType.DriverDisplay">
+            <summary>
+            Indicates the file contains a display driver.  
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileSubType.DriverMouse">
+            <summary>
+            Indicates the file contains a mouse driver. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileSubType.DriverNetwork">
+            <summary>
+            Indicates the file contains a network driver. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileSubType.DriverSystem">
+            <summary>
+            Indicates the file contains a system driver. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileSubType.DriverInstallable">
+            <summary>
+            Indicates the file contains an installable driver. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileSubType.DriverSound">
+            <summary>
+            Indicates the file contains a sound driver. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileSubType.DriverCommunications">
+            <summary>
+            Indicates the file contains a communications driver. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileSubType.DriverVersionedPrinter">
+            <summary>
+            Indicates the file contains a versioned printer driver. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileSubType.FontRaster">
+            <summary>
+            Indicates the file contains a raster font. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileSubType.FontVector">
+            <summary>
+            Indicates the file contains a vector font. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileSubType.FontTrueType">
+            <summary>
+            Indicates the file contains a TrueType font. 
+            </summary>
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Version.FileType">
+            <summary>
+            Provides members describing the general type of file. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileType.Unknown">
+            <summary>
+            Indicates the file type is unknown to the system.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileType.App">
+            <summary>
+            Indicates the file contains an application. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileType.Dll">
+            <summary>
+            Indicates the file contains a DLL. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileType.Driver">
+            <summary>
+            Indicates the file contains a device driver.  
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileType.Font">
+            <summary>
+            Indicates the file contains a font. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileType.VirtualDevice">
+            <summary>
+            Indicates the file contains a virtual device. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FileType.StaticLibrary">
+            <summary>
+            Indicates the file contains a static-link library. 
+            </summary>
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Version.FixedVersionInfo">
+            <summary>
+            Represents the organization of data in a file-version resource. It is the root structure that contains
+            all other file-version information structures.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.FixedVersionInfo.Signature">
+            <summary>
+            The signature value a FixedVersionInfo structure starts with.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.FixedVersionInfo.FromReader(AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Reads a single fixed version info structure from an input stream.
+            </summary>
+            <param name="reader">The input stream.</param>
+            <returns>The read structure.</returns>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.FixedVersionInfo.FileVersion">
+            <summary>
+            Gets or sets the file version number.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.FixedVersionInfo.ProductVersion">
+            <summary>
+            Gets or sets the product version number.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.FixedVersionInfo.FileFlagsMask">
+            <summary>
+            Gets or sets the bitmask that specifies the valid bits in <see cref="P:AsmResolver.PE.Win32Resources.Version.FixedVersionInfo.FileFlags"/>.
+            A bit is valid only if it was defined when the file was created.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.FixedVersionInfo.FileFlags">
+            <summary>
+            Gets or sets the bitmask that specifies the attributes of the file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.FixedVersionInfo.FileOS">
+            <summary>
+            Gets or ses the operating system for which this file was designed.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.FixedVersionInfo.FileType">
+            <summary>
+            Gets or sets the general type of file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.FixedVersionInfo.FileSubType">
+            <summary>
+            Gets or sets the function of the file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.FixedVersionInfo.FileDate">
+            <summary>
+            Gets or sets the binary creation date and time stamp
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.FixedVersionInfo.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.FixedVersionInfo.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Version.StringFileInfo">
+            <summary>
+            Represents the organization of data in a file-version resource. It contains version information that can be
+            displayed for a particular language and code page.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.StringFileInfo.StringFileInfoKey">
+            <summary>
+            The name of the StringFileInfo entry.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringFileInfo.FromReader(System.UInt64,AsmResolver.PE.Win32Resources.Version.VersionTableEntryHeader,AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Reads a single StringFileInfo structure from the provided input stream.
+            </summary>
+            <param name="startOffset">The offset of the consumed header.</param>
+            <param name="header">The header.</param>
+            <param name="reader">The input stream.</param>
+            <returns>The read structure.</returns>
+            <remarks>
+            This function assumes the provided header was already consumed.
+            </remarks>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.StringFileInfo.Key">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.StringFileInfo.ValueType">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.StringFileInfo.Tables">
+            <summary>
+            Gets a collection of tables stored in this VarFileInfo structure, typically containing a list of languages
+            that the application or DLL supports.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringFileInfo.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringFileInfo.GetValueLength">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringFileInfo.WriteValue(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Version.StringTable">
+            <summary>
+            Represents the organization of data in a file-version resource. It contains language and code page formatting
+            information for the strings specified by the Children member. A code page is an ordered character set.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.StringTable.CommentsKey">
+            <summary>
+            The name of the string describing the comments assigned to the executable file.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.StringTable.CompanyNameKey">
+            <summary>
+            The name of the string describing the name of the company that developed the executable file.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.StringTable.FileDescriptionKey">
+            <summary>
+            The name of the string describing the executable in such a way that it can be presented to users.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.StringTable.FileVersionKey">
+            <summary>
+            The name of the string describing the version of the file.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.StringTable.InternalNameKey">
+            <summary>
+            The name of the string describing the internal name of the file.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.StringTable.LegalCopyrightKey">
+            <summary>
+            The name of the string describing the copyright notices that apply to the file.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.StringTable.LegalTrademarksKey">
+            <summary>
+            The name of the string describing the trademark notices that apply to the file.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.StringTable.OriginalFilenameKey">
+            <summary>
+            The name of the string providing the original file name.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.StringTable.PrivateBuildKey">
+            <summary>
+            The name of the string describing by whom, where, and why this private version of the file was built.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.StringTable.ProductNameKey">
+            <summary>
+            The name of the string describing the name of the product with which this file is distributed.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.StringTable.ProductVersionKey">
+            <summary>
+            The name of the string describing the version of the product with which this file is distributed.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.StringTable.SpecialBuildKey">
+            <summary>
+            The name of the string describing how this version of the file differs from the normal version
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringTable.#ctor(System.UInt16,System.UInt16)">
+            <summary>
+            Creates a new string table.
+            </summary>
+            <param name="languageIdentifier">The language identifier.</param>
+            <param name="codePage">The code page.</param>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.StringTable.Key">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.StringTable.LanguageIdentifier">
+            <summary>
+            Gets or sets the language identifier of this string table.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.StringTable.CodePage">
+            <summary>
+            Gets or sets the code page of this string table.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.StringTable.ValueType">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.StringTable.Item(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.StringTable.Count">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.StringTable.Keys">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.StringTable.Values">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringTable.FromReader(AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Reads a single StringTable structure from the provided input stream.
+            </summary>
+            <param name="reader">The input stream.</param>
+            <returns>The read structure.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringTable.Add(System.String,System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringTable.ContainsKey(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringTable.TryGetValue(System.String,System.String@)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringTable.Add(System.Collections.Generic.KeyValuePair{System.String,System.String})">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringTable.Remove(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringTable.Remove(System.Collections.Generic.KeyValuePair{System.String,System.String})">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringTable.Clear">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringTable.Contains(System.Collections.Generic.KeyValuePair{System.String,System.String})">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringTable.CopyTo(System.Collections.Generic.KeyValuePair{System.String,System.String}[],System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringTable.GetEnumerator">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringTable.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringTable.GetValueLength">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.StringTable.WriteValue(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Version.VarFileInfo">
+            <summary>
+            Represents the organization of data in a file-version resource. It contains version information not dependent
+            on a particular language and code page combination.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.VarFileInfo.VarFileInfoKey">
+            <summary>
+            The name of the VarFileInfo entry.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VarFileInfo.FromReader(System.UInt64,AsmResolver.PE.Win32Resources.Version.VersionTableEntryHeader,AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Reads a single VarFileInfo structure from the provided input stream.
+            </summary>
+            <param name="startOffset">The offset of the consumed header.</param>
+            <param name="header">The header.</param>
+            <param name="reader">The input stream.</param>
+            <returns>The read structure.</returns>
+            <remarks>
+            This function assumes the provided header was already consumed.
+            </remarks>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VarFileInfo.Key">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VarFileInfo.ValueType">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VarFileInfo.Tables">
+            <summary>
+            Gets a collection of tables stored in this VarFileInfo structure, typically containing a list of languages
+            that the application or DLL supports.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VarFileInfo.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VarFileInfo.GetValueLength">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VarFileInfo.WriteValue(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Version.VarTable">
+            <summary>
+            Represents the organization of data in a file-version resource. It typically contains a list of language and
+            code page identifier pairs that the version of the application or DLL supports.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.VarTable.TranslationKey">
+            <summary>
+            The name of the Var entry.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VarTable.FromReader(AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Reads a single Var table at the provided input stream.
+            </summary>
+            <param name="reader">The input stream.</param>
+            <returns>The var table.</returns>
+            <exception cref="T:System.FormatException">
+            Occurs when the input stream does not point to a valid Var table structure.
+            </exception>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VarTable.Key">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VarTable.ValueType">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VarTable.Values">
+            <summary>
+            Gets a collection of one or more values that are language and code page identifier pairs.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VarTable.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VarTable.GetValueLength">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VarTable.WriteValue(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Version.VersionInfoResource">
+            <summary>
+            Represents a native version resource file.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.VsVersionInfoKey">
+            <summary>
+            The name of the root object of the native version resource file.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.#ctor">
+            <summary>
+            Creates a new empty version info resource targeting the English (United States) language identifier.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.#ctor(System.Int32)">
+            <summary>
+            Creates a new empty version info resource.
+            </summary>
+            <param name="lcid">The language identifier the resource version info is targeting.</param>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.Lcid">
+            <summary>
+            Gets the language identifier the resource version info is targeting.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.Key">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.ValueType">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.FixedVersionInfo">
+            <summary>
+            Gets the fixed version info stored in this version resource.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.Item(System.String)">
+            <summary>
+            Gets or sets a version table entry by its name.
+            </summary>
+            <param name="name">The name of the child.</param>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.FindAllFromDirectory(AsmResolver.PE.Win32Resources.ResourceDirectory)">
+            <summary>
+            Obtains all version info resources from the provided root win32 resources directory.
+            </summary>
+            <param name="rootDirectory">The root resources directory to extract the version info from.</param>
+            <returns>The version info resource, or <c>null</c> if none was found.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.FromDirectory(AsmResolver.PE.Win32Resources.ResourceDirectory)">
+            <summary>
+            Obtains the first version info resource from the provided root win32 resources directory.
+            </summary>
+            <param name="rootDirectory">The root resources directory to extract the version info from.</param>
+            <returns>The version info resource, or <c>null</c> if none was found.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.FromDirectory(AsmResolver.PE.Win32Resources.ResourceDirectory,System.Int32)">
+            <summary>
+            Obtains the version info resource from the provided root win32 resources directory.
+            </summary>
+            <param name="rootDirectory">The root resources directory to extract the version info from.</param>
+            <param name="lcid">The language identifier to get the version info from.</param>
+            <returns>The version info resource, or <c>null</c> if none was found.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.FromResourceData(AsmResolver.PE.Win32Resources.ResourceData)">
+            <summary>
+            Obtains the version info resource from the provided resource data entry.
+            </summary>
+            <param name="dataEntry">The data entry to extract the version info from.</param>
+            <returns>The extracted version info resource.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.FromReader(AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Reads a version resource from an input stream.
+            </summary>
+            <param name="reader">The input stream.</param>
+            <returns>The parsed version resource.</returns>
+            <exception cref="T:System.FormatException">
+            Occurs when the input stream does not point to a valid version resource.
+            </exception>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.FromReader(System.Int32,AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Reads a version resource from an input stream.
+            </summary>
+            <param name="lcid">The language identifier to get the version info from.</param>
+            <param name="reader">The input stream.</param>
+            <returns>The parsed version resource.</returns>
+            <exception cref="T:System.FormatException">
+            Occurs when the input stream does not point to a valid version resource.
+            </exception>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.GetChildren">
+            <summary>
+            Gets a collection of entries stored in the version resource.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.GetChild``1(System.String)">
+            <summary>
+            Gets a version table entry by its name.
+            </summary>
+            <param name="name">The name of the child.</param>
+            <typeparam name="TEntry">The type of the version table entry to lookup.</typeparam>
+            <returns>The entry.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.AddEntry(AsmResolver.PE.Win32Resources.Version.VersionTableEntry)">
+            <summary>
+            Adds (or overrides the existing entry with the same name) to the version resource.
+            </summary>
+            <param name="entry">The entry to add.</param>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.RemoveEntry(System.String)">
+            <summary>
+            Remove an entry by its name.
+            </summary>
+            <param name="name">The name of the child to remove..</param>
+            <returns>
+            <c>true</c> if the name existed in the table and was removed successfully, <c>false</c> otherwise.
+            </returns>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.GetValueLength">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.WriteValue(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionInfoResource.InsertIntoDirectory(AsmResolver.PE.Win32Resources.ResourceDirectory)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Version.VersionTableEntry">
+            <summary>
+            Provides a base for all version tables stored in a native version resource file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VersionTableEntry.Key">
+            <summary>
+            Gets the name of the table.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VersionTableEntry.ValueType">
+            <summary>
+            Gets the value type of the table.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionTableEntry.CreateHeader">
+            <summary>
+            Creates a new header for the table entry.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionTableEntry.GetValueLength">
+            <summary>
+            Gets the length of the raw value.
+            </summary>
+            <returns>The raw value.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionTableEntry.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionTableEntry.WriteValue(AsmResolver.IO.BinaryStreamWriter)">
+            <summary>
+            Writes the value field of the version structure.
+            </summary>
+            <param name="writer">The output stream.</param>
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Version.VersionTableEntryHeader">
+            <summary>
+            Represents the raw version table entry header.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionTableEntryHeader.#ctor(System.String)">
+            <summary>
+            Creates a new version table entry header with the provided key.
+            </summary>
+            <param name="key">The name of the resource.</param>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionTableEntryHeader.#ctor(System.UInt16,System.UInt16,AsmResolver.PE.Win32Resources.Version.VersionTableValueType,System.String)">
+            <summary>
+            Creates a new version table entry header with the provided key.
+            </summary>
+            <param name="length">The length in bytes of the structure.</param>
+            <param name="valueLength">The size in bytes of the value member.</param>
+            <param name="type">The type of data that is stored.</param>
+            <param name="key">The name of the resource.</param>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VersionTableEntryHeader.Length">
+            <summary>
+            Gets or sets the raw length in bytes of the structure.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VersionTableEntryHeader.ValueLength">
+            <summary>
+            Gets or sets the raw length in bytes of the value member.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VersionTableEntryHeader.Type">
+            <summary>
+            Gets or sets a value indicating the value is binary or textual.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.Win32Resources.Version.VersionTableEntryHeader.Key">
+            <summary>
+            Gets or sets the key name of the resource.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionTableEntryHeader.FromReader(AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Reads a single resource table header.
+            </summary>
+            <param name="reader">The reader.</param>
+            <returns>The table header.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionTableEntryHeader.GetHeaderSize(System.String)">
+            <summary>
+            Computes the size of the raw header in bytes.
+            </summary>
+            <param name="key">The key of the entry.</param>
+            <returns>The number of bytes.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionTableEntryHeader.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.Win32Resources.Version.VersionTableEntryHeader.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.Win32Resources.Version.VersionTableValueType">
+            <summary>
+            Provides members describing the value type of a version resource entry. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.VersionTableValueType.Binary">
+            <summary>
+            Indicates the value is binary.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.Win32Resources.Version.VersionTableValueType.String">
+            <summary>
+            Indicates the value is textual.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.LazyPropertyAttribute">
+            <summary>
+            Specifies an auto property is lazily initialized and that this implementation is provided by a source generator
+            </summary>
+            <remarks>
+            The source generator generates for every property <c>X</c> marked with this attribute the following:
+            <list type="bullet">
+               <item><description>A private field <c>_x</c> to store the value of the property</description></item>
+               <item><description>A private constant <c>XMask</c> specifying the bit mask within the initialization vector <c>_initialized</c></description></item>
+               <item><description>A call to a parameterless method <c>GetX()</c></description></item>
+            </list>
+            In case <see cref="P:AsmResolver.LazyPropertyAttribute.OwnerProperty" /> is set, the source generator will also generate code to automatically test and update exclusive ownership of the property's value.
+            </remarks>
+        </member>
+        <member name="P:AsmResolver.LazyPropertyAttribute.OwnerProperty">
+            <summary>
+            When non-null, gets the name of the property that reflects the owner of the marked property's value.
+            </summary>
+            <remarks>
+            Use this to indicate the value of the property is exclusively owned by at most one instance of the enclosing class.
+            </remarks>
+        </member>
+    </members>
+</doc>

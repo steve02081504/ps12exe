@@ -1,0 +1,2072 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>AsmResolver.PE.File</name>
+    </assembly>
+    <members>
+        <member name="T:AsmResolver.PE.File.Characteristics">
+            <summary>
+            Provides valid attributes for describing a portable executable file.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.Characteristics.RelocsStripped">
+            <summary>
+            Indicates that the file does not contain base relocations and must therefore be loaded at
+            its preferred base address.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.Characteristics.Image">
+            <summary>
+            Indicates that the image file is valid and can be run. If this flag is not set, it indicates a linker error.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.Characteristics.LineNumsStripped">
+            <summary>
+            Indicates COFF line numbers have been removed. This flag is deprecated and should be zero.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.Characteristics.LocalSymsStripped">
+            <summary>
+            Indicates COFF symbol table entries for local symbols have been removed. This flag is deprecated and
+            should be zero.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.Characteristics.AggressiveWsTrim">
+            <summary>
+            Indicates an aggressively trim working set is used. This flag is deprecated for Windows 2000 and later
+            and must be zero.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.Characteristics.LargeAddressAware">
+            <summary>
+            Indicates the application can handle larger than 2GB addresses.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.Characteristics.BytesReversedLo">
+            <summary>
+            Indicates the file uses little endian. This flag is deprecated and should be zero.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.Characteristics.Machine32Bit">
+            <summary>
+            Indicates the target machine is based on a 32-bit-word architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.Characteristics.DebugStripped">
+            <summary>
+            Indicates debugging information is removed from the image file.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.Characteristics.RemovableRunFromSwap">
+            <summary>
+            Indicates the image should be fully loaded and copied to the swap file if the image is on removable media.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.Characteristics.NetRunFromSwap">
+            <summary>
+            Indicates the image should be fully loaded and copied to the swap file if the image is on a network media.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.Characteristics.System">
+            <summary>
+            Indicates the image file is a system file, not a user program.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.Characteristics.Dll">
+            <summary>
+            Indicates the image file is a dynamic-link library (DLL). Such files are considered executable files
+            for almost all purposes, although they cannot be directly run.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.Characteristics.UpSystemOnly">
+            <summary>
+            Indicates the file should be run only on a uniprocessor machine.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.Characteristics.BytesReversedHi">
+            <summary>
+            Indicates the file uses big endian. This flag is deprecated and should be zero.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.PE.File.DataDirectory">
+            <summary>
+            Represents a data directory header, consisting of the starting address, and the size.
+            </summary>
+            <remarks>
+            This structure does not contain the actual contents of the data directory.
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectory.DataDirectorySize">
+            <summary>
+            Indicates the size of a single data directory header.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.DataDirectory.FromReader(AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Reads a single data directory at the current position of the provided input stream.
+            </summary>
+            <param name="reader">The input stream to read from.</param>
+            <returns>The data directory that was read.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.DataDirectory.#ctor(System.UInt32,System.UInt32)">
+            <summary>
+            Creates a new data directory header.
+            </summary>
+            <param name="virtualAddress">The starting virtual address (RVA) of the directory.</param>
+            <param name="size">The size in bytes of the directory.</param>
+        </member>
+        <member name="P:AsmResolver.PE.File.DataDirectory.VirtualAddress">
+            <summary>
+            Gets the relative virtual address (RVA) of the directory.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.DataDirectory.Size">
+            <summary>
+            Gets the size of the directory.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.DataDirectory.IsPresentInPE">
+            <summary>
+            Gets a value indicating the data directory is present in the portable executable file.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.DataDirectory.CreateForSegment(AsmResolver.ISegment)">
+            <summary>
+            Creates a data directory descriptor for the provided segment.
+            </summary>
+            <param name="segment">The segment to create a data directory descriptor for.</param>
+            <returns>The data directory.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.DataDirectory.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.DataDirectory.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.DataDirectory.Deconstruct(System.UInt32@,System.UInt32@)">
+            <summary>
+            Deconstructs the data directory into a 2-tuple.
+            </summary>
+            <param name="virtualAddress">The virtual address.</param>
+            <param name="size">The size.</param>
+        </member>
+        <member name="M:AsmResolver.PE.File.DataDirectory.ToString">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.File.DataDirectoryIndex">
+            <summary>
+            Provides members describing the semantics of each data directory entry in an optional header.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectoryIndex.ExportDirectory">
+            <summary>
+            Indicates the data directory entry containing exported symbols.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectoryIndex.ImportDirectory">
+            <summary>
+            Indicates the directory entry containing a register of imported symbols.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectoryIndex.ResourceDirectory">
+            <summary>
+            Indicates the directory entry referencing the root win32 resource directory.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectoryIndex.ExceptionDirectory">
+            <summary>
+            Indicates the directory entry containing a register of exception handlers.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectoryIndex.CertificateDirectory">
+            <summary>
+            Indicates the directory entry containing authentication signatures.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectoryIndex.BaseRelocationDirectory">
+            <summary>
+            Indicates the directory entry containing base relocations that need to be applied to the image after
+            loading.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectoryIndex.DebugDirectory">
+            <summary>
+            Indicates the directory entry containing debug information.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectoryIndex.ArchitectureDirectory">
+            <summary>
+            Reserved.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectoryIndex.GlobalPtrDirectory">
+            <summary>
+            The RVA of the value to be stored in the global pointer register.
+            The size member of this structure must be set to zero. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectoryIndex.TlsDirectory">
+            <summary>
+            Indicates the directory entry containing the thread local storage (TLS) table.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectoryIndex.LoadConfigDirectory">
+            <summary>
+            Indicates the directory entry containing the load configuration table.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectoryIndex.BoundImportDirectory">
+            <summary>
+            Indicates the directory entry containing the bound import directory.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectoryIndex.IatDirectory">
+            <summary>
+            Indicates the directory entry containing the import address table.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectoryIndex.DelayImportDescrDirectory">
+            <summary>
+            Indicates the directory entry containing the delay import descriptor table.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectoryIndex.ClrDirectory">
+            <summary>
+            Indicates the directory entry containing the CLR runtime headers.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DataDirectoryIndex.ReservedDirectory">
+            <summary>
+            Reserved.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.PE.File.DllCharacteristics">
+            <summary>
+            Provides members describing all possible flags that can be set in the <see cref="P:AsmResolver.PE.File.OptionalHeader.DllCharacteristics"/>
+            field.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DllCharacteristics.HighEntropyVA">
+            <summary>
+            Indicates the image can handle a high entropy 64-bit virtual address space. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DllCharacteristics.DynamicBase">
+            <summary>
+            Indicates the DLL can be relocated at load time. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DllCharacteristics.ForceIntegrity">
+            <summary>
+            Indicates Code Integrity checks are enforced. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DllCharacteristics.NxCompat">
+            <summary>
+            Indicates the image is NX compatible. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DllCharacteristics.NoIsolation">
+            <summary>
+            Indicates the image is isolation aware, but do not isolate the image. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DllCharacteristics.NoSeh">
+            <summary>
+            Indicates the image does not use structured exception (SE) handling.
+            No SE handler may be called in this image. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DllCharacteristics.NoBind">
+            <summary>
+            Indicates the image must not be bound.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DllCharacteristics.AppContainer">
+            <summary>
+            Indicates the image must execute in an AppContainer. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DllCharacteristics.WdmDriver">
+            <summary>
+            Indicates the image is a WDM driver. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DllCharacteristics.ControlFLowGuard">
+            <summary>
+            Indicates the image supports Control Flow Guard. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DllCharacteristics.TerminalServerAware">
+            <summary>
+            Indicates the image is Terminal Server aware.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.PE.File.DosHeader">
+            <summary>
+            Represents the DOS header (also known as the MZ header) in the portable executable (PE) file format.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DosHeader.ValidPEMagic">
+            <summary>
+            Indicates the magic constant that every DOS header should start with.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DosHeader.MinimalDosHeaderLength">
+            <summary>
+            Indicates the minimal length of a valid DOS header in a portable executable file.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DosHeader.NextHeaderFieldOffset">
+            <summary>
+            Indicates the offset of the e_flanew field in the DOS header.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.DosHeader.DefaultNewHeaderOffset">
+            <summary>
+            Indicates the default value of the e_flanew field in the DOS header.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.DosHeader.FromReader(AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Reads a DOS header structure at the current position of the provided input stream.
+            </summary>
+            <param name="reader">The input stream to read from.</param>
+            <returns>The read DOS header.</returns>
+            <exception cref="T:System.BadImageFormatException">Occurs when the input stream does not point to a valid DOS header.</exception>
+        </member>
+        <member name="M:AsmResolver.PE.File.DosHeader.#ctor">
+            <summary>
+            Creates a new DOS header with the default contents.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.DosHeader.#ctor(System.Byte[])">
+            <summary>
+            Creates a new DOS header with the provided contents.
+            </summary>
+            <param name="stub">The raw contents of the header.</param>
+            <exception cref="T:System.BadImageFormatException">Occurs when the input data does not contain a valid DOS header.</exception>
+        </member>
+        <member name="P:AsmResolver.PE.File.DosHeader.NextHeaderOffset">
+            <summary>
+            Gets or sets the offset to the next header (NT header).
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.DosHeader.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.DosHeader.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.File.FileHeader">
+            <summary>
+            Represents the COFF file header of a portable executable file.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.FileHeader.FileHeaderSize">
+            <summary>
+            Indicates the static size of the COFF file header.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.FileHeader.FromReader(AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Reads a COFF file header from an input stream.
+            </summary>
+            <param name="reader">The input stream.</param>
+            <returns>The read file header.</returns>
+        </member>
+        <member name="P:AsmResolver.PE.File.FileHeader.Machine">
+            <summary>
+            Gets or sets the machine the portable executable file is compiled for.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.FileHeader.NumberOfSections">
+            <summary>
+            Gets or sets the number of sections defined in the portable executable file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.FileHeader.TimeDateStamp">
+            <summary>
+            Gets or sets the time stamp of the portable executable file.
+            </summary>
+            <remarks>
+            This timestamp is encoded as the number of seconds since 00:00 January 1, 1970.
+            </remarks>
+        </member>
+        <member name="P:AsmResolver.PE.File.FileHeader.PointerToSymbolTable">
+            <summary>
+            Gets or sets the absolute file offset to the symbol table.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.FileHeader.NumberOfSymbols">
+            <summary>
+            Gets or sets the number of symbols defined in the portable executable file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.FileHeader.SizeOfOptionalHeader">
+            <summary>
+            Gets or sets the size of the optional header.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.FileHeader.Characteristics">
+            <summary>
+            Gets or sets the characteristics of the portable executable file.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.FileHeader.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.FileHeader.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.File.MachineType">
+            <summary>
+            Provides members for each processor architecture that a portable executable (PE) file can encode for.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Unknown">
+            <summary>
+            The content of this field is assumed to be applicable to any machine type.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.DotNetAppleOSOverride">
+            <summary>
+            Provides a bitmask that is used to indicate the PE file is targeting Apple devices only.
+            </summary>
+            <remarks>
+            This value is a bitmask and is not a valid machine type on its own. Furthermore, is only supposed to be
+            used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.DotNetFreeBsdOSOverride">
+            <summary>
+            Provides a bitmask that is used to indicate the PE file is targeting FreeBSD operating system derivatives.
+            </summary>
+            <remarks>
+            This value is a bitmask and is not a valid machine type on its own. Furthermore, is only supposed to be
+            used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.DotNetLinuxOSOverride">
+            <summary>
+            Provides a bitmask that is used to indicate the PE file is targeting Linux operating system derivatives.
+            </summary>
+            <remarks>
+            This value is a bitmask and is not a valid machine type on its own. Furthermore, is only supposed to be
+            used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.DotNetNetBsdOSOverride">
+            <summary>
+            Provides a bitmask that is used to indicate the PE file is targeting NetBSD operating system derivatives.
+            </summary>
+            <remarks>
+            This value is a bitmask and is not a valid machine type on its own. Furthermore, is only supposed to be
+            used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.DotNetSunOSOverride">
+            <summary>
+            Provides a bitmask that is used to indicate the PE file is targeting Sun operating system derivatives.
+            </summary>
+            <remarks>
+            This value is a bitmask and is not a valid machine type on its own. Furthermore, is only supposed to be
+            used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Am33">
+            <summary>
+            Indicates the Matsushita AM33 architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Amd64">
+            <summary>
+            Indicates the x64 architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Amd64DotNetApple">
+            <summary>
+            Indicates the x64 architecture, but specifically targets Apple devices.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Amd64DotNetFreeBsd">
+            <summary>
+            Indicates the x64 architecture, but specifically targets FreeBSD operating system derivatives.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Amd64DotNetLinux">
+            <summary>
+            Indicates the x64 architecture, but specifically targets Linux operating system derivatives.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Amd64DotNetNetBsd">
+            <summary>
+            Indicates the x64 architecture, but specifically targets NetBSD operating system derivatives.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Amd64DotNetSun">
+            <summary>
+            Indicates the x64 architecture, but specifically targets SunOS operating system derivatives.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Arm">
+            <summary>
+            Indicates the ARM little endian architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.ArmNt">
+            <summary>
+            Indicates the ARM thumb-2 little endian architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.ArmNtDotNetApple">
+            <summary>
+            Indicates the ARM thumb-2 little endian architecture, but specifically targets Apple devices.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.ArmNtDotNetFreeBsd">
+            <summary>
+            Indicates the ARM thumb-2 little endian architecture, but specifically targets FreeBSD operating system
+            derivatives.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.ArmNtDotNetLinux">
+            <summary>
+            Indicates the ARM thumb-2 little endian architecture, but specifically targets Linux operating system
+            derivatives.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.ArmNtDotNetSun">
+            <summary>
+            Indicates the ARM thumb-2 little endian architecture, but specifically targets SunOS operating system
+            derivatives.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.ArmNtDotNetNetBsd">
+            <summary>
+            Indicates the ARM thumb-2 little endian architecture, but specifically targets NetBSD operating system
+            derivatives.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Arm64">
+            <summary>
+            Indicates the ARM 64-bit little endian architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Arm64DotNetApple">
+            <summary>
+            Indicates the ARM 64-bit little endian architecture, but specifically targets Apple devices.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Arm64DotNetFreeBsd">
+            <summary>
+            Indicates the ARM 64-bit little endian architecture, but specifically targets FreeBSD operating system
+            derivatives.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Arm64DotNetLinux">
+            <summary>
+            Indicates the ARM 64-bit little endian architecture, but specifically targets Linux operating system
+            derivatives.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Arm64DotNetNetBsd">
+            <summary>
+            Indicates the ARM 64-bit little endian architecture, but specifically targets NetBSD operating system
+            derivatives.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Arm64DotNetSun">
+            <summary>
+            Indicates the ARM 64-bit little endian architecturee, but specifically targets SunOS operating system derivatives.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Ebc">
+            <summary>
+            Indicates EFI byte code.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.I386">
+            <summary>
+            Indicates the Intel 368 or compatible x86 (32-bit) architectures.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.I386DotNetApple">
+            <summary>
+            Indicates the Intel 368 or compatible x86 (32-bit) architectures, but specifically targets
+            Apple devices.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.I386DotNetFreeBsd">
+            <summary>
+            Indicates the Intel 368 or compatible x86 (32-bit) architectures, but specifically targets FreeBSD operating
+            system derivatives.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.I386DotNetLinux">
+            <summary>
+            Indicates the Intel 368 or compatible x86 (32-bit) architectures, but specifically targets Linux
+            operating system derivatives.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.I386DotNetNetBsd">
+            <summary>
+            Indicates the Intel 368 or compatible x86 (32-bit) architectures, but specifically targets NetBSD
+            operating system derivatives.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.I386DotNetSun">
+            <summary>
+            Indicates the Intel 368 or compatible x86 (32-bit) architectures, but specifically targets SunOS
+            operating system derivatives.
+            </summary>
+            <remarks>
+            This value is only used by .NET PE images.
+            Reference: https://github.com/dotnet/runtime/issues/36364
+            </remarks>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Ia64">
+            <summary>
+            Indicates the Intel Itanium processor family.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.M32R">
+            <summary>
+            Indicates the Mitsubishi M32R little endian architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Mips16">
+            <summary>
+            Indicates the MIPS 16-bit architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.MipsFpu">
+            <summary>
+            Indicates the MIPS architecture with FPU.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.MipsFpu16">
+            <summary>
+            Indicates the MIPS 16-bit architecture with FPU.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.PowerPc">
+            <summary>
+            Indicates the PowerPC little-endian architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.PowerPcFp">
+            <summary>
+            Indicates the PowerPC little-endian architecture with floating point support.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.R4000">
+            <summary>
+            Indicates the MIPS little endian architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Sh3">
+            <summary>
+            Indicates the Hitachi SH3 architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Sh3Dsp">
+            <summary>
+            Indicates the Hitachi SH3 DSP architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Sh4">
+            <summary>
+            Indicates the Hitachi SH4 architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Sh5">
+            <summary>
+            Indicates the Hitachi SH5 architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.Thumb">
+            <summary>
+            Indicates the Thumb architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.WceMipsV2">
+            <summary>
+            Indicates the MIPS little-endian WCE v2 architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.RiscV32">
+            <summary>
+            Indicates the RISCV 32-bit architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.RiscV64">
+            <summary>
+            Indicates the RISCV 64-bit architecture.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.MachineType.RiscV128">
+            <summary>
+            Indicates the RISCV 128-bit architecture.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.PE.File.OptionalHeader">
+            <summary>
+            Represents a 32-bit or 64-bit optional header in a portable executable (PE) file.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.OptionalHeader.OptionalHeaderSizeOfImageFieldOffset">
+            <summary>
+            Indicates the offset of the SizeOfImage field in the optional header.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.OptionalHeader.OptionalHeader32SizeExcludingDataDirectories">
+            <summary>
+            Indicates the static size of an optional header in a 32-bit portable executable file, excluding the
+            data directory entries.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.OptionalHeader.OptionalHeader64SizeExcludingDataDirectories">
+            <summary>
+            Indicates the static size of an optional header in a 64-bit portable executable file, excluding the
+            data directory entries.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.OptionalHeader.DefaultNumberOfRvasAndSizes">
+            <summary>
+            Indicates the default number of data directory entries in an optional header.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.OptionalHeader.FromReader(AsmResolver.IO.BinaryStreamReader@,System.Boolean)">
+            <summary>
+            Reads an optional header from the provided input stream.
+            </summary>
+            <param name="reader">The input stream.</param>
+            <param name="ignoreNumberOfRvasAndSizes">Indicates whether the number of data directories should be ignored
+            and <see cref="F:AsmResolver.PE.File.OptionalHeader.DefaultNumberOfRvasAndSizes"/> should be used instead.</param>
+            <returns>The optional header.</returns>
+            <exception cref="T:System.BadImageFormatException">Occurs when the input stream is malformed.</exception>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.Magic">
+            <summary>
+            Gets or sets the magic optional header signature, determining whether the image is a PE32 (32-bit) or a PE32+ (64-bit) image.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.MajorLinkerVersion">
+            <summary>
+            Gets or sets the major linker version used to link the portable executable (PE) file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.MinorLinkerVersion">
+            <summary>
+            Gets or sets the minor linker version used to link the portable executable (PE) file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.SizeOfCode">
+            <summary>
+            Gets or sets the total amount of bytes the code sections consist of.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.SizeOfInitializedData">
+            <summary>
+            Gets or sets the total amount of bytes the initialized data sections consist of.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.SizeOfUninitializedData">
+            <summary>
+            Gets or sets the total amount of bytes the uninitialized data sections consist of.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.AddressOfEntryPoint">
+            <summary>
+            Gets or sets the relative virtual address to the entry point of the portable executable (PE) file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.BaseOfCode">
+            <summary>
+            Gets or sets the relative virtual address (RVA) to the beginning of the code section, when loaded into memory.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.BaseOfData">
+            <summary>
+            Gets or sets the relative virtual address to the begin of the data section, when loaded into memory.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.ImageBase">
+            <summary>
+            Gets or sets the preferred address of the first byte of the image when loaded into memory. Must be a multiple of 64,000.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.SectionAlignment">
+            <summary>
+            Gets or sets the alignment of the sections when loaded into memory. Must be greater or equal to
+            <see cref="P:AsmResolver.PE.File.OptionalHeader.FileAlignment"/>. Default is the page size for the architecture.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.FileAlignment">
+            <summary>
+            Gets or sets the alignment of the raw data of sections in the image file. Must be a power of 2 between 512 and 64,000.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.MajorOperatingSystemVersion">
+            <summary>
+            Gets or sets the minimum major version of the operating system required to run the portable executable (PE) file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.MinorOperatingSystemVersion">
+            <summary>
+            Gets or sets the minimum minor version of the operating system required to run the portable executable (PE) file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.MajorImageVersion">
+            <summary>
+            Gets or sets the major image version.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.MinorImageVersion">
+            <summary>
+            Gets or sets the minor image version.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.MajorSubsystemVersion">
+            <summary>
+            Gets or sets the major version of the subsystem.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.MinorSubsystemVersion">
+            <summary>
+            Gets or sets the minor version of the subsystem.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.Win32VersionValue">
+            <summary>
+            Reserved, should be zero.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.SizeOfImage">
+            <summary>
+            Gets or sets the size in bytes of the portable executable (PE) file, including all headers. Must be a multiple of <see cref="P:AsmResolver.PE.File.OptionalHeader.SectionAlignment"/>.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.SizeOfHeaders">
+            <summary>
+            Gets or sets the size of the headers of the portable executable (PE) file, including the DOS-, PE- and section headers, rounded to <see cref="P:AsmResolver.PE.File.OptionalHeader.FileAlignment"/>.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.CheckSum">
+            <summary>
+            Gets or sets the checksum of the portable executable (PE) file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.SubSystem">
+            <summary>
+            Gets or sets the subsystem to use when running the portable executable (PE) file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.DllCharacteristics">
+            <summary>
+            Gets or sets the dynamic linked library characteristics of the portable executable (PE) file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.SizeOfStackReserve">
+            <summary>
+            Gets or sets the size of the stack to reserve.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.SizeOfStackCommit">
+            <summary>
+            Gets or sets the size of the stack to commit.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.SizeOfHeapReserve">
+            <summary>
+            Gets or sets the size of the heap to reserve.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.SizeOfHeapCommit">
+            <summary>
+            Gets or sets the size of the heap to commit.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.LoaderFlags">
+            <summary>
+            Obsolete.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.NumberOfRvaAndSizes">
+            <summary>
+            Gets or sets the number of data directory headers defined in the optional header.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.OptionalHeader.DataDirectories">
+            <summary>
+            Gets the data directory headers defined in the optional header.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.OptionalHeader.GetDataDirectory(AsmResolver.PE.File.DataDirectoryIndex)">
+            <summary>
+            Gets a data directory by its index.
+            </summary>
+            <param name="index">The index.</param>
+            <returns>The data directory entry.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.OptionalHeader.SetDataDirectory(AsmResolver.PE.File.DataDirectoryIndex,AsmResolver.PE.File.DataDirectory)">
+            <summary>
+            Sets a data directory by its index.
+            </summary>
+            <param name="index">The index.</param>
+            <param name="directory">The new data directory entry.</param>
+        </member>
+        <member name="M:AsmResolver.PE.File.OptionalHeader.SetDataDirectory(AsmResolver.PE.File.DataDirectoryIndex,AsmResolver.ISegment)">
+            <summary>
+            Maps a segment to a data directory.
+            </summary>
+            <param name="index">The index.</param>
+            <param name="contents">
+            The contents of the data directory, or <c>null</c> to indicate an absence of the directory.
+            </param>
+        </member>
+        <member name="M:AsmResolver.PE.File.OptionalHeader.EnsureDataDirectoryCount(System.Int32)">
+            <summary>
+            Ensures the provided number of data directories are present in <see cref="P:AsmResolver.PE.File.OptionalHeader.DataDirectories"/>.
+            </summary>
+            <param name="count">The number of data directories.</param>
+        </member>
+        <member name="M:AsmResolver.PE.File.OptionalHeader.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.OptionalHeader.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.File.OptionalHeaderMagic">
+            <summary>
+            Provides valid values for the optional header magic.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.OptionalHeaderMagic.PE32">
+            <summary>
+            Indicates the binary contains a 32-bit portable executable file.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.OptionalHeaderMagic.PE32Plus">
+            <summary>
+            Indicates the binary contains a 64-bit portable executable file.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.OptionalHeaderMagic.PE64">
+            <summary>
+            Indicates the binary contains a 64-bit portable executable file.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.PE.File.PEFile">
+            <summary>
+            Models a file using the portable executable (PE) file format. It provides access to various PE headers, as well
+            as the raw contents of each section present in the file.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.PEFile.ValidPESignature">
+            <summary>
+            Indicates a valid NT header signature.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.#ctor">
+            <summary>
+            Creates a new empty portable executable file.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.#ctor(AsmResolver.PE.File.DosHeader,AsmResolver.PE.File.FileHeader,AsmResolver.PE.File.OptionalHeader)">
+            <summary>
+            Creates a new portable executable file.
+            </summary>
+            <param name="dosHeader">The DOS header to add.</param>
+            <param name="fileHeader">The COFF header to add.</param>
+            <param name="optionalHeader">The optional header to add.</param>
+        </member>
+        <member name="P:AsmResolver.PE.File.PEFile.FilePath">
+            <summary>
+            When this PE file was read from the disk, gets the file path to the PE file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PEFile.DosHeader">
+            <summary>
+            Gets or sets the DOS header of the PE file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PEFile.FileHeader">
+            <summary>
+            Gets or sets the COFF file header of the portable executable (PE) file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PEFile.OptionalHeader">
+            <summary>
+            Gets or sets the optional header of the portable executable (PE) file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PEFile.Sections">
+            <summary>
+            Gets a collection of sections present in the portable executable (PE) file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PEFile.MappingMode">
+            <summary>
+            Gets a value indicating the mapping mode of the PE file. If the PE file is in its mapped form,
+            then every offset of all segments in the PE file will be equal to the physical memory address.
+            If the file is in its unmapped form, the offsets will be equal to the file offset.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PEFile.ExtraSectionData">
+            <summary>
+            Gets or sets the padding data in between the last section header and the first section.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PEFile.EofData">
+            <summary>
+            Gets or sets the data appended to the end of the file (EoF), if available.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.FromFile(System.String)">
+            <summary>
+            Reads an unmapped PE file from the disk.
+            </summary>
+            <param name="path">The file path to the PE file.</param>
+            <returns>The PE file that was read.</returns>
+            <exception cref="T:System.BadImageFormatException">Occurs when the file does not follow the PE file format.</exception>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.FromFile(AsmResolver.IO.IInputFile)">
+            <summary>
+            Reads an unmapped PE file.
+            </summary>
+            <param name="file">The file representing the PE.</param>
+            <returns>The PE file that was read.</returns>
+            <exception cref="T:System.BadImageFormatException">Occurs when the file does not follow the PE file format.</exception>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.FromBytes(System.Byte[])">
+            <summary>
+            Reads an unmapped PE file from memory.
+            </summary>
+            <param name="raw">The raw bytes representing the contents of the PE file to read.</param>
+            <returns>The PE file that was read.</returns>
+            <exception cref="T:System.BadImageFormatException">Occurs when the file does not follow the PE file format.</exception>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.FromStream(System.IO.Stream)">
+            <summary>
+            Reads an unmapped PE file from memory.
+            </summary>
+            <param name="raw">The raw stream representing the contents of the PE file to read.</param>
+            <returns>The PE file that was read.</returns>
+            <exception cref="T:System.BadImageFormatException">Occurs when the file does not follow the PE file format.</exception>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.FromModuleBaseAddress(System.IntPtr,AsmResolver.PE.File.PEMappingMode)">
+            <summary>
+            Reads a PE file starting at the provided module base address (HINSTANCE).
+            </summary>
+            <param name="hInstance">The HINSTANCE or base address of the module.</param>
+            <param name="mode">Indicates how the input PE file is mapped.</param>
+            <returns>The PE file that was read.</returns>
+            <exception cref="T:System.BadImageFormatException">Occurs when the file does not follow the PE file format.</exception>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.FromDataSource(AsmResolver.IO.IDataSource,AsmResolver.PE.File.PEMappingMode)">
+            <summary>
+            Reads a PE file from the provided data source.
+            </summary>
+            <param name="dataSource">The data source to read from.</param>
+            <param name="mode">Indicates how the input PE file is mapped.</param>
+            <returns>The PE file that was read.</returns>
+            <exception cref="T:System.BadImageFormatException">Occurs when the file does not follow the PE file format.</exception>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.FromReader(AsmResolver.IO.BinaryStreamReader@,AsmResolver.PE.File.PEMappingMode)">
+            <summary>
+            Reads a PE file from the provided input stream.
+            </summary>
+            <param name="reader">The input stream to read from.</param>
+            <param name="mode">Indicates how the input PE file is mapped.</param>
+            <returns>The PE file that was read.</returns>
+            <exception cref="T:System.BadImageFormatException">Occurs when the file does not follow the PE file format.</exception>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.GetReferenceToRva(System.UInt32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.FileOffsetToRva(System.UInt64)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.RvaToFileOffset(System.UInt32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.GetSectionContainingOffset(System.UInt64)">
+            <summary>
+            Finds the section containing the provided file offset.
+            </summary>
+            <param name="fileOffset">The file offset.</param>
+            <returns>The section containing the file offset.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">Occurs when the file offset does not fall within any of the sections.</exception>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.TryGetSectionContainingOffset(System.UInt64,AsmResolver.PE.File.PESection@)">
+            <summary>
+            Attempts to find the section containing the provided file offset.
+            </summary>
+            <param name="fileOffset">The file offset.</param>
+            <param name="section">The section that was found.</param>
+            <returns><c>true</c> if the section was found, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.GetSectionContainingRva(System.UInt32)">
+            <summary>
+            Finds the section containing the provided virtual address.
+            </summary>
+            <param name="rva">The virtual address.</param>
+            <returns>The section containing the virtual address.</returns>
+            <exception cref="T:System.ArgumentOutOfRangeException">Occurs when the virtual address does not fall within any of the sections.</exception>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.TryGetSectionContainingRva(System.UInt32,AsmResolver.PE.File.PESection@)">
+            <summary>
+            Attempts to find the section containing the provided virtual address.
+            </summary>
+            <param name="rva">The virtual address.</param>
+            <param name="section">The section that was found.</param>
+            <returns><c>true</c> if the section was found, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.CreateDataDirectoryReader(AsmResolver.PE.File.DataDirectory)">
+            <summary>
+            Obtains a reader that spans the provided data directory.
+            </summary>
+            <param name="dataDirectory">The data directory to read.</param>
+            <returns>The reader.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.TryCreateDataDirectoryReader(AsmResolver.PE.File.DataDirectory,AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Attempts to create a reader that spans the provided data directory.
+            </summary>
+            <param name="dataDirectory">The data directory to read.</param>
+            <param name="reader">The reader that was created.</param>
+            <returns><c>true</c> if the reader was created successfully, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.CreateReaderAtFileOffset(System.UInt64)">
+            <summary>
+            Creates a new reader at the provided file offset.
+            </summary>
+            <param name="fileOffset">The file offset to start reading at.</param>
+            <returns>The reader.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.TryCreateReaderAtFileOffset(System.UInt64,AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Attempts to create a new reader at the provided file offset.
+            </summary>
+            <param name="fileOffset">The file offset to start reading at.</param>
+            <param name="reader">The reader that was created.</param>
+            <returns><c>true</c> if the reader was created successfully, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.CreateReaderAtFileOffset(System.UInt64,System.UInt32)">
+            <summary>
+            Creates a new reader of a chunk of data at the provided file offset.
+            </summary>
+            <param name="fileOffset">The file offset to start reading at.</param>
+            <param name="size">The number of bytes in the chunk.</param>
+            <returns>The reader.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.TryCreateReaderAtFileOffset(System.UInt64,System.UInt32,AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Attempts to create a new reader of a chunk of data at the provided file offset.
+            </summary>
+            <param name="fileOffset">The file offset to start reading at.</param>
+            <param name="size">The number of bytes in the chunk.</param>
+            <param name="reader">The reader that was created.</param>
+            <returns><c>true</c> if the reader was created successfully, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.CreateReaderAtRva(System.UInt32)">
+            <summary>
+            Creates a new reader at the provided virtual address.
+            </summary>
+            <param name="rva">The virtual address to start reading at.</param>
+            <returns>The reader.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.TryCreateReaderAtRva(System.UInt32,AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Attempts to create a new reader at the provided virtual address.
+            </summary>
+            <param name="rva">The virtual address to start reading at.</param>
+            <param name="reader">The reader that was created.</param>
+            <returns><c>true</c> if the reader was created successfully, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.CreateReaderAtRva(System.UInt32,System.UInt32)">
+            <summary>
+            Creates a new reader of a chunk of data at the provided virtual address.
+            </summary>
+            <param name="rva">The virtual address to start reading at.</param>
+            <param name="size">The number of bytes in the chunk.</param>
+            <returns>The reader.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.TryCreateReaderAtRva(System.UInt32,System.UInt32,AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Attempts to create a new reader of a chunk of data at the provided virtual address.
+            </summary>
+            <param name="rva">The virtual address to start reading at.</param>
+            <param name="size">The number of bytes in the chunk.</param>
+            <param name="reader">The reader that was created.</param>
+            <returns><c>true</c> if the reader was created successfully, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.UpdateHeaders">
+            <summary>
+            Recomputes file offsets and sizes in the file, optional and section headers.
+            </summary>
+            <remarks>
+            Affected fields in the file header include:
+            <list type="bullet">
+                <item>
+                    <term>SizeOfOptionalHeader</term>
+                </item>
+            </list>
+            Affected fields in the optional header include:
+            <list type="bullet">
+                <item>
+                    <term>SizeOfHeaders</term>
+                    <term>SizeOfImage</term>
+                    <term>Data directories</term>
+                </item>
+            </list>
+            Affected fields in the section header include:
+            <list type="bullet">
+                <item>
+                    <term>VirtualAddress</term>
+                    <term>VirtualSize</term>
+                    <term>PointerToRawData</term>
+                    <term>SizeOfRawData</term>
+                </item>
+            </list>
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.AlignSections">
+            <summary>
+            Aligns all sections according to the file and section alignment properties in the optional header.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.AlignDataDirectoryEntries(System.Collections.Generic.IList{AsmResolver.PE.File.SectionHeader})">
+            <summary>
+            Aligns all data directories' virtual address according to the section header's ones.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.Write(System.String)">
+            <summary>
+            Writes the PE file to a file on the disk.
+            </summary>
+            <param name="filePath">The path of the file.</param>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.Write(System.IO.Stream)">
+            <summary>
+            Writes the PE file to the provided output stream.
+            </summary>
+            <param name="stream">The output stream to write to.</param>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <summary>
+            Writes the PE file to the provided output stream.
+            </summary>
+            <param name="writer">The output stream to write to.</param>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.GetSections">
+            <summary>
+            Obtains the sections in the portable executable file.
+            </summary>
+            <returns>The section.</returns>
+            <remarks>
+            This method is called upon the initialization of the <see cref="P:AsmResolver.PE.File.PEFile.Sections"/> property.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.GetExtraSectionData">
+            <summary>
+            Obtains the padding data in between the last section header and the first section.
+            </summary>
+            <returns>The extra padding data.</returns>
+            <remarks>
+            This method is called upon the initialization of the <see cref="P:AsmResolver.PE.File.PEFile.ExtraSectionData"/> property.
+            </remarks>
+        </member>
+        <member name="M:AsmResolver.PE.File.PEFile.GetEofData">
+            <summary>
+            Obtains any data appended to the end of the file (EoF).
+            </summary>
+            <returns>The extra data.</returns>
+            <remarks>
+            This method is called upon the initialization of the <see cref="P:AsmResolver.PE.File.PEFile.EofData"/> property.
+            </remarks>
+        </member>
+        <member name="T:AsmResolver.PE.File.PEMappingMode">
+            <summary>
+            Provides members for describing whether a portable executable file is in its mapped or unmapped form.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.PEMappingMode.Unmapped">
+            <summary>
+            Indicates the portable executable is in its unmapped form.
+            Every offset in the portable executable refers to a physical file offset as it would appear on disk.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.PEMappingMode.Mapped">
+            <summary>
+            Indicates the portable executable is in its mapped form.
+            Every offset in the portable executable refers to an absolute memory address.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.PE.File.PESection">
+            <summary>
+            Represents a single section in a portable executable (PE) file.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.PESection.#ctor(AsmResolver.Utf8String,AsmResolver.PE.File.SectionFlags)">
+            <summary>
+            Creates a new empty section.
+            </summary>
+            <param name="name">The name of the section.</param>
+            <param name="characteristics">The section flags.</param>
+        </member>
+        <member name="M:AsmResolver.PE.File.PESection.#ctor(AsmResolver.Utf8String,AsmResolver.PE.File.SectionFlags,AsmResolver.ISegment)">
+            <summary>
+            Creates a new empty section.
+            </summary>
+            <param name="name">The name of the section.</param>
+            <param name="characteristics">The section flags.</param>
+            <param name="contents">The contents of the section.</param>
+        </member>
+        <member name="M:AsmResolver.PE.File.PESection.#ctor(AsmResolver.PE.File.PESection)">
+            <summary>
+            Copy a new section.
+            </summary>
+            <param name="section">The section to be copied.</param>
+        </member>
+        <member name="M:AsmResolver.PE.File.PESection.#ctor(AsmResolver.PE.File.SectionHeader,AsmResolver.ISegment)">
+            <summary>
+            Creates a new section with the provided contents.
+            </summary>
+            <param name="header">The header to associate to the section.</param>
+            <param name="contents">The contents of the section.</param>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.ContainingFile">
+            <summary>
+            Gets the portable executable file this section is part of.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.Name">
+            <summary>
+            Gets or sets the name of the section.
+            </summary>
+            <remarks>
+            The name of the section is a UTF-8 string that can be no longer than 8 characters long.
+            </remarks>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.Characteristics">
+            <summary>
+            Gets or sets the characteristics of the section.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.IsContentCode">
+            <summary>
+            Gets or sets a value indicating the section contains executable code.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.IsContentInitializedData">
+            <summary>
+            Gets or sets a value indicating the section contains initialized data.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.IsContentUninitializedData">
+            <summary>
+            Gets or sets a value indicating the section contains uninitialized data.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.IsMemoryDiscardable">
+            <summary>
+            Gets or sets a value indicating the section can be discarded as needed.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.IsMemoryNotCached">
+            <summary>
+            Gets or sets a value indicating the section cannot be cached.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.IsMemoryNotPaged">
+            <summary>
+            Gets or sets a value indicating the section is not pageable.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.IsMemoryShared">
+            <summary>
+            Gets or sets a value indicating the section can be shared in memory.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.IsMemoryExecute">
+            <summary>
+            Gets or sets a value indicating the section can be executed as code.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.IsMemoryRead">
+            <summary>
+            Gets or sets a value indicating the section can be read.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.IsMemoryWrite">
+            <summary>
+            Gets or sets a value indicating the section can be written.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.Contents">
+            <summary>
+            Gets or sets the contents of the section.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.IsReadable">
+            <summary>
+            Gets a value indicating whether the section is readable using a binary stream reader.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.Offset">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.Rva">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.File.PESection.CanUpdateOffsets">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.PESection.UpdateOffsets(AsmResolver.RelocationParameters@)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.PESection.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.PESection.GetVirtualSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.PESection.CreateReader(System.UInt64,System.UInt32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.PESection.CreateHeader">
+            <summary>
+            Creates a new header for this section.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.PESection.ContainsFileOffset(System.UInt64)">
+            <summary>
+            Determines whether the provided file offset falls within the section that the header describes.
+            </summary>
+            <param name="fileOffset">The offset to check.</param>
+            <returns><c>true</c> if the file offset falls within the section, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.PESection.ContainsRva(System.UInt32)">
+            <summary>
+            Determines whether the provided virtual address falls within the section that the header describes.
+            </summary>
+            <param name="rva">The virtual address to check.</param>
+            <returns><c>true</c> if the virtual address falls within the section, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.PESection.FileOffsetToRva(System.UInt64)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.PESection.RvaToFileOffset(System.UInt32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.PESection.ToString">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.PESection.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.File.PESectionCollection">
+            <summary>
+            Represents a collection of sections stored in a portable executable file.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.PESectionCollection.#ctor(AsmResolver.PE.File.PEFile)">
+            <summary>
+            Creates a new instance of the <see cref="T:AsmResolver.PE.File.PESectionCollection"/> class.
+            </summary>
+            <param name="owner">The owner of the sections.</param>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESectionCollection.Owner">
+            <summary>
+            Gets the PE file containing the sections.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.PESectionCollection.ClearItems">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.PESectionCollection.InsertItem(System.Int32,AsmResolver.PE.File.PESection)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.PESectionCollection.SetItem(System.Int32,AsmResolver.PE.File.PESection)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.PESectionCollection.RemoveItem(System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.File.PESegmentReference">
+            <summary>
+            Represents a reference to a segment of a PE file.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.PESegmentReference.#ctor(AsmResolver.PE.File.PEFile,System.UInt32)">
+            <summary>
+            Creates a new PE reference.
+            </summary>
+            <param name="peFile">The underlying PE file.</param>
+            <param name="rva">The virtual address of the segment.</param>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESegmentReference.Offset">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.File.PESegmentReference.Rva">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.File.PESegmentReference.CanRead">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.File.PESegmentReference.IsBounded">
+            <inheritdoc />
+        </member>
+        <member name="P:AsmResolver.PE.File.PESegmentReference.IsValidAddress">
+            <summary>
+            Gets a value indicating whether the reference points to a valid section within the PE file.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.PESegmentReference.PointsToPhysicalData">
+            <summary>
+            Gets a value indicating whether the reference points to a valid physical section within the PE file.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.PESegmentReference.CreateReader">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.PESegmentReference.GetSegment">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.PESegmentReference.ToString">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.File.SectionFlags">
+            <summary>
+            Provides members describing all possible flags that can be assigned to a section.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.TypeDsect">
+            <summary>
+            Reserved for future use.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.TypeNoLoad">
+            <summary>
+            Reserved for future use.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.TypeGroup">
+            <summary>
+            Reserved for future use.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.TypeNoPadded">
+            <summary>
+            The section should not be padded to the next boundary. This flag is obsolete and is replaced by Align1Bytes. This is valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.TypeCopy">
+            <summary>
+            Reserved for future use.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.ContentCode">
+            <summary>
+            The section contains executable code.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.ContentInitializedData">
+            <summary>
+            The section contains initialized data.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.ContentUninitializedData">
+            <summary>
+            The section contains uninitialized data.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.LinkOther">
+            <summary>
+            Reserved for future use.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.LinkInfo">
+            <summary>
+            The section contains comments or other information. The .drectve section has this type. This is valid for object files only.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.TypeOver">
+            <summary>
+            Reserved for future use.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.LinkRemove">
+            <summary>
+            The section will not become part of the image. This is valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.LinkComDat">
+            <summary>
+            The section contains COMDAT data. For more information, see section 5.5.6, COMDAT Sections (Object Only). This is valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.NoDeferSpecExceptions">
+            <summary>
+            Reset speculative exceptions handling bits in the TLB entries for this section.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.RelativeGp">
+            <summary>
+            The section contains data referenced through the global pointer (GP).
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.MemPurgeable">
+            <summary>
+            Reserved for future use.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.Memory16Bit">
+            <summary>
+            Reserved for future use.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.MemoryLocked">
+            <summary>
+            Reserved for future use.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.MemoryPreload">
+            <summary>
+            Reserved for future use.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.Align1Bytes">
+            <summary>
+            Align data on a 1-byte boundary. Valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.Align2Bytes">
+            <summary>
+            Align data on a 2-byte boundary. Valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.Align4Bytes">
+            <summary>
+            Align data on a 4-byte boundary. Valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.Align8Bytes">
+            <summary>
+            Align data on an 8-byte boundary. Valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.Align16Bytes">
+            <summary>
+            Align data on a 16-byte boundary. Valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.Align32Bytes">
+            <summary>
+            Align data on a 32-byte boundary. Valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.Align64Bytes">
+            <summary>
+            Align data on a 64-byte boundary. Valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.Align128Bytes">
+            <summary>
+            Align data on a 128-byte boundary. Valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.Align256Bytes">
+            <summary>
+            Align data on a 256-byte boundary. Valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.Align512Bytes">
+            <summary>
+            Align data on a 512-byte boundary. Valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.Align1024Bytes">
+            <summary>
+            Align data on a 1024-byte boundary. Valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.Align2048Bytes">
+            <summary>
+            Align data on a 2048-byte boundary. Valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.Align4096Bytes">
+            <summary>
+            Align data on a 4096-byte boundary. Valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.Align8192Bytes">
+            <summary>
+            Align data on an 8192-byte boundary. Valid only for object files.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.LinkExtendedRelocationOverflow">
+            <summary>
+            The section contains extended relocations.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.MemoryDiscardable">
+            <summary>
+            The section can be discarded as needed.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.MemoryNotCached">
+            <summary>
+            The section cannot be cached.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.MemoryNotPaged">
+            <summary>
+            The section is not pageable.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.MemoryShared">
+            <summary>
+            The section can be shared in memory.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.MemoryExecute">
+            <summary>
+            The section can be executed as code.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.MemoryRead">
+            <summary>
+            The section can be read.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionFlags.MemoryWrite">
+            <summary>
+            The section can be written.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.PE.File.SectionHeader">
+            <summary>
+            Represents a single section header in the portable executable (PE) file format.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SectionHeader.SectionHeaderSize">
+            <summary>
+            Indicates the static size of a single section header.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.SectionHeader.#ctor(AsmResolver.Utf8String,AsmResolver.PE.File.SectionFlags)">
+            <summary>
+            Creates a new section header with the provided name.
+            </summary>
+            <param name="name">The name of the new section.</param>
+            <param name="characteristics">The section flags to assign.</param>
+        </member>
+        <member name="M:AsmResolver.PE.File.SectionHeader.#ctor(AsmResolver.PE.File.SectionHeader)">
+            <summary>
+            Creates a copy of the provided section header.
+            </summary>
+            <param name="value">The section header to base information on.</param>
+        </member>
+        <member name="P:AsmResolver.PE.File.SectionHeader.Name">
+            <summary>
+            Gets or sets the name of the section.
+            </summary>
+            <remarks>
+            The name of the section is a UTF-8 string that can be no longer than 8 characters long.
+            </remarks>
+        </member>
+        <member name="P:AsmResolver.PE.File.SectionHeader.VirtualSize">
+            <summary>
+            Gets or sets the total number of bytes the section consists of when it is loaded into memory.
+            </summary>
+            <remarks>
+            If the value is greater than <see cref="P:AsmResolver.PE.File.SectionHeader.SizeOfRawData"/>, it is zero-padded when loaded into memory.
+            </remarks>
+        </member>
+        <member name="P:AsmResolver.PE.File.SectionHeader.VirtualAddress">
+            <summary>
+            Gets or sets the virtual address (relative to the image base) of the section.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.SectionHeader.SizeOfRawData">
+            <summary>
+            Gets or sets the number of bytes the section consists of on disk.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.SectionHeader.PointerToRawData">
+            <summary>
+            Gets or sets the file offset to the beginning of the section on disk.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.PE.File.SectionHeader.PointerToRelocations">
+            <summary>
+            Gets or sets the file offset to the beginning of the relocations table for the section.
+            </summary>
+            <remarks>
+            This field is set to zero in a normal PE image.
+            </remarks>
+        </member>
+        <member name="P:AsmResolver.PE.File.SectionHeader.PointerToLineNumbers">
+            <summary>
+            Gets or sets the file offset to the beginning of the line numbers table for the section.
+            </summary>
+            <remarks>
+            This field is set to zero in a normal PE image.
+            </remarks>
+        </member>
+        <member name="P:AsmResolver.PE.File.SectionHeader.NumberOfRelocations">
+            <summary>
+            Gets or sets the number of relocations in the relocation table of the section.
+            </summary>
+            <remarks>
+            This field is set to zero for executable files.
+            </remarks>
+        </member>
+        <member name="P:AsmResolver.PE.File.SectionHeader.NumberOfLineNumbers">
+            <summary>
+            Gets or sets the total amount of line numbers table referenced by <see cref="P:AsmResolver.PE.File.SectionHeader.PointerToLineNumbers" /> for the section.
+            </summary>
+            <remarks>
+            This field is not used in a normal PE image.
+            </remarks>
+        </member>
+        <member name="P:AsmResolver.PE.File.SectionHeader.Characteristics">
+            <summary>
+            Gets or sets the characteristics of the section.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.SectionHeader.FromReader(AsmResolver.IO.BinaryStreamReader@)">
+            <summary>
+            Reads a single section header at the current position of the provided input stream.
+            </summary>
+            <param name="reader">The input stream to read from.</param>
+            <returns>The section header that was read.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.SectionHeader.GetPhysicalSize">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.SectionHeader.ContainsFileOffset(System.UInt64)">
+            <summary>
+            Determines whether the provided file offset falls within the section that the header describes.
+            </summary>
+            <param name="fileOffset">The offset to check.</param>
+            <returns><c>true</c> if the file offset falls within the section, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.SectionHeader.ContainsRva(System.UInt32)">
+            <summary>
+            Determines whether the provided virtual address falls within the section that the header describes.
+            </summary>
+            <param name="rva">The virtual address to check.</param>
+            <returns><c>true</c> if the virtual address falls within the section, <c>false</c> otherwise.</returns>
+        </member>
+        <member name="M:AsmResolver.PE.File.SectionHeader.FileOffsetToRva(System.UInt64)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.SectionHeader.RvaToFileOffset(System.UInt32)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.SectionHeader.Write(AsmResolver.IO.BinaryStreamWriter)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.SectionHeader.ToString">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.File.SerializedPEFile">
+            <summary>
+            Provides an implementation of a PE image that gets its data from an input stream.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.PE.File.SerializedPEFile.#ctor(AsmResolver.IO.BinaryStreamReader@,AsmResolver.PE.File.PEMappingMode)">
+            <summary>
+            Reads a PE file from an input stream.
+            </summary>
+            <param name="reader">The input stream.</param>
+            <param name="mode">Indicates how the input PE file is mapped.</param>
+            <exception cref="T:System.BadImageFormatException">Occurs when the input stream is malformed.</exception>
+        </member>
+        <member name="M:AsmResolver.PE.File.SerializedPEFile.GetSections">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.PE.File.SerializedPEFile.GetEofData">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.PE.File.SubSystem">
+            <summary>
+            Provides members describing all supported subsystems that a portable executable can run in.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SubSystem.Unknown">
+            <summary>
+            Indicates an unknown subsystem.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SubSystem.Native">
+            <summary>
+            Indicates device drivers and native Windows processes. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SubSystem.WindowsGui">
+            <summary>
+            Indicates the Windows graphical user interface subsystem.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SubSystem.WindowsCui">
+            <summary>
+            Indicates the Windows character subsystem.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SubSystem.PosixCui">
+            <summary>
+            Indicates the POSIX character subsystem.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SubSystem.NativeWindows">
+            <summary>
+            Indicates a native Win9x driver. 
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SubSystem.WindowsCeGui">
+            <summary>
+            Indicates a Windows CE graphical user interface application.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SubSystem.EfiApplication">
+            <summary>
+            Indicates an extensible firmware interface application.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SubSystem.EfiBootServiceDriver">
+            <summary>
+            Indicates an extensible firmware interface driver with boot services.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SubSystem.EfiRuntime">
+            <summary>
+            Indicates an extensible firmware interface driver with run-time services.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SubSystem.EfiRom">
+            <summary>
+            Indicates an extensible firmware interface ROM image.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SubSystem.Xbox">
+            <summary>
+            Indicates an XBOX application.
+            </summary>
+        </member>
+        <member name="F:AsmResolver.PE.File.SubSystem.WindowsBootApplication">
+            <summary>
+            Indicates a Windows boot application.
+            </summary>
+        </member>
+        <member name="T:AsmResolver.LazyPropertyAttribute">
+            <summary>
+            Specifies an auto property is lazily initialized and that this implementation is provided by a source generator
+            </summary>
+            <remarks>
+            The source generator generates for every property <c>X</c> marked with this attribute the following:
+            <list type="bullet">
+               <item><description>A private field <c>_x</c> to store the value of the property</description></item>
+               <item><description>A private constant <c>XMask</c> specifying the bit mask within the initialization vector <c>_initialized</c></description></item>
+               <item><description>A call to a parameterless method <c>GetX()</c></description></item>
+            </list>
+            In case <see cref="P:AsmResolver.LazyPropertyAttribute.OwnerProperty" /> is set, the source generator will also generate code to automatically test and update exclusive ownership of the property's value.
+            </remarks>
+        </member>
+        <member name="P:AsmResolver.LazyPropertyAttribute.OwnerProperty">
+            <summary>
+            When non-null, gets the name of the property that reflects the owner of the marked property's value.
+            </summary>
+            <remarks>
+            Use this to indicate the value of the property is exclusively owned by at most one instance of the enclosing class.
+            </remarks>
+        </member>
+    </members>
+</doc>

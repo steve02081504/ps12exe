@@ -1,0 +1,95 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>AsmResolver.DotNet.Dynamic</name>
+    </assembly>
+    <members>
+        <member name="T:AsmResolver.DotNet.Dynamic.DynamicCilOperandResolver">
+            <summary>
+            Provides an implementation of <see cref="T:AsmResolver.PE.DotNet.Cil.ICilOperandResolver"/> that resolves operands based on
+            runtime information.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.DotNet.Dynamic.DynamicCilOperandResolver.#ctor(AsmResolver.DotNet.Serialized.SerializedModuleDefinition,AsmResolver.DotNet.Dynamic.DynamicMethodDefinition,AsmResolver.DotNet.Code.Cil.CilMethodBody,System.Collections.Generic.IList{System.Object})">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.DotNet.Dynamic.DynamicCilOperandResolver.ResolveMember(AsmResolver.PE.DotNet.Metadata.Tables.MetadataToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.DotNet.Dynamic.DynamicCilOperandResolver.ResolveString(AsmResolver.PE.DotNet.Metadata.Tables.MetadataToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:AsmResolver.DotNet.Dynamic.DynamicMethodDefinition">
+            <summary>
+            Represents a single method in a type definition of a .NET module.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.DotNet.Dynamic.DynamicMethodDefinition.#ctor(AsmResolver.DotNet.ModuleDefinition,System.Object)">
+            <summary>
+            Create a Dynamic Method Definition
+            </summary>
+            <param name="module">Target Module</param>
+            <param name="dynamicMethodObj">Dynamic Method / Delegate / DynamicResolver</param>
+        </member>
+        <member name="P:AsmResolver.DotNet.Dynamic.DynamicMethodDefinition.IsSupported">
+            <summary>
+            Determines whether dynamic method reading is fully supported in the current host's .NET environment.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.DotNet.Dynamic.DynamicMethodDefinition.DeclaringModule">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.DotNet.Dynamic.DynamicMethodDefinition.CreateDynamicMethodBody(AsmResolver.DotNet.Dynamic.DynamicMethodDefinition,System.Object)">
+            <summary>
+            Creates a CIL method body from a dynamic method.
+            </summary>
+            <param name="method">The method that owns the method body.</param>
+            <param name="dynamicMethodObj">The Dynamic Method/Delegate/DynamicResolver.</param>
+            <returns>The method body.</returns>
+        </member>
+        <member name="T:AsmResolver.DotNet.Dynamic.DynamicTypeSignatureResolver">
+            <summary>
+            Provides an implementation for the <see cref="T:AsmResolver.DotNet.Signatures.ITypeSignatureResolver"/> that resolves metadata tokens from
+            the underlying module's tables stream, and is able to transform addresses referencing method tables in the
+            current process to type signatures.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.DotNet.Dynamic.DynamicTypeSignatureResolver.Instance">
+            <summary>
+            Gets the singleton instance of the <see cref="T:AsmResolver.DotNet.Dynamic.DynamicTypeSignatureResolver"/> class.
+            </summary>
+        </member>
+        <member name="P:AsmResolver.DotNet.Dynamic.DynamicTypeSignatureResolver.IsSupported">
+            <summary>
+            Gets a value indicating whether dynamic resolution of method tables is supported.
+            </summary>
+        </member>
+        <member name="M:AsmResolver.DotNet.Dynamic.DynamicTypeSignatureResolver.ResolveRuntimeType(AsmResolver.DotNet.Signatures.BlobReaderContext@,System.IntPtr)">
+            <inheritdoc />
+        </member>
+        <member name="M:AsmResolver.DotNet.Dynamic.FieldReader.ReadField``1(System.Object,System.String)">
+            <summary>
+            Finds and gets value of non-public field.
+            </summary>
+            <exception cref="T:System.NullReferenceException"/>
+            <exception cref="T:System.ArgumentNullException"/>
+            <param name="instance">Object Instance</param>
+            <param name="fieldName">Field Name</param>
+        </member>
+        <member name="M:AsmResolver.DotNet.Dynamic.FieldReader.TryReadField``1(System.Object,System.String,``0@)">
+            <summary>
+            Tries to find and gets value of non-public field.
+            </summary>
+            <param name="instance">Object Instance</param>
+            <param name="fieldName">Field Name</param>
+            <param name="val">Returns result</param>
+        </member>
+        <member name="M:AsmResolver.DotNet.Dynamic.FieldReader.ExistsField(System.Object,System.String)">
+            <summary>
+            Checks if an object has a non-public field.
+            </summary>
+            <param name="instance">Object Instance</param>
+            <param name="fieldName">Field Name</param>
+        </member>
+    </members>
+</doc>
