@@ -147,7 +147,7 @@ namespace exe21sp {
 					return null;
 				var builder = new StringBuilder();
 				var escaped = message.Replace("'", "''");
-				builder.Append("'").Append(escaped).Append("'");
+				builder.Append('\'').Append(escaped).Append('\'');
 				return builder.ToString();
 			}
 			catch {
