@@ -100,7 +100,7 @@ $cp.CompilerOptions = $CompilerOptions -ne '' -join ' '
 Write-Debug "Using Compiler Options: $($cp.CompilerOptions)"
 
 if (!$AstAnalyzeResult.IsConst) {
-	[VOID]$cp.EmbeddedResources.Add("$TempDir\main.ps1")
+	[VOID]$cp.EmbeddedResources.Add("$TempDir\main.par")
 }
 $cr = $cop.CompileAssemblyFromSource($cp, $programFrame)
 if ($cr.Errors.Count -gt 0) {

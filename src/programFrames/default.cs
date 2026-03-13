@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
+using System.IO;
+using System.IO.Compression;
 #if !Pwsh20
 	using System.Management.Automation.Language;
 #endif
@@ -1908,10 +1910,12 @@ namespace PSRunnerNS {
 			this.pwsh.Runspace.SessionStateProxy.SetVariable("PSEXEpath", exepath);
 			Assembly executingAssembly = Assembly.GetExecutingAssembly();
 			string script;
-			using(System.IO.Stream scriptstream = executingAssembly.GetManifestResourceStream("main.ps1")) {
-				using(System.IO.StreamReader scriptreader = new System.IO.StreamReader(scriptstream, System.Text.Encoding.UTF8)) {
-					script = scriptreader.ReadToEnd();
-					this.PSRunSpace.SessionStateProxy.SetVariable("PSEXEscript", script);
+			using (Stream scriptstream = executingAssembly.GetManifestResourceStream("main.par")) {
+				using (var gzip = new GZipStream(scriptstream, CompressionMode.Decompress)) {
+					using (var scriptreader = new StreamReader(gzip, Encoding.UTF8)) {
+						script = scriptreader.ReadToEnd();
+						this.PSRunSpace.SessionStateProxy.SetVariable("PSEXEscript", script);
+					}
 				}
 			}
 			script = "function PSEXEMainFunction{"+script+"}";

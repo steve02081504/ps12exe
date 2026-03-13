@@ -20,6 +20,7 @@ else {
 	# [int].Assembly.Location 等基础类型的程序集也是它。
 	GetAssembly "mscorlib"
 	if ($PSVersionTable.PSEdition -eq "Core") { GetAssembly "System.Runtime" }
+	GetAssembly "System.IO.Compression"
 	GetAssembly "System.Management.Automation"
 
 	# If noConsole is true, add System.Windows.Forms.dll and System.Drawing.dll to the reference assemblies
@@ -62,8 +63,22 @@ if (-not $TempDir) {
 	New-Item -Path $TempTempDir -ItemType Directory | Out-Null
 }
 $TempDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($TempDir)
+[byte[]]$scriptBytes = [System.Text.Encoding]::UTF8.GetBytes($Content)
+$parPath = Join-Path $TempDir 'main.par'
 
-$Content | Set-Content $TempDir\main.ps1 -Encoding UTF8 -NoNewline
+$fileStream = [System.IO.File]::Create($parPath)
+try {
+	$gzip = New-Object System.IO.Compression.GZipStream($fileStream, [System.IO.Compression.CompressionMode]::Compress)
+	try {
+		$gzip.Write($scriptBytes, 0, $scriptBytes.Length)
+	}
+	finally {
+		$gzip.Dispose()
+	}
+}
+finally {
+	$fileStream.Dispose()
+}
 if ($iconFile -match "^(https?|ftp)://") {
 	try {
 		# 首先尝试从URL中获取文件扩展名

@@ -62,7 +62,7 @@ $compilation = [Microsoft.CodeAnalysis.CSharp.CSharpCompilation]::Create(
 )
 
 if (!$AstAnalyzeResult.IsConst) {
-	$resourceDescription = New-Object Microsoft.CodeAnalysis.Emit.EmbeddedResource("$TempDir\main.ps1", [Microsoft.CodeAnalysis.ResourceDescriptionKind]::Embedded)
+	$resourceDescription = New-Object Microsoft.CodeAnalysis.Emit.EmbeddedResource("$TempDir\main.par", [Microsoft.CodeAnalysis.ResourceDescriptionKind]::Embedded)
 	$compilation = $compilation.AddReferences($resourceDescription)
 }
 
