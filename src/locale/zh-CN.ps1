@@ -61,6 +61,15 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 			help	 = "显示此帮助信息。"
 		}
 	}
+	exe21spHelpData		   = @{
+		title	   = "用法："
+		Usage	   = "exe21sp [-ExePath] '<exe文件路径>' [-OutFile '<输出ps1路径>'] [-help]"
+		PrarmsData = [ordered]@{
+			ExePath = "要反编译的 ps12exe 生成的 exe 文件路径。"
+			OutFile = "可选；写出还原脚本的 ps1 文件路径，不指定则输出到标准输出。"
+			help	 = "显示此帮助信息。"
+		}
+	}
 	ConsoleHelpData		   = @{
 		title	   = "用法："
 		Usage	   = "[input |] ps12exe [[-inputFile] '<文件名|url>' | -Content '<脚本>'] [-outputFile '<文件名>']

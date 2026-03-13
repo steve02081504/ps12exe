@@ -61,6 +61,15 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 			help	 = "Mostrar esta información de ayuda."
 		}
 	}
+	exe21spHelpData		   = @{
+		title	   = "Uso:"
+		Usage	   = "exe21sp [-ExePath] '<ruta al exe>' [-OutFile '<ruta al .ps1>'] [-help]"
+		PrarmsData = [ordered]@{
+			ExePath = "Ruta al exe generado por ps12exe a descompilar."
+			OutFile = "Opcional; ruta donde escribir el script recuperado. Si se omite, salida a stdout."
+			help	 = "Mostrar esta ayuda."
+		}
+	}
 	ConsoleHelpData		   = @{
 		title	   = "Uso:"
 		Usage	   = "[input |] ps12exe [[-inputFile] '<nombre de archivo|url>' | -Content '<script>'] [-outputFile '<nombre de archivo>']

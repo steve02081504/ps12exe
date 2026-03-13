@@ -61,6 +61,15 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 			help	 = "इस मदद सूचना को दिखाएँ।"
 		}
 	}
+	exe21spHelpData		   = @{
+		title	   = "उपयोग:"
+		Usage	   = "exe21sp [-ExePath] '<exe पथ>' [-OutFile '<.ps1 पथ>'] [-help]"
+		PrarmsData = [ordered]@{
+			ExePath = "ps12exe द्वारा निर्मित exe का पथ (डीकंपाइल करने के लिए)।"
+			OutFile = "वैकल्पिक; पुनर्प्राप्त स्क्रिप्ट लिखने का पथ। छोड़ने पर stdout।"
+			help	 = "यह सहायता दिखाएँ।"
+		}
+	}
 	ConsoleHelpData		   = @{
 		title	   = "उपयोग:"
 		Usage	   = "[input |] ps12exe [[-inputFile] '<फ़ाइल नाम|url>' | -Content '<स्क्रिप्ट>'] [-outputFile '<फ़ाइल नाम>']

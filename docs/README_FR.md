@@ -82,6 +82,14 @@ Start-ps12exeWebServer
 
 Démarre un service Web qui permet aux utilisateurs de compiler du code PowerShell en ligne.
 
+### Récupérer le ps1 depuis un exe (exe21sp)
+
+```powershell
+exe21sp -ExePath .\target.exe -OutFile .\target.ps1
+```
+
+`exe21sp` extrait le script PowerShell contenu dans un exécutable généré par ps12exe et le restitue dans un fichier `.ps1` ou sur la sortie standard.
+
 ## Paramètres
 
 ### Paramètres GUI

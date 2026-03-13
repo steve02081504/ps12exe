@@ -1,28 +1,26 @@
 //code from https://blog.washi.dev/posts/tinysharp/
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Linq;
 using AsmResolver;
 using AsmResolver.DotNet;
-using AsmResolver.DotNet.Builder.Metadata.Blob;
-using AsmResolver.DotNet.Builder.Metadata.Strings;
+using AsmResolver.DotNet.Builder.Metadata;
 using AsmResolver.DotNet.Code.Cil;
 using AsmResolver.DotNet.Signatures;
 using AsmResolver.IO;
 using AsmResolver.PE;
-using AsmResolver.PE.DotNet.Builder;
+using AsmResolver.PE.Builder;
 using AsmResolver.PE.Code;
 using AsmResolver.PE.DotNet;
 using AsmResolver.PE.DotNet.Cil;
 using AsmResolver.PE.DotNet.Metadata;
 using AsmResolver.PE.DotNet.Metadata.Tables;
-using AsmResolver.PE.DotNet.Metadata.Tables.Rows;
 using AsmResolver.PE.Win32Resources;
 using AsmResolver.PE.Win32Resources.Icon;
 using AsmResolver.PE.Win32Resources.Version;
 using AsmResolver.PE.File;
-using AsmResolver.PE.File.Headers;
 
 namespace TinySharp {
 	public class Program {
@@ -78,8 +76,13 @@ namespace TinySharp {
 						MethodImplAttributes.PreserveSig,
 						MethodAttributes.Static | MethodAttributes.PInvokeImpl,
 						stringsStreamBuffer.GetStringIndex("puts"),
-						blobStreamBuffer.GetBlobIndex(new DummyProvider(),
-							MethodSignature.CreateStatic(module.CorLibTypeFactory.Void, module.CorLibTypeFactory.IntPtr), ThrowErrorListener.Instance),
+						blobStreamBuffer.GetBlobIndex(
+							module,
+							new DummyProvider(),
+							MethodSignature.CreateStatic(
+								module.CorLibTypeFactory.Void,
+								new[] { module.CorLibTypeFactory.IntPtr }),
+							ThrowErrorListener.Instance),
 						1
 					));
 				}
@@ -90,8 +93,13 @@ namespace TinySharp {
 						MethodImplAttributes.PreserveSig,
 						MethodAttributes.Static | MethodAttributes.PInvokeImpl,
 						stringsStreamBuffer.GetStringIndex("GetStdHandle"),
-						blobStreamBuffer.GetBlobIndex(new DummyProvider(),
-							MethodSignature.CreateStatic(module.CorLibTypeFactory.IntPtr, module.CorLibTypeFactory.Int32), ThrowErrorListener.Instance),
+						blobStreamBuffer.GetBlobIndex(
+							module,
+							new DummyProvider(),
+							MethodSignature.CreateStatic(
+								module.CorLibTypeFactory.IntPtr,
+								new[] { module.CorLibTypeFactory.Int32 }),
+							ThrowErrorListener.Instance),
 						1
 					));
 					methodTable.Add(new MethodDefinitionRow(
@@ -99,8 +107,20 @@ namespace TinySharp {
 						MethodImplAttributes.PreserveSig,
 						MethodAttributes.Static | MethodAttributes.PInvokeImpl,
 						stringsStreamBuffer.GetStringIndex("WriteConsoleW"),
-						blobStreamBuffer.GetBlobIndex(new DummyProvider(),
-							MethodSignature.CreateStatic(module.CorLibTypeFactory.Void, module.CorLibTypeFactory.IntPtr, module.CorLibTypeFactory.IntPtr, module.CorLibTypeFactory.Int32, module.CorLibTypeFactory.IntPtr, module.CorLibTypeFactory.IntPtr), ThrowErrorListener.Instance),
+						blobStreamBuffer.GetBlobIndex(
+							module,
+							new DummyProvider(),
+							MethodSignature.CreateStatic(
+								module.CorLibTypeFactory.Void,
+								new[]
+								{
+									module.CorLibTypeFactory.IntPtr,
+									module.CorLibTypeFactory.IntPtr,
+									module.CorLibTypeFactory.Int32,
+									module.CorLibTypeFactory.IntPtr,
+									module.CorLibTypeFactory.IntPtr
+								}),
+							ThrowErrorListener.Instance),
 						1
 					));
 				}
@@ -143,8 +163,11 @@ namespace TinySharp {
 					0,
 					MethodAttributes.Static,
 					0,
-					blobStreamBuffer.GetBlobIndex(new DummyProvider(),
-						MethodSignature.CreateStatic(retype), ThrowErrorListener.Instance),
+					blobStreamBuffer.GetBlobIndex(
+						module,
+						new DummyProvider(),
+						MethodSignature.CreateStatic(retype),
+						ThrowErrorListener.Instance),
 					1
 				));
 			}
@@ -189,16 +212,16 @@ namespace TinySharp {
 			));
 
 			// Add all .NET metadata to the PE image.
+			var metadataDirectory = new MetadataDirectory {
+				VersionString = targetRuntime == "Framework2.0" ? "v2.0." : "v4.0."
+			};
+			metadataDirectory.Streams.Add(tablesStream);
+			metadataDirectory.Streams.Add(blobStreamBuffer.CreateStream());
+			metadataDirectory.Streams.Add(stringsStreamBuffer.CreateStream());
+
 			image.DotNetDirectory = new DotNetDirectory {
 				EntryPoint = new MetadataToken(TableIndex.Method, hasOutput?allASCIIoutput?2u:3u:1u),
-				Metadata = new Metadata {
-					VersionString = targetRuntime == "Framework2.0" ? "v2.0." : "v4.0.",
-					Streams = {
-						tablesStream,
-						blobStreamBuffer.CreateStream(),
-						stringsStreamBuffer.CreateStream()
-					}
-				}
+				Metadata = metadataDirectory
 			};
 			if (architecture == "anycpu")
 				image.DotNetDirectory.Flags &= ~DotNetDirectoryFlags.Bit32Required;
@@ -212,48 +235,43 @@ namespace TinySharp {
 			return result;
 		}
 		private DataSegment OutSegment;
-		private IPEImage Image;
+		private PEImage Image;
 		public void Build(string OutFile) {
-			// Assemble PE file.
-			var file = new MyBuilder().CreateFile(this.Image);
-
-			// Put string to print in the padding data.
-			if (OutSegment != null)
-				file.ExtraSectionData = this.OutSegment;
-
+			// Do NOT substitute ManagedPEFileBuilder: size would grow (see DESIGN at top of file).
+			// Pass OutSegment into builder so it is laid out inside .text and CIL patch gets correct RVA.
+			var file = new MinimalPEFileBuilder(OutSegment).CreateFile(this.Image);
 			file.Write(OutFile);
 		}
 		public void SetWin32Icon(string IconFile) {
-			// Create a new icon group with 1 icon.
-			var newGroup = new IconGroupDirectory { Type = 1, Count = 1 };
-
-			// Add the icon to the group (header stripped).
 			byte[] header = File.ReadAllBytes(IconFile);
-			var iconBytes = BitConverter.ToUInt32(header, 14);
-			// cut head and tail
-			byte[] icon = header.Skip(0x16).Take((int)iconBytes).ToArray();
-			newGroup.AddEntry(
-				new IconGroupDirectoryEntry {
-					Id = (ushort) 1, // Icon ID (must be unique)
-					BytesInRes = iconBytes,
-					PixelBitCount = BitConverter.ToUInt16(header, 12),
-					Width = header[6],
-					Height = header[7],
-					ColorCount = 0,
-					ColorPlanes = 1
-				},
-				new IconEntry { RawIcon = icon }
-			);
+			if (header.Length < 22) return;
+			ushort count = BitConverter.ToUInt16(header, 4);
+			if (count == 0) return;
+			// First icon directory entry: width, height, colors, reserved, planes, bpp, size, offset
+			byte w = header[6], h = header[7];
+			ushort planes = BitConverter.ToUInt16(header, 10);
+			ushort bpp = BitConverter.ToUInt16(header, 12);
+			uint size = BitConverter.ToUInt32(header, 14);
+			uint offset = BitConverter.ToUInt32(header, 18);
+			if (offset + size > (uint)header.Length) return;
+			byte[] iconBytes = new byte[size];
+			Buffer.BlockCopy(header, (int)offset, iconBytes, 0, (int)size);
 
-			// Add icon to icon resource group.
-			var newResource = new IconResource();
-			newResource.AddEntry(0x7f00, newGroup);
+			var entry = new IconEntry(1, 0) {
+				Width = w,
+				Height = h,
+				ColorCount = 0,
+				Planes = planes,
+				BitsPerPixel = bpp,
+				PixelData = new DataSegment(iconBytes)
+			};
+			var group = new IconGroup(1u, 0u) { Type = IconType.Icon };
+			group.Icons.Add(entry);
+			var iconResource = new IconResource(IconType.Icon);
+			iconResource.Groups.Add(group);
 
-			// Add resource to PE.
 			if (this.Image.Resources == null) this.Image.Resources = new ResourceDirectory(0u);
-			this.Image.Resources.Entries.Insert(0, new ResourceDirectory(ResourceType.Icon));
-			this.Image.Resources.Entries.Insert(1, new ResourceDirectory(ResourceType.GroupIcon));
-			newResource.WriteToDirectory(this.Image.Resources);
+			iconResource.InsertIntoDirectory(this.Image.Resources);
 		}
 		public void SetAssemblyInfo(string description, string company, string title, string product, string copyright, string trademark, string version) {
 			// Create new version resource.
@@ -297,38 +315,69 @@ namespace TinySharp {
 
 			// Add to resources.
 			if (this.Image.Resources == null) this.Image.Resources = new ResourceDirectory(0u);
-			versionResource.WriteToDirectory(this.Image.Resources);
+			versionResource.InsertIntoDirectory(this.Image.Resources);
 		}
 	}
 
 	internal class DummyProvider: ITypeCodedIndexProvider {
-		public uint GetTypeDefOrRefIndex(ITypeDefOrRef type) {
+		public uint GetTypeDefOrRefIndex(ITypeDefOrRef type, object extraArgument) {
 			throw new NotImplementedException();
 		}
 	}
 
-	public class MyBuilder: ManagedPEFileBuilder {
-		protected override PESection CreateTextSection(IPEImage image, ManagedPEBuilderContext context) {
-			// We override this method to only have it emit the bare minimum .text section.
+	/// <summary>
+	/// Minimal PE: FileAlignment 512, SectionAlignment 4096 (loader requires 4K section alignment), .text only,
+	/// minimal data directories. Achieves 1024 bytes. Output string is passed into builder and laid out inside .text
+	/// so CIL patch gets correct RVA. 512 bytes total is not possible (PE headers + one section >= 1024).
+	/// </summary>
+	internal sealed class MinimalPEFileBuilder : ManagedPEFileBuilder {
+		private readonly ISegment _extraSectionData;
 
-			var methodTable = context.DotNetSegment.DotNetDirectory.Metadata.GetStream<TablesStream>().GetTable<MethodDefinitionRow>();
+		public MinimalPEFileBuilder(ISegment extraSectionData = null) {
+			_extraSectionData = extraSectionData;
+		}
 
-			for (uint rid = 1; rid <= methodTable.Count; rid++) {
-				var methodRow = methodTable.GetByRid(rid);
+		protected override uint GetFileAlignment(PEFileBuilderContext context, PEFile outputFile) { return 512; }
+		// Section alignment 4096 for loader; file alignment 512 for size.
+		protected override uint GetSectionAlignment(PEFileBuilderContext context, PEFile outputFile) { return 4096; }
 
-				var bodySegment = methodRow.Body.IsBounded
-					? methodRow.Body.GetSegment()
-					: null;
+		protected override IEnumerable<PESection> CreateSections(PEFileBuilderContext context) {
+			yield return CreateTextSection(context);
+		}
 
-				if (bodySegment != null) {
-					context.DotNetSegment.MethodBodyTable.AddNativeBody(bodySegment, 4);
-					methodRow.Body = bodySegment.ToReference();
-				}
+		protected override void AssignDataDirectories(PEFileBuilderContext context, PEFile outputFile) {
+			base.AssignDataDirectories(context, outputFile);
+			outputFile.OptionalHeader.SetDataDirectory(DataDirectoryIndex.BaseRelocationDirectory, (ISegment)null);
+			outputFile.OptionalHeader.SetDataDirectory(DataDirectoryIndex.DebugDirectory, (ISegment)null);
+			outputFile.OptionalHeader.SetDataDirectory(DataDirectoryIndex.ResourceDirectory, (ISegment)null);
+			outputFile.OptionalHeader.SetDataDirectory(DataDirectoryIndex.ExportDirectory, (ISegment)null);
+		}
+
+		protected override PESection CreateTextSection(PEFileBuilderContext context) {
+			var contents = new SegmentBuilder();
+			if (!context.ImportDirectory.IsEmpty) {
+				contents.Add(context.ImportDirectory.ImportAddressDirectory);
 			}
-
+			var dotNet = context.Image.DotNetDirectory;
+			if (dotNet != null) {
+				contents.Add(dotNet);
+				contents.Add(context.FieldRvaTable);
+				contents.Add(context.MethodBodyTable);
+				if (dotNet.Metadata != null) contents.Add(dotNet.Metadata, 4);
+				if (dotNet.DotNetResources != null) contents.Add(dotNet.DotNetResources, 4);
+				if (dotNet.StrongName != null) contents.Add(dotNet.StrongName, 4);
+				if (dotNet.VTableFixups != null && dotNet.VTableFixups.Count > 0) contents.Add(dotNet.VTableFixups);
+				if (dotNet.ExportAddressTable != null) contents.Add(dotNet.ExportAddressTable, 4);
+				if (dotNet.ManagedNativeHeader != null) contents.Add(dotNet.ManagedNativeHeader, 4);
+			}
+			if (!context.ImportDirectory.IsEmpty) {
+				contents.Add(context.ImportDirectory);
+			}
+			if (_extraSectionData != null)
+				contents.Add(_extraSectionData);
 			return new PESection(".text",
-				SectionFlags.ContentCode | SectionFlags.MemoryRead,
-				context.DotNetSegment);
+				SectionFlags.ContentCode | SectionFlags.MemoryExecute | SectionFlags.MemoryRead,
+				contents);
 		}
 	}
 }

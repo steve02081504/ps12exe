@@ -74,6 +74,14 @@ ps12exe https://raw.githubusercontent.com/steve02081504/ps12exe/master/src/GUI/M
 
 Compiles `Main.ps1` from the internet into the executable `.\Main.exe`.
 
+### Recover ps1 from exe (exe21sp)
+
+```powershell
+exe21sp -ExePath .\target.exe -OutFile .\target.ps1
+```
+
+`exe21sp` extracts the PowerShell script embedded in a ps12exe-generated executable and saves it as a `.ps1` file or prints it to standard output.
+
 ### Self-Hosted Web Server
 
 ```powershell

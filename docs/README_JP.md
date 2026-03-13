@@ -82,6 +82,14 @@ Start-ps12exeWebServer
 
 ユーザーがオンラインで PowerShell コードをコンパイルできるようにする Web サービスを開始します。
 
+### exe から ps1 を復元（exe21sp）
+
+```powershell
+exe21sp -ExePath .\target.exe -OutFile .\target.ps1
+```
+
+`exe21sp` は ps12exe が生成した exe に埋め込まれている PowerShell スクリプトを取り出し、`.ps1` ファイルとして保存するか、標準出力に書き出します。
+
 ## パラメータ
 
 ### GUI パラメータ
