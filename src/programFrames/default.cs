@@ -1,4 +1,4 @@
-﻿// Simple PowerShell host created by Ingo Karstein (http://blog.karstein-consulting.com)
+// Simple PowerShell host created by Ingo Karstein (http://blog.karstein-consulting.com)
 // Reworked and GUI support by Markus Scholtes
 
 using System;
@@ -1768,8 +1768,8 @@ namespace PSRunnerNS {
 			private readonly PSRunnerUI _ui;
 
 			public ConsoleColorProxy(PSRunnerUI ui) {
-				if (ui == null) throw new ArgumentNullException("ui");
-				_ui = ui;
+                ArgumentNullException.ThrowIfNull(ui);
+                _ui = ui;
 			}
 
 			public ConsoleColor ErrorForegroundColor {
