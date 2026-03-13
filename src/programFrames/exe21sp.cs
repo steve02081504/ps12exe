@@ -35,33 +35,36 @@ namespace exe21sp {
 			try {
 				var module = ModuleDefinition.FromFile(exePath);
 				foreach (var resource in module.Resources) {
-					if (!resource.IsEmbedded)
-						continue;
-
 					string name = object.ReferenceEquals(resource.Name, null) ? null : resource.Name.ToString();
-					if (string.Equals(name, "main.par", StringComparison.OrdinalIgnoreCase)) {
-						var raw = resource.GetData();
-						if (raw == null || raw.Length == 0)
-							return null;
-
-						using (var ms = new MemoryStream(raw))
-						using (var gzip = new GZipStream(ms, CompressionMode.Decompress))
-						using (var reader = new StreamReader(gzip, Encoding.UTF8)) {
-							return reader.ReadToEnd();
+					// Resource may be "main.par" or e.g. "path\main.par" / "Namespace.main.par" depending on compiler.
+					if (name != null && (string.Equals(name, "main.par", StringComparison.OrdinalIgnoreCase) || name.EndsWith("main.par", StringComparison.OrdinalIgnoreCase))) {
+						if (!resource.IsEmbedded) continue; // need raw bytes from this module
+						byte[] raw = null;
+						try { raw = resource.GetData(); } catch { }
+						if (raw == null || raw.Length == 0) return null;
+						try {
+							using (var ms = new MemoryStream(raw))
+							using (var gzip = new GZipStream(ms, CompressionMode.Decompress))
+							using (var reader = new StreamReader(gzip, Encoding.UTF8)) {
+								return reader.ReadToEnd();
+							}
+						} catch {
+							// not valid gzip or not UTF-8
 						}
+						return null;
 					}
 
 					// Fallback: some frames may embed the plain script as a .ps1 resource instead of main.par.
-					if (name != null && name.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase)) {
-						var raw = resource.GetData();
-						if (raw == null || raw.Length == 0)
-							continue;
-
-						using (var ms = new MemoryStream(raw))
-						// Detect encoding from BOM when present; default to UTF-8 without BOM.
-						using (var reader = new StreamReader(ms, new UTF8Encoding(false), detectEncodingFromByteOrderMarks: true)) {
-							return reader.ReadToEnd();
-						}
+					if (name != null && name.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase) && resource.IsEmbedded) {
+						byte[] raw = null;
+						try { raw = resource.GetData(); } catch { }
+						if (raw == null || raw.Length == 0) continue;
+						try {
+							using (var ms = new MemoryStream(raw))
+							using (var reader = new StreamReader(ms, new UTF8Encoding(false), detectEncodingFromByteOrderMarks: true)) {
+								return reader.ReadToEnd();
+							}
+						} catch { }
 					}
 				}
 			}
@@ -74,6 +77,12 @@ namespace exe21sp {
 		private static string TryExtractFromTinySharp(string exePath) {
 			try {
 				var peFile = PEFile.FromFile(exePath);
+				// Only attempt TinySharp extraction for .NET assemblies (e.g. no main.par).
+				var opt = peFile.OptionalHeader;
+				if (opt == null) return null;
+				var clrDir = opt.GetDataDirectory(DataDirectoryIndex.ClrDirectory);
+				if (!clrDir.IsPresentInPE) return null;
+
 				PESection section = null;
 				foreach (var s in peFile.Sections) {
 					if (!object.ReferenceEquals(s.Name, null) && s.Name.ToString() == ".text") {
@@ -129,6 +138,12 @@ namespace exe21sp {
 				else if (bestAscii != null)
 					message = bestAscii;
 				if (string.IsNullOrEmpty(message))
+					return null;
+				// Reject obvious non-script strings (e.g. .NET type names from .text).
+				var trimmed = message.Trim();
+				if (trimmed.StartsWith("System.", StringComparison.Ordinal) || trimmed.StartsWith("Microsoft.", StringComparison.Ordinal))
+					return null;
+				if (trimmed.Length > 0 && trimmed.Length < 10 && !char.IsLetter(trimmed[0]))
 					return null;
 				var builder = new StringBuilder();
 				var escaped = message.Replace("'", "''");
