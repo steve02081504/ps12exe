@@ -1,26 +1,26 @@
 ﻿@{
-	LangName			   = "हिंदी (हिंदी)"
-	LangID				   = "hi-IN"
+	LangName				= "हिंदी (हिंदी)"
+	LangID					= "hi-IN"
 	# Right click Menu
-	CompileTitle		   = "कॉम्पाइल करें EXE में"
-	OpenInGUI			   = "ps12exeGUI में खोलें"
-	GUICfgFileDesc		   = "ps12exe GUI कॉन्फ़िगरेशन फ़ाइल"
+	CompileTitle			= "कॉम्पाइल करें EXE में"
+	OpenInGUI				= "ps12exeGUI में खोलें"
+	GUICfgFileDesc			= "ps12exe GUI कॉन्फ़िगरेशन फ़ाइल"
 	# Web Server
-	ServerStarted		   = "HTTP सर्वर शुरू हो गया है!"
-	ServerStopped		   = "HTTP सर्वर बंद हो गया है!"
-	ServerStartFailed	   = "HTTP सर्वर शुरू करने में विफल रहा!"
-	TryRunAsRoot		   = "कृपया प्रशासक के रूप में चलाने का प्रयास करें।"
-	ServerListening		   = "पहुंच का पता:"
-	ExitServerTip		   = "आप कभी भी Ctrl+C दबाकर सर्वर को बंद कर सकते हैं"
+	ServerStarted			= "HTTP सर्वर शुरू हो गया है!"
+	ServerStopped			= "HTTP सर्वर बंद हो गया है!"
+	ServerStartFailed		= "HTTP सर्वर शुरू करने में विफल रहा!"
+	TryRunAsRoot			= "कृपया प्रशासक के रूप में चलाने का प्रयास करें।"
+	ServerListening			= "पहुंच का पता:"
+	ExitServerTip			= "आप कभी भी Ctrl+C दबाकर सर्वर को बंद कर सकते हैं"
 	# GUI
-	ErrorHead			   = "त्रुटि:"
-	CompileResult		   = "कॉम्पाइल परिणाम"
-	DefaultResult		   = "पूरा हुआ!"
-	AskSaveCfg			   = "क्या आप कॉन्फ़िगरेशन फ़ाइल को सहेजना चाहते हैं?"
-	AskSaveCfgTitle		   = "कॉन्फ़िगरेशन फ़ाइल सहेजें"
-	CfgFileLabelHead	   = "कॉन्फ़िगरेशन फ़ाइल:"
+	ErrorHead				= "त्रुटि:"
+	CompileResult			= "कॉम्पाइल परिणाम"
+	DefaultResult			= "पूरा हुआ!"
+	AskSaveCfg				= "क्या आप कॉन्फ़िगरेशन फ़ाइल को सहेजना चाहते हैं?"
+	AskSaveCfgTitle			= "कॉन्फ़िगरेशन फ़ाइल सहेजें"
+	CfgFileLabelHead		= "कॉन्फ़िगरेशन फ़ाइल:"
 	# Console
-	WebServerHelpData	   = @{
+	WebServerHelpData		= @{
 		title	   = "उपयोग:"
 		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
 	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<पथ>']
@@ -37,7 +37,7 @@
 			help			  = "इस मदद सूचना को दिखाएँ।"
 		}
 	}
-	GUIHelpData			   = @{
+	GUIHelpData				= @{
 		title	   = "उपयोग:"
 		Usage	   = @"
 ps12exeGUI [[-ConfigFile] '<कॉन्फ़िगरेशन फ़ाइल>'] [-PS1File '<स्क्रिप्ट फ़ाइल>'] [-Localize '<भाषा कोड>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
@@ -46,13 +46,13 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 "@
 		PrarmsData = [ordered]@{
 			ConfigFile	= "लोड करने के लिए कॉन्फ़िगरेशन फ़ाइल।"
-			PS1File		= "कंपाइल करने के लिए स्क्रिप्ट फ़ाइल।"
-			Localize	= "उपयोग किया जाने वाला भाषा कोड।"
-			UIMode		= "उपयोग किया जाने वाला उपयोगकर्ता इंटरफेस मोड।"
-			help		= "इस मदद सूचना को दिखाएँ।"
+			PS1File	   = "कंपाइल करने के लिए स्क्रिप्ट फ़ाइल।"
+			Localize   = "उपयोग किया जाने वाला भाषा कोड।"
+			UIMode	   = "उपयोग किया जाने वाला उपयोगकर्ता इंटरफेस मोड।"
+			help	   = "इस मदद सूचना को दिखाएँ।"
 		}
 	}
-	SetContextMenuHelpData = @{
+	SetContextMenuHelpData	= @{
 		title	   = "उपयोग:"
 		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<भाषा कोड>'] [-help]"
 		PrarmsData = [ordered]@{
@@ -61,7 +61,16 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 			help	 = "इस मदद सूचना को दिखाएँ।"
 		}
 	}
-	ConsoleHelpData		   = @{
+	exe21spHelpData			= @{
+		title	   = "उपयोग:"
+		Usage	   = "exe21sp [-ExePath] '<exe पथ>' [-OutFile '<.ps1 पथ>'] [-help]"
+		PrarmsData = [ordered]@{
+			ExePath = "ps12exe द्वारा निर्मित exe का पथ (डीकंपाइल करने के लिए)।"
+			OutFile = "वैकल्पिक; पुनर्प्राप्त स्क्रिप्ट लिखने का पथ। छोड़ने पर stdout।"
+			help	= "यह सहायता दिखाएँ।"
+		}
+	}
+	ConsoleHelpData			= @{
 		title	   = "उपयोग:"
 		Usage	   = "[input |] ps12exe [[-inputFile] '<फ़ाइल नाम|url>' | -Content '<स्क्रिप्ट>'] [-outputFile '<फ़ाइल नाम>']
 	[-CompilerOptions '<विकल्प>'] [-TempDir '<फ़ोल्डर>'] [-minifyer '<स्क्रिप्टब्लॉक>'] [-noConsole]
@@ -109,7 +118,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 			Help			 = "इस मदद सूचना को दिखाएँ"
 		}
 	}
-	CompilingI18nData	   = @{
+	CompilingI18nData		= @{
 		NewVersionAvailable						  = "ps12exe का नया संस्करण उपलब्ध है: {0}!"
 		NoneInput								  = "कोई इनपुट फ़ाइल निर्दिष्ट नहीं है!"
 		BothInputAndContentSpecified			  = "इनपुट फ़ाइल और सामग्री का उपयोग एक साथ नहीं किया जा सकता है!"
@@ -184,13 +193,13 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		DllExportDelNoneTypeArg					  = "{0}: {1} एक गैर-प्रकार का पैरामीटर है, मान लें कि यह एक स्ट्रिंग है।"
 		DllExportUsing							  = "आप #_DllExport का उपयोग कर रहे हैं, यह मैक्रो अभी भी विकास के अधीन है और अभी तक समर्थित नहीं है।"
 	}
-	WebServerI18nData	   = @{
+	WebServerI18nData		= @{
 		CompilingUserInput	= "उपयोगकर्ता इनपुट संकलित कर रहा है: {0}"
 		EmptyResponse		= "अनुरोध को संभालते समय कोई डेटा नहीं मिला, खाली प्रतिक्रिया लौटा रहा है"
 		InputTooLarge413	= "उपयोगकर्ता इनपुट बहुत बड़ा है, 413 त्रुटि लौटा रहा है"
 		ReqLimitExceeded429 = "IP {0} ने प्रति मिनट {1} अनुरोधों की सीमा पार कर ली है, 429 त्रुटि लौटा रहा है"
 	}
-	InteractI18nData	   = @{
+	InteractI18nData		= @{
 		ModeName					= "इंटरैक्टिव"
 		Welcome						= "इंटरैक्टिव मो�� में प्रवेश किया। बाहर निकलने के लिए Ctrl+C दबाएं।"
 		EnterInputFile				= "कृपया इनपुट फ़ाइल पथ या URL दर्ज करें:"
@@ -234,5 +243,24 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		CompileFailedException		= "संकलन विफल: {0}"
 		CompileAnother				= "एक और फ़ाइल संकलित करें?"
 		Exiting						= "इंटरैक्टिव मोड से बाहर निकल रहा है।"
+	}
+	exe21spInteractI18nData = @{
+		ModeName			 = "exe21sp"
+		Welcome				 = "exe21sp इंटरैक्टिव मोड में आपका स्वागत है। किसी भी समय बाहर निकलने के लिए Ctrl+C दबाएं।"
+		EnterExePath		 = "ps12exe-जनित exe का पथ दर्ज करें (बाहर निकलने के लिए खाली छोड़ें):"
+		EnterOutputPs1Path	 = "आउटपुट ps1 पथ दर्ज करें (खाली छोड़ने पर समान फ़ोल्डर में <exe>.ps1 उपयोग होगा):"
+		Prompt				 = " >> "
+		AdditionalInfoPrompt = "[Y/N]"
+		ConvertAnother		 = "किसी अन्य exe को परिवर्तित करें?"
+		Exiting				 = "exe21sp से बाहर निकल रहा है।"
+	}
+	exe21spI18nData			= @{
+		TinySharpNoTextSection		 = "एक्ज़ीक्यूटेबल एक .NET असेंबली है लेकिन TinySharp लेआउट से मेल नहीं खाता (.text सेक्शन नहीं)।"
+		TinySharpTextSectionEmpty	 = "एक्ज़ीक्यूटेबल एक .NET असेंबली है लेकिन TinySharp लेआउट से मेल नहीं खाता (.text सेक्शन खाली)।"
+		TinySharpCannotReadText		 = "एक्ज़ीक्यूटेबल एक .NET असेंबली है लेकिन TinySharp लेआउट से मेल नहीं खाता (.text पढ़ नहीं सकते)।"
+		TinySharpPayloadNotRecovered	= "एक्ज़ीक्यूटेबल एक .NET असेंबली है लेकिन TinySharp लेआउट से मेल नहीं खाता; स्क्रिप्ट पेलोड पुनर्प्राप्त नहीं हो सका।"
+		NoEmbeddedScript			 = "'{0}' में कोई एम्बेडेड स्क्रिप्ट नहीं मिली (ps12exe-बिल्ट exe नहीं, या पेलोड पुनर्प्राप्त नहीं हो सकता)।"
+		ExePathRequired				 = "exe21sp: -ExePath आवश्यक है। उपयोग के लिए -help देखें।"
+		FileNotFound				 = "फ़ाइल नहीं मिली: {0}"
 	}
 }

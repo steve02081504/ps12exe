@@ -27,7 +27,8 @@ better pwsh code 2 exe repo:
 - Use `ps12exeGUI` for a graphical interface that simplifies compilation;
 - Use `Set-ps12exeContextMenu` to add a context menu item for quick compilation or GUI access on `.ps1` files;
 - Use `Start-ps12exeWebServer` to launch a web server that allows users to compile scripts online;
-- Use `Enter-ps12exeInteract` to enter an interactive mode for compiling scripts without parameters.
+- Use `Enter-ps12exeInteract` to enter an interactive mode for compiling scripts without parameters;
+- Use `exe21sp` to extract the PowerShell script from a ps12exe-generated executable back into a `.ps1` script.
 All commands in this module support the `-help` option for detailed assistance in your language.
 '@
 
@@ -68,7 +69,7 @@ All commands in this module support the `-help` option for detailed assistance i
 	# NestedModules = @()
 
 	# Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-	FunctionsToExport      = @('ps12exe', 'ps12exeGUI', 'Set-ps12exeContextMenu', 'Start-ps12exeWebServer', 'Enter-ps12exeInteract')
+	FunctionsToExport      = @('ps12exe', 'ps12exeGUI', 'Set-ps12exeContextMenu', 'Start-ps12exeWebServer', 'Enter-ps12exeInteract', 'exe21sp')
 
 	# Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
 	# CmdletsToExport = @()

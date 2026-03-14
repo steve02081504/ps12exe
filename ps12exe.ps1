@@ -639,6 +639,9 @@ function UsingWinPowershell($Boundparameters) {
 }
 if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerShell -and (Get-Command powershell -ErrorAction Ignore)) {
 	UsingWinPowershell $Params
+	if ([System.Console]::IsOutputRedirected -or [System.Console]::IsInputRedirected -or [System.Console]::IsErrorRedirected) {
+		Write-Output $outputFile
+	}
 	return
 }
 #_endif
@@ -723,8 +726,7 @@ try {
 	. $PSScriptRoot\src\InitCompileThings.ps1
 	Write-TaskbarProgress -Percent 10
 	#_if PSScript
-	if (-not $noConsole -and $AstAnalyzeResult.IsConst -and -not $iconFile -and -not $requireAdmin) {
-		# TODO: GUI（MassageBoxW）、icon
+	if ($AstAnalyzeResult.IsConst -and -not $requireAdmin) {
 		Write-I18n Verbose TryingTinySharpCompile
 		Write-I18n Host CompilingFile
 		Write-TaskbarProgress -Percent 20
@@ -840,6 +842,9 @@ try {
 				Write-I18n Error SigningFailed $_.Exception.Message
 			}
 		}
+	}
+	if (!$nested -and -not ([System.Console]::IsOutputRedirected -or [System.Console]::IsInputRedirected -or [System.Console]::IsErrorRedirected)) {
+		Write-Output $outputFile
 	}
 }
 catch {

@@ -1,26 +1,26 @@
 ﻿@{
-	LangName			   = "简体中文"
-	LangID				   = "zh-CN"
+	LangName				= "简体中文"
+	LangID					= "zh-CN"
 	# Right click Menu
-	CompileTitle		   = "编译到 EXE"
-	OpenInGUI			   = "在 ps12exeGUI 中打开"
-	GUICfgFileDesc		   = "ps12exe GUI 配置文件"
+	CompileTitle			= "编译到 EXE"
+	OpenInGUI				= "在 ps12exeGUI 中打开"
+	GUICfgFileDesc			= "ps12exe GUI 配置文件"
 	# Web Server
-	ServerStarted		   = "HTTP 服务器已启动！"
-	ServerStopped		   = "HTTP 服务器已停止！"
-	ServerStartFailed	   = "HTTP 服务器启动失败！"
-	TryRunAsRoot		   = "请尝试以管理员身份运行。"
-	ServerListening		   = "访问地址："
-	ExitServerTip		   = "您随时可以按 Ctrl+C 退出服务器"
+	ServerStarted			= "HTTP 服务器已启动！"
+	ServerStopped			= "HTTP 服务器已停止！"
+	ServerStartFailed		= "HTTP 服务器启动失败！"
+	TryRunAsRoot			= "请尝试以管理员身份运行。"
+	ServerListening			= "访问地址："
+	ExitServerTip			= "您随时可以按 Ctrl+C 退出服务器"
 	# GUI
-	ErrorHead			   = "错误："
-	CompileResult		   = "编译结果"
-	DefaultResult		   = "完成！"
-	AskSaveCfg			   = "需要保存配置文件吗？"
-	AskSaveCfgTitle		   = "保存配置文件"
-	CfgFileLabelHead	   = "配置文件："
+	ErrorHead				= "错误："
+	CompileResult			= "编译结果"
+	DefaultResult			= "完成！"
+	AskSaveCfg				= "需要保存配置文件吗？"
+	AskSaveCfgTitle			= "保存配置文件"
+	CfgFileLabelHead		= "配置文件："
 	# Console
-	WebServerHelpData	   = @{
+	WebServerHelpData		= @{
 		title	   = "用法："
 		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
 	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<路径>']
@@ -37,7 +37,7 @@
 			help			  = "显示此帮助信息。"
 		}
 	}
-	GUIHelpData			   = @{
+	GUIHelpData				= @{
 		title	   = "用法："
 		Usage	   = @"
 ps12exeGUI [[-ConfigFile] '<配置文件>'] [-PS1File '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
@@ -46,13 +46,13 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 "@
 		PrarmsData = [ordered]@{
 			ConfigFile	= "要加载的配置文件。"
-			PS1File		= "要编译的脚本文件。"
-			Localize	= "要使用的语言代码。"
-			UIMode		= "要使用的用户界面模式。"
-			help		= "显示此帮助信息。"
+			PS1File	   = "要编译的脚本文件。"
+			Localize   = "要使用的语言代码。"
+			UIMode	   = "要使用的用户界面模式。"
+			help	   = "显示此帮助信息。"
 		}
 	}
-	SetContextMenuHelpData = @{
+	SetContextMenuHelpData	= @{
 		title	   = "用法："
 		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<语言代码>'] [-help]"
 		PrarmsData = [ordered]@{
@@ -61,7 +61,16 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 			help	 = "显示此帮助信息。"
 		}
 	}
-	ConsoleHelpData		   = @{
+	exe21spHelpData			= @{
+		title	   = "用法："
+		Usage	   = "exe21sp [-ExePath] '<exe文件路径>' [-OutFile '<输出ps1路径>'] [-help]"
+		PrarmsData = [ordered]@{
+			ExePath = "要反编译的 ps12exe 生成的 exe 文件路径。"
+			OutFile = "可选；写出还原脚本的 ps1 文件路径，不指定则输出到标准输出。"
+			help	= "显示此帮助信息。"
+		}
+	}
+	ConsoleHelpData			= @{
 		title	   = "用法："
 		Usage	   = "[input |] ps12exe [[-inputFile] '<文件名|url>' | -Content '<脚本>'] [-outputFile '<文件名>']
 	[-CompilerOptions '<选项>'] [-TempDir '<文件夹>'] [-minifyer '<scriptblock>'] [-noConsole]
@@ -109,7 +118,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 			Help			 = "显示此帮助信息"
 		}
 	}
-	CompilingI18nData	   = @{
+	CompilingI18nData		= @{
 		NewVersionAvailable						  = "ps12exe有了新版本：{0}！"
 		NoneInput								  = "无输入！"
 		BothInputAndContentSpecified			  = "不能同时输入文件和内容！"
@@ -184,13 +193,13 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		DllExportDelNoneTypeArg					  = "{0}：{1}是无类型参数，假设它是字符串。"
 		DllExportUsing							  = "您正在使用 #_DllExport，此宏尚在开发中，尚未支持。"
 	}
-	WebServerI18nData	   = @{
+	WebServerI18nData		= @{
 		CompilingUserInput	= "正在编译用户输入：{0}"
 		EmptyResponse		= "处理请求时未找到数据，返回空响应"
 		InputTooLarge413	= "用户输入太大，返回413错误"
 		ReqLimitExceeded429 = "IP {0} 超过每分钟{1}次请求的限制，返回429错误"
 	}
-	InteractI18nData	   = @{
+	InteractI18nData		= @{
 		ModeName					= "交互式"
 		Welcome						= "欢迎使用交互模式。可随时按 Ctrl+C 退出。"
 		EnterInputFile				= "请输入输入文件路径或URL："
@@ -234,5 +243,24 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		CompileFailedException		= "编译时发生错误：{0}"
 		CompileAnother				= "是否要编译下一个文件？"
 		Exiting						= "正在退出交互模式…"
+	}
+	exe21spInteractI18nData = @{
+		ModeName			 = "exe21sp"
+		Welcome				 = "欢迎使用 exe21sp 交互模式。可随时按 Ctrl+C 退出。"
+		EnterExePath		 = "请输入由 ps12exe 生成的 exe 路径（留空退出）："
+		EnterOutputPs1Path	 = "请输入输出的 ps1 路径（留空则使用同目录下 <exe>.ps1）："
+		Prompt				 = " >> "
+		AdditionalInfoPrompt = "[Y/N]"
+		ConvertAnother		 = "是否继续转换其他 exe？"
+		Exiting				 = "正在退出 exe21sp。"
+	}
+	exe21spI18nData			= @{
+		TinySharpNoTextSection		 = "该可执行文件是 .NET 程序集，但不符合 TinySharp 布局（无 .text 节）。"
+		TinySharpTextSectionEmpty	 = "该可执行文件是 .NET 程序集，但不符合 TinySharp 布局（.text 节为空）。"
+		TinySharpCannotReadText		 = "该可执行文件是 .NET 程序集，但不符合 TinySharp 布局（无法读取 .text）。"
+		TinySharpPayloadNotRecovered = "该可执行文件是 .NET 程序集，但不符合 TinySharp 布局；无法恢复脚本负载。"
+		NoEmbeddedScript			 = '在 "{0}" 中未找到嵌入脚本（不是 ps12exe 构建的 exe，或无法恢复负载）。'
+		ExePathRequired				 = "exe21sp：需要 -ExePath。使用 -help 查看用法。"
+		FileNotFound				 = "文件不存在：{0}"
 	}
 }

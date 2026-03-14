@@ -18,6 +18,7 @@ function LoadFileAsFunction($File, $FunctionName) {
 . $(LoadFileAsFunction $PSScriptRoot/src/GUI/ContextMenuAdder.ps1 Set-ps12exeContextMenu)
 . $(LoadFileAsFunction $PSScriptRoot/src/WebServer/main.ps1 Start-ps12exeWebServer)
 . $(LoadFileAsFunction $PSScriptRoot/src/Interact/main.ps1 Enter-ps12exeInteract)
+. $(LoadFileAsFunction $PSScriptRoot/exe21sp.ps1 exe21sp)
 
 # Export functions
 Export-ModuleMember -Function $Script:Functions

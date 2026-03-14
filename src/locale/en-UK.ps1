@@ -1,26 +1,26 @@
 ﻿@{
-	LangName			   = "English (United Kingdom)"
-	LangID				   = "en-UK"
+	LangName				= "English (United Kingdom)"
+	LangID					= "en-UK"
 	# Right click Menu
-	CompileTitle		   = "Compile to EXE"
-	OpenInGUI			   = "Open in ps12exeGUI"
-	GUICfgFileDesc		   = "ps12exeGUI configuration file"
+	CompileTitle			= "Compile to EXE"
+	OpenInGUI				= "Open in ps12exeGUI"
+	GUICfgFileDesc			= "ps12exeGUI configuration file"
 	# Web Server
-	ServerStarted		   = "HTTP server started!"
-	ServerStopped		   = "HTTP server stopped."
-	ServerStartFailed	   = "Failed to start the HTTP server!"
-	TryRunAsRoot		   = "Try running as root."
-	ServerListening		   = "Access address:"
-	ExitServerTip		   = "You can press Ctrl+C to stop the server at any time."
+	ServerStarted			= "HTTP server started!"
+	ServerStopped			= "HTTP server stopped."
+	ServerStartFailed		= "Failed to start the HTTP server!"
+	TryRunAsRoot			= "Try running as root."
+	ServerListening			= "Access address:"
+	ExitServerTip			= "You can press Ctrl+C to stop the server at any time."
 	# GUI
-	ErrorHead			   = "An error occurred:"
-	CompileResult		   = "Compilation result:"
-	DefaultResult		   = "Finished!"
-	AskSaveCfg			   = "Save the configuration file?"
-	AskSaveCfgTitle		   = "Save configuration file"
-	CfgFileLabelHead	   = "Configuration file:"
+	ErrorHead				= "An error occurred:"
+	CompileResult			= "Compilation result:"
+	DefaultResult			= "Finished!"
+	AskSaveCfg				= "Save the configuration file?"
+	AskSaveCfgTitle			= "Save configuration file"
+	CfgFileLabelHead		= "Configuration file:"
 	# Console
-	WebServerHelpData	   = @{
+	WebServerHelpData		= @{
 		title	   = "Usage:"
 		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
 	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<path>']
@@ -37,7 +37,7 @@
 			help			  = "Display this help information."
 		}
 	}
-	GUIHelpData			   = @{
+	GUIHelpData				= @{
 		title	   = "Usage:"
 		Usage	   = @"
 ps12exeGUI [[-ConfigFile] '<config file>'] [-PS1File '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
@@ -46,13 +46,13 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 "@
 		PrarmsData = [ordered]@{
 			ConfigFile	= "The configuration file to load."
-			PS1File		= "The script file to be compiled."
-			Localize	= "The language code to use."
-			UIMode		= "The UI mode to use."
-			help		= "Show this help message."
+			PS1File	   = "The script file to be compiled."
+			Localize   = "The language code to use."
+			UIMode	   = "The UI mode to use."
+			help	   = "Show this help message."
 		}
 	}
-	SetContextMenuHelpData = @{
+	SetContextMenuHelpData	= @{
 		title	   = "Usage:"
 		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<language code>'] [-help]"
 		PrarmsData = [ordered]@{
@@ -61,7 +61,16 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 			help	 = "Show this help message."
 		}
 	}
-	ConsoleHelpData		   = @{
+	exe21spHelpData			= @{
+		title	   = "Usage:"
+		Usage	   = "exe21sp [-ExePath] '<path to exe>' [-OutFile '<path to output .ps1>'] [-help]"
+		PrarmsData = [ordered]@{
+			ExePath = "Path to the ps12exe-generated exe to decompile."
+			OutFile = "Optional; path to write the recovered script. If omitted, output goes to stdout."
+			help	= "Show this help message."
+		}
+	}
+	ConsoleHelpData			= @{
 		title	   = "Usage:"
 		Usage	   = "[input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>']
 	[-CompilerOptions '<options>'] [-TempDir '<directory>'] [-minifyer '<scriptblock>'] [-noConsole]
@@ -109,7 +118,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 			Help			 = "Show this help message."
 		}
 	}
-	CompilingI18nData	   = @{
+	CompilingI18nData		= @{
 		NewVersionAvailable						  = "There's a new version of ps12exe available: {0}!"
 		NoneInput								  = "No input file specified!"
 		BothInputAndContentSpecified			  = "Input file and content can't be used at the same time."
@@ -184,13 +193,13 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		DllExportDelNoneTypeArg					  = "{0}: {1} is a none type parameter, assuming it's a string."
 		DllExportUsing							  = "You are using #_DllExport, this macro is in dev and not yet supported."
 	}
-	WebServerI18nData	   = @{
+	WebServerI18nData		= @{
 		CompilingUserInput	= "Compiling User Input: {0}"
 		EmptyResponse		= "No data found when Handling the Request, returning an empty response."
 		InputTooLarge413	= "User input is too large, returning a 413 error."
 		ReqLimitExceeded429 = "IP {0} has exceeded the limit of {1} requests per minute, returning a 429 error."
 	}
-	InteractI18nData	   = @{
+	InteractI18nData		= @{
 		ModeName					= "Interactive Session"
 		Welcome						= "Welcome to the interactive session. You may press Ctrl+C to withdraw at any time."
 		EnterInputFile				= "Kindly provide the path or URL to the input file, if you please:"
@@ -234,5 +243,24 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		CompileFailedException		= "Compilation failed: {0}"
 		CompileAnother				= "Shall we proceed with another compilation?"
 		Exiting						= "Farewell, then."
+	}
+	exe21spInteractI18nData = @{
+		ModeName			 = "exe21sp"
+		Welcome				 = "Welcome to exe21sp interactive mode. Press Ctrl+C to quit at any time."
+		EnterExePath		 = "Enter path to ps12exe-generated exe (blank to quit):"
+		EnterOutputPs1Path	 = "Enter output ps1 path (blank to use <exe>.ps1 in the same folder):"
+		Prompt				 = " >> "
+		AdditionalInfoPrompt = "[Y/N]"
+		ConvertAnother		 = "Convert another exe?"
+		Exiting				 = "Exiting exe21sp."
+	}
+	exe21spI18nData			= @{
+		TinySharpNoTextSection		 = "The executable is a .NET assembly but does not match the TinySharp layout (no .text section)."
+		TinySharpTextSectionEmpty	 = "The executable is a .NET assembly but does not match the TinySharp layout (.text section is empty)."
+		TinySharpCannotReadText		 = "The executable is a .NET assembly but does not match the TinySharp layout (cannot read .text)."
+		TinySharpPayloadNotRecovered	= "The executable is a .NET assembly but does not match the TinySharp layout; script payload cannot be recovered."
+		NoEmbeddedScript			 = "No embedded script found in '{0}' (not a ps12exe-built exe, or payload cannot be recovered)."
+		ExePathRequired				 = "exe21sp: -ExePath is required. Use -help for usage."
+		FileNotFound				 = "File not found: {0}"
 	}
 }

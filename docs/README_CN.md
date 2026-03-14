@@ -74,6 +74,14 @@ ps12exe https://raw.githubusercontent.com/steve02081504/ps12exe/master/src/GUI/M
 
 将来自互联网的`Main.ps1`编译为可执行文件输出到`.\Main.exe`。
 
+### 从 exe 还原 ps1（exe21sp）
+
+```powershell
+exe21sp -ExePath .\target.exe -OutFile .\target.ps1
+```
+
+`exe21sp` 用于从 ps12exe 生成的 exe 中提取其中的 PowerShell 脚本，并写入 `.ps1` 文件或输出到标准输出。
+
 ### 自托管Web服务
 
 ```powershell

@@ -1,4 +1,4 @@
-@{
+﻿@{
 	LangName			   = "Français"
 	LangID				   = "fr-FR"
 	# Right click Menu
@@ -46,10 +46,10 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 "@
 		PrarmsData = [ordered]@{
 			ConfigFile	= "Fichier de configuration à charger."
-			PS1File		= "Fichier de script à compiler."
-			Localize	= "Code de langue à utiliser."
-			UIMode		= "Mode d’interface utilisateur à utiliser."
-			help		= "Affiche cette aide."
+			PS1File	   = "Fichier de script à compiler."
+			Localize   = "Code de langue à utiliser."
+			UIMode	   = "Mode d’interface utilisateur à utiliser."
+			help	   = "Affiche cette aide."
 		}
 	}
 	SetContextMenuHelpData = @{
@@ -59,6 +59,15 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 			action	 = "Action à exécuter."
 			Localize = "Code de langue à utiliser."
 			help	 = "Affiche cette aide."
+		}
+	}
+	exe21spHelpData		   = @{
+		title	   = "Utilisation :"
+		Usage	   = "exe21sp [-ExePath] '<chemin exe>' [-OutFile '<chemin .ps1>'] [-help]"
+		PrarmsData = [ordered]@{
+			ExePath = "Chemin vers l'exe généré par ps12exe à décompiler."
+			OutFile = "Optionnel ; chemin du script .ps1 récupéré. Sinon sortie sur stdout."
+			help	= "Afficher cette aide."
 		}
 	}
 	ConsoleHelpData		   = @{
@@ -225,5 +234,24 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 		CompileFailedException		= "Échec de la compilation : {0}"
 		CompileAnother				= "Compiler un autre fichier ?"
 		Exiting						= "Quitter le mode interactif."
+	}
+	Exe21SpI18nData		   = @{
+		ModeName			 = "exe21sp"
+		Welcome				 = "Bienvenue en mode interactif exe21sp. Appuyez sur Ctrl+C pour quitter à tout moment."
+		EnterExePath		 = "Entrez le chemin de l'exe généré par ps12exe (vide pour quitter) :"
+		EnterOutputPs1Path	 = "Entrez le chemin du fichier ps1 de sortie (vide pour utiliser <exe>.ps1 dans le même dossier) :"
+		Prompt				 = " >> "
+		AdditionalInfoPrompt = "[Y/N]"
+		ConvertAnother		 = "Convertir un autre exe ?"
+		Exiting				 = "Sortie d'exe21sp."
+	}
+}
+		TinySharpNoTextSection		= "L'exécutable est un assembly .NET mais ne correspond pas au layout TinySharp (pas de section .text)."
+		TinySharpTextSectionEmpty	= "L'exécutable est un assembly .NET mais ne correspond pas au layout TinySharp (section .text vide)."
+		TinySharpCannotReadText		= "L'exécutable est un assembly .NET mais ne correspond pas au layout TinySharp (impossible de lire .text)."
+		TinySharpPayloadNotRecovered	= "L'exécutable est un assembly .NET mais ne correspond pas au layout TinySharp ; charge utile du script non récupérable."
+		NoEmbeddedScript				= "Aucun script incorporé dans « {0} » (exe non construit par ps12exe ou charge utile non récupérable)."
+		ExePathRequired				= "exe21sp : -ExePath est requis. Utilisez -help pour l'usage."
+		FileNotFound					= "Fichier introuvable : {0}"
 	}
 }

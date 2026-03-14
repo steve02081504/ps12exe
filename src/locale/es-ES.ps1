@@ -1,26 +1,26 @@
 ﻿@{
-	LangName			   = "Español (España)"
-	LangID				   = "es-ES"
+	LangName				= "Español (España)"
+	LangID					= "es-ES"
 	# Right click Menu
-	CompileTitle		   = "Compilar a EXE"
-	OpenInGUI			   = "Abrir en ps12exeGUI"
-	GUICfgFileDesc		   = "Archivo de configuración de ps12exe GUI"
+	CompileTitle			= "Compilar a EXE"
+	OpenInGUI				= "Abrir en ps12exeGUI"
+	GUICfgFileDesc			= "Archivo de configuración de ps12exe GUI"
 	# Web Server
-	ServerStarted		   = "¡Servidor HTTP iniciado!"
-	ServerStopped		   = "¡Servidor HTTP detenido!"
-	ServerStartFailed	   = "Error al iniciar el servidor HTTP."
-	TryRunAsRoot		   = "Vuelva a intentarlo como usuario root."
-	ServerListening		   = "Dirección de acceso:"
-	ExitServerTip		   = "Puede presionar Ctrl+C para salir del servidor en cualquier momento."
+	ServerStarted			= "¡Servidor HTTP iniciado!"
+	ServerStopped			= "¡Servidor HTTP detenido!"
+	ServerStartFailed		= "Error al iniciar el servidor HTTP."
+	TryRunAsRoot			= "Vuelva a intentarlo como usuario root."
+	ServerListening			= "Dirección de acceso:"
+	ExitServerTip			= "Puede presionar Ctrl+C para salir del servidor en cualquier momento."
 	# GUI
-	ErrorHead			   = "Error:"
-	CompileResult		   = "Resultado de la compilación"
-	DefaultResult		   = "¡Hecho!"
-	AskSaveCfg			   = "¿Desea guardar el archivo de configuración?"
-	AskSaveCfgTitle		   = "Guardar archivo de configuración"
-	CfgFileLabelHead	   = "Archivo de configuración:"
+	ErrorHead				= "Error:"
+	CompileResult			= "Resultado de la compilación"
+	DefaultResult			= "¡Hecho!"
+	AskSaveCfg				= "¿Desea guardar el archivo de configuración?"
+	AskSaveCfgTitle			= "Guardar archivo de configuración"
+	CfgFileLabelHead		= "Archivo de configuración:"
 	# Console
-	WebServerHelpData	   = @{
+	WebServerHelpData		= @{
 		title	   = "Uso:"
 		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
 	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<donde>']
@@ -37,7 +37,7 @@
 			help			  = "Mostrar esta información de ayuda."
 		}
 	}
-	GUIHelpData			   = @{
+	GUIHelpData				= @{
 		title	   = "Uso:"
 		Usage	   = @"
 ps12exeGUI [[-ConfigFile] '<archivo de configuración>'] [-PS1File '<archivo de código>'] [-Localize '<código de idioma>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
@@ -46,13 +46,13 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 "@
 		PrarmsData = [ordered]@{
 			ConfigFile	= "El archivo de configuración que desea cargar."
-			PS1File		= "El archivo de script a compilar."
-			Localize	= "El código de idioma que desea usar."
-			UIMode		= "El modo de interfaz de usuario que desea usar."
-			help		= "Mostrar esta información de ayuda."
+			PS1File	   = "El archivo de script a compilar."
+			Localize   = "El código de idioma que desea usar."
+			UIMode	   = "El modo de interfaz de usuario que desea usar."
+			help	   = "Mostrar esta información de ayuda."
 		}
 	}
-	SetContextMenuHelpData = @{
+	SetContextMenuHelpData	= @{
 		title	   = "Uso:"
 		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<código de idioma>'] [-help]"
 		PrarmsData = [ordered]@{
@@ -61,7 +61,16 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 			help	 = "Mostrar esta información de ayuda."
 		}
 	}
-	ConsoleHelpData		   = @{
+	exe21spHelpData			= @{
+		title	   = "Uso:"
+		Usage	   = "exe21sp [-ExePath] '<ruta al exe>' [-OutFile '<ruta al .ps1>'] [-help]"
+		PrarmsData = [ordered]@{
+			ExePath = "Ruta al exe generado por ps12exe a descompilar."
+			OutFile = "Opcional; ruta donde escribir el script recuperado. Si se omite, salida a stdout."
+			help	= "Mostrar esta ayuda."
+		}
+	}
+	ConsoleHelpData			= @{
 		title	   = "Uso:"
 		Usage	   = "[input |] ps12exe [[-inputFile] '<nombre de archivo|url>' | -Content '<script>'] [-outputFile '<nombre de archivo>']
 	[-CompilerOptions '<opciones>'] [-TempDir '<carpeta>'] [-minifyer '<scriptblock>'] [-noConsole]
@@ -109,7 +118,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 			Help			 = "Mostrar esta información de ayuda"
 		}
 	}
-	CompilingI18nData	   = @{
+	CompilingI18nData		= @{
 		NewVersionAvailable						  = "¡Hay una nueva versión de ps12exe disponible: {0}!"
 		NoneInput								  = "¡Sin entrada!"
 		BothInputAndContentSpecified			  = "¡No se puede usar el archivo de entrada y el contenido al mismo tiempo!"
@@ -184,13 +193,13 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 		DllExportDelNoneTypeArg					  = "{0}: {1} es un parámetro de tipo nulo, se asume que es una cadena."
 		DllExportUsing							  = "Está utilizando #_DllExport, esta macro está en desarrollo y aún no es compatible."
 	}
-	WebServerI18nData	   = @{
+	WebServerI18nData		= @{
 		CompilingUserInput	= "Compilando entrada de usuario: {0}"
 		EmptyResponse		= "No se encontraron datos al manejar la solicitud, se devuelve una respuesta vacía"
 		InputTooLarge413	= "La entrada del usuario es demasiado grande, se devuelve un error 413"
 		ReqLimitExceeded429 = "La IP {0} ha superado el límite de {1} solicitudes por minuto, se devuelve un error 429"
 	}
-	InteractI18nData	   = @{
+	InteractI18nData		= @{
 		ModeName					= "Interactivo"
 		Welcome						= "Has entrado en modo interactivo. Pulsa Ctrl+C para salir."
 		EnterInputFile				= "Introduce la ruta o URL del archivo de entrada:"
@@ -234,5 +243,24 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 		CompileFailedException		= "Error de compilación: {0}"
 		CompileAnother				= "¿Compilar otro archivo?"
 		Exiting						= "Saliendo del modo interactivo."
+	}
+	exe21spInteractI18nData = @{
+		ModeName			 = "exe21sp"
+		Welcome				 = "Bienvenido al modo interactivo de exe21sp. Pulsa Ctrl+C para salir en cualquier momento."
+		EnterExePath		 = "Introduce la ruta del exe generado por ps12exe (en blanco para salir):"
+		EnterOutputPs1Path	 = "Introduce la ruta del ps1 de salida (en blanco para usar <exe>.ps1 en la misma carpeta):"
+		Prompt				 = " >> "
+		AdditionalInfoPrompt = "[Y/N]"
+		ConvertAnother		 = "¿Convertir otro exe?"
+		Exiting				 = "Saliendo de exe21sp."
+	}
+	exe21spI18nData			= @{
+		TinySharpNoTextSection		 = "El ejecutable es un ensamblado .NET pero no coincide con el diseño TinySharp (no hay sección .text)."
+		TinySharpTextSectionEmpty	 = "El ejecutable es un ensamblado .NET pero no coincide con el diseño TinySharp (la sección .text está vacía)."
+		TinySharpCannotReadText		 = "El ejecutable es un ensamblado .NET pero no coincide con el diseño TinySharp (no se puede leer .text)."
+		TinySharpPayloadNotRecovered	= "El ejecutable es un ensamblado .NET pero no coincide con el diseño TinySharp; no se puede recuperar el script."
+		NoEmbeddedScript			 = "No se encontró script incrustado en '{0}' (no es un exe de ps12exe o no se puede recuperar la carga)."
+		ExePathRequired				 = "exe21sp: se requiere -ExePath. Use -help para la ayuda."
+		FileNotFound				 = "Archivo no encontrado: {0}"
 	}
 }
