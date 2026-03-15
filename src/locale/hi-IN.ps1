@@ -6,13 +6,6 @@
 	OpenInGUI				= "ps12exeGUI में खोलें"
 	GUICfgFileDesc			= "ps12exe GUI कॉन्फ़िगरेशन फ़ाइल"
 	# Web Server
-	ServerStarted			= "HTTP सर्वर शुरू हो गया है!"
-	ServerStopped			= "HTTP सर्वर बंद हो गया है!"
-	ServerStartFailed		= "HTTP सर्वर शुरू करने में विफल रहा!"
-	TryRunAsRoot			= "कृपया प्रशासक के रूप में चलाने का प्रयास करें।"
-	ServerListening			= "पहुंच का पता:"
-	ExitServerTip			= "आप कभी भी Ctrl+C दबाकर सर्वर को बंद कर सकते हैं"
-	# GUI
 	ErrorHead				= "त्रुटि:"
 	CompileResult			= "कॉम्पाइल परिणाम"
 	DefaultResult			= "पूरा हुआ!"
@@ -20,56 +13,13 @@
 	AskSaveCfgTitle			= "कॉन्फ़िगरेशन फ़ाइल सहेजें"
 	CfgFileLabelHead		= "कॉन्फ़िगरेशन फ़ाइल:"
 	# Console
-	WebServerHelpData		= @{
-		title	   = "उपयोग:"
-		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
-	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<पथ>']
-	[-Localize '<भाषा कोड>'] [-help]"
-		PrarmsData = [ordered]@{
-			HostUrl			  = "रजिस्टर करने के लिए HTTP सर्वर पता।"
-			MaxCompileThreads = "अधिकतम कॉम्पाइल धागों की संख्या।"
-			MaxCompileTime	  = "अधिकतम कॉम्पाइल समय (सेकंड)।"
-			ReqLimitPerMin	  = "फ़ाइल प्रति मिनट की अनुरोध सीमा।"
-			MaxCachedFileSize = "अधिकतम कैश फ़ाइल का आकार।"
-			MaxScriptFileSize = "अधिकतम स्क्रिप्ट फ़ाइल का आकार।"
-			CacheDir		  = "अधिकतम कैश फ़ाइल का डाइरेक्टरी पथ।"
-			Localize		  = "सर्वर साइड रिकॉर्ड करने के लिए उपयोग किए जाने वाले भाषा कोड।"
-			help			  = "इस मदद सूचना को दिखाएँ।"
-		}
-	}
-	GUIHelpData				= @{
-		title	   = "उपयोग:"
-		Usage	   = @"
-ps12exeGUI [[-ConfigFile] '<कॉन्फ़िगरेशन फ़ाइल>'] [-PS1File '<स्क्रिप्ट फ़ाइल>'] [-Localize '<भाषा कोड>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
-
-ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize '<भाषा कोड>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
-"@
-		PrarmsData = [ordered]@{
-			ConfigFile	= "लोड करने के लिए कॉन्फ़िगरेशन फ़ाइल।"
-			PS1File	   = "कंपाइल करने के लिए स्क्रिप्ट फ़ाइल।"
-			Localize   = "उपयोग किया जाने वाला भाषा कोड।"
-			UIMode	   = "उपयोग किया जाने वाला उपयोगकर्ता इंटरफेस मोड।"
-			help	   = "इस मदद सूचना को दिखाएँ।"
-		}
-	}
-	SetContextMenuHelpData	= @{
-		title	   = "उपयोग:"
-		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<भाषा कोड>'] [-help]"
-		PrarmsData = [ordered]@{
-			action	 = "क्रिया का कार्यान्वयन।"
-			Localize = "उपयोग किए जाने वाले भाषा कोड।"
-			help	 = "इस मदद सूचना को दिखाएँ।"
-		}
-	}
-	exe21spHelpData			= @{
-		title	   = "उपयोग:"
-		Usage	   = "exe21sp [-ExePath] '<exe पथ>' [-OutFile '<.ps1 पथ>'] [-help]"
-		PrarmsData = [ordered]@{
-			ExePath = "ps12exe द्वारा निर्मित exe का पथ (डीकंपाइल करने के लिए)।"
-			OutFile = "वैकल्पिक; पुनर्प्राप्त स्क्रिप्ट लिखने का पथ। छोड़ने पर stdout।"
-			help	= "यह सहायता दिखाएँ।"
-		}
-	}
+	ServerStarted			= "HTTP सर्वर शुरू हो गया है!"
+	ServerStopped			= "HTTP सर्वर बंद हो गया है!"
+	ServerStartFailed		= "HTTP सर्वर शुरू करने में विफल रहा!"
+	TryRunAsRoot			= "कृपया प्रशासक के रूप में चलाने का प्रयास करें।"
+	ServerListening			= "पहुंच का पता:"
+	ExitServerTip			= "आप कभी भी Ctrl+C दबाकर सर्वर को बंद कर सकते हैं"
+	# GUI
 	ConsoleHelpData			= @{
 		title	   = "उपयोग:"
 		Usage	   = "[input |] ps12exe [[-inputFile] '<फ़ाइल नाम|url>' | -Content '<स्क्रिप्ट>'] [-outputFile '<फ़ाइल नाम>']
@@ -116,6 +66,56 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 			GolfMode		 = "गॉल्फ मोड सक्षम करें, संक्षिप्त रूप और सामान्य फ़ंक्शन जोड़ें"
 			Localize		 = "स्थानीयकरण भाषा कोड की निर्दिष्टि करें"
 			Help			 = "इस मदद सूचना को दिखाएँ"
+		}
+	}
+	GUIHelpData				= @{
+		title	   = "उपयोग:"
+		Usage	   = @"
+ps12exeGUI [[-ConfigFile] '<कॉन्फ़िगरेशन फ़ाइल>'] [-PS1File '<स्क्रिप्ट फ़ाइल>'] [-Localize '<भाषा कोड>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+
+ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize '<भाषा कोड>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+"@
+		PrarmsData = [ordered]@{
+			ConfigFile	= "लोड करने के लिए कॉन्फ़िगरेशन फ़ाइल।"
+			PS1File	   = "कंपाइल करने के लिए स्क्रिप्ट फ़ाइल।"
+			Localize   = "उपयोग किया जाने वाला भाषा कोड।"
+			UIMode	   = "उपयोग किया जाने वाला उपयोगकर्ता इंटरफेस मोड।"
+			help	   = "इस मदद सूचना को दिखाएँ।"
+		}
+	}
+	SetContextMenuHelpData	= @{
+		title	   = "उपयोग:"
+		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<भाषा कोड>'] [-help]"
+		PrarmsData = [ordered]@{
+			action	 = "क्रिया का कार्यान्वयन।"
+			Localize = "उपयोग किए जाने वाले भाषा कोड।"
+			help	 = "इस मदद सूचना को दिखाएँ।"
+		}
+	}
+	WebServerHelpData		= @{
+		title	   = "उपयोग:"
+		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
+	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<पथ>']
+	[-Localize '<भाषा कोड>'] [-help]"
+		PrarmsData = [ordered]@{
+			HostUrl			  = "रजिस्टर करने के लिए HTTP सर्वर पता।"
+			MaxCompileThreads = "अधिकतम कॉम्पाइल धागों की संख्या।"
+			MaxCompileTime	  = "अधिकतम कॉम्पाइल समय (सेकंड)।"
+			ReqLimitPerMin	  = "फ़ाइल प्रति मिनट की अनुरोध सीमा।"
+			MaxCachedFileSize = "अधिकतम कैश फ़ाइल का आकार।"
+			MaxScriptFileSize = "अधिकतम स्क्रिप्ट फ़ाइल का आकार।"
+			CacheDir		  = "अधिकतम कैश फ़ाइल का डाइरेक्टरी पथ।"
+			Localize		  = "सर्वर साइड रिकॉर्ड करने के लिए उपयोग किए जाने वाले भाषा कोड।"
+			help			  = "इस मदद सूचना को दिखाएँ।"
+		}
+	}
+	exe21spHelpData			= @{
+		title	   = "उपयोग:"
+		Usage	   = "exe21sp [-ExePath] '<exe पथ>' [-OutFile '<.ps1 पथ>'] [-help]"
+		PrarmsData = [ordered]@{
+			ExePath = "ps12exe द्वारा निर्मित exe का पथ (डीकंपाइल करने के लिए)।"
+			OutFile = "वैकल्पिक; पुनर्प्राप्त स्क्रिप्ट लिखने का पथ। छोड़ने पर stdout।"
+			help	= "यह सहायता दिखाएँ।"
 		}
 	}
 	CompilingI18nData		= @{
@@ -200,8 +200,8 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		ReqLimitExceeded429 = "IP {0} ने प्रति मिनट {1} अनुरोधों की सीमा पार कर ली है, 429 त्रुटि लौटा रहा है"
 	}
 	InteractI18nData		= @{
-		ModeName					= "इंटरैक्टिव"
-		Welcome						= "इंटरैक्टिव मो�� में प्रवेश किया। बाहर निकलने के लिए Ctrl+C दबाएं।"
+		ModeName					= "इंटरैक्टिव मोड"
+		Welcome						= "ps12exe इंटरैक्टिव मोड में आपका स्वागत है। किसी भी समय बाहर निकलने के लिए Ctrl+C दबाएं।"
 		EnterInputFile				= "कृपया इनपुट फ़ाइल पथ या URL दर्ज करें:"
 		Prompt						= " >> "
 		ExitMessage					= "इंटरैक्टिव मोड से बाहर निकल रहा है।"
@@ -245,14 +245,14 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		Exiting						= "इंटरैक्टिव मोड से बाहर निकल रहा है।"
 	}
 	exe21spInteractI18nData = @{
-		ModeName			 = "exe21sp"
+		ModeName			 = "इंटरैक्टिव मोड"
 		Welcome				 = "exe21sp इंटरैक्टिव मोड में आपका स्वागत है। किसी भी समय बाहर निकलने के लिए Ctrl+C दबाएं।"
 		EnterExePath		 = "ps12exe-जनित exe का पथ दर्ज करें (बाहर निकलने के लिए खाली छोड़ें):"
 		EnterOutputPs1Path	 = "आउटपुट ps1 पथ दर्ज करें (खाली छोड़ने पर समान फ़ोल्डर में <exe>.ps1 उपयोग होगा):"
 		Prompt				 = " >> "
 		AdditionalInfoPrompt = "[Y/N]"
 		ConvertAnother		 = "किसी अन्य exe को परिवर्तित करें?"
-		Exiting				 = "exe21sp से बाहर निकल रहा है।"
+		Exiting				 = "इंटरैक्टिव मोड से बाहर निकल रहा है।"
 	}
 	exe21spI18nData			= @{
 		TinySharpNoTextSection		 = "एक्ज़ीक्यूटेबल एक .NET असेंबली है लेकिन TinySharp लेआउट से मेल नहीं खाता (.text सेक्शन नहीं)।"

@@ -6,13 +6,6 @@
 	OpenInGUI				= "Abrir en ps12exeGUI"
 	GUICfgFileDesc			= "Archivo de configuración de ps12exe GUI"
 	# Web Server
-	ServerStarted			= "¡Servidor HTTP iniciado!"
-	ServerStopped			= "¡Servidor HTTP detenido!"
-	ServerStartFailed		= "Error al iniciar el servidor HTTP."
-	TryRunAsRoot			= "Vuelva a intentarlo como usuario root."
-	ServerListening			= "Dirección de acceso:"
-	ExitServerTip			= "Puede presionar Ctrl+C para salir del servidor en cualquier momento."
-	# GUI
 	ErrorHead				= "Error:"
 	CompileResult			= "Resultado de la compilación"
 	DefaultResult			= "¡Hecho!"
@@ -20,56 +13,13 @@
 	AskSaveCfgTitle			= "Guardar archivo de configuración"
 	CfgFileLabelHead		= "Archivo de configuración:"
 	# Console
-	WebServerHelpData		= @{
-		title	   = "Uso:"
-		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
-	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<donde>']
-	[-Localize '<código de idioma>'] [-help]"
-		PrarmsData = [ordered]@{
-			HostUrl			  = "La dirección del servidor HTTP que se registrará."
-			MaxCompileThreads = "El número maximo de hilos de compilación."
-			MaxCompileTime	  = "El tiempo maximo de compilación (segundos)."
-			ReqLimitPerMin	  = "El número de solicitudes por minuto para cada IP."
-			MaxCachedFileSize = "El tamaño maximo de archivo caché."
-			MaxScriptFileSize = "El tamaño maximo de archivo de código."
-			CacheDir		  = "El directorio donde se almacenan los archivos caché."
-			Localize		  = "El código de idioma para el registro en el lado del servidor."
-			help			  = "Mostrar esta información de ayuda."
-		}
-	}
-	GUIHelpData				= @{
-		title	   = "Uso:"
-		Usage	   = @"
-ps12exeGUI [[-ConfigFile] '<archivo de configuración>'] [-PS1File '<archivo de código>'] [-Localize '<código de idioma>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
-
-ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
-"@
-		PrarmsData = [ordered]@{
-			ConfigFile	= "El archivo de configuración que desea cargar."
-			PS1File	   = "El archivo de script a compilar."
-			Localize   = "El código de idioma que desea usar."
-			UIMode	   = "El modo de interfaz de usuario que desea usar."
-			help	   = "Mostrar esta información de ayuda."
-		}
-	}
-	SetContextMenuHelpData	= @{
-		title	   = "Uso:"
-		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<código de idioma>'] [-help]"
-		PrarmsData = [ordered]@{
-			action	 = "El método que desea ejecutar."
-			Localize = "El código de idioma que desea usar."
-			help	 = "Mostrar esta información de ayuda."
-		}
-	}
-	exe21spHelpData			= @{
-		title	   = "Uso:"
-		Usage	   = "exe21sp [-ExePath] '<ruta al exe>' [-OutFile '<ruta al .ps1>'] [-help]"
-		PrarmsData = [ordered]@{
-			ExePath = "Ruta al exe generado por ps12exe a descompilar."
-			OutFile = "Opcional; ruta donde escribir el script recuperado. Si se omite, salida a stdout."
-			help	= "Mostrar esta ayuda."
-		}
-	}
+	ServerStarted			= "¡Servidor HTTP iniciado!"
+	ServerStopped			= "¡Servidor HTTP detenido!"
+	ServerStartFailed		= "Error al iniciar el servidor HTTP."
+	TryRunAsRoot			= "Vuelva a intentarlo como usuario root."
+	ServerListening			= "Dirección de acceso:"
+	ExitServerTip			= "Puede presionar Ctrl+C para salir del servidor en cualquier momento."
+	# GUI
 	ConsoleHelpData			= @{
 		title	   = "Uso:"
 		Usage	   = "[input |] ps12exe [[-inputFile] '<nombre de archivo|url>' | -Content '<script>'] [-outputFile '<nombre de archivo>']
@@ -116,6 +66,56 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 			GolfMode		 = "Activar el modo golf, agregando abreviaturas y funciones comunes"
 			Localize		 = "El código de idioma que desea usar"
 			Help			 = "Mostrar esta información de ayuda"
+		}
+	}
+	GUIHelpData				= @{
+		title	   = "Uso:"
+		Usage	   = @"
+ps12exeGUI [[-ConfigFile] '<archivo de configuración>'] [-PS1File '<archivo de código>'] [-Localize '<código de idioma>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+
+ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+"@
+		PrarmsData = [ordered]@{
+			ConfigFile	= "El archivo de configuración que desea cargar."
+			PS1File	   = "El archivo de script a compilar."
+			Localize   = "El código de idioma que desea usar."
+			UIMode	   = "El modo de interfaz de usuario que desea usar."
+			help	   = "Mostrar esta información de ayuda."
+		}
+	}
+	SetContextMenuHelpData	= @{
+		title	   = "Uso:"
+		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<código de idioma>'] [-help]"
+		PrarmsData = [ordered]@{
+			action	 = "El método que desea ejecutar."
+			Localize = "El código de idioma que desea usar."
+			help	 = "Mostrar esta información de ayuda."
+		}
+	}
+	WebServerHelpData		= @{
+		title	   = "Uso:"
+		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
+	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<donde>']
+	[-Localize '<código de idioma>'] [-help]"
+		PrarmsData = [ordered]@{
+			HostUrl			  = "La dirección del servidor HTTP que se registrará."
+			MaxCompileThreads = "El número maximo de hilos de compilación."
+			MaxCompileTime	  = "El tiempo maximo de compilación (segundos)."
+			ReqLimitPerMin	  = "El número de solicitudes por minuto para cada IP."
+			MaxCachedFileSize = "El tamaño maximo de archivo caché."
+			MaxScriptFileSize = "El tamaño maximo de archivo de código."
+			CacheDir		  = "El directorio donde se almacenan los archivos caché."
+			Localize		  = "El código de idioma para el registro en el lado del servidor."
+			help			  = "Mostrar esta información de ayuda."
+		}
+	}
+	exe21spHelpData			= @{
+		title	   = "Uso:"
+		Usage	   = "exe21sp [-ExePath] '<ruta al exe>' [-OutFile '<ruta al .ps1>'] [-help]"
+		PrarmsData = [ordered]@{
+			ExePath = "Ruta al exe generado por ps12exe a descompilar."
+			OutFile = "Opcional; ruta donde escribir el script recuperado. Si se omite, salida a stdout."
+			help	= "Mostrar esta ayuda."
 		}
 	}
 	CompilingI18nData		= @{
@@ -200,8 +200,8 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 		ReqLimitExceeded429 = "La IP {0} ha superado el límite de {1} solicitudes por minuto, se devuelve un error 429"
 	}
 	InteractI18nData		= @{
-		ModeName					= "Interactivo"
-		Welcome						= "Has entrado en modo interactivo. Pulsa Ctrl+C para salir."
+		ModeName					= "Modo interactivo"
+		Welcome						= "Bienvenido al modo interactivo de ps12exe. Pulsa Ctrl+C para salir en cualquier momento."
 		EnterInputFile				= "Introduce la ruta o URL del archivo de entrada:"
 		Prompt						= " >> "
 		ExitMessage					= "Saliendo del modo interactivo."
@@ -245,14 +245,14 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 		Exiting						= "Saliendo del modo interactivo."
 	}
 	exe21spInteractI18nData = @{
-		ModeName			 = "exe21sp"
+		ModeName			 = "Modo interactivo"
 		Welcome				 = "Bienvenido al modo interactivo de exe21sp. Pulsa Ctrl+C para salir en cualquier momento."
 		EnterExePath		 = "Introduce la ruta del exe generado por ps12exe (en blanco para salir):"
 		EnterOutputPs1Path	 = "Introduce la ruta del ps1 de salida (en blanco para usar <exe>.ps1 en la misma carpeta):"
 		Prompt				 = " >> "
 		AdditionalInfoPrompt = "[Y/N]"
 		ConvertAnother		 = "¿Convertir otro exe?"
-		Exiting				 = "Saliendo de exe21sp."
+		Exiting				 = "Saliendo del modo interactivo."
 	}
 	exe21spI18nData			= @{
 		TinySharpNoTextSection		 = "El ejecutable es un ensamblado .NET pero no coincide con el diseño TinySharp (no hay sección .text)."

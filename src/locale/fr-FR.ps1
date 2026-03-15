@@ -1,76 +1,26 @@
 ﻿@{
-	LangName			   = "Français"
-	LangID				   = "fr-FR"
+	LangName				= "Français"
+	LangID					= "fr-FR"
 	# Right click Menu
-	CompileTitle		   = "Compiler en EXE"
-	OpenInGUI			   = "Ouvrir dans ps12exeGUI"
-	GUICfgFileDesc		   = "Fichier de configuration ps12exe GUI"
+	CompileTitle			= "Compiler en EXE"
+	OpenInGUI				= "Ouvrir dans ps12exeGUI"
+	GUICfgFileDesc			= "Fichier de configuration ps12exe GUI"
 	# Web Server
-	ServerStarted		   = "Serveur HTTP démarré !"
-	ServerStopped		   = "Serveur HTTP arrêté !"
-	ServerStartFailed	   = "Échec du démarrage du serveur HTTP !"
-	TryRunAsRoot		   = "Veuillez essayer d’exécuter en tant qu’administrateur."
-	ServerListening		   = "Adresse d’accès :"
-	ExitServerTip		   = "Vous pouvez quitter le serveur à tout moment en appuyant sur Ctrl+C"
-	# GUI
-	ErrorHead			   = "Erreur :"
-	CompileResult		   = "Résultat de la compilation"
-	DefaultResult		   = "Terminé !"
-	AskSaveCfg			   = "Faut-il enregistrer le fichier de configuration ?"
-	AskSaveCfgTitle		   = "Enregistrer le fichier de configuration"
-	CfgFileLabelHead	   = "Fichier de configuration :"
+	ErrorHead				= "Erreur :"
+	CompileResult			= "Résultat de la compilation"
+	DefaultResult			= "Terminé !"
+	AskSaveCfg				= "Faut-il enregistrer le fichier de configuration ?"
+	AskSaveCfgTitle			= "Enregistrer le fichier de configuration"
+	CfgFileLabelHead		= "Fichier de configuration :"
 	# Console
-	WebServerHelpData	   = @{
-		title	   = "Utilisation :"
-		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
-	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<chemin>']
-	[-Localize '<code_de_langue>'] [-help]"
-		PrarmsData = [ordered]@{
-			HostUrl			  = "Adresse du serveur HTTP à enregistrer."
-			MaxCompileThreads = "Nombre maximal de threads de compilation."
-			MaxCompileTime	  = "Temps de compilation maximal (secondes)."
-			ReqLimitPerMin	  = "Limite de requêtes par minute et par adresse IP."
-			MaxCachedFileSize = "Taille maximale du fichier mis en cache."
-			MaxScriptFileSize = "Taille maximale du fichier script."
-			CacheDir		  = "Répertoire du cache."
-			Localize		  = "Code de langue à utiliser pour les journaux du côté serveur."
-			help			  = "Affiche cette aide."
-		}
-	}
-	GUIHelpData			   = @{
-		title	   = "Utilisation :"
-		Usage	   = @"
-ps12exeGUI [[-ConfigFile] '<fichier_de_configuration>'] [-PS1File '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
-
-ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
-"@
-		PrarmsData = [ordered]@{
-			ConfigFile	= "Fichier de configuration à charger."
-			PS1File	   = "Fichier de script à compiler."
-			Localize   = "Code de langue à utiliser."
-			UIMode	   = "Mode d’interface utilisateur à utiliser."
-			help	   = "Affiche cette aide."
-		}
-	}
-	SetContextMenuHelpData = @{
-		title	   = "Utilisation :"
-		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<code_de_langue>'] [-help]"
-		PrarmsData = [ordered]@{
-			action	 = "Action à exécuter."
-			Localize = "Code de langue à utiliser."
-			help	 = "Affiche cette aide."
-		}
-	}
-	exe21spHelpData		   = @{
-		title	   = "Utilisation :"
-		Usage	   = "exe21sp [-ExePath] '<chemin exe>' [-OutFile '<chemin .ps1>'] [-help]"
-		PrarmsData = [ordered]@{
-			ExePath = "Chemin vers l'exe généré par ps12exe à décompiler."
-			OutFile = "Optionnel ; chemin du script .ps1 récupéré. Sinon sortie sur stdout."
-			help	= "Afficher cette aide."
-		}
-	}
-	ConsoleHelpData		   = @{
+	ServerStarted			= "Serveur HTTP démarré !"
+	ServerStopped			= "Serveur HTTP arrêté !"
+	ServerStartFailed		= "Échec du démarrage du serveur HTTP !"
+	TryRunAsRoot			= "Veuillez essayer d’exécuter en tant qu’administrateur."
+	ServerListening			= "Adresse d’accès :"
+	ExitServerTip			= "Vous pouvez quitter le serveur à tout moment en appuyant sur Ctrl+C"
+	# GUI
+	ConsoleHelpData			= @{
 		title	   = "Utilisation :"
 		Usage	   = "[input |] ps12exe [[-inputFile] '<nom_de_fichier|url>' | -Content '<script>'] [-outputFile '<nom_de_fichier>']
 	[-CompilerOptions '<options>'] [-TempDir '<dossier>'] [-minifyer '<scriptblock>'] [-noConsole]
@@ -118,7 +68,57 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 			Help			 = "Affiche cette aide."
 		}
 	}
-	CompilingI18nData	   = @{
+	GUIHelpData				= @{
+		title	   = "Utilisation :"
+		Usage	   = @"
+ps12exeGUI [[-ConfigFile] '<fichier_de_configuration>'] [-PS1File '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+
+ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+"@
+		PrarmsData = [ordered]@{
+			ConfigFile	= "Fichier de configuration à charger."
+			PS1File	   = "Fichier de script à compiler."
+			Localize   = "Code de langue à utiliser."
+			UIMode	   = "Mode d’interface utilisateur à utiliser."
+			help	   = "Affiche cette aide."
+		}
+	}
+	SetContextMenuHelpData	= @{
+		title	   = "Utilisation :"
+		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<code_de_langue>'] [-help]"
+		PrarmsData = [ordered]@{
+			action	 = "Action à exécuter."
+			Localize = "Code de langue à utiliser."
+			help	 = "Affiche cette aide."
+		}
+	}
+	WebServerHelpData		= @{
+		title	   = "Utilisation :"
+		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
+	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<chemin>']
+	[-Localize '<code_de_langue>'] [-help]"
+		PrarmsData = [ordered]@{
+			HostUrl			  = "Adresse du serveur HTTP à enregistrer."
+			MaxCompileThreads = "Nombre maximal de threads de compilation."
+			MaxCompileTime	  = "Temps de compilation maximal (secondes)."
+			ReqLimitPerMin	  = "Limite de requêtes par minute et par adresse IP."
+			MaxCachedFileSize = "Taille maximale du fichier mis en cache."
+			MaxScriptFileSize = "Taille maximale du fichier script."
+			CacheDir		  = "Répertoire du cache."
+			Localize		  = "Code de langue à utiliser pour les journaux du côté serveur."
+			help			  = "Affiche cette aide."
+		}
+	}
+	exe21spHelpData			= @{
+		title	   = "Utilisation :"
+		Usage	   = "exe21sp [-ExePath] '<chemin exe>' [-OutFile '<chemin .ps1>'] [-help]"
+		PrarmsData = [ordered]@{
+			ExePath = "Chemin vers l'exe généré par ps12exe à décompiler."
+			OutFile = "Optionnel ; chemin du script .ps1 récupéré. Sinon sortie sur stdout."
+			help	= "Afficher cette aide."
+		}
+	}
+	CompilingI18nData		= @{
 		NewVersionAvailable						  = "Une nouvelle version de ps12exe est disponible : {0} !"
 		NoneInput								  = "Aucune entrée !"
 		BothInputAndContentSpecified			  = "Impossible de spécifier à la fois un fichier et du contenu !"
@@ -184,15 +184,15 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 		DllExportDelNoneTypeArg					  = "{0} : {1} est un argument sans type, on suppose qu’il s’agit d’une chaîne."
 		DllExportUsing							  = "Vous utilisez #_DllExport, cette macro est encore en développement, elle n’est pas encore prise en charge."
 	}
-	WebServerI18nData	   = @{
+	WebServerI18nData		= @{
 		CompilingUserInput	= "Compilation de la saisie utilisateur en cours : {0}"
 		EmptyResponse		= "Aucune donnée n’a été trouvée lors du traitement de la demande, renvoi d’une réponse vide."
 		InputTooLarge413	= "La saisie utilisateur est trop grande, renvoi d’une erreur 413."
 		ReqLimitExceeded429 = "L’adresse IP {0} a dépassé la limite de {1} requêtes par minute, renvoi d’une erreur 429."
 	}
-	InteractI18nData	   = @{
-		ModeName					= "Interactif"
-		Welcome						= "Vous êtes en mode interactif. Appuyez sur Ctrl+C à tout moment pour quitter."
+	InteractI18nData		= @{
+		ModeName					= "Mode interactif"
+		Welcome						= "Bienvenue au mode interactif ps12exe. Appuyez sur Ctrl+C pour quitter à tout moment."
 		EnterInputFile				= "Veuillez entrer le chemin ou l'URL du fichier d'entrée :"
 		Prompt						= " >> "
 		ExitMessage					= "Quitter le mode interactif."
@@ -235,23 +235,23 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 		CompileAnother				= "Compiler un autre fichier ?"
 		Exiting						= "Quitter le mode interactif."
 	}
-	Exe21SpI18nData		   = @{
-		ModeName			 = "exe21sp"
-		Welcome				 = "Bienvenue en mode interactif exe21sp. Appuyez sur Ctrl+C pour quitter à tout moment."
+	exe21spInteractI18nData = @{
+		ModeName			 = "Mode interactif"
+		Welcome				 = "Bienvenue au mode interactif exe21sp. Appuyez sur Ctrl+C pour quitter à tout moment."
 		EnterExePath		 = "Entrez le chemin de l'exe généré par ps12exe (vide pour quitter) :"
 		EnterOutputPs1Path	 = "Entrez le chemin du fichier ps1 de sortie (vide pour utiliser <exe>.ps1 dans le même dossier) :"
 		Prompt				 = " >> "
 		AdditionalInfoPrompt = "[Y/N]"
 		ConvertAnother		 = "Convertir un autre exe ?"
-		Exiting				 = "Sortie d'exe21sp."
+		Exiting				 = "Quitter le mode interactif."
 	}
-}
-		TinySharpNoTextSection		= "L'exécutable est un assembly .NET mais ne correspond pas au layout TinySharp (pas de section .text)."
-		TinySharpTextSectionEmpty	= "L'exécutable est un assembly .NET mais ne correspond pas au layout TinySharp (section .text vide)."
-		TinySharpCannotReadText		= "L'exécutable est un assembly .NET mais ne correspond pas au layout TinySharp (impossible de lire .text)."
-		TinySharpPayloadNotRecovered	= "L'exécutable est un assembly .NET mais ne correspond pas au layout TinySharp ; charge utile du script non récupérable."
-		NoEmbeddedScript				= "Aucun script incorporé dans « {0} » (exe non construit par ps12exe ou charge utile non récupérable)."
-		ExePathRequired				= "exe21sp : -ExePath est requis. Utilisez -help pour l'usage."
-		FileNotFound					= "Fichier introuvable : {0}"
+	exe21spI18nData			= @{
+		TinySharpNoTextSection		 = "L'exécutable est un assembly .NET mais ne correspond pas au layout TinySharp (pas de section .text)."
+		TinySharpTextSectionEmpty	 = "L'exécutable est un assembly .NET mais ne correspond pas au layout TinySharp (section .text vide)."
+		TinySharpCannotReadText		 = "L'exécutable est un assembly .NET mais ne correspond pas au layout TinySharp (impossible de lire .text)."
+		TinySharpPayloadNotRecovered = "L'exécutable est un assembly .NET mais ne correspond pas au layout TinySharp ; charge utile du script non récupérable."
+		NoEmbeddedScript			 = "Aucun script incorporé dans « {0} » (exe non construit par ps12exe ou charge utile non récupérable)."
+		ExePathRequired				 = "exe21sp : -ExePath est requis. Utilisez -help pour l'usage."
+		FileNotFound				 = "Fichier introuvable : {0}"
 	}
 }

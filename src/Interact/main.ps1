@@ -322,7 +322,7 @@ try {
 			Write-I18n "[!]" ($I18n.CompileFailedException -f $_.Exception.Message) -SymbolColor Red
 		}
 
-		Write-I18n "[?" $I18n.CompileAnother $I18n.AdditionalInfoPrompt -SymbolColor Blue -SequenceColor DarkGray
+		Write-I18n "[?]" $I18n.CompileAnother $I18n.AdditionalInfoPrompt -SymbolColor Blue -SequenceColor DarkGray
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 		if (-not (IsEnable(Read-Host))) {
 			break
