@@ -1,4 +1,4 @@
-param ($SyntaxErrors)
+﻿param ($SyntaxErrors)
 $SyntaxErrors | ForEach-Object {
 	$Extent = $_.Extent
 	if ($Extent.StartLineNumber) {

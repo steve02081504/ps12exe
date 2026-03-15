@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
 	从 ps12exe 生成的 exe 中还原出等价的 ps1（exe -> ps1）。

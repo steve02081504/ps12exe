@@ -1,4 +1,4 @@
-# 重新构建编译内容
+﻿# 重新构建编译内容
 $ConstResult = $RowResult | ForEach-Object {
 	(($_ | Out-String) -replace '\r\n$', '')
 }

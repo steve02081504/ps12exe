@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param ([switch]$noConsole)
 
 function GetAssemblyLocation($assemblyName) {

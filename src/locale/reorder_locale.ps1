@@ -1,4 +1,4 @@
-# Reorder locale .ps1 files to match zh-CN.ps1 top-level key order.
+﻿# Reorder locale .ps1 files to match zh-CN.ps1 top-level key order.
 # Usage: .\reorder_locale.ps1 [path to locale folder]
 # Default: script's directory
 

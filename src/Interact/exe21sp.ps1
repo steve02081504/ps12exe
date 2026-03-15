@@ -1,4 +1,4 @@
-# Interactive loop for exe21sp (invoked when exe21sp is run with no arguments and console is not redirected).
+﻿# Interactive loop for exe21sp (invoked when exe21sp is run with no arguments and console is not redirected).
 param($Localize)
 
 #_if PSScript

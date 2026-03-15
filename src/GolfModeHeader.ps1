@@ -1,4 +1,4 @@
-#region Input/Output (输入/输出)
+﻿#region Input/Output (输入/输出)
 function rl { Read-Host }
 
 function pr([Parameter(ValueFromPipeline = $true)] [object[]]$input) {
