@@ -85,7 +85,7 @@ Start-ps12exeWebServer
 ### exe から ps1 を復元（exe21sp）
 
 ```powershell
-exe21sp -ExePath .\target.exe -OutFile .\target.ps1
+exe21sp -inputFile .\target.exe -outputFile .\target.ps1
 ```
 
 `exe21sp` は ps12exe が生成した exe に埋め込まれている PowerShell スクリプトを取り出し、`.ps1` ファイルとして保存するか、標準出力に書き出します。ps12exe と同様に `$LastExitCode` で結果を表します：0 = 成功、1 = 入力/解析エラー（例：ps12exe 生成 exe でない）、2 = 呼び出しエラー（例：リダイレクト時に入力なし）、3 = リソース/内部エラー（例：ファイルなし）。
@@ -94,8 +94,8 @@ exe21sp -ExePath .\target.exe -OutFile .\target.ps1
 
 - **ps12exe**：標準出力（または標準入力/標準エラー）がリダイレクトされているとき、ps12exe は生成した exe のパスのみを標準出力に書き、キャプチャできるようにします（例：`$exe = ps12exe .\a.ps1`）。
 - **exe21sp**：パイプライン入力で exe パスを受け取れます（例：`Get-ChildItem *.exe | exe21sp` や `".\app.exe" | exe21sp`）。
-- **exe21sp**：`-OutFile` を指定せず、標準出力がリダイレクト**されていない**ときは、反コンパイル結果を exe と同じディレクトリ・同じベース名の `.ps1` に保存します。
-- **exe21sp**：`-OutFile` を指定せず、標準出力がリダイレクト**されている**ときは、反コンパイル結果を標準出力に書き出します。
+- **exe21sp**：`-outputFile` を指定せず、標準出力がリダイレクト**されていない**ときは、反コンパイル結果を exe と同じディレクトリ・同じベース名の `.ps1` に保存します。
+- **exe21sp**：`-outputFile` を指定せず、標準出力がリダイレクト**されている**ときは、反コンパイル結果を標準出力に書き出します。
 
 ## パラメータ
 

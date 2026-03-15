@@ -84,14 +84,14 @@ function Write-SymboledI18n {
 
 # Table: Name, Symbol, SymbolColor, MessageColor, SequenceColor. Wrappers are generated from this (single body, no duplication).
 $script:SymboledI18nWrapperDefs = @(
-	@{ Name = 'Write-SymboledErrorI18n';   Symbol = '[!]'; SymbolColor = 'Red';    MessageColor = 'White';   SequenceColor = 'White' },
-	@{ Name = 'Write-SymboledQuestionI18n'; Symbol = '[?]'; SymbolColor = 'Blue';   MessageColor = 'White';   SequenceColor = 'DarkGray' },
-	@{ Name = 'Write-SymboledInfoI18n';    Symbol = '[*]'; SymbolColor = 'Green';  MessageColor = 'White';   SequenceColor = 'White' },
-	@{ Name = 'Write-SymboledWelcomeI18n'; Symbol = '[*]'; SymbolColor = 'Cyan';   MessageColor = 'White';   SequenceColor = 'White' },
-	@{ Name = 'Write-SymboledProgressI18n'; Symbol = '[~]'; SymbolColor = 'Gray';   MessageColor = 'White';   SequenceColor = 'White' },
-	@{ Name = 'Write-SymboledExitI18n';    Symbol = '[/]'; SymbolColor = 'Yellow';  MessageColor = 'White';   SequenceColor = 'White' },
-	@{ Name = 'Write-SymboledSuccessI18n'; Symbol = '[+]'; SymbolColor = 'Green';  MessageColor = 'White';   SequenceColor = 'White' },
-	@{ Name = 'Write-SymboledInvalidI18n'; Symbol = '[-]'; SymbolColor = 'Red';    MessageColor = 'White';   SequenceColor = 'White' }
+	@{ Name = 'Write-SymboledErrorI18n'; Symbol = '[!]'; SymbolColor = 'Red'; MessageColor = 'White'; SequenceColor = 'White' },
+	@{ Name = 'Write-SymboledQuestionI18n'; Symbol = '[?]'; SymbolColor = 'Blue'; MessageColor = 'White'; SequenceColor = 'DarkGray' },
+	@{ Name = 'Write-SymboledInfoI18n'; Symbol = '[*]'; SymbolColor = 'Green'; MessageColor = 'White'; SequenceColor = 'White' },
+	@{ Name = 'Write-SymboledWelcomeI18n'; Symbol = '[*]'; SymbolColor = 'Cyan'; MessageColor = 'White'; SequenceColor = 'White' },
+	@{ Name = 'Write-SymboledProgressI18n'; Symbol = '[~]'; SymbolColor = 'Gray'; MessageColor = 'White'; SequenceColor = 'White' },
+	@{ Name = 'Write-SymboledExitI18n'; Symbol = '[/]'; SymbolColor = 'Yellow'; MessageColor = 'White'; SequenceColor = 'White' },
+	@{ Name = 'Write-SymboledSuccessI18n'; Symbol = '[+]'; SymbolColor = 'Green'; MessageColor = 'White'; SequenceColor = 'White' },
+	@{ Name = 'Write-SymboledInvalidI18n'; Symbol = '[-]'; SymbolColor = 'Red'; MessageColor = 'White'; SequenceColor = 'White' }
 )
 
 function New-SymboledI18nWrapperScriptBlock($Def) {

@@ -77,17 +77,17 @@ ps12exe https://raw.githubusercontent.com/steve02081504/ps12exe/master/src/GUI/M
 ### 从 exe 还原 ps1（exe21sp）
 
 ```powershell
-exe21sp -ExePath .\target.exe -OutFile .\target.ps1
+exe21sp -inputFile .\target.exe -outputFile .\target.ps1
 ```
 
-`exe21sp` 用于从 ps12exe 生成的 exe 中提取其中的 PowerShell 脚本，并写入 `.ps1` 文件或输出到标准输出。与 ps12exe 相同，exe21sp 使用 `$LastExitCode` 表示结果：0 = 成功，1 = 输入/解析错误（如不是 ps12exe 生成的 exe），2 = 调用错误（如重定向时无输入），3 = 资源/内部错误（如文件不存在）。
+`exe21sp` 用于从 ps12exe 生成的 exe（本地路径或 URL）中提取其中的 PowerShell 脚本，并写入 `.ps1` 文件或输出到标准输出。与 ps12exe 相同，exe21sp 使用 `$LastExitCode` 表示结果：0 = 成功，1 = 输入/解析错误（如不是 ps12exe 生成的 exe），2 = 调用错误（如重定向时无输入），3 = 资源/内部错误（如文件不存在）。
 
 ### 管道与重定向
 
 - **ps12exe**：当标准输出（或标准输入/标准错误）被重定向时，ps12exe 仅将生成的 exe 路径写入标准输出，便于捕获（如 `$exe = ps12exe .\a.ps1`）。
-- **exe21sp**：可从管道接收 exe 路径（如 `Get-ChildItem *.exe | exe21sp` 或 `".\app.exe" | exe21sp`）。
-- **exe21sp**：未指定 `-OutFile` 且标准输出**未**被重定向时，将反编译结果保存为与 exe 同目录、同主文件名的 `.ps1` 文件。
-- **exe21sp**：未指定 `-OutFile` 且标准输出**已**被重定向时，将反编译结果写入标准输出。
+- **exe21sp**：可从管道接收 exe 路径或 URL（如 `Get-ChildItem *.exe | exe21sp` 或 `".\app.exe" | exe21sp`）。
+- **exe21sp**：未指定 `-outputFile` 且标准输出**未**被重定向时，将反编译结果保存为与 exe 同目录、同主文件名的 `.ps1` 文件。
+- **exe21sp**：未指定 `-outputFile` 且标准输出**已**被重定向时，将反编译结果写入标准输出。
 
 ### 自托管Web服务
 

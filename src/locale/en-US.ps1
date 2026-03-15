@@ -111,12 +111,12 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 	}
 	exe21spHelpData			= @{
 		title	   = "Usage:"
-		Usage	   = "[input |] exe21sp [-ExePath] '<path to exe>' [-OutFile '<path to output .ps1>'] [-help]"
+		Usage	   = "[input |] exe21sp [[-inputFile] '<path or url to exe>'] [-outputFile '<path to output .ps1>'] [-help]"
 		PrarmsData = [ordered]@{
-			input    = "Path to the ps12exe-generated exe to decompile (when piped)."
-			ExePath  = "Path to the ps12exe-generated exe to decompile."
-			OutFile  = "Optional; path to write the recovered script. If omitted, output goes to stdout when redirected, otherwise writes to ``<exe>.ps1`` in the same directory."
-			help	 = "Show this help message."
+			input	   = "Path or URL to the ps12exe-generated exe to decompile, same as ``-inputFile``."
+			inputFile  = "Path or URL to the ps12exe-generated exe to decompile."
+			outputFile = "Optional; path to write the recovered script. If omitted, output goes to stdout when redirected, otherwise writes to ``<exe>.ps1`` in the same folder."
+			help	   = "Show this help message."
 		}
 	}
 	CompilingI18nData		= @{
@@ -209,7 +209,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		InvalidInputFile			= "C'mon, give me a real PS1 file path."
 		FileDoesNotExist			= "Whoa there, that file's a ghost. Doesn't exist."
 		InvalidExtension			= "Dude, the file's gotta be a '.ps1', '.psd1', or '.tmp'. Stick to the script."
-		EnterOutputFile				= "Output file path (leave it blank for the default, ya know):"
+		EnterOutputFile				= "Output file path (leave it blank for <ps1>.exe in the same folder):"
 		OutputFileExtensionError	= "Output file's gotta be a '.exe'. Slappin' that on for ya."
 		AddAdditionalInfo			= "Wanna throw in some extra info (icon, version, all that jazz)?"
 		AdditionalInfoPrompt		= "[Y/N]"
@@ -246,22 +246,27 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		Exiting						= "Exiting interactive mode."
 	}
 	exe21spInteractI18nData = @{
-		ModeName			 = "Interactive"
-		Welcome				 = "Welcome to exe21sp interactive mode. Press Ctrl+C to exit anytime."
-		EnterExePath		 = "Enter path to ps12exe-generated exe (blank to quit):"
-		EnterOutputPs1Path	 = "Enter output ps1 path (blank to use <exe>.ps1 in the same folder):"
-		Prompt				 = " >> "
-		AdditionalInfoPrompt = "[Y/N]"
-		ConvertAnother		 = "Convert another exe?"
-		Exiting				 = "Exiting interactive mode."
+		ModeName				 = "Interactive"
+		Welcome					 = "Welcome to exe21sp interactive mode. Press Ctrl+C to exit anytime."
+		EnterInputFile			 = "Gimme the input exe path or URL:"
+		Prompt					 = " >> "
+		ExitMessage				 = "Exited interactive mode."
+		InvalidInputFile		 = "C'mon, give me a valid exe path or URL."
+		FileDoesNotExist		 = "Whoa there, that file's a ghost. Doesn't exist."
+		EnterOutputFile			 = "Output file path (leave it blank for <exe>.ps1 in the same folder):"
+		OutputFileExtensionError	= "Output file's gotta be a '.ps1'. Slappin' that on for ya."
+		AdditionalInfoPrompt	 = "[Y/N]"
+		ConvertAnother			 = "Convert another exe?"
+		Exiting					 = "Exiting interactive mode."
 	}
 	exe21spI18nData			= @{
-		NoneInput					 = "No input!"
+		NoneInput					 = "No input file specified!"
 		TinySharpNoTextSection		 = "The executable is a .NET assembly but does not match the TinySharp layout (no .text section)."
 		TinySharpTextSectionEmpty	 = "The executable is a .NET assembly but does not match the TinySharp layout (.text section is empty)."
 		TinySharpCannotReadText		 = "The executable is a .NET assembly but does not match the TinySharp layout (cannot read .text)."
 		TinySharpPayloadNotRecovered	= "The executable is a .NET assembly but does not match the TinySharp layout; script payload cannot be recovered."
 		NoEmbeddedScript			 = "No embedded script found in '{0}' (not a ps12exe-built exe, or payload cannot be recovered)."
 		FileNotFound				 = "File not found: {0}"
+		InputUrlFailed				 = "Failed to read from URL: {0}"
 	}
 }

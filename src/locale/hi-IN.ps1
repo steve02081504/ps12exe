@@ -111,12 +111,12 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 	}
 	exe21spHelpData			= @{
 		title	   = "उपयोग:"
-		Usage	   = "[input |] exe21sp [-ExePath] '<exe पथ>' [-OutFile '<.ps1 पथ>'] [-help]"
+		Usage	   = "[input |] exe21sp [[-inputFile] '<exe पथ या url>'] [-outputFile '<.ps1 पथ>'] [-help]"
 		PrarmsData = [ordered]@{
-			input    = "ps12exe द्वारा निर्मित exe का पथ (पाइप इनपुट होने पर, डीकंपाइल करने के लिए)।"
-			ExePath  = "ps12exe द्वारा निर्मित exe का पथ (डीकंपाइल करने के लिए)।"
-			OutFile  = "वैकल्पिक; पुनर्प्राप्त स्क्रिप्ट लिखने का पथ। छोड़ने पर: रीडायरेक्ट होने पर stdout, वरना समान निर्देशिका में ``<exe>.ps1`` में लिखता है।"
-			help	 = "यह सहायता दिखाएँ।"
+			input	   = "ps12exe द्वारा निर्मित exe का पथ या URL, ``-inputFile`` के समान।"
+			inputFile  = "ps12exe द्वारा निर्मित exe का पथ या URL (डीकंपाइल करने के लिए)।"
+			outputFile = "वैकल्पिक; पुनर्प्राप्त स्क्रिप्ट लिखने का पथ। छोड़ने पर: रीडायरेक्ट होने पर stdout, वरना समान फ़ोल्डर में ``<exe>.ps1`` में लिखता है।"
+			help	   = "यह सहायता दिखाएँ।"
 		}
 	}
 	CompilingI18nData		= @{
@@ -205,11 +205,11 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		Welcome						= "ps12exe इंटरैक्टिव मोड में आपका स्वागत है। किसी भी समय बाहर निकलने के लिए Ctrl+C दबाएं।"
 		EnterInputFile				= "कृपया इनपुट फ़ाइल पथ या URL दर्ज करें:"
 		Prompt						= " >> "
-		ExitMessage					= "इंटरैक्टिव मोड से बाहर निकल रहा है।"
+		ExitMessage					= "इंटरैक्टिव मोड से बाहर निकल चुके हैं।"
 		InvalidInputFile			= "कृपया एक वैध PS1 फ़ाइल पथ दर्ज करें।"
 		FileDoesNotExist			= "फ़ाइल मौजूद नहीं है।"
 		InvalidExtension			= "फ़ाइल में '.ps1', '.psd1' या '.tmp' एक्सटेंशन होना चाहिए।"
-		EnterOutputFile				= "कृपया आउटपुट फ़ाइल पथ दर्ज करें (डिफ़ॉल्ट के लिए खाली छोड़ दें):"
+		EnterOutputFile				= "कृपया आउटपुट फ़ाइल पथ दर्ज करें (खाली छोड़ने पर समान फ़ोल्डर में <ps1>.exe):"
 		OutputFileExtensionError	= "आउटपुट फ़ाइल में '.exe' एक्सटेंशन होना चाहिए। '.exe' जोड़ दिया जाएगा。"
 		AddAdditionalInfo			= "अतिरिक्त जानकारी (आइकन, संस्करण, आदि) जोड़ें?"
 		AdditionalInfoPrompt		= "[Y/N]"
@@ -246,22 +246,27 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		Exiting						= "इंटरैक्टिव मोड से बाहर निकल रहा है।"
 	}
 	exe21spInteractI18nData = @{
-		ModeName			 = "इंटरैक्टिव मोड"
-		Welcome				 = "exe21sp इंटरैक्टिव मोड में आपका स्वागत है। किसी भी समय बाहर निकलने के लिए Ctrl+C दबाएं।"
-		EnterExePath		 = "ps12exe-जनित exe का पथ दर्ज करें (बाहर निकलने के लिए खाली छोड़ें):"
-		EnterOutputPs1Path	 = "आउटपुट ps1 पथ दर्ज करें (खाली छोड़ने पर समान फ़ोल्डर में <exe>.ps1 उपयोग होगा):"
-		Prompt				 = " >> "
-		AdditionalInfoPrompt = "[Y/N]"
-		ConvertAnother		 = "किसी अन्य exe को परिवर्तित करें?"
-		Exiting				 = "इंटरैक्टिव मोड से बाहर निकल रहा है।"
+		ModeName				 = "इंटरैक्टिव मोड"
+		Welcome					 = "exe21sp इंटरैक्टिव मोड में आपका स्वागत है। किसी भी समय बाहर निकलने के लिए Ctrl+C दबाएं।"
+		EnterInputFile			 = "इनपुट exe का पथ या URL दर्ज करें:"
+		Prompt					 = " >> "
+		ExitMessage				 = "इंटरैक्टिव मोड से बाहर निकल चुके हैं।"
+		InvalidInputFile		 = "कृपया एक वैध exe पथ या URL दर्ज करें।"
+		FileDoesNotExist		 = "फ़ाइल मौजूद नहीं है।"
+		EnterOutputFile			 = "कृपया आउटपुट फ़ाइल पथ दर्ज करें (खाली छोड़ने पर समान फ़ोल्डर में <exe>.ps1):"
+		OutputFileExtensionError	= "आउटपुट फ़ाइल में '.ps1' एक्सटेंशन होना चाहिए। जोड़ रहा हूं।"
+		AdditionalInfoPrompt	 = "[Y/N]"
+		ConvertAnother			 = "किसी अन्य exe को परिवर्तित करें?"
+		Exiting					 = "इंटरैक्टिव मोड से बाहर निकल रहा है।"
 	}
 	exe21spI18nData			= @{
-		NoneInput					 = "कोई इनपुट नहीं!"
+		NoneInput					 = "कोई इनपुट फ़ाइल निर्दिष्ट नहीं है!"
 		TinySharpNoTextSection		 = "एक्ज़ीक्यूटेबल एक .NET असेंबली है लेकिन TinySharp लेआउट से मेल नहीं खाता (.text सेक्शन नहीं)।"
 		TinySharpTextSectionEmpty	 = "एक्ज़ीक्यूटेबल एक .NET असेंबली है लेकिन TinySharp लेआउट से मेल नहीं खाता (.text सेक्शन खाली)।"
 		TinySharpCannotReadText		 = "एक्ज़ीक्यूटेबल एक .NET असेंबली है लेकिन TinySharp लेआउट से मेल नहीं खाता (.text पढ़ नहीं सकते)।"
 		TinySharpPayloadNotRecovered	= "एक्ज़ीक्यूटेबल एक .NET असेंबली है लेकिन TinySharp लेआउट से मेल नहीं खाता; स्क्रिप्ट पेलोड पुनर्प्राप्त नहीं हो सका।"
 		NoEmbeddedScript			 = "'{0}' में कोई एम्बेडेड स्क्रिप्ट नहीं मिली (ps12exe-बिल्ट exe नहीं, या पेलोड पुनर्प्राप्त नहीं हो सकता)।"
 		FileNotFound				 = "फ़ाइल नहीं मिली: {0}"
+		InputUrlFailed				 = "URL से पढ़ने में विफल: {0}"
 	}
 }

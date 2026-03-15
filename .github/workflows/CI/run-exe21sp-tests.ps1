@@ -16,9 +16,9 @@ function Get-Exe21spContent {
 	param([string]$RelPath)
 	$exePath = Join-Path $repoRoot $RelPath
 	$pathEsc = $exePath -replace "'", "''"
-	pwsh -NoProfile -Command "Import-Module '$repoEsc' -Force; exe21sp -ExePath '$pathEsc'" | Out-String
+	pwsh -NoProfile -Command "Import-Module '$repoEsc' -Force; exe21sp -inputFile '$pathEsc'" | Out-String
 }
-# Pipeline input: exe path from pipeline, script to stdout (same behavior as -ExePath when redirected)
+# Pipeline input: exe path from pipeline, script to stdout (same behavior as -inputFile when redirected)
 function Get-Exe21spContentFromPipeline {
 	param([string]$RelPath)
 	$exePath = Join-Path $repoRoot $RelPath
@@ -66,13 +66,13 @@ try {
 		if ($e5 -notmatch "tinysharp-gui-42" -or $e5 -notmatch "exit 42") { throw "exe21sp TinySharp GUI 42: expected content+exit 42, got: $e5" }
 	}
 
-	# exe21sp without -OutFile and without redirect: saves to <exe>.ps1 in same directory (call without pipe; when stdout is not redirected, exe21sp writes to file)
+	# exe21sp without -outputFile and without redirect: saves to <exe>.ps1 in same directory (call without pipe; when stdout is not redirected, exe21sp writes to file)
 	$normalExeFull = [System.IO.Path]::GetFullPath((Join-Path $repoRoot 'build/normal.exe'))
 	$expectedPs1Path = [System.IO.Path]::GetDirectoryName($normalExeFull) + [System.IO.Path]::DirectorySeparatorChar + [System.IO.Path]::GetFileNameWithoutExtension($normalExeFull) + '.ps1'
 	if (Test-Path -LiteralPath $expectedPs1Path) { Remove-Item -LiteralPath $expectedPs1Path -Force }
 	$stdoutNotRedirected = -not [System.Console]::IsOutputRedirected
 	if ($stdoutNotRedirected) {
-		exe21sp -ExePath $normalExeFull
+		exe21sp -inputFile $normalExeFull
 		if (-not (Test-Path -LiteralPath $expectedPs1Path)) { throw "exe21sp no-OutFile no-redirect: expected file $expectedPs1Path" }
 		$savedContent = Get-Content -LiteralPath $expectedPs1Path -Raw -Encoding UTF8
 		if ($savedContent -notmatch 'normal-embed') { throw "exe21sp no-OutFile no-redirect: expected 'normal-embed' in saved file, got: $savedContent" }

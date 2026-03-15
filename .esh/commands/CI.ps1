@@ -28,7 +28,8 @@ if ($anySpecified) {
 
 if (-not $Full -and $anySpecified) {
 	# 仅跑勾选的项，不再用 git diff
-} elseif (-not $Full) {
+}
+elseif (-not $Full) {
 	# 按 git diff 增量
 	$changed = @()
 	$diffWorking = git diff --name-only 2>$null

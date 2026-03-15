@@ -21,27 +21,57 @@ try {
 	while ($true) {
 		Write-TaskbarProgress -Percent 0
 		$exe21spArgs = @{}
-		Write-SymboledInfoI18n EnterExePath
-		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
-		$exe21spArgs.ExePath = Read-Host
-		if (-not $exe21spArgs.ExePath) { break }
+		$inputFile = ''
+		do {
+			Write-SymboledInfoI18n EnterInputFile
+			Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
+			$inputFile = Read-Host
+			if (-not $inputFile) {
+				Write-SymboledErrorI18n InvalidInputFile
+			}
+			elseif ($inputFile -match "^(https?|ftp)://") {
+				try {
+					$null = Invoke-WebRequest -Uri $inputFile -Method Head -ErrorAction Stop
+				}
+				catch {
+					Write-SymboledErrorI18n FileDoesNotExist
+					$inputFile = ''
+				}
+			}
+			else {
+				if (-not (Test-Path -LiteralPath $inputFile -PathType Leaf)) {
+					Write-SymboledErrorI18n FileDoesNotExist
+					$inputFile = ''
+				}
+			}
+		} while (-not $inputFile)
+		$exe21spArgs.inputFile = $inputFile
 		Write-TaskbarProgress -Percent 25
 
-		Write-SymboledInfoI18n EnterOutputPs1Path
+		Write-SymboledInfoI18n EnterOutputFile
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
-		$exe21spArgs.OutFile = Read-Host
+		$outputFile = Read-Host
+		if ($outputFile) {
+			if ($outputFile -notmatch "\.ps1$") {
+				Write-SymboledErrorI18n OutputFileExtensionError
+				$outputFile += ".ps1"
+			}
+			$exe21spArgs.outputFile = $outputFile
+		}
 		Write-TaskbarProgress -Percent 50
 
 		try {
 			Write-TaskbarProgress -Percent 75
 			if (Get-Command exe21sp -ErrorAction SilentlyContinue) {
 				exe21sp @exe21spArgs
-			} else {
+			}
+			else {
 				& $exe21spScript @exe21spArgs
 			}
 			Write-TaskbarProgress -Percent 100
 			Write-TaskbarProgressClear
-		} catch {
+		}
+		catch {
 			Write-TaskbarProgressError
 			Write-Error $_
 		}
@@ -51,7 +81,7 @@ try {
 		if (-not (IsEnable(Read-Host))) { break }
 	}
 
-	Write-SymboledExitI18n Exiting
+	Write-SymboledExitI18n ExitMessage
 }
 finally {
 	Write-TaskbarProgressClear

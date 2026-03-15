@@ -85,7 +85,7 @@ Démarre un service Web qui permet aux utilisateurs de compiler du code PowerShe
 ### Récupérer le ps1 depuis un exe (exe21sp)
 
 ```powershell
-exe21sp -ExePath .\target.exe -OutFile .\target.ps1
+exe21sp -inputFile .\target.exe -outputFile .\target.ps1
 ```
 
 `exe21sp` extrait le script PowerShell contenu dans un exécutable généré par ps12exe et le restitue dans un fichier `.ps1` ou sur la sortie standard. Comme ps12exe, il utilise la convention `$LastExitCode` : 0 = succès, 1 = erreur d’entrée/analyse (ex. exe non généré par ps12exe), 2 = erreur d’appel (ex. pas d’entrée en redirection), 3 = erreur ressource/interne (ex. fichier introuvable).
@@ -94,8 +94,8 @@ exe21sp -ExePath .\target.exe -OutFile .\target.ps1
 
 - **ps12exe** : lorsque la sortie standard (ou l’entrée standard / l’erreur standard) est redirigée, ps12exe n’écrit que le chemin de l’exe généré sur la sortie standard pour pouvoir le capturer (ex. `$exe = ps12exe .\a.ps1`).
 - **exe21sp** : accepte les chemins d’exe en entrée de pipeline (ex. `Get-ChildItem *.exe | exe21sp` ou `".\app.exe" | exe21sp`).
-- **exe21sp** : si `-OutFile` n’est pas précisé et que la sortie standard n’est **pas** redirigée, le script décompilé est enregistré dans un fichier `.ps1` de même nom que l’exe, dans le même répertoire.
-- **exe21sp** : si `-OutFile` n’est pas précisé et que la sortie standard **est** redirigée, le script décompilé est écrit sur la sortie standard.
+- **exe21sp** : si `-outputFile` n’est pas précisé et que la sortie standard n’est **pas** redirigée, le script décompilé est enregistré dans un fichier `.ps1` de même nom que l’exe, dans le même répertoire.
+- **exe21sp** : si `-outputFile` n’est pas précisé et que la sortie standard **est** redirigée, le script décompilé est écrit sur la sortie standard.
 
 ## Paramètres
 

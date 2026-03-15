@@ -9,7 +9,8 @@ function Write-TaskbarProgress {
 	if ($PSBoundParameters.ContainsKey('Percent')) {
 		$p = [Math]::Max(0, [Math]::Min(100, $Percent))
 		Write-Host -NoNewline "`e]9;4;1;$p`e\"
-	} else {
+	}
+	else {
 		Write-Host -NoNewline "`e]9;4;3;0`e\"
 	}
 }

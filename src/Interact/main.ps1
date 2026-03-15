@@ -53,7 +53,7 @@ try {
 			}
 			else {
 				# Local file path
-				if (-not (Test-Path $inputFile -PathType Leaf)) {
+				if (-not (Test-Path -LiteralPath $inputFile -PathType Leaf)) {
 					Write-SymboledErrorI18n FileDoesNotExist
 					$inputFile = ''
 				}
@@ -107,7 +107,7 @@ try {
 					}
 					else {
 						# Local file path
-						if (Test-Path $iconInput -PathType Leaf) {
+						if (Test-Path -LiteralPath $iconInput -PathType Leaf) {
 							$isValid = $true
 						}
 						else {
@@ -210,7 +210,7 @@ try {
 					}
 					else {
 						# Local file path
-						if (Test-Path $certPathInput -PathType Leaf) {
+						if (Test-Path -LiteralPath $certPathInput -PathType Leaf) {
 							$isValid = $true
 						}
 						else {
@@ -315,7 +315,7 @@ try {
 		}
 	}
 
-	Write-SymboledExitI18n Exiting
+	Write-SymboledExitI18n ExitMessage
 }
 finally {
 	Write-TaskbarProgressClear

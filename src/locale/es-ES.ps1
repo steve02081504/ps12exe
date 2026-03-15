@@ -111,17 +111,17 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 	}
 	exe21spHelpData			= @{
 		title	   = "Uso:"
-		Usage	   = "[input |] exe21sp [-ExePath] '<ruta al exe>' [-OutFile '<ruta al .ps1>'] [-help]"
+		Usage	   = "[input |] exe21sp [[-inputFile] '<ruta o url al exe>'] [-outputFile '<ruta al .ps1>'] [-help]"
 		PrarmsData = [ordered]@{
-			input    = "Ruta al exe generado por ps12exe a descompilar (cuando se canaliza)."
-			ExePath  = "Ruta al exe generado por ps12exe a descompilar."
-			OutFile  = "Opcional; ruta donde escribir el script recuperado. Si se omite: salida a stdout si está redirigido, si no se escribe en ``<exe>.ps1`` en el mismo directorio."
-			help	 = "Mostrar esta ayuda."
+			input	   = "Ruta o URL al exe generado por ps12exe a descompilar, igual que ``-inputFile``."
+			inputFile  = "Ruta o URL al exe generado por ps12exe a descompilar."
+			outputFile = "Opcional; ruta donde escribir el script recuperado. Si se omite: salida a stdout si está redirigido, si no se escribe en ``<exe>.ps1`` en la misma carpeta."
+			help	   = "Mostrar esta ayuda."
 		}
 	}
 	CompilingI18nData		= @{
 		NewVersionAvailable						  = "¡Hay una nueva versión de ps12exe disponible: {0}!"
-		NoneInput								  = "¡Sin entrada!"
+		NoneInput								  = "¡No se ha especificado ningún archivo de entrada!"
 		BothInputAndContentSpecified			  = "¡No se puede usar el archivo de entrada y el contenido al mismo tiempo!"
 		PreprocessDone							  = "Finalización de la preprocesación del script de entrada"
 		PreprocessedScriptSize					  = "Script preprocesado -> {0} bytes"
@@ -205,11 +205,11 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 		Welcome						= "Bienvenido al modo interactivo de ps12exe. Pulsa Ctrl+C para salir en cualquier momento."
 		EnterInputFile				= "Introduce la ruta o URL del archivo de entrada:"
 		Prompt						= " >> "
-		ExitMessage					= "Saliendo del modo interactivo."
+		ExitMessage					= "Saliste del modo interactivo."
 		InvalidInputFile			= "La ruta del archivo PS1 no es válida. Inténtalo de nuevo:"
 		FileDoesNotExist			= "El archivo no existe."
 		InvalidExtension			= "El archivo debe tener la extensión '.ps1', '.psd1' o '.tmp'."
-		EnterOutputFile				= "Introduce la ruta del archivo de salida (dejar en blanco para el valor predeterminado):"
+		EnterOutputFile				= "Introduce la ruta del archivo de salida (dejar en blanco para <ps1>.exe en la misma carpeta):"
 		OutputFileExtensionError	= "El archivo de salida debe ser un '.exe'. Se añadirá la extensión por ti."
 		AddAdditionalInfo			= "¿Quieres añadir información adicional (icono, versión, etc.)?"
 		AdditionalInfoPrompt		= "[Y/N]"
@@ -246,22 +246,27 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 		Exiting						= "Saliendo del modo interactivo."
 	}
 	exe21spInteractI18nData = @{
-		ModeName			 = "Modo interactivo"
-		Welcome				 = "Bienvenido al modo interactivo de exe21sp. Pulsa Ctrl+C para salir en cualquier momento."
-		EnterExePath		 = "Introduce la ruta del exe generado por ps12exe (en blanco para salir):"
-		EnterOutputPs1Path	 = "Introduce la ruta del ps1 de salida (en blanco para usar <exe>.ps1 en la misma carpeta):"
-		Prompt				 = " >> "
-		AdditionalInfoPrompt = "[Y/N]"
-		ConvertAnother		 = "¿Convertir otro exe?"
-		Exiting				 = "Saliendo del modo interactivo."
+		ModeName				 = "Modo interactivo"
+		Welcome					 = "Bienvenido al modo interactivo de exe21sp. Pulsa Ctrl+C para salir en cualquier momento."
+		EnterInputFile			 = "Introduce la ruta o URL del exe de entrada:"
+		Prompt					 = " >> "
+		ExitMessage				 = "Saliste del modo interactivo."
+		InvalidInputFile		 = "Introduce una ruta o URL de exe válida."
+		FileDoesNotExist		 = "El archivo no existe."
+		EnterOutputFile			 = "Introduce la ruta del archivo de salida (dejar en blanco para <exe>.ps1 en la misma carpeta):"
+		OutputFileExtensionError	= "El archivo de salida debe ser '.ps1'. Se añadirá la extensión."
+		AdditionalInfoPrompt	 = "[Y/N]"
+		ConvertAnother			 = "¿Convertir otro exe?"
+		Exiting					 = "Saliendo del modo interactivo."
 	}
 	exe21spI18nData			= @{
-		NoneInput					 = "¡Sin entrada!"
+		NoneInput					 = "¡No se ha especificado ningún archivo de entrada!"
 		TinySharpNoTextSection		 = "El ejecutable es un ensamblado .NET pero no coincide con el diseño TinySharp (no hay sección .text)."
 		TinySharpTextSectionEmpty	 = "El ejecutable es un ensamblado .NET pero no coincide con el diseño TinySharp (la sección .text está vacía)."
 		TinySharpCannotReadText		 = "El ejecutable es un ensamblado .NET pero no coincide con el diseño TinySharp (no se puede leer .text)."
 		TinySharpPayloadNotRecovered	= "El ejecutable es un ensamblado .NET pero no coincide con el diseño TinySharp; no se puede recuperar el script."
 		NoEmbeddedScript			 = "No se encontró script incrustado en '{0}' (no es un exe de ps12exe o no se puede recuperar la carga)."
 		FileNotFound				 = "Archivo no encontrado: {0}"
+		InputUrlFailed				 = "Error al leer desde la URL: {0}"
 	}
 }

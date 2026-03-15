@@ -8,17 +8,17 @@
 	# Web Server
 	ErrorHead				= "An error occurred:"
 	CompileResult			= "Compilation result:"
-	DefaultResult			= "Finished!"
-	AskSaveCfg				= "Save the configuration file?"
+	DefaultResult			= "Jolly good, we're finished!"
+	AskSaveCfg				= "Might you wish to save the configuration file?"
 	AskSaveCfgTitle			= "Save configuration file"
 	CfgFileLabelHead		= "Configuration file:"
 	# Console
-	ServerStarted			= "HTTP server started!"
-	ServerStopped			= "HTTP server stopped."
-	ServerStartFailed		= "Failed to start the HTTP server!"
-	TryRunAsRoot			= "Try running as root."
+	ServerStarted			= "The HTTP server is up and running!"
+	ServerStopped			= "The HTTP server has been stopped."
+	ServerStartFailed		= "Rather unfortunate—failed to start the HTTP server!"
+	TryRunAsRoot			= "Do try running as root."
 	ServerListening			= "Access address:"
-	ExitServerTip			= "You can press Ctrl+C to stop the server at any time."
+	ExitServerTip			= "You may press Ctrl+C to stop the server at any time."
 	# GUI
 	ConsoleHelpData			= @{
 		title	   = "Usage:"
@@ -111,12 +111,12 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 	}
 	exe21spHelpData			= @{
 		title	   = "Usage:"
-		Usage	   = "[input |] exe21sp [-ExePath] '<path to exe>' [-OutFile '<path to output .ps1>'] [-help]"
+		Usage	   = "[input |] exe21sp [[-inputFile] '<path or url to exe>'] [-outputFile '<path to output .ps1>'] [-help]"
 		PrarmsData = [ordered]@{
-			input    = "Path to the ps12exe-generated exe to decompile (when piped)."
-			ExePath  = "Path to the ps12exe-generated exe to decompile."
-			OutFile  = "Optional; path to write the recovered script. If omitted, output goes to stdout when redirected, otherwise writes to ``<exe>.ps1`` in the same directory."
-			help	 = "Show this help message."
+			input	   = "Path or URL to the ps12exe-generated exe to decompile, same as ``-inputFile``."
+			inputFile  = "Path or URL to the ps12exe-generated exe to decompile."
+			outputFile = "Optional; path to write the recovered script. If omitted, output goes to stdout when redirected, otherwise writes to ``<exe>.ps1`` in the same folder."
+			help	   = "Display this help message."
 		}
 	}
 	CompilingI18nData		= @{
@@ -153,8 +153,8 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		CompilationFailed						  = "Compilation failed!"
 		OutputFileNotWritten					  = "Output file {0} not written."
 		CompiledFileSize						  = "Compiled file written -> {0} bytes."
-		OppsSomethingWentWrong					  = "Oops, something went wrong."
-		TryUpgrade								  = "Latest version is {0}, try upgrading."
+		OppsSomethingWentWrong					  = "Oh dear, something has gone rather wrong."
+		TryUpgrade								  = "Latest version is {0}; do try upgrading."
 		EnterToSubmitIssue						  = "For help, please submit an issue by pressing Enter."
 		GuestModeFileTooLarge					  = "The file {0} is too large to read."
 		GuestModeIconFileTooLarge				  = "The icon {0} is too large to read."
@@ -202,14 +202,14 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 	}
 	InteractI18nData		= @{
 		ModeName					= "Interactive"
-		Welcome						= "Welcome to ps12exe interactive mode. Press Ctrl+C to exit anytime."
-		EnterInputFile				= "Kindly provide the path or URL to the input file, if you please:"
+		Welcome						= "Welcome to the ps12exe interactive mode. Do press Ctrl+C to exit at any time."
+		EnterInputFile				= "Kindly provide the path or URL to the input file, if you would:"
 		Prompt						= " >> "
 		ExitMessage					= "Exited interactive mode."
 		InvalidInputFile			= "I do beg your pardon, but that does not appear to be a valid PS1 file path."
 		FileDoesNotExist			= "Regrettably, the specified file could not be located."
 		InvalidExtension			= "File must have '.ps1', '.psd1', or '.tmp' extension."
-		EnterOutputFile				= "Please enter the output file path (leave blank for default):"
+		EnterOutputFile				= "Please enter the output file path (leave blank for <ps1>.exe in the same folder):"
 		OutputFileExtensionError	= "It appears the output file lacks the requisite '.exe' extension. I shall append it for you."
 		AddAdditionalInfo			= "Would you care to embellish the executable with additional details?"
 		AdditionalInfoPrompt		= "[Y/N]"
@@ -246,22 +246,27 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		Exiting						= "Exiting interactive mode."
 	}
 	exe21spInteractI18nData = @{
-		ModeName			 = "Interactive"
-		Welcome				 = "Welcome to exe21sp interactive mode. Press Ctrl+C to exit anytime."
-		EnterExePath		 = "Enter path to ps12exe-generated exe (blank to quit):"
-		EnterOutputPs1Path	 = "Enter output ps1 path (blank to use <exe>.ps1 in the same folder):"
-		Prompt				 = " >> "
-		AdditionalInfoPrompt = "[Y/N]"
-		ConvertAnother		 = "Convert another exe?"
-		Exiting				 = "Exiting interactive mode."
+		ModeName				 = "Interactive"
+		Welcome					 = "Welcome to the exe21sp interactive mode. Do press Ctrl+C to exit at any time."
+		EnterInputFile			 = "Kindly provide the input exe path or URL, if you would:"
+		Prompt					 = " >> "
+		ExitMessage				 = "Exited interactive mode."
+		InvalidInputFile		 = "I'm afraid that doesn't appear to be a valid exe path or URL. Do try again."
+		FileDoesNotExist		 = "Regrettably, that file could not be located."
+		EnterOutputFile			 = "Kindly enter the output file path (leave blank for <exe>.ps1 in the same folder):"
+		OutputFileExtensionError	= "It appears the output file lacks the requisite '.ps1' extension. I shall append it for you."
+		AdditionalInfoPrompt	 = "[Y/N]"
+		ConvertAnother			 = "Shall we convert another exe?"
+		Exiting					 = "Exiting interactive mode."
 	}
 	exe21spI18nData			= @{
-		NoneInput					 = "No input!"
+		NoneInput					 = "No input file specified!"
 		TinySharpNoTextSection		 = "The executable is a .NET assembly but does not match the TinySharp layout (no .text section)."
 		TinySharpTextSectionEmpty	 = "The executable is a .NET assembly but does not match the TinySharp layout (.text section is empty)."
 		TinySharpCannotReadText		 = "The executable is a .NET assembly but does not match the TinySharp layout (cannot read .text)."
 		TinySharpPayloadNotRecovered	= "The executable is a .NET assembly but does not match the TinySharp layout; script payload cannot be recovered."
 		NoEmbeddedScript			 = "No embedded script found in '{0}' (not a ps12exe-built exe, or payload cannot be recovered)."
 		FileNotFound				 = "File not found: {0}"
+		InputUrlFailed				 = "Regrettably, failed to read from URL: {0}"
 	}
 }
