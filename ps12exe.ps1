@@ -285,38 +285,10 @@ $LocalizeData =
 #_else
 	#_include "$PSScriptRoot/src/locale/en-UK.ps1"
 #_endif
+. $PSScriptRoot\src\WriteI18n.ps1
+Set-I18nData -I18nData $LocalizeData.CompilingI18nData
 function Show-Help {
 	. $PSScriptRoot\src\HelpShower.ps1 -HelpData $LocalizeData.ConsoleHelpData | Write-Host
-}
-function Write-I18n(
-	[ValidateSet('Info', 'Warning', 'Error', 'Debug', 'Verbose', 'Host', 'Output')]
-	$PipeLineType,
-	$Mid,
-	$FormatArgs,
-	$ErrorId = $Mid,
-	[System.Management.Automation.ErrorCategory]$Category = 'NotSpecified',
-	$TargetObject,
-	$Exception,
-	$ForegroundColor = $Host.UI.RawUI.ForegroundColor
-) {
-	$value = $LocalizeData.CompilingI18nData[$Mid] -f $FormatArgs
-	if (!$value) { $value = "fatal error: No i18n data for $Mid, Rest format args: $FormatArgs" }
-	if (!$ForegroundColor) { $ForegroundColor = 'White' }
-	switch ($PipeLineType) {
-		'Info' { Write-Information $value }
-		'Warning' { Write-Warning $value }
-		'Error' {
-			if (!$Exception) { $Exception = [System.Exception]::new($value) }
-			try { $Host.UI.RawUI.ForegroundColor = "Red" } catch {}
-			$Host.UI.WriteErrorLine($value)
-			try { $Host.UI.RawUI.ForegroundColor = $ForegroundColor } catch {}
-			Write-Error -Exception $Exception -Message $value -Category $Category -ErrorId $ErrorId -TargetObject $TargetObject -ErrorAction SilentlyContinue
-		}
-		'Debug' { Write-Debug $value }
-		'Host' { Write-Host $value -ForegroundColor $ForegroundColor }
-		'Output' { $value }
-		'Verbose' { Write-Verbose $value }
-	}
 }
 #_if PSScript
 	$versionNow = (Get-Module -ListAvailable ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1).Version

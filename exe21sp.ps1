@@ -40,6 +40,8 @@ param(
 #_if PSScript
 $global:LastExitCode = 0
 $LocalizeData = . $PSScriptRoot\src\LocaleLoader.ps1 -Localize $Localize
+. $PSScriptRoot\src\WriteI18n.ps1
+Set-I18nData -I18nData $LocalizeData.exe21spI18nData
 function Show-exe21spHelp {
 	. $PSScriptRoot\src\HelpShower.ps1 -HelpData $LocalizeData.exe21spHelpData | Write-Host
 }
@@ -53,7 +55,7 @@ $exePathsToProcess = @($ExePath) + @($input) | Where-Object { $_ }
 if ($exePathsToProcess.Count -eq 0) {
 	Show-exe21spHelp
 	Write-Host
-	Write-Error -Message $LocalizeData.exe21spI18nData.NoneInput -Category InvalidArgument -ErrorAction Continue
+	Write-I18n Error NoneInput -Category InvalidArgument
 	if ([System.Console]::IsOutputRedirected -or [System.Console]::IsInputRedirected -or [System.Console]::IsErrorRedirected) {
 		$global:LastExitCode = 2
 		return
@@ -61,8 +63,6 @@ if ($exePathsToProcess.Count -eq 0) {
 	& $PSScriptRoot\src\Interact\exe21sp.ps1 -Localize $Localize
 	return
 }
-
-$exe21spI18n = $LocalizeData.exe21spI18nData
 
 $Refs = @(
 	'System',
@@ -89,7 +89,7 @@ foreach ($currentExePath in $exePathsToProcess) {
 	Write-TaskbarProgress -Percent ([Math]::Min(100, [int](($currentIndex / $total) * 100)))
 	$currentExe = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($currentExePath)
 	if (-not (Test-Path -LiteralPath $currentExe -PathType Leaf)) {
-		Write-Error (($exe21spI18n['FileNotFound']) -f $currentExePath)
+		Write-I18n Error FileNotFound $currentExePath
 		$global:LastExitCode = 3
 		Write-TaskbarProgressError
 		$currentIndex++
@@ -99,17 +99,18 @@ foreach ($currentExePath in $exePathsToProcess) {
 		$script = [exe21sp.Extractor]::ExtractScriptFromExe($currentExe)
 	} catch {
 		$msg = $_.Exception.Message
-		if ($exe21spI18n.ContainsKey($msg)) {
-			$msg = $exe21spI18n[$msg]
+		if ($LocalizeData.exe21spI18nData.ContainsKey($msg)) {
+			Write-I18n Error $msg
+		} else {
+			Write-Error $msg
 		}
-		Write-Error $msg
 		$global:LastExitCode = 1
 		Write-TaskbarProgressError
 		$currentIndex++
 		continue
 	}
 	if ($null -eq $script) {
-		Write-Error (($exe21spI18n['NoEmbeddedScript']) -f $currentExePath)
+		Write-I18n Error NoEmbeddedScript $currentExePath
 		$global:LastExitCode = 1
 		Write-TaskbarProgressError
 		$currentIndex++

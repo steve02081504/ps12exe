@@ -4,7 +4,9 @@
 # Load localization data
 . "$PSScriptRoot\..\predicate.ps1"
 . "$PSScriptRoot\..\TaskbarProgress.ps1"
+. "$PSScriptRoot\..\WriteI18n.ps1"
 $LocalizeData = . "$PSScriptRoot\..\LocaleLoader.ps1" -Localize $Localize
+Set-I18nData -I18nData $LocalizeData.InteractI18nData
 $I18n = $LocalizeData.InteractI18nData
 
 # Set window title for interactive mode
@@ -12,23 +14,7 @@ $OldTitle = $Host.UI.RawUI.WindowTitle
 $Host.UI.RawUI.WindowTitle = "ps12exe - $($I18n.ModeName)"
 
 try {
-	# Helper function for colored, internationalized output
-	function Write-I18n {
-		param(
-			[string]$Symbol,
-			[string]$Message,
-			[string]$Sequence,
-			[ConsoleColor]$SymbolColor,
-			[ConsoleColor]$MessageColor = 'White',
-			[ConsoleColor]$SequenceColor = 'White'
-		)
-		Write-Host -NoNewline " "
-		Write-Host -ForegroundColor $SymbolColor $Symbol -NoNewline
-		Write-Host -ForegroundColor $MessageColor " $Message" -NoNewline
-		Write-Host -ForegroundColor $SequenceColor " $Sequence"
-	}
-
-	Write-I18n "[*]" $I18n.Welcome -SymbolColor Cyan
+	Write-SymboledWelcomeI18n Welcome
 
 	while ($true) {
 		$cmdParams = [System.Collections.ArrayList]::new()
@@ -37,11 +23,11 @@ try {
 		# Input file prompt
 		$inputFile = ''
 		do {
-			Write-I18n "[*]" $I18n.EnterInputFile -SymbolColor Green
+			Write-SymboledInfoI18n EnterInputFile
 			Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 			$inputFile = Read-Host
 			if (-not $inputFile) {
-				Write-I18n "[!]" $I18n.InvalidInputFile -SymbolColor Red
+				Write-SymboledErrorI18n InvalidInputFile
 			}
 			elseif ($inputFile -match "^(https?|ftp)://") {
 				# URL: Use HEAD request to verify file exists
@@ -55,24 +41,24 @@ try {
 					}
 					elseif ($urlWithoutQuery -match "\.[^./]+$") {
 						# URL has extension but not valid
-						Write-I18n "[!]" $I18n.InvalidExtension -SymbolColor Red
+						Write-SymboledErrorI18n InvalidExtension
 						$inputFile = ''
 					}
 					# If no extension, accept it (URL might work without extension)
 				}
 				catch {
-					Write-I18n "[!]" $I18n.FileDoesNotExist -SymbolColor Red
+					Write-SymboledErrorI18n FileDoesNotExist
 					$inputFile = ''
 				}
 			}
 			else {
 				# Local file path
 				if (-not (Test-Path $inputFile -PathType Leaf)) {
-					Write-I18n "[!]" $I18n.FileDoesNotExist -SymbolColor Red
+					Write-SymboledErrorI18n FileDoesNotExist
 					$inputFile = ''
 				}
 				elseif ($inputFile -notmatch "\.(ps1|psd1|tmp)$") {
-					Write-I18n "[!]" $I18n.InvalidExtension -SymbolColor Red
+					Write-SymboledErrorI18n InvalidExtension
 					$inputFile = ''
 				}
 			}
@@ -82,12 +68,12 @@ try {
 
 		# Output file prompt
 		$outputFile = ''
-		Write-I18n "[*]" $I18n.EnterOutputFile -SymbolColor Green
+		Write-SymboledInfoI18n EnterOutputFile
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 		$outputFile = Read-Host
 		if ($outputFile) {
 			if ($outputFile -notmatch "\.(exe|com|scr|bin|bat|cmd)$") {
-				Write-I18n "[!]" $I18n.OutputFileExtensionError -SymbolColor Red
+				Write-SymboledErrorI18n OutputFileExtensionError
 				$outputFile += ".exe"
 			}
 			$cmdParams.Add("-outputFile `"$outputFile`"") | Out-Null
@@ -95,16 +81,16 @@ try {
 		Write-TaskbarProgress -Percent 30
 
 		# Additional information prompt
-		Write-I18n "[?]" $I18n.AddAdditionalInfo $I18n.AdditionalInfoPrompt -SymbolColor Blue -SequenceColor DarkGray
+		Write-SymboledQuestionI18n AddAdditionalInfo AdditionalInfoPrompt
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 		if (IsEnable(Read-Host)) {
-			Write-I18n "[~]" $I18n.CollectingInfo -SymbolColor Gray
+			Write-SymboledProgressI18n CollectingInfo
 			$resourceParams = @{}
 
 			# Icon
 			$icon = ''
 			do {
-				Write-I18n "[*]" $I18n.IconPath -SymbolColor Green
+				Write-SymboledInfoI18n IconPath
 				Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 				$iconInput = Read-Host
 				if ($iconInput) {
@@ -116,7 +102,7 @@ try {
 							$isValid = $true
 						}
 						catch {
-							Write-I18n "[!]" $I18n.IconDoesNotExist -SymbolColor Red
+							Write-SymboledErrorI18n IconDoesNotExist
 						}
 					}
 					else {
@@ -125,7 +111,7 @@ try {
 							$isValid = $true
 						}
 						else {
-							Write-I18n "[!]" $I18n.IconDoesNotExist -SymbolColor Red
+							Write-SymboledErrorI18n IconDoesNotExist
 						}
 					}
 
@@ -151,19 +137,19 @@ try {
 				trademark   = $I18n.EnterTrademark
 			}
 			foreach ($key in $resourcePrompts.Keys) {
-				Write-I18n "[*]" ($I18n.EnterResourcePrompt -f $resourcePrompts[$key]) -SymbolColor Green
+				Write-SymboledInfoI18n EnterResourcePrompt -MessageFormatArgs $resourcePrompts[$key]
 				Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 				$value = Read-Host
 				if ($value) { $resourceParams[$key] = $value }
 			}
 
 			# Version
-			Write-I18n "[*]" $I18n.Version -SymbolColor Green
+			Write-SymboledInfoI18n Version
 			Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 			$version = Read-Host
 			if ($version) {
 				if ($version -notmatch '^\d+(\.\d+){0,3}$') {
-					Write-I18n "[-]" $I18n.InvalidVersionFormat -SymbolColor Red
+					Write-SymboledInvalidI18n InvalidVersionFormat
 				}
 				else {
 					$resourceParams.version = $version
@@ -176,19 +162,19 @@ try {
 			}
 		}
 		else {
-			Write-I18n "[~]" $I18n.SkippingAdditionalInfo -SymbolColor Gray
+			Write-SymboledProgressI18n SkippingAdditionalInfo
 		}
 		Write-TaskbarProgress -Percent 50
 
 		# Other options
-		Write-I18n "[?]" $I18n.CompileAsGui $I18n.AdditionalInfoPrompt -SymbolColor Blue -SequenceColor DarkGray
+		Write-SymboledQuestionI18n CompileAsGui AdditionalInfoPrompt
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 		if (IsEnable(Read-Host)) {
 			$cmdParams.Add("-noConsole") | Out-Null
 		}
 		Write-TaskbarProgress -Percent 60
 
-		Write-I18n "[?]" $I18n.RequireAdmin $I18n.AdditionalInfoPrompt -SymbolColor Blue -SequenceColor DarkGray
+		Write-SymboledQuestionI18n RequireAdmin AdditionalInfoPrompt
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 		if (IsEnable(Read-Host)) {
 			$cmdParams.Add("-requireAdmin") | Out-Null
@@ -196,7 +182,7 @@ try {
 		Write-TaskbarProgress -Percent 70
 
 		# Code signing
-		Write-I18n "[?]" $I18n.EnableCodeSigning $I18n.AdditionalInfoPrompt -SymbolColor Blue -SequenceColor DarkGray
+		Write-SymboledQuestionI18n EnableCodeSigning AdditionalInfoPrompt
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 		if (IsEnable(Read-Host)) {
 			$codeSigningParams = @{}
@@ -204,13 +190,13 @@ try {
 			# Certificate Path
 			$certPath = ''
 			do {
-				Write-I18n "[*]" $I18n.EnterCertificatePath -SymbolColor Green
+				Write-SymboledInfoI18n EnterCertificatePath
 				Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 				$certPathInput = Read-Host
 				if ($certPathInput) {
 					$isValid = $false
 					if ($certPathInput -notmatch '\.pfx$') {
-						Write-I18n "[!]" $I18n.InvalidCertificateExtension -SymbolColor Red
+						Write-SymboledErrorI18n InvalidCertificateExtension
 					}
 					elseif ($certPathInput -match "^(https?|ftp)://") {
 						# URL: Use HEAD request to verify file exists
@@ -219,7 +205,7 @@ try {
 							$isValid = $true
 						}
 						catch {
-							Write-I18n "[!]" $I18n.CertificateDoesNotExist -SymbolColor Red
+							Write-SymboledErrorI18n CertificateDoesNotExist
 						}
 					}
 					else {
@@ -228,7 +214,7 @@ try {
 							$isValid = $true
 						}
 						else {
-							Write-I18n "[!]" $I18n.CertificateDoesNotExist -SymbolColor Red
+							Write-SymboledErrorI18n CertificateDoesNotExist
 						}
 					}
 
@@ -237,7 +223,7 @@ try {
 						$codeSigningParams.Path = $certPath
 
 						# Certificate Password
-						Write-I18n "[*]" $I18n.EnterCertificatePassword -SymbolColor Green
+						Write-SymboledInfoI18n EnterCertificatePassword
 						Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 						$certPassword = Read-Host -AsSecureString
 						if ($certPassword) {
@@ -255,7 +241,7 @@ try {
 			} while ($true)
 
 			# Certificate Thumbprint
-			Write-I18n "[*]" $I18n.EnterCertificateThumbprint -SymbolColor Green
+			Write-SymboledInfoI18n EnterCertificateThumbprint
 			Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 			$thumbprint = Read-Host
 			if ($thumbprint) {
@@ -263,7 +249,7 @@ try {
 			}
 
 			# Timestamp Server
-			Write-I18n "[*]" $I18n.EnterTimestampServer -SymbolColor Green
+			Write-SymboledInfoI18n EnterTimestampServer
 			Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 			$timestampServer = Read-Host
 			if ($timestampServer) {
@@ -287,12 +273,12 @@ try {
 			}
 		}
 		else {
-			Write-I18n "[~]" $I18n.SkippingCodeSigning -SymbolColor Gray
+			Write-SymboledProgressI18n SkippingCodeSigning
 		}
 		Write-TaskbarProgress -Percent 85
 
 		# Build and execute command
-		Write-I18n "[~]" $I18n.BuildingCommand -SymbolColor Gray
+		Write-SymboledProgressI18n BuildingCommand
 		if (Get-Command ps12exe -ErrorAction SilentlyContinue) {
 			$command = "ps12exe " + ($cmdParams -join ' ')
 		}
@@ -301,7 +287,7 @@ try {
 			$command = "& `"$scriptPath`" " + ($cmdParams -join ' ')
 		}
 
-		Write-I18n "[~]" $I18n.ExecutingCommand -SymbolColor Gray
+		Write-SymboledProgressI18n ExecutingCommand
 		Write-Host $command
 		Write-TaskbarProgress -Percent 90
 
@@ -310,26 +296,26 @@ try {
 			Invoke-Expression $command
 			if ($LASTEXITCODE -eq 0) {
 				Write-TaskbarProgressClear
-				Write-I18n "[+]" $I18n.CompileSuccess -SymbolColor Green
+				Write-SymboledSuccessI18n CompileSuccess
 			}
 			else {
 				Write-TaskbarProgressError
-				Write-I18n "[!]" ($I18n.CompileFailed -f $LASTEXITCODE) -SymbolColor Red
+				Write-SymboledErrorI18n CompileFailed -MessageFormatArgs $LASTEXITCODE
 			}
 		}
 		catch {
 			Write-TaskbarProgressError
-			Write-I18n "[!]" ($I18n.CompileFailedException -f $_.Exception.Message) -SymbolColor Red
+			Write-SymboledErrorI18n CompileFailedException -MessageFormatArgs $_.Exception.Message
 		}
 
-		Write-I18n "[?]" $I18n.CompileAnother $I18n.AdditionalInfoPrompt -SymbolColor Blue -SequenceColor DarkGray
+		Write-SymboledQuestionI18n CompileAnother AdditionalInfoPrompt
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 		if (-not (IsEnable(Read-Host))) {
 			break
 		}
 	}
 
-	Write-I18n "[/]" $I18n.Exiting -SymbolColor Yellow
+	Write-SymboledExitI18n Exiting
 }
 finally {
 	Write-TaskbarProgressClear
