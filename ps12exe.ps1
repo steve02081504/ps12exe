@@ -815,7 +815,7 @@ try {
 			}
 		}
 	}
-	if (!$nested -and -not ([System.Console]::IsOutputRedirected -or [System.Console]::IsInputRedirected -or [System.Console]::IsErrorRedirected)) {
+	if (!$nested -and [System.Console]::IsOutputRedirected) {
 		Write-Output $outputFile
 	}
 }
