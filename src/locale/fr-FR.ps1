@@ -111,11 +111,12 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 	}
 	exe21spHelpData			= @{
 		title	   = "Utilisation :"
-		Usage	   = "exe21sp [-ExePath] '<chemin exe>' [-OutFile '<chemin .ps1>'] [-help]"
+		Usage	   = "[input |] exe21sp [-ExePath] '<chemin exe>' [-OutFile '<chemin .ps1>'] [-help]"
 		PrarmsData = [ordered]@{
-			ExePath = "Chemin vers l'exe généré par ps12exe à décompiler."
-			OutFile = "Optionnel ; chemin du script .ps1 récupéré. Sinon sortie sur stdout."
-			help	= "Afficher cette aide."
+			input    = "Chemin vers l'exe généré par ps12exe à décompiler (en entrée de pipe)."
+			ExePath  = "Chemin vers l'exe généré par ps12exe à décompiler."
+			OutFile  = "Optionnel ; chemin du script .ps1 récupéré. Si omis : sortie sur stdout si redirigé, sinon écriture dans ``<exe>.ps1`` dans le même répertoire."
+			help	 = "Afficher cette aide."
 		}
 	}
 	CompilingI18nData		= @{
@@ -246,12 +247,12 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 		Exiting				 = "Quitter le mode interactif."
 	}
 	exe21spI18nData			= @{
+		NoneInput					 = "Aucune entrée !"
 		TinySharpNoTextSection		 = "L'exécutable est un assembly .NET mais ne correspond pas au layout TinySharp (pas de section .text)."
 		TinySharpTextSectionEmpty	 = "L'exécutable est un assembly .NET mais ne correspond pas au layout TinySharp (section .text vide)."
 		TinySharpCannotReadText		 = "L'exécutable est un assembly .NET mais ne correspond pas au layout TinySharp (impossible de lire .text)."
 		TinySharpPayloadNotRecovered = "L'exécutable est un assembly .NET mais ne correspond pas au layout TinySharp ; charge utile du script non récupérable."
 		NoEmbeddedScript			 = "Aucun script incorporé dans « {0} » (exe non construit par ps12exe ou charge utile non récupérable)."
-		ExePathRequired				 = "exe21sp : -ExePath est requis. Utilisez -help pour l'usage."
 		FileNotFound				 = "Fichier introuvable : {0}"
 	}
 }

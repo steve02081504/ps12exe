@@ -1,4 +1,4 @@
-# 根据变更路径输出需要运行的测试组（JSON 数组），供 CI 增量测试使用。
+﻿# 根据变更路径输出需要运行的测试组（JSON 数组），供 CI 增量测试使用。
 # 用法: 从 stdin 或 -ChangedPaths 接收相对路径列表；输出 JSON 数组 ["ps12exe","exe21sp","tinysharp"]
 # 若未提供变更列表（如 workflow_dispatch 全量），则输出全部组。
 

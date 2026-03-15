@@ -88,7 +88,14 @@ Inicia un servicio web que permite a los usuarios compilar código powershell en
 exe21sp -ExePath .\target.exe -OutFile .\target.ps1
 ```
 
-`exe21sp` extrae el script de PowerShell incrustado en un exe generado por ps12exe y lo guarda como archivo `.ps1` o lo escribe en la salida estándar.
+`exe21sp` extrae el script de PowerShell incrustado en un exe generado por ps12exe y lo guarda como archivo `.ps1` o lo escribe en la salida estándar. Usa la misma convención `$LastExitCode` que ps12exe: 0 = éxito, 1 = error de entrada/análisis (p. ej. exe no generado por ps12exe), 2 = error de invocación (p. ej. sin entrada al redirigir), 3 = error de recurso/interno (p. ej. archivo no encontrado).
+
+### Pipeline y redirección
+
+- **ps12exe**: cuando la salida estándar (o la entrada o el error estándar) está redirigida, ps12exe escribe solo la ruta del exe generado en la salida estándar para poder capturarla (ej. `$exe = ps12exe .\a.ps1`).
+- **exe21sp**: acepta rutas de exe por pipeline (ej. `Get-ChildItem *.exe | exe21sp` o `".\app.exe" | exe21sp`).
+- **exe21sp**: si no se especifica `-OutFile` y la salida estándar **no** está redirigida, el script descompilado se guarda en un `.ps1` con el mismo nombre base que el exe en el mismo directorio.
+- **exe21sp**: si no se especifica `-OutFile` y la salida estándar **sí** está redirigida, el script descompilado se escribe en la salida estándar.
 
 ## Parámetros
 

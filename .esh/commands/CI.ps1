@@ -1,4 +1,4 @@
-# 本地 CI：默认按 git diff 增量跑测试；-Full 全量；-RunPs12exe/-RunExe21sp/-RunTinysharp 显式指定要跑的项。
+﻿# 本地 CI：默认按 git diff 增量跑测试；-Full 全量；-RunPs12exe/-RunExe21sp/-RunTinysharp 显式指定要跑的项。
 param(
 	[switch]$Full,
 	[switch]$RunPs12exe,

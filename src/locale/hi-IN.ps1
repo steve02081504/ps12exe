@@ -111,11 +111,12 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 	}
 	exe21spHelpData			= @{
 		title	   = "उपयोग:"
-		Usage	   = "exe21sp [-ExePath] '<exe पथ>' [-OutFile '<.ps1 पथ>'] [-help]"
+		Usage	   = "[input |] exe21sp [-ExePath] '<exe पथ>' [-OutFile '<.ps1 पथ>'] [-help]"
 		PrarmsData = [ordered]@{
-			ExePath = "ps12exe द्वारा निर्मित exe का पथ (डीकंपाइल करने के लिए)।"
-			OutFile = "वैकल्पिक; पुनर्प्राप्त स्क्रिप्ट लिखने का पथ। छोड़ने पर stdout।"
-			help	= "यह सहायता दिखाएँ।"
+			input    = "ps12exe द्वारा निर्मित exe का पथ (पाइप इनपुट होने पर, डीकंपाइल करने के लिए)।"
+			ExePath  = "ps12exe द्वारा निर्मित exe का पथ (डीकंपाइल करने के लिए)।"
+			OutFile  = "वैकल्पिक; पुनर्प्राप्त स्क्रिप्ट लिखने का पथ। छोड़ने पर: रीडायरेक्ट होने पर stdout, वरना समान निर्देशिका में ``<exe>.ps1`` में लिखता है।"
+			help	 = "यह सहायता दिखाएँ।"
 		}
 	}
 	CompilingI18nData		= @{
@@ -255,12 +256,12 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		Exiting				 = "इंटरैक्टिव मोड से बाहर निकल रहा है।"
 	}
 	exe21spI18nData			= @{
+		NoneInput					 = "कोई इनपुट नहीं!"
 		TinySharpNoTextSection		 = "एक्ज़ीक्यूटेबल एक .NET असेंबली है लेकिन TinySharp लेआउट से मेल नहीं खाता (.text सेक्शन नहीं)।"
 		TinySharpTextSectionEmpty	 = "एक्ज़ीक्यूटेबल एक .NET असेंबली है लेकिन TinySharp लेआउट से मेल नहीं खाता (.text सेक्शन खाली)।"
 		TinySharpCannotReadText		 = "एक्ज़ीक्यूटेबल एक .NET असेंबली है लेकिन TinySharp लेआउट से मेल नहीं खाता (.text पढ़ नहीं सकते)।"
 		TinySharpPayloadNotRecovered	= "एक्ज़ीक्यूटेबल एक .NET असेंबली है लेकिन TinySharp लेआउट से मेल नहीं खाता; स्क्रिप्ट पेलोड पुनर्प्राप्त नहीं हो सका।"
 		NoEmbeddedScript			 = "'{0}' में कोई एम्बेडेड स्क्रिप्ट नहीं मिली (ps12exe-बिल्ट exe नहीं, या पेलोड पुनर्प्राप्त नहीं हो सकता)।"
-		ExePathRequired				 = "exe21sp: -ExePath आवश्यक है। उपयोग के लिए -help देखें।"
 		FileNotFound				 = "फ़ाइल नहीं मिली: {0}"
 	}
 }

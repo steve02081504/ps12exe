@@ -1,4 +1,4 @@
-# 获取模块文件夹
+﻿# 获取模块文件夹
 $PROFILE_DIR = Split-Path -Path $PROFILE -Parent
 $ModulesDir = "$PROFILE_DIR\Modules"
 New-Item $ModulesDir -ItemType Directory -Force -ErrorAction Ignore | Out-Null

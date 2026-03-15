@@ -124,11 +124,12 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 	# 控制台帮助 - exe21sp
 	exe21spHelpData         = @{
 		title      = "用法："
-		Usage      = "exe21sp [-ExePath] '<exe文件路径>' [-OutFile '<输出ps1路径>'] [-help]"
+		Usage      = "[input |] exe21sp [-ExePath] '<exe文件路径>' [-OutFile '<输出ps1路径>'] [-help]"
 		PrarmsData = [ordered]@{
-			ExePath = "要反编译的 ps12exe 生成的 exe 文件路径。"
-			OutFile = "可选；写出还原脚本的 ps1 文件路径，不指定则输出到标准输出。"
-			help    = "显示此帮助信息。"
+			input    = "要反编译的 ps12exe 生成的 exe 文件路径（使用管道输入时）。"
+			ExePath  = "要反编译的 ps12exe 生成的 exe 文件路径。"
+			OutFile  = "可选；写出还原脚本的 ps1 文件路径，不指定则在被重定向时输出到标准输出，否则写入同目录下 ``<exe>.ps1``。"
+			help     = "显示此帮助信息。"
 		}
 	}
 
@@ -296,12 +297,12 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 
 	# exe21sp 反编译消息
 	exe21spI18nData         = @{
+		NoneInput                   = "无输入！"
 		TinySharpNoTextSection       = "该可执行文件是 .NET 程序集，但不符合 TinySharp 布局（无 .text 节）。"
 		TinySharpTextSectionEmpty    = "该可执行文件是 .NET 程序集，但不符合 TinySharp 布局（.text 节为空）。"
 		TinySharpCannotReadText      = "该可执行文件是 .NET 程序集，但不符合 TinySharp 布局（无法读取 .text）。"
 		TinySharpPayloadNotRecovered = "该可执行文件是 .NET 程序集，但不符合 TinySharp 布局；无法恢复脚本负载。"
 		NoEmbeddedScript             = '在 "{0}" 中未找到嵌入脚本（不是 ps12exe 构建的 exe，或无法恢复负载）。'
-		ExePathRequired              = "exe21sp：需要 -ExePath。使用 -help 查看用法。"
 		FileNotFound                 = "文件不存在：{0}"
 	}
 }

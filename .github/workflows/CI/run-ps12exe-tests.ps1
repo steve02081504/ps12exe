@@ -1,4 +1,4 @@
-# ps12exe 构建与基础运行测试；无状态：测试前后恢复右键菜单状态。失败时输出 GitHub 友好 ::error/::group。
+﻿# ps12exe 构建与基础运行测试；无状态：测试前后恢复右键菜单状态。失败时输出 GitHub 友好 ::error/::group。
 $ErrorActionPreference = 'Stop'
 $error.Clear()
 $repoRoot = $env:REPO_ROOT
@@ -35,6 +35,13 @@ try {
 		if ($path1 -ne $path2) { Write-Error "$path1 -ne $path2" }
 	}
 	& $repoRoot/build/hello.exe | Write-Host
+
+	# Pipeline/redirection: when stdout is redirected, ps12exe outputs only the exe path
+	Set-Content -LiteralPath (Join-Path $buildDir 'redirect_test.ps1') -Value "Write-Output 'redirect-test'" -Encoding UTF8
+	$expectedExePath = [System.IO.Path]::GetFullPath((Join-Path $buildDir 'redirect_test.exe'))
+	$capturedPath = & $repoRoot/ps12exe.ps1 -inputFile (Join-Path $buildDir 'redirect_test.ps1') 2>$null
+	if ([System.IO.Path]::GetFullPath($capturedPath) -ne $expectedExePath) { throw "ps12exe redirect: expected path $expectedExePath , got: $capturedPath" }
+
 	# 供 workflow 上传产物：将 exe 拷到仓库根
 	Copy-Item -LiteralPath (Join-Path $buildDir 'ps12exe.exe') -Destination (Join-Path $repoRoot 'ps12exe.exe') -Force
 } catch {}

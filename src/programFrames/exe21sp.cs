@@ -99,43 +99,13 @@ namespace exe21sp {
 			if (raw == null || raw.Length == 0)
 				throw new InvalidOperationException("TinySharpCannotReadText");
 
-			// TinySharp places its output string at the end of .text; take the last null-terminated string.
-			int bestAsciiEnd = -1, bestUnicodeEnd = -1;
-			string bestAscii = null;
-			string bestUnicode = null;
-			for (int i = 0; i < raw.Length - 1; i++) {
-				if (raw[i] == 0)
-					continue;
-				int end = i;
-				while (end < raw.Length && raw[end] != 0)
-					end++;
-				if (end - i < 1 || end - i > 2048)
-					continue;
-				var candidate = Encoding.ASCII.GetString(raw, i, end - i);
-				if (!IsPrintableAscii(candidate))
-					continue;
-				if (end > bestAsciiEnd) { bestAscii = candidate; bestAsciiEnd = end; }
-			}
-			for (int i = 0; i < raw.Length - 3; i += 2) {
-				if (raw[i] == 0 && raw[i + 1] == 0)
-					continue;
-				int end = i;
-				while (end + 1 < raw.Length && (raw[end] != 0 || raw[end + 1] != 0))
-					end += 2;
-				if (end - i < 2 || (end - i) / 2 > 2048)
-					continue;
-				var candidate = Encoding.Unicode.GetString(raw, i, end - i);
-				if (!IsPrintableUnicode(candidate))
-					continue;
-				if (end > bestUnicodeEnd) { bestUnicode = candidate; bestUnicodeEnd = end; }
-			}
-			string message = null;
-			if (bestAscii != null && bestAscii.Length >= 1 && (bestUnicode == null || !IsPrintableAscii(bestUnicode) || bestAsciiEnd >= bestUnicodeEnd))
-				message = bestAscii;
-			else if (bestUnicode != null)
-				message = bestUnicode;
-			else if (bestAscii != null)
-				message = bestAscii;
+			// Locate the message string by counting ldc.i4 VA references in the CIL region.
+			// TinySharp patches the message address into every MessageBoxW call site (2× for the
+			// two-path MessageBox build, 1× for console builds), while infrastructure strings
+			// (e.g. VerQueryValueW subBlock path) are referenced only once.  The most-referenced
+			// VA that maps to actual file content in .text is therefore the message — no content
+			// heuristics needed.
+			string message = FindMessageByVARefCount(raw, peFile.OptionalHeader.ImageBase, section);
 			if (string.IsNullOrEmpty(message))
 				throw new InvalidOperationException("TinySharpPayloadNotRecovered");
 
@@ -186,6 +156,79 @@ namespace exe21sp {
 					return false;
 			return true;
 		}
+
+		/// <summary>
+		/// Scans the first 2 KB of .text (the CIL region) for ldc.i4 operands whose value
+		/// is a VA within the physical file content of .text.  Counts how many times each
+		/// such VA appears; the most-referenced one is the message string (TinySharp MessageBox
+		/// patches it at every call site — 2×, whereas infra strings like the VerQueryValueW
+		/// subBlock path appear only 1×).  No content heuristics are used.
+		/// </summary>
+		private static string FindMessageByVARefCount(byte[] raw, ulong imageBase, PESection section) {
+			ulong textVABase = imageBase + section.Rva;
+			// Parallel arrays instead of Dictionary<> to avoid requiring extra assembly references.
+			// At most a handful of distinct .text VAs appear as ldc.i4 operands in 2 KB of CIL.
+			const int MaxSlots = 64;
+			uint[] vaKeys   = new uint[MaxSlots];
+			int[]  vaCounts = new int[MaxSlots];
+			int    slotCount = 0;
+			int cilEnd = Math.Min(raw.Length - 6, 2048);
+			for (int i = 0; i <= cilEnd; i++) {
+				if (raw[i] != 0x20) continue; // ldc.i4 opcode
+				uint operand = (uint)BitConverter.ToInt32(raw, i + 1);
+				// TinySharp imageBase < 2^32, so the ldc.i4 operand IS the full 32-bit VA.
+				ulong va = (imageBase & 0xFFFFFFFF00000000UL) | (ulong)operand;
+				if (va < textVABase) continue;
+				ulong fileOff = va - textVABase;
+				if (fileOff >= (ulong)raw.Length) continue; // BSS/virtual — no file content
+				// Linear search is fine; < 20 distinct candidates expected.
+				int idx = -1;
+				for (int j = 0; j < slotCount; j++) if (vaKeys[j] == operand) { idx = j; break; }
+				if (idx < 0 && slotCount < MaxSlots) { vaKeys[slotCount] = operand; vaCounts[slotCount] = 1; slotCount++; }
+				else if (idx >= 0) vaCounts[idx]++;
+			}
+			// Most-referenced VA = message; tiebreak by lowest file offset (message placed first).
+			int bestCount = 0;
+			ulong bestFileOff = ulong.MaxValue;
+			uint bestOperand = 0;
+			for (int j = 0; j < slotCount; j++) {
+				ulong va = (imageBase & 0xFFFFFFFF00000000UL) | (ulong)vaKeys[j];
+				ulong fileOff = va - textVABase;
+				if (vaCounts[j] > bestCount || (vaCounts[j] == bestCount && fileOff < bestFileOff)) {
+					bestCount = vaCounts[j]; bestFileOff = fileOff; bestOperand = vaKeys[j];
+				}
+			}
+			if (bestOperand == 0) return null;
+			int off = (int)bestFileOff;
+			// Distinguish encoding by checking whether the second byte is a null (UTF-16LE pattern).
+			// MessageBox / WriteConsoleW builds use Unicode (raw[off+1] == 0x00 for ASCII-range text).
+			// puts builds use plain ASCII (raw[off+1] is a printable byte, not zero).
+			bool looksUtf16 = (off + 1 < raw.Length && raw[off + 1] == 0);
+			if (looksUtf16) {
+				var msgU = TryReadNullTermUnicode(raw, off);
+				return msgU ?? TryReadNullTermAscii(raw, off);
+			} else {
+				var msgA = TryReadNullTermAscii(raw, off);
+				return msgA ?? TryReadNullTermUnicode(raw, off);
+			}
+		}
+
+		private static string TryReadNullTermUnicode(byte[] raw, int offset) {
+			if (offset < 0 || offset + 2 > raw.Length) return null;
+			int end = offset;
+			while (end + 1 < raw.Length && (raw[end] != 0 || raw[end + 1] != 0)) end += 2;
+			if (end == offset || end - offset > 8192) return null;
+			var s = Encoding.Unicode.GetString(raw, offset, end - offset);
+			return IsPrintableUnicode(s) ? s : null;
+		}
+
+		private static string TryReadNullTermAscii(byte[] raw, int offset) {
+			if (offset < 0 || offset >= raw.Length) return null;
+			int end = offset;
+			while (end < raw.Length && raw[end] != 0) end++;
+			if (end == offset || end - offset > 8192) return null;
+			var s = Encoding.ASCII.GetString(raw, offset, end - offset);
+			return IsPrintableAscii(s) ? s : null;
+		}
 	}
 }
-

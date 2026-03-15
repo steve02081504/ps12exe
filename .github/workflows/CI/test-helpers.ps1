@@ -1,4 +1,4 @@
-# CI 测试辅助：无状态右键菜单保存/恢复、向目标窗口发送回车、GitHub Actions 友好错误输出
+﻿# CI 测试辅助：无状态右键菜单保存/恢复、向目标窗口发送回车、GitHub Actions 友好错误输出
 $ErrorActionPreference = 'Stop'
 
 $ContextMenuKey = 'Registry::HKEY_CURRENT_USER\Software\Classes\*\shell\ps12exeCompile'
@@ -111,7 +111,8 @@ public class CIWindowHelper {
 		$deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
 		while ([DateTime]::UtcNow -lt $deadline) {
 			Start-Sleep -Milliseconds 200
-			if ([CIWindowHelper]::SendEnterToProcessMainWindow($p.Id)) { break }
+			$sent = [CIWindowHelper]::SendEnterToProcessMainWindow($p.Id)
+			if ($sent) { break }
 			if ($p.HasExited) { return $p.ExitCode }
 		}
 		$p.WaitForExit([int](($deadline - [DateTime]::UtcNow).TotalMilliseconds))

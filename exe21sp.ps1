@@ -1,69 +1,68 @@
 ﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
-	从 ps12exe 生成的 exe 中还原出等价的 ps1（exe -> ps1）。
+	Restore equivalent ps1 from exe built by ps12exe (exe -> ps1).
 
 .DESCRIPTION
-	使用 AsmResolver 读取 exe 中的脚本负载：
-	- 对于标准程序框架（CodeDom/CodeAnalysis）生成的 exe：读取嵌入的 .NET 清单资源 "main.par"，GZip 解压并按 UTF-8 解码，得到原始脚本。
-	- 对于 TinySharp 编译的极小 exe：解析其 CIL 和 PE 映像，还原 TinySharp 捕获的输出字符串和退出码，
-	  生成一个只包含该字符串（及可选 exit 语句）的极简 ps1，以在行为上等价复现。
+	Uses AsmResolver to read script payload from exe:
+	- For exe built with standard program frame (CodeDom/CodeAnalysis): reads embedded .NET manifest resource "main.par", GZip-decompresses and decodes as UTF-8 to get the original script.
+	- For minimal exe compiled with TinySharp: parses its CIL and PE image, restores the output string and exit code captured by TinySharp,
+	  and generates a minimal ps1 containing only that string (and optional exit statement) to equivalently reproduce the behavior.
 
 .PARAMETER ExePath
-	要反编译的 .exe 文件路径。
+	Path to the .exe file to decompile.
 
 .PARAMETER OutFile
-	可选，要写出的 ps1 文件路径。不指定时输出到标准输出。
+	Optional path for the output ps1 file. If not specified, writes to stdout.
 
 .EXAMPLE
 	exe21sp -ExePath .\myapp.exe
 	exe21sp -ExePath .\myapp.exe -OutFile .\myapp.ps1
+.EXAMPLE
+	Get-ChildItem *.exe | exe21sp
+	".\app.exe" | exe21sp
 #>
 [CmdletBinding()]
 param(
-	[Parameter(Mandatory = $false, Position = 0)]
-	[string]$ExePath,
-
-	[Parameter(Mandatory = $false)]
+	[Parameter(ValueFromPipeline=$true)]
+	[string[]]$ExePath,
 	[string]$OutFile,
-
-	[Parameter(Mandatory = $false)]
+	#_if PSScript
+		[ArgumentCompleter({
+			Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+			. "$PSScriptRoot\src\LocaleArgCompleter.ps1" @PSBoundParameters
+		})]
+	#_endif
+	[string]$Localize,
 	[switch]$help
 )
 
-function Show-Exe21spHelp {
-	$LocalizeData = . $PSScriptRoot\src\LocaleLoader.ps1
+#_if PSScript
+$global:LastExitCode = 0
+$LocalizeData = . $PSScriptRoot\src\LocaleLoader.ps1 -Localize $Localize
+function Show-exe21spHelp {
 	. $PSScriptRoot\src\HelpShower.ps1 -HelpData $LocalizeData.exe21spHelpData | Write-Host
 }
 
-if ($help -or $ExePath -eq '-help' -or $ExePath -eq '--help') {
-	Show-Exe21spHelp
+if ($help) {
+	Show-exe21spHelp
 	return
 }
 
-if (-not $PSBoundParameters.Count -and -not $args.Count) {
-	Show-Exe21spHelp
+$exePathsToProcess = @($ExePath) + @($input) | Where-Object { $_ }
+if ($exePathsToProcess.Count -eq 0) {
+	Show-exe21spHelp
+	Write-Host
+	Write-Error -Message $LocalizeData.exe21spI18nData.NoneInput -Category InvalidArgument -ErrorAction Continue
 	if ([System.Console]::IsOutputRedirected -or [System.Console]::IsInputRedirected -or [System.Console]::IsErrorRedirected) {
+		$global:LastExitCode = 2
 		return
 	}
-	& $PSScriptRoot\src\Interact\exe21sp.ps1
+	& $PSScriptRoot\src\Interact\exe21sp.ps1 -Localize $Localize
 	return
 }
 
-$LocalizeData = . $PSScriptRoot\src\LocaleLoader.ps1
 $exe21spI18n = $LocalizeData.exe21spI18nData
-
-if (-not $ExePath) {
-	Write-Error $exe21spI18n.ExePathRequired
-	exit 1
-}
-
-$ErrorActionPreference = 'Stop'
-$ExePath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ExePath)
-if (-not (Test-Path -LiteralPath $ExePath -PathType Leaf)) {
-	Write-Error (($exe21spI18n['FileNotFound']) -f $ExePath)
-	exit 1
-}
 
 $Refs = @(
 	'System',
@@ -80,35 +79,60 @@ Get-ChildItem -LiteralPath $PSScriptRoot\src\bin\AsmResolver -Recurse -Filter *.
 		$Error.Remove($_)
 	}
 }
-
 $ExtractorCode = Get-Content -LiteralPath $PSScriptRoot\src\programFrames\exe21sp.cs -Raw -Encoding UTF8
 Add-Type -TypeDefinition $ExtractorCode -ReferencedAssemblies $Refs -IgnoreWarnings
 
-try {
-	$script = [exe21sp.Extractor]::ExtractScriptFromExe($ExePath)
-} catch {
-	$msg = $_.Exception.Message
-	if ($exe21spI18n.ContainsKey($msg)) {
-		$msg = $exe21spI18n[$msg]
+. $PSScriptRoot\src\TaskbarProgress.ps1
+$total = $exePathsToProcess.Count
+$currentIndex = 0
+foreach ($currentExePath in $exePathsToProcess) {
+	Write-TaskbarProgress -Percent ([Math]::Min(100, [int](($currentIndex / $total) * 100)))
+	$currentExe = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($currentExePath)
+	if (-not (Test-Path -LiteralPath $currentExe -PathType Leaf)) {
+		Write-Error (($exe21spI18n['FileNotFound']) -f $currentExePath)
+		$global:LastExitCode = 3
+		Write-TaskbarProgressError
+		$currentIndex++
+		continue
 	}
-	Write-Error $msg
-	exit 1
+	try {
+		$script = [exe21sp.Extractor]::ExtractScriptFromExe($currentExe)
+	} catch {
+		$msg = $_.Exception.Message
+		if ($exe21spI18n.ContainsKey($msg)) {
+			$msg = $exe21spI18n[$msg]
+		}
+		Write-Error $msg
+		$global:LastExitCode = 1
+		Write-TaskbarProgressError
+		$currentIndex++
+		continue
+	}
+	if ($null -eq $script) {
+		Write-Error (($exe21spI18n['NoEmbeddedScript']) -f $currentExePath)
+		$global:LastExitCode = 1
+		Write-TaskbarProgressError
+		$currentIndex++
+		continue
+	}
+	$currentOutFile = $OutFile
+	if (-not $currentOutFile -and -not [System.Console]::IsOutputRedirected) {
+		$dir = [System.IO.Path]::GetDirectoryName($currentExe)
+		$name = [System.IO.Path]::GetFileNameWithoutExtension($currentExe)
+		$currentOutFile = [System.IO.Path]::Combine($dir, "$name.ps1")
+	}
+	if ($currentOutFile) {
+		$currentOutFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($currentOutFile)
+		[System.IO.File]::WriteAllText($currentOutFile, $script, [System.Text.UTF8Encoding]::new($false))
+		Write-Verbose "Written to $currentOutFile"
+	} else {
+		Write-Output $script
+	}
+	$currentIndex++
 }
-if ($null -eq $script) {
-	Write-Error (($exe21spI18n['NoEmbeddedScript']) -f $ExePath)
-	exit 1
-}
-
-if (-not $OutFile -and -not [System.Console]::IsOutputRedirected) {
-	$dir = [System.IO.Path]::GetDirectoryName($ExePath)
-	$name = [System.IO.Path]::GetFileNameWithoutExtension($ExePath)
-	$OutFile = [System.IO.Path]::Combine($dir, "$name.ps1")
-}
-
-if ($OutFile) {
-	$OutFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutFile)
-	[System.IO.File]::WriteAllText($OutFile, $script, [System.Text.UTF8Encoding]::new($false))
-	Write-Verbose "Written to $OutFile"
-} else {
-	Write-Output $script
-}
+Write-TaskbarProgress -Percent 100
+Write-TaskbarProgressClear
+#_else
+#_require ps12exe
+#_!!exe21sp @PSBoundParameters
+#_endif

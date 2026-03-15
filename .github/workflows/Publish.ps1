@@ -26,7 +26,7 @@ try {
 	# update psd1
 	Set-Content -Path "$repoPath/ps12exe.psd1" -Value $(PSObjectToString($packData)) -NoNewline -Encoding UTF8 -Force
 	# 对于每个fbs文件，以xml格式读取，再用linux换行符+tab缩进写回源文件
-	. $PSScriptRoot/../../.esh/commands/GUIfix.ps1
+	. $PSScriptRoot/../../.esh/commands/lint.ps1
 	# 遍历文件列表，移除.开头的文件和文件夹
 	Get-ChildItem -Path $repoPath -Recurse | Where-Object { $_.Name -match '^\.' } | ForEach-Object { Remove-Item -Path $_.FullName -Force -Recurse }
 	# 移除docs
