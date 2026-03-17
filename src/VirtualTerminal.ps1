@@ -1,4 +1,4 @@
-# 代码截取并修改自esh，所有权和许可证由esh项目保留
+﻿# 代码截取并修改自esh，所有权和许可证由esh项目保留
 if ($Host.UI.SupportsVirtualTerminal) {
 	function Escape { [char]27 + '[' + $args }
 	$VirtualTerminal = @{

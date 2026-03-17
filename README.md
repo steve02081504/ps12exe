@@ -78,10 +78,17 @@ compiles `Main.ps1` from the internet into the executable `.\Main.exe`.
 ### Recover ps1 from exe (exe21sp)
 
 ```powershell
-exe21sp -ExePath .\target.exe -OutFile .\target.ps1
+exe21sp -inputFile .\target.exe -outputFile .\target.ps1
 ```
 
-`exe21sp` extracts the original PowerShell script from a ps12exe-generated executable and writes it to a `.ps1` file or standard output.
+`exe21sp` extracts the original PowerShell script from a ps12exe-generated executable (local path or URL) and writes it to a `.ps1` file or standard output. It uses the same `$LastExitCode` convention as ps12exe: 0 = success, 1 = input/parse error (e.g. not a ps12exe exe), 2 = invocation error (e.g. no input when redirected), 3 = resource/internal error (e.g. file not found).
+
+### Pipeline and redirection
+
+- **ps12exe**: When stdout (or stdin/stderr) is redirected, ps12exe writes only the path of the generated exe to stdout so you can capture it (e.g. `$exe = ps12exe .\a.ps1`).
+- **exe21sp**: Accepts exe paths or URLs from pipeline input (e.g. `Get-ChildItem *.exe | exe21sp` or `".\app.exe" | exe21sp`).
+- **exe21sp**: If `-outputFile` is not specified and stdout is **not** redirected, the decompiled script is saved to a `.ps1` file with the same base name as the exe in the same directory.
+- **exe21sp**: If `-outputFile` is not specified and stdout **is** redirected, the decompiled script is written to stdout.
 
 ### Self-Host WebServer
 

@@ -1,4 +1,4 @@
-# 重新构建编译内容
+﻿# 重新构建编译内容
 $ConstResult = $RowResult | ForEach-Object {
 	(($_ | Out-String) -replace '\r\n$', '')
 }
@@ -26,7 +26,7 @@ $TinySharpCode = Get-Content $PSScriptRoot/programFrames/TinySharp.cs -Raw -Enco
 Add-Type $TinySharpCode -ReferencedAssemblies $Refs
 
 # 编译
-$file = [TinySharp.Program]::Compile($targetRuntime, $architecture, $ConstResult, [ps12exeConstEvalHost]::LastExitCode, -not $noOutput)
+$file = [TinySharp.Program]::Compile($targetRuntime, $architecture, $ConstResult, [ps12exeConstEvalHost]::LastExitCode, -not $noOutput, $noConsole)
 if ($iconFile) {
 	$file.SetWin32Icon($iconFile)
 }

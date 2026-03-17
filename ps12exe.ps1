@@ -285,38 +285,10 @@ $LocalizeData =
 #_else
 	#_include "$PSScriptRoot/src/locale/en-UK.ps1"
 #_endif
+. $PSScriptRoot\src\WriteI18n.ps1
+Set-I18nData -I18nData $LocalizeData.CompilingI18nData
 function Show-Help {
 	. $PSScriptRoot\src\HelpShower.ps1 -HelpData $LocalizeData.ConsoleHelpData | Write-Host
-}
-function Write-I18n(
-	[ValidateSet('Info', 'Warning', 'Error', 'Debug', 'Verbose', 'Host', 'Output')]
-	$PipeLineType,
-	$Mid,
-	$FormatArgs,
-	$ErrorId = $Mid,
-	[System.Management.Automation.ErrorCategory]$Category = 'NotSpecified',
-	$TargetObject,
-	$Exception,
-	$ForegroundColor = $Host.UI.RawUI.ForegroundColor
-) {
-	$value = $LocalizeData.CompilingI18nData[$Mid] -f $FormatArgs
-	if (!$value) { $value = "fatal error: No i18n data for $Mid, Rest format args: $FormatArgs" }
-	if (!$ForegroundColor) { $ForegroundColor = 'White' }
-	switch ($PipeLineType) {
-		'Info' { Write-Information $value }
-		'Warning' { Write-Warning $value }
-		'Error' {
-			if (!$Exception) { $Exception = [System.Exception]::new($value) }
-			try { $Host.UI.RawUI.ForegroundColor = "Red" } catch {}
-			$Host.UI.WriteErrorLine($value)
-			try { $Host.UI.RawUI.ForegroundColor = $ForegroundColor } catch {}
-			Write-Error -Exception $Exception -Message $value -Category $Category -ErrorId $ErrorId -TargetObject $TargetObject -ErrorAction SilentlyContinue
-		}
-		'Debug' { Write-Debug $value }
-		'Host' { Write-Host $value -ForegroundColor $ForegroundColor }
-		'Output' { $value }
-		'Verbose' { Write-Verbose $value }
-	}
 }
 #_if PSScript
 	$versionNow = (Get-Module -ListAvailable ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1).Version
@@ -639,6 +611,9 @@ function UsingWinPowershell($Boundparameters) {
 }
 if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerShell -and (Get-Command powershell -ErrorAction Ignore)) {
 	UsingWinPowershell $Params
+	if ([System.Console]::IsOutputRedirected -or [System.Console]::IsInputRedirected -or [System.Console]::IsErrorRedirected) {
+		Write-Output $outputFile
+	}
 	return
 }
 #_endif
@@ -723,8 +698,7 @@ try {
 	. $PSScriptRoot\src\InitCompileThings.ps1
 	Write-TaskbarProgress -Percent 10
 	#_if PSScript
-	if (-not $noConsole -and $AstAnalyzeResult.IsConst -and -not $iconFile -and -not $requireAdmin) {
-		# TODO: GUI（MassageBoxW）、icon
+	if ($AstAnalyzeResult.IsConst -and -not $requireAdmin) {
 		Write-I18n Verbose TryingTinySharpCompile
 		Write-I18n Host CompilingFile
 		Write-TaskbarProgress -Percent 20
@@ -840,6 +814,9 @@ try {
 				Write-I18n Error SigningFailed $_.Exception.Message
 			}
 		}
+	}
+	if (!$nested -and [System.Console]::IsOutputRedirected) {
+		Write-Output $outputFile
 	}
 }
 catch {

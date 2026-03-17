@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 enable/disable/reset ps12exe's context menu
 .DESCRIPTION

@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param (
 	[ArgumentCompleter({
 		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)

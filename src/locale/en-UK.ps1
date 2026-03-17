@@ -1,76 +1,26 @@
 ﻿@{
-	LangName			   = "English (United Kingdom)"
-	LangID				   = "en-UK"
+	LangName				= "English (United Kingdom)"
+	LangID					= "en-UK"
 	# Right click Menu
-	CompileTitle		   = "Compile to EXE"
-	OpenInGUI			   = "Open in ps12exeGUI"
-	GUICfgFileDesc		   = "ps12exeGUI configuration file"
+	CompileTitle			= "Compile to EXE"
+	OpenInGUI				= "Open in ps12exeGUI"
+	GUICfgFileDesc			= "ps12exeGUI configuration file"
 	# Web Server
-	ServerStarted		   = "HTTP server started!"
-	ServerStopped		   = "HTTP server stopped."
-	ServerStartFailed	   = "Failed to start the HTTP server!"
-	TryRunAsRoot		   = "Try running as root."
-	ServerListening		   = "Access address:"
-	ExitServerTip		   = "You can press Ctrl+C to stop the server at any time."
-	# GUI
-	ErrorHead			   = "An error occurred:"
-	CompileResult		   = "Compilation result:"
-	DefaultResult		   = "Finished!"
-	AskSaveCfg			   = "Save the configuration file?"
-	AskSaveCfgTitle		   = "Save configuration file"
-	CfgFileLabelHead	   = "Configuration file:"
+	ErrorHead				= "An error occurred:"
+	CompileResult			= "Compilation result:"
+	DefaultResult			= "Jolly good, we're finished!"
+	AskSaveCfg				= "Might you wish to save the configuration file?"
+	AskSaveCfgTitle			= "Save configuration file"
+	CfgFileLabelHead		= "Configuration file:"
 	# Console
-	WebServerHelpData	   = @{
-		title	   = "Usage:"
-		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
-	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<path>']
-	[-Localize '<language code>'] [-help]"
-		PrarmsData = [ordered]@{
-			HostUrl			  = "The HTTP server address to register."
-			MaxCompileThreads = "The maximum number of compile threads."
-			MaxCompileTime	  = "The maximum compile time in seconds."
-			ReqLimitPerMin	  = "The maximum number of requests per minute per IP."
-			MaxCachedFileSize = "The maximum size of the cached file."
-			MaxScriptFileSize = "The maximum size of the script file."
-			CacheDir		  = "The directory to store the cached files."
-			Localize		  = "The language code to be used for server-side logging."
-			help			  = "Display this help information."
-		}
-	}
-	GUIHelpData			   = @{
-		title	   = "Usage:"
-		Usage	   = @"
-ps12exeGUI [[-ConfigFile] '<config file>'] [-PS1File '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
-
-ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
-"@
-		PrarmsData = [ordered]@{
-			ConfigFile	= "The configuration file to load."
-			PS1File		= "The script file to be compiled."
-			Localize	= "The language code to use."
-			UIMode		= "The UI mode to use."
-			help		= "Show this help message."
-		}
-	}
-	SetContextMenuHelpData = @{
-		title	   = "Usage:"
-		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<language code>'] [-help]"
-		PrarmsData = [ordered]@{
-			action	 = "The action to execute."
-			Localize = "The language code to use."
-			help	 = "Show this help message."
-		}
-	}
-	exe21spHelpData		   = @{
-		title	   = "Usage:"
-		Usage	   = "exe21sp [-ExePath] '<path to exe>' [-OutFile '<path to output .ps1>'] [-help]"
-		PrarmsData = [ordered]@{
-			ExePath = "Path to the ps12exe-generated exe to decompile."
-			OutFile = "Optional; path to write the recovered script. If omitted, output goes to stdout."
-			help	 = "Show this help message."
-		}
-	}
-	ConsoleHelpData		   = @{
+	ServerStarted			= "The HTTP server is up and running!"
+	ServerStopped			= "The HTTP server has been stopped."
+	ServerStartFailed		= "Rather unfortunate—failed to start the HTTP server!"
+	TryRunAsRoot			= "Do try running as root."
+	ServerListening			= "Access address:"
+	ExitServerTip			= "You may press Ctrl+C to stop the server at any time."
+	# GUI
+	ConsoleHelpData			= @{
 		title	   = "Usage:"
 		Usage	   = "[input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>']
 	[-CompilerOptions '<options>'] [-TempDir '<directory>'] [-minifyer '<scriptblock>'] [-noConsole]
@@ -118,7 +68,58 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 			Help			 = "Show this help message."
 		}
 	}
-	CompilingI18nData	   = @{
+	GUIHelpData				= @{
+		title	   = "Usage:"
+		Usage	   = @"
+ps12exeGUI [[-ConfigFile] '<config file>'] [-PS1File '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+
+ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+"@
+		PrarmsData = [ordered]@{
+			ConfigFile	= "The configuration file to load."
+			PS1File	   = "The script file to be compiled."
+			Localize   = "The language code to use."
+			UIMode	   = "The UI mode to use."
+			help	   = "Show this help message."
+		}
+	}
+	SetContextMenuHelpData	= @{
+		title	   = "Usage:"
+		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<language code>'] [-help]"
+		PrarmsData = [ordered]@{
+			action	 = "The action to execute."
+			Localize = "The language code to use."
+			help	 = "Show this help message."
+		}
+	}
+	WebServerHelpData		= @{
+		title	   = "Usage:"
+		Usage	   = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
+	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<path>']
+	[-Localize '<language code>'] [-help]"
+		PrarmsData = [ordered]@{
+			HostUrl			  = "The HTTP server address to register."
+			MaxCompileThreads = "The maximum number of compile threads."
+			MaxCompileTime	  = "The maximum compile time in seconds."
+			ReqLimitPerMin	  = "The maximum number of requests per minute per IP."
+			MaxCachedFileSize = "The maximum size of the cached file."
+			MaxScriptFileSize = "The maximum size of the script file."
+			CacheDir		  = "The directory to store the cached files."
+			Localize		  = "The language code to be used for server-side logging."
+			help			  = "Display this help information."
+		}
+	}
+	exe21spHelpData			= @{
+		title	   = "Usage:"
+		Usage	   = "[input |] exe21sp [[-inputFile] '<path or url to exe>'] [-outputFile '<path to output .ps1>'] [-help]"
+		PrarmsData = [ordered]@{
+			input	   = "Path or URL to the ps12exe-generated exe to decompile, same as ``-inputFile``."
+			inputFile  = "Path or URL to the ps12exe-generated exe to decompile."
+			outputFile = "Optional; path to write the recovered script. If omitted, output goes to stdout when redirected, otherwise writes to ``<exe>.ps1`` in the same folder."
+			help	   = "Display this help message."
+		}
+	}
+	CompilingI18nData		= @{
 		NewVersionAvailable						  = "There's a new version of ps12exe available: {0}!"
 		NoneInput								  = "No input file specified!"
 		BothInputAndContentSpecified			  = "Input file and content can't be used at the same time."
@@ -152,8 +153,8 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		CompilationFailed						  = "Compilation failed!"
 		OutputFileNotWritten					  = "Output file {0} not written."
 		CompiledFileSize						  = "Compiled file written -> {0} bytes."
-		OppsSomethingWentWrong					  = "Oops, something went wrong."
-		TryUpgrade								  = "Latest version is {0}, try upgrading."
+		OppsSomethingWentWrong					  = "Oh dear, something has gone rather wrong."
+		TryUpgrade								  = "Latest version is {0}; do try upgrading."
 		EnterToSubmitIssue						  = "For help, please submit an issue by pressing Enter."
 		GuestModeFileTooLarge					  = "The file {0} is too large to read."
 		GuestModeIconFileTooLarge				  = "The icon {0} is too large to read."
@@ -193,22 +194,22 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		DllExportDelNoneTypeArg					  = "{0}: {1} is a none type parameter, assuming it's a string."
 		DllExportUsing							  = "You are using #_DllExport, this macro is in dev and not yet supported."
 	}
-	WebServerI18nData	   = @{
+	WebServerI18nData		= @{
 		CompilingUserInput	= "Compiling User Input: {0}"
 		EmptyResponse		= "No data found when Handling the Request, returning an empty response."
 		InputTooLarge413	= "User input is too large, returning a 413 error."
 		ReqLimitExceeded429 = "IP {0} has exceeded the limit of {1} requests per minute, returning a 429 error."
 	}
-	InteractI18nData	   = @{
-		ModeName					= "Interactive Session"
-		Welcome						= "Welcome to the interactive session. You may press Ctrl+C to withdraw at any time."
-		EnterInputFile				= "Kindly provide the path or URL to the input file, if you please:"
+	InteractI18nData		= @{
+		ModeName					= "Interactive"
+		Welcome						= "Welcome to the ps12exe interactive mode. Do press Ctrl+C to exit at any time."
+		EnterInputFile				= "Kindly provide the path or URL to the input file, if you would:"
 		Prompt						= " >> "
-		ExitMessage					= "Very well. Concluding the interactive session."
+		ExitMessage					= "Exited interactive mode."
 		InvalidInputFile			= "I do beg your pardon, but that does not appear to be a valid PS1 file path."
 		FileDoesNotExist			= "Regrettably, the specified file could not be located."
 		InvalidExtension			= "File must have '.ps1', '.psd1', or '.tmp' extension."
-		EnterOutputFile				= "Please enter the output file path (leave blank for default):"
+		EnterOutputFile				= "Please enter the output file path (leave blank for <ps1>.exe in the same folder):"
 		OutputFileExtensionError	= "It appears the output file lacks the requisite '.exe' extension. I shall append it for you."
 		AddAdditionalInfo			= "Would you care to embellish the executable with additional details?"
 		AdditionalInfoPrompt		= "[Y/N]"
@@ -242,6 +243,30 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		CompileFailed				= "Oh, dear. The compilation has failed with exit code {0}."
 		CompileFailedException		= "Compilation failed: {0}"
 		CompileAnother				= "Shall we proceed with another compilation?"
-		Exiting						= "Farewell, then."
+		Exiting						= "Exiting interactive mode."
+	}
+	exe21spInteractI18nData = @{
+		ModeName				 = "Interactive"
+		Welcome					 = "Welcome to the exe21sp interactive mode. Do press Ctrl+C to exit at any time."
+		EnterInputFile			 = "Kindly provide the input exe path or URL, if you would:"
+		Prompt					 = " >> "
+		ExitMessage				 = "Exited interactive mode."
+		InvalidInputFile		 = "I'm afraid that doesn't appear to be a valid exe path or URL. Do try again."
+		FileDoesNotExist		 = "Regrettably, that file could not be located."
+		EnterOutputFile			 = "Kindly enter the output file path (leave blank for <exe>.ps1 in the same folder):"
+		OutputFileExtensionError	= "It appears the output file lacks the requisite '.ps1' extension. I shall append it for you."
+		AdditionalInfoPrompt	 = "[Y/N]"
+		ConvertAnother			 = "Shall we convert another exe?"
+		Exiting					 = "Exiting interactive mode."
+	}
+	exe21spI18nData			= @{
+		NoneInput					 = "No input file specified!"
+		TinySharpNoTextSection		 = "The executable is a .NET assembly but does not match the TinySharp layout (no .text section)."
+		TinySharpTextSectionEmpty	 = "The executable is a .NET assembly but does not match the TinySharp layout (.text section is empty)."
+		TinySharpCannotReadText		 = "The executable is a .NET assembly but does not match the TinySharp layout (cannot read .text)."
+		TinySharpPayloadNotRecovered	= "The executable is a .NET assembly but does not match the TinySharp layout; script payload cannot be recovered."
+		NoEmbeddedScript			 = "No embedded script found in '{0}' (not a ps12exe-built exe, or payload cannot be recovered)."
+		FileNotFound				 = "File not found: {0}"
+		InputUrlFailed				 = "Regrettably, failed to read from URL: {0}"
 	}
 }

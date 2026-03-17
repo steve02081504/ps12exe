@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param (
 	[ArgumentCompleter({
 		Get-ChildItem $PSScriptRoot -Filter *.txt | ForEach-Object { $_.Name -replace '\.txt$', '' }
