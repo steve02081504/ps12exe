@@ -861,7 +861,7 @@ $($_ | Format-List | Out-String)
 		if ($versionNow -ne $versionOnline) {
 			Write-I18n Host TryUpgrade $versionOnline -ForegroundColor Yellow
 		}
-		else {
+		elseif (![System.Console]::IsOutputRedirected) {
 			Write-I18n Host EnterToSubmitIssue -ForegroundColor Yellow
 			Read-Host | Out-Null
 			Start-Process $githubfeedback
