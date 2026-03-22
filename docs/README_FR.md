@@ -398,7 +398,7 @@ if ($Host.Name -eq "PSEXE") { Write-Output "ps12exe" } else { Write-Output "Un a
 
 Étant donné que ps12exe convertit les scripts en fichiers exécutables, la valeur de la variable `$MyInvocation` est différente de celle du script.
 
-Vous pouvez toujours utiliser `$PSScriptRoot` pour obtenir le chemin d'accès au répertoire où se trouve le fichier exécutable, et utiliser le nouveau `$PSEXEpath` pour obtenir le chemin d'accès au fichier exécutable lui-même.
+Vous pouvez toujours utiliser `$PSScriptRoot` pour obtenir le chemin d'accès au répertoire où se trouve le fichier exécutable, et utiliser `$PSCommandPath` pour obtenir le chemin d'accès au fichier exécutable lui-même.
 
 ### Fenêtre d'arrière-plan en mode -noConsole
 

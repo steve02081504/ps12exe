@@ -398,7 +398,7 @@ if ($Host.Name -eq "PSEXE") { Write-Output "ps12exe" } else { Write-Output "Some
 
 由于ps12exe将脚本转换为可执行文件，变量`$MyInvocation`的值与脚本中的不同。
 
-你仍然可以使用`$PSScriptRoot`来获取可执行文件所在的目录路径，并使用新的`$PSEXEpath`来获取可执行文件本身的路径。
+你仍然可以使用`$PSScriptRoot`来获取可执行文件所在的目录路径，并使用`$PSCommandPath`来获取可执行文件本身的路径。
 
 ### 在 -noConsole 模式下的后台窗口
 

@@ -399,7 +399,7 @@ if ($Host.Name -eq "PSEXE") { Write-Output "ps12exe" } else { Write-Output "Some
 
 Since ps12exe turns a script into an executable, the variable `$MyInvocation` is set to different values than in a script.
 
-You can still use `$PSScriptRoot` to get the directory where the executable is, and the new `$PSEXEpath` to get the path of the executable itself.
+You can still use `$PSScriptRoot` to get the directory where the executable is, and `$PSCommandPath` to get the path of the executable itself.
 
 ### Window in Background in -noConsole Mode
 

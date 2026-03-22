@@ -24,7 +24,7 @@ try {
 	& $repoRoot/build/ps12exe.exe $repoRoot/ps12exe.ps1 -Verbose -noConsole -title 'lol' | Write-Host
 	& $repoRoot/build/ps12exe.exe $repoRoot/ps12exe.ps1 $repoRoot/build/ps12exe2.exe -Verbose | Write-Host
 	"'Hello 世界！👾'" | ps12exe -outputFile $repoRoot/build/hello.exe -Verbose | Write-Host
-	& $repoRoot/build/ps12exe2.exe -Content '$PSEXEpath;$PSScriptRoot' -outputFile $repoRoot/build/pathtest.exe | Write-Host
+	& $repoRoot/build/ps12exe2.exe -Content '$PSCommandPath;$PSScriptRoot' -outputFile $repoRoot/build/pathtest.exe | Write-Host
 
 	$pathresult = . $repoRoot/build/pathtest.exe
 	$pathresultshouldbe = @("$repoRoot/build/pathtest.exe", "$repoRoot/build")

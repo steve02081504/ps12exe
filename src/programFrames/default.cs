@@ -1907,7 +1907,6 @@ namespace PSRunnerNS {
 			this.pwsh = PowerShell.Create();
 			this.pwsh.Runspace = PSRunSpace;
 			string exepath = System.Reflection.Assembly.GetExecutingAssembly().Location;
-			this.pwsh.Runspace.SessionStateProxy.SetVariable("PSEXEpath", exepath);
 			Assembly executingAssembly = Assembly.GetExecutingAssembly();
 			string script;
 			using (Stream scriptstream = executingAssembly.GetManifestResourceStream("main.par")) {
