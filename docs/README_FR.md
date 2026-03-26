@@ -66,13 +66,13 @@ Compile `source.ps1` en `target.exe` (si `.\target.exe` est omis, la sortie sera
 '"Bonjour le monde !"' | ps12exe
 ```
 
-Compile `"Bonjour le monde !"` en un fichier exécutable et le sort dans `.\a.exe`.
+Compile `"Bonjour le monde !"` en exécutable et l’écrit dans `.\a.exe`.
 
 ```powershell
 ps12exe https://raw.githubusercontent.com/steve02081504/ps12exe/master/src/GUI/Main.ps1
 ```
 
-Compile `Main.ps1` depuis Internet en un fichier exécutable et le sort dans `.\Main.exe`.
+Compile `Main.ps1` depuis Internet en exécutable et l’écrit dans `.\Main.exe`.
 
 ### Service Web auto-hébergé
 
@@ -93,7 +93,7 @@ exe21sp -inputFile .\target.exe -outputFile .\target.ps1
 ### Pipeline et redirection
 
 - **ps12exe** : lorsque la sortie standard (ou l’entrée standard / l’erreur standard) est redirigée, ps12exe n’écrit que le chemin de l’exe généré sur la sortie standard pour pouvoir le capturer (ex. `$exe = ps12exe .\a.ps1`).
-- **exe21sp** : accepte les chemins d’exe en entrée de pipeline (ex. `Get-ChildItem *.exe | exe21sp` ou `".\app.exe" | exe21sp`).
+- **exe21sp** : accepte les chemins ou URL d’exe en entrée de pipeline (ex. `Get-ChildItem *.exe | exe21sp` ou `".\app.exe" | exe21sp`).
 - **exe21sp** : si `-outputFile` n’est pas précisé et que la sortie standard n’est **pas** redirigée, le script décompilé est enregistré dans un fichier `.ps1` de même nom que l’exe, dans le même répertoire.
 - **exe21sp** : si `-outputFile` n’est pas précisé et que la sortie standard **est** redirigée, le script décompilé est écrit sur la sortie standard.
 
@@ -447,3 +447,7 @@ Par rapport à [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/
 | 🌍 Prise en charge multilingue, interface graphique en pur script                            | Meilleure prise en charge multilingue, interface graphique en pur script, prise en charge du mode sombre                                                   |
 | 📖 Séparation du fichier cs du fichier ps1                                                   | Plus facile à lire et à entretenir                                                                                                                         |
 | 🚀 Plus d'améliorations                                                                      | Et bien plus encore...                                                                                                                                     |
+
+## Points de vue au fil du temps ⭐
+
+[![Points de vue au fil du temps](https://starchart.cc/steve02081504/ps12exe.svg?variant=adaptive)](https://starchart.cc/steve02081504/ps12exe)

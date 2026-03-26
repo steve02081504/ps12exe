@@ -85,7 +85,7 @@ exe21sp -inputFile .\target.exe -outputFile .\target.ps1
 ### Pipeline and redirection
 
 - **ps12exe**: When stdout (or stdin/stderr) is redirected, ps12exe writes only the path of the generated exe to stdout so you can capture it (e.g. `$exe = ps12exe .\a.ps1`).
-- **exe21sp**: Accepts exe paths from pipeline input (e.g. `Get-ChildItem *.exe | exe21sp` or `".\app.exe" | exe21sp`).
+- **exe21sp**: Accepts exe paths or URLs from pipeline input (e.g. `Get-ChildItem *.exe | exe21sp` or `".\app.exe" | exe21sp`).
 - **exe21sp**: If `-outputFile` is not specified and stdout is **not** redirected, the decompiled script is saved to a `.ps1` file with the same base name as the exe in the same directory.
 - **exe21sp**: If `-outputFile` is not specified and stdout **is** redirected, the decompiled script is written to stdout.
 
@@ -98,33 +98,6 @@ Start-ps12exeWebServer
 Starts a web server for compiling PowerShell scripts online.
 
 ## Parameters
-
-### Error Handling
-
-Unlike most proper PowerShell functions, ps12exe sets the `$LastExitCode` variable to show if it’s cocked up, but it doesn’t promise you won’t get a right old exception, yeah?  
-You can have a butcher's at whether it's gone wrong like this, see:
-
-```powershell
-$LastExitCodeBackup = $LastExitCode
-try {
-	'"some code!"' | ps12exe
-	if ($LastExitCode -ne 0) {
-		throw "ps12exe buggered up with exit code $LastExitCode"
-	}
-}
-finally {
-	$LastExitCode = $LastExitCodeBackup
-}
-```
-
-Different `$LastExitCode` values show you what kinda balls-up it’s made:
-
-| Error Type | `$LastExitCode` Value               |
-| ---------- | ----------------------------------- |
-| 0          | All Tickety-boo                     |
-| 1          | Input code is a load of old rubbish |
-| 2          | The call's all gone pear-shaped     |
-| 3          | ps12exe’s had a proper mare         |
 
 ### GUI Parameters
 
@@ -194,6 +167,33 @@ Help             : Show this help message.
 ```
 
 ## Remarks
+
+### Error Handling
+
+Unlike many PowerShell functions, ps12exe sets `$LastExitCode` to report success or failure, but exceptions may still occur.  
+Check the exit code like this:
+
+```powershell
+$LastExitCodeBackup = $LastExitCode
+try {
+	'"some code!"' | ps12exe
+	if ($LastExitCode -ne 0) {
+		throw "ps12exe failed with exit code $LastExitCode"
+	}
+}
+finally {
+	$LastExitCode = $LastExitCodeBackup
+}
+```
+
+`$LastExitCode` meanings:
+
+| Error type | `$LastExitCode`        |
+| ---------- | ---------------------- |
+| 0          | Success                |
+| 1          | Input or code error    |
+| 2          | Invocation error       |
+| 3          | Internal ps12exe error |
 
 ### Preprocessing
 
@@ -282,7 +282,7 @@ elseif
 (Test-Path $env:LOCALAPPDATA/esh) { "$env:LOCALAPPDATA/esh" }
 ```
 
-Any line beginning with `#_!!` will be removed.
+The `#_!!` prefix is stripped from any line that starts with it.
 
 #### `#_require <modulesList>`
 
@@ -309,7 +309,7 @@ $modules | ForEach-Object{
 Note that the code it generates will only install modules, not import them.
 Please use `Import-Module` as needed.
 
-When you need to require more than one module, you can use spaces, commas, or semicolons and full stops as separators instead of writing multi-line require statements.
+When you need several modules, you can separate them with spaces, commas, semicolons, or the Chinese enumeration comma (、) instead of multiple `#_require` lines.
 
 ```powershell
 #_require module1 module2;module3、module4,module5
@@ -369,7 +369,7 @@ The basic input/output commands had to be rewritten in C# for ps12exe. Not imple
 
 ### GUI Mode Output Formatting
 
-By default, in PowerShell, outputs of commandlets are formatted line by line (as an array of strings). When your command generates 10 lines of output and you use GUI output, 10 message boxes will appear, each awaiting an OK. To prevent this, pipe your command to the commandlet `Out-String`. This will convert the output to one string array with 10 lines, and all output will be shown in one message box (e.g., `dir C:\ | Out-String`).
+By default, PowerShell formats cmdlet output line by line (as a string array). If a command produces 10 lines and you use GUI output, you get 10 message boxes. Pipe to `Out-String` to combine lines into one string so a single message box shows everything (e.g. `dir C:\ | Out-String`).
 
 ### Config Files
 
@@ -448,3 +448,7 @@ Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tre
 | 🌍 Multilingual support, pure script GUI                     | Better multilingual support, pure script GUI, support for dark mode                                       |
 | 📖 Separated cs files from ps1 files                         | Easier to read and maintain                                                                               |
 | 🚀 More improvements                                         | And more...                                                                                               |
+
+## Stargazers over time ⭐
+
+[![Stargazers over time](https://starchart.cc/steve02081504/ps12exe.svg?variant=adaptive)](https://starchart.cc/steve02081504/ps12exe)

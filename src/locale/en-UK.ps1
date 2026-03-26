@@ -196,7 +196,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 	}
 	WebServerI18nData		= @{
 		CompilingUserInput	= "Compiling User Input: {0}"
-		EmptyResponse		= "No data found when Handling the Request, returning an empty response."
+		EmptyResponse		= "No data found when handling the request; returning an empty response."
 		InputTooLarge413	= "User input is too large, returning a 413 error."
 		ReqLimitExceeded429 = "IP {0} has exceeded the limit of {1} requests per minute, returning a 429 error."
 	}

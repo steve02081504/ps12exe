@@ -2,7 +2,7 @@
 
 > [!CAUTION]
 > Do not store passwords in source code!  
-> See [localed readme](https://steve02081504.github.io/ps12exe/readme#password-security-stuff) for more details.
+> See the [localized readme](https://steve02081504.github.io/ps12exe/readme#password-security-stuff) for more details.
 
 ## Introduction
 
@@ -35,7 +35,7 @@ Set-ps12exeContextMenu #Set right-click menu
 (you can also clone this repository and run `./ps12exe.ps1` directly)
 
 **Hard to upgrade from PS2EXE to ps12exe? No problem!**  
-PS2EXE2ps12exe can hooks PS2EXE calls into ps12exe, All you need is just uninstall PS2EXE and install this, then use PS2EXE as normal.
+PS2EXE2ps12exe hooks PS2EXE calls into ps12exe. Uninstall PS2EXE, install this module, then use PS2EXE as usual.
 
 ```powershell
 Uninstall-Module PS2EXE
@@ -96,7 +96,7 @@ exe21sp -inputFile .\target.exe -outputFile .\target.ps1
 Start-ps12exeWebServer
 ```
 
-Starts a web server that can be used to compile powerShell scripts online.
+Starts a web server that can be used to compile PowerShell scripts online.
 
 ## Comparative Advantages 🏆
 
@@ -130,4 +130,8 @@ Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tre
 | 📖 Separated cs files from ps1 files                         | Easier to read and maintain                                                                               |
 | 🚀 More improvements                                         | And more...                                                                                               |
 
-see [localed readme](https://steve02081504.github.io/ps12exe/readme) for more details.
+See the [localized readme](https://steve02081504.github.io/ps12exe/readme) for more details.
+
+## Stargazers over time ⭐
+
+[![Stargazers over time](https://starchart.cc/steve02081504/ps12exe.svg?variant=adaptive)](https://starchart.cc/steve02081504/ps12exe)

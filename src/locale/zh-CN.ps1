@@ -37,14 +37,14 @@
 	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<运行时版本>']
 	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<语言代码>'] [-help]"
 		PrarmsData = [ordered]@{
-			input			 = "PowerShell脚本文件内容的字符串，与``-Content``相同。"
-			inputFile		 = "您想要转换为可执行文件的PowerShell脚本文件路径或URL（文件必须是UTF8或UTF16编码）"
-			Content			 = "您想要转换为可执行文件的PowerShell脚本内容"
-			outputFile		 = "目标可执行文件名或文件夹，默认为带有``'.exe'``扩展名的``inputFile``"
+			input			 = "PowerShell 脚本文件内容的字符串，与 ``-Content`` 相同。"
+			inputFile		 = "要转换为可执行文件的 PowerShell 脚本路径或 URL（文件须为 UTF-8 或 UTF-16 编码）。"
+			Content			 = "要转换为可执行文件的 PowerShell 脚本内容。"
+			outputFile		 = "输出可执行文件路径或文件夹；默认与输入文件同路径并添加 ``.exe`` 扩展名。"
 			CompilerOptions	 = "额外的编译器选项（参见 ``https://msdn.microsoft.com/en-us/library/78f4aasd.aspx``）"
 			TempDir			 = "存储临时文件的目录（默认为``%temp%``中随机生成的临时目录）"
 			minifyer		 = "在编译之前缩小脚本的脚本块"
-			lcid			 = "编译的可执行文件的位置ID。如果未指定，则为当前用户文化"
+			lcid			 = "已编译可执行文件的区域设置 ID（LCID）。省略则使用当前用户的区域。"
 			prepareDebug	 = "创建有助于调试的信息"
 			architecture	 = "仅为特定运行时编译。可能的值为``'x64'``，``'x86'``和``'anycpu'``"
 			threadingModel	 = "``'单线程单元'``或``'多线程单元'``模式"
@@ -66,10 +66,10 @@
 			longPaths		 = "如果在OS上启用，启用长路径（> 260个字符）（仅适用于Windows 10或更高版本）"
 			targetRuntime	 = "目标运行时版本，默认为 ``'Framework4.0'``，支持 ``'Framework2.0'``"
 			SkipVersionCheck = "跳过ps12exe的新版本检查"
-			GuestMode		 = "在额外的保护下编译脚本，避免本机文件被访问"
+			GuestMode		 = "在额外保护下编译脚本，阻止访问本机文件。"
 			PreprocessOnly	 = "预处理输入脚本并在不编译的情况下返回它"
 			GolfMode		 = "启用golf模式，添加缩写和常用函数"
-			Localize		 = "指定本地化语言"
+			Localize		 = "界面与消息所使用的语言代码。"
 			Help			 = "显示此帮助信息"
 		}
 	}
@@ -86,7 +86,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 			ConfigFile = "要加载的配置文件。"
 			PS1File	   = "要编译的脚本文件。"
 			Localize   = "要使用的语言代码。"
-			UIMode	   = "要使用的用户界面模式。"
+			UIMode	   = "界面模式。"
 			help	   = "显示此帮助信息。"
 		}
 	}

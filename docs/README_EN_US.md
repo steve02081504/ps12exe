@@ -1,8 +1,8 @@
 # ps12exe
 
 > [!CAUTION]
-> Don't store passwords in the source code, you hear?  
-> See [this section](#password-security) for more details.
+> Do not store passwords in source code.  
+> See [Password security](#password-security-stuff) for details.
 
 ## Introduction
 
@@ -31,10 +31,10 @@ Install-Module ps12exe # Install the ps12exe module
 Set-ps12exeContextMenu # Set the right-click menu
 ```
 
-(You can also clone this here repo and run `./ps12exe.ps1` directly.)
+(You can also clone this repository and run `./ps12exe.ps1` directly.)
 
 **Upgrading from PS2EXE to ps12exe? No problem!**  
-PS2EXE2ps12exe can hook the PS2EXE calls into ps12exe. Just uninstall PS2EXE, install this, and keep using PS2EXE like normal.
+PS2EXE2ps12exe redirects PS2EXE calls to ps12exe. Uninstall PS2EXE, install this module, then use PS2EXE as usual.
 
 ```powershell
 Uninstall-Module PS2EXE
@@ -85,7 +85,7 @@ exe21sp -inputFile .\target.exe -outputFile .\target.ps1
 ### Pipeline and redirection
 
 - **ps12exe**: When stdout (or stdin/stderr) is redirected, ps12exe writes only the path of the generated exe to stdout so you can capture it (e.g. `$exe = ps12exe .\a.ps1`).
-- **exe21sp**: Accepts exe paths from pipeline input (e.g. `Get-ChildItem *.exe | exe21sp` or `".\app.exe" | exe21sp`).
+- **exe21sp**: Accepts exe paths or URLs from pipeline input (e.g. `Get-ChildItem *.exe | exe21sp` or `".\app.exe" | exe21sp`).
 - **exe21sp**: If `-outputFile` is not specified and stdout is **not** redirected, the decompiled script is saved to a `.ps1` file with the same base name as the exe in the same directory.
 - **exe21sp**: If `-outputFile` is not specified and stdout **is** redirected, the decompiled script is written to stdout.
 
@@ -108,11 +108,11 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 ```
 
 ```text
-ConfigFile : The configuration file to load.
-PS1File    : The script file to be compiled.
-Localize   : The language code to use, ya know?
-UIMode     : The UI mode to use, dark or light.
-help       : Shows this here help message.
+ConfigFile : Configuration file to load.
+PS1File    : Script file to compile.
+Localize   : Language code to use.
+UIMode     : UI mode (Dark, Light, or Auto).
+help       : Shows this help message.
 ```
 
 ### Console Parameters
@@ -130,14 +130,14 @@ help       : Shows this here help message.
 ```
 
 ```text
-input            : String of the PowerShell script file's contents, same as -Content.
-inputFile        : PowerShell script file path or URL you wanna convert to an executable (file must be UTF8 or UTF16 encoded).
-Content          : PowerShell script content you wanna convert to an executable.
-outputFile       : Destination executable file name or folder, defaults to inputFile with '.exe' added on.
+input            : String contents of the PowerShell script (same as -Content).
+inputFile        : Path or URL of the PowerShell script to convert (file must be UTF-8 or UTF-16 encoded).
+Content          : PowerShell script text to convert to an executable.
+outputFile       : Output executable path or folder; defaults to the input file path with a `.exe` extension.
 CompilerOptions  : Extra compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx).
 TempDir          : Directory for temp files (default is a randomly generated temp directory in %temp%).
 minifyer         : Scriptblock to minify the script before compiling.
-lcid             : Location ID for the compiled executable. Current user culture if nothin's specified.
+lcid             : Locale ID for the compiled executable. Uses the current user culture if omitted.
 prepareDebug     : Creates info to help with debugging.
 architecture     : Compile for a specific runtime. Possible values are 'x64', 'x86', and 'anycpu'.
 threadingModel   : 'Single Thread Apartment' or 'Multi Thread Apartment' mode.
@@ -159,26 +159,26 @@ virtualize       : App virtualization is activated (forcing x86 runtime).
 longPaths        : Enable long paths ( > 260 characters) if enabled on the OS (Windows 10 or up).
 targetRuntime    : Target runtime version, 'Framework4.0' by default, 'Framework2.0' is supported.
 SkipVersionCheck : Skip the check for new versions of ps12exe
-GuestMode        : Compile scripts with extra protection, preventin' native files from being accessed.
+GuestMode        : Compile scripts with extra protection, preventing access to native files.
 PreprocessOnly   : Preprocess the input script and return it without compiling.
 GolfMode         : Enable golf mode, adding abbreviations and common functions.
 Localize         : Language code.
-Help             : Show this here help message.
+Help             : Show this help message.
 ```
 
 ## Remarks
 
-### Error Handlin
+### Error Handling
 
-Unlike most PowerShell functions, ps12exe sets the `$LastExitCode` variable to show if somethin' went sideways, but it ain't guaranteein' no exceptions.  
-You can have a butcher's at whether it's gone wrong like this, see:
+Unlike many PowerShell functions, ps12exe sets `$LastExitCode` to report success or failure, but it may still throw exceptions.  
+Check the exit code like this:
 
 ```powershell
 $LastExitCodeBackup = $LastExitCode
 try {
 	'"some code!"' | ps12exe
 	if ($LastExitCode -ne 0) {
-		throw "ps12exe crashed and burned with exit code $LastExitCode"
+		throw "ps12exe failed with exit code $LastExitCode"
 	}
 }
 finally {
@@ -186,14 +186,14 @@ finally {
 }
 ```
 
-Different `$LastExitCode` values tell ya what kinda screw-up happened.
+`$LastExitCode` meanings:
 
-| Error Type | `$LastExitCode` Value        |
-| ---------- | ---------------------------- |
-| 0          | All good, no problemo        |
-| 1          | Input code's a hot mess      |
-| 2          | Call's all jacked up         |
-| 3          | ps12exe had a total meltdown |
+| Error type | `$LastExitCode`        |
+| ---------- | ---------------------- |
+| 0          | Success                |
+| 1          | Input/code error       |
+| 2          | Invocation error       |
+| 3          | Internal ps12exe error |
 
 ### Preprocessing
 
@@ -282,7 +282,7 @@ elseif
 (Test-Path $env:LOCALAPPDATA/esh) { "$env:LOCALAPPDATA/esh" }
 ```
 
-Any line starting with `#_!!` gets removed.
+The `#_!!` prefix is stripped from any line that starts with it.
 
 #### `#_require <modulesList>`
 
@@ -309,7 +309,7 @@ $modules | ForEach-Object{
 Note that the generated code only installs modules, it doesn't import them.
 Use `Import-Module` as needed.
 
-When you gotta require more than one module, you can use spaces, commas, or semicolons as separators instead of writing multiple `#_require` lines.
+When you need several modules, you can separate them with spaces, commas, or semicolons instead of multiple `#_require` lines.
 
 ```powershell
 #_require module1 module2;module3、module4,module5
@@ -365,11 +365,11 @@ If you don't know how to write one of those script blocks, you can use [psminnif
 
 ### List of Cmdlets Not Implemented
 
-The basic input/output commands had to be rewritten in C# for ps12exe. Not implemented are _`Write-Progress`_ in console mode (too much work, man), and _`Start-Transcript`_/_`Stop-Transcript`_ (no good reference implementation by Microsoft).
+The basic input/output commands had to be rewritten in C# for ps12exe. Not implemented: _`Write-Progress`_ in console mode (prohibitively much work), and _`Start-Transcript`_ / _`Stop-Transcript`_ (no suitable reference implementation from Microsoft).
 
 ### GUI Mode Output Formatting
 
-By default in PowerShell, commandlet outputs are formatted line by line (as an array of strings). When your command makes 10 lines of output and you use GUI output, 10 message boxes will show up, each waiting for an OK. To avoid this, pipe your command to `Out-String`. This turns the output into one string array with 10 lines, and all output shows in one message box (for example: `dir C:\ | Out-String`).
+By default, PowerShell formats cmdlet output line by line (as a string array). If a command produces 10 lines and you use GUI output, you get 10 message boxes. Pipe to `Out-String` to combine lines into one string so a single message box shows everything (e.g. `dir C:\ | Out-String`).
 
 ### Config Files
 
@@ -377,13 +377,13 @@ ps12exe can create config files named after the generated executable + ".config"
 
 ### Parameter Processing
 
-Compiled scripts handle parameters like the original script. One limit comes from Windows: for all executables, all parameters are type String. If there's no implicit conversion for your parameter type, you gotta convert it explicitly in your script. You can even pipe content to the executable, but all piped values are type String.
+Compiled scripts handle parameters like the original script. One limitation is Windows itself: for any executable, arguments are strings. If your parameter needs another type, convert it explicitly. Piped input works the same way (values are strings).
 
 ### Password Security
 
 <a id="password-security-stuff"></a>
 Never store passwords in your compiled script!
-The whole script is easily visible to any .net decompiler, you see?
+The whole script is easy to read with any .NET decompiler.
 
 ![image](https://github.com/steve02081504/ps12exe/assets/31927825/92d96e53-ba52-406f-ae8b-538891f42779)
 
@@ -409,7 +409,7 @@ This happens because when the external window closes, Windows tries to activate 
 
 To fix this, `$Host.UI.RawUI.FlushInputBuffer()` opens an invisible window that can be activated. The following call of `$Host.UI.RawUI.FlushInputBuffer()` closes this window (and so on).
 
-The following example will not open a window in the background anymore, as a single call of `ipconfig | Out-String` will do:
+The following avoids the background-window issue, unlike a single `ipconfig | Out-String` alone:
 
 ```powershell
 $Host.UI.RawUI.FlushInputBuffer()
@@ -417,9 +417,9 @@ ipconfig | Out-String
 $Host.UI.RawUI.FlushInputBuffer()
 ```
 
-### Comparative Advantages
+## Comparative Advantages 🏆
 
-### Quick Comparison
+### Quick Comparison 🏁
 
 | Comparison                                        | ps12exe                                        | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
 | ------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
@@ -432,13 +432,13 @@ $Host.UI.RawUI.FlushInputBuffer()
 | `-extract` and other special parameter parsing 🧹 | 🗑️ Removed                                     | 🥲 Requires modifying the source code                                                                           |
 | PR welcome level 🤝                               | 🥰 Welcome!                                    | 🤷 14 PRs, 13 closed                                                                                            |
 
-### Detailed Comparison
+### Detailed Comparison 🔍
 
-Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5), this project has these improvements:
+Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5), this project offers the following improvements:
 
 | Improvement                                                   | Description                                                                                        |
 | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| ✔️ Syntax check during compilation                            | Syntax check during compilation to improve code quality, you know?                                 |
+| ✔️ Syntax check during compilation                            | Syntax checking at compile time for better code quality                                            |
 | 🔄 Powerful preprocessing                                     | Preprocess the script before compilation, no need to copy and paste everything into the script     |
 | 🛠️ `-CompilerOptions` parameter                               | New parameter to let you further customize the generated executable                                |
 | 📦️ `-Minifyer` parameter                                     | Preprocess the script before compilation to generate a smaller executable                          |
@@ -446,5 +446,9 @@ Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tre
 | 🖥️ Optimization of `-noConsole` parameter                     | Optimized option handling and window title display; you can now set the title of the custom pop-up |
 | 🧹 Removed exe files                                          | Removed exe files from the code repo                                                               |
 | 🌍 Multilingual support, pure script GUI                      | Better multilingual support, pure script GUI, supports dark mode                                   |
-| 📖 Separated cs files from ps1 files                          | Easier to read and maintain, ya see?                                                               |
-| 🚀 More improvements                                          | And a whole bunch more...                                                                          |
+| 📖 Separated cs files from ps1 files                          | Easier to read and maintain                                                                        |
+| 🚀 More improvements                                          | And more                                                                                           |
+
+## Stargazers over time ⭐
+
+[![Stargazers over time](https://starchart.cc/steve02081504/ps12exe.svg?variant=adaptive)](https://starchart.cc/steve02081504/ps12exe)

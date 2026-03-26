@@ -20,7 +20,7 @@ ps12exe एक PowerShell मॉड्यूल है जो आपको .ps1 
 [![中文](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/China.png)](./README_CN.md)
 [![English (United Kingdom)](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/United-Kingdom.png)](./README_EN_UK.md)
 [![English (United States)](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/United-States.png)](./README_EN_US.md)
-[![日本语](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Japan.png)](./README_JP.md)
+[![日本語](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Japan.png)](./README_JP.md)
 [![Français](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/France.png)](./README_FR.md)
 [![Español](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Spain.png)](./README_ES.md)
 
@@ -80,7 +80,7 @@ ps12exe https://raw.githubusercontent.com/steve02081504/ps12exe/master/src/GUI/M
 Start-ps12exeWebServer
 ```
 
-एक वेब सेवा प्रारंभ करें जो उपयोगकर्ताओं को पॉवरशेल कोड को ऑनलाइन संकलित करने की अनुमति देती है।
+ऐसी वेब सेवा शुरू करें जिससे उपयोगकर्ता ऑनलाइन PowerShell कोड संकलित कर सकें।
 
 ### exe से ps1 पुनर्प्राप्त करें (exe21sp)
 
@@ -447,3 +447,7 @@ $Host.UI.RawUI.FlushInputBuffer()
 | 🌍 बहु-भाषा समर्थन, शुद्ध स्क्रिप्ट जीयूआई                            | बेहतर बहु-भाषा समर्थन, शुद्ध स्क्रिप्ट जीयूआई, डार्क मोड का समर्थन करता है                                              |
 | 📖 सीएस फाइलों को पीएस1 फाइलों से अलग करें                            | पढ़ने और बनाए रखने में आसान                                                                                             |
 | 🚀 अधिक सुधार                                                         | और अधिक...                                                                                                              |
+
+## समय पर स्टार ⭐
+
+[![समय पर स्टार](https://starchart.cc/steve02081504/ps12exe.svg?variant=adaptive)](https://starchart.cc/steve02081504/ps12exe)

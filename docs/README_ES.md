@@ -27,14 +27,14 @@ ps12exe es un módulo de PowerShell que permite crear ejecutables a partir de sc
 ## Instalación
 
 ```powershell
-Install-Module ps12exe ## Instala el módulo ps12exe
-Set-ps12exeContextMenu ## Configura el menú contextual
+Install-Module ps12exe # Instala el módulo ps12exe
+Set-ps12exeContextMenu # Configura el menú contextual
 ```
 
 (También puede clonar el repositorio y ejecutar `.\ps12exe.ps1`)
 
-**¿Difícil de actualizar desde PS2EXE a ps12exe? ¡No hay problema!**  
-PS2EXE2ps12exe puede enganchar las llamadas de PS2EXE en ps12exe. Todo lo que necesitas hacer es desinstalar PS2EXE e instalar esto, luego usar PS2EXE como de costumbre.
+**¿Le cuesta pasar de PS2EXE a ps12exe? No hay problema.**  
+PS2EXE2ps12exe redirige las llamadas de PS2EXE a ps12exe. Desinstale PS2EXE, instale este módulo y siga usando PS2EXE como siempre.
 
 ```powershell
 Uninstall-Module PS2EXE
@@ -45,8 +45,8 @@ Install-Module PS2EXE2ps12exe
 
 ### Menú contextual
 
-Una vez que haya configurado `Set-ps12exeContextMenu`, puede compilar rápidamente cualquier archivo ps1 a un exe o abrir ps12exeGUI haciendo click derecho sobre él.  
-¡! [image](https://github.com/steve02081504/ps12exe/assets/31927825/24e7caf7-2bd8-46aa-8e1d-ee6da44c2dcc)
+Una vez configurado `Set-ps12exeContextMenu`, puede compilar rápidamente cualquier archivo `.ps1` a exe o abrir ps12exeGUI con clic derecho sobre el archivo.  
+![image](https://github.com/steve02081504/ps12exe/assets/31927825/24e7caf7-2bd8-46aa-8e1d-ee6da44c2dcc)
 
 ### Modo GUI
 
@@ -80,7 +80,7 @@ Compila `Main.ps1` desde Internet en un archivo ejecutable para su salida en `.\
 Start-ps12exeWebServer
 ```
 
-Inicia un servicio web que permite a los usuarios compilar código powershell en línea.
+Inicia un servicio web que permite compilar código PowerShell en línea.
 
 ### Recuperar ps1 desde un exe (exe21sp)
 
@@ -93,7 +93,7 @@ exe21sp -inputFile .\target.exe -outputFile .\target.ps1
 ### Pipeline y redirección
 
 - **ps12exe**: cuando la salida estándar (o la entrada o el error estándar) está redirigida, ps12exe escribe solo la ruta del exe generado en la salida estándar para poder capturarla (ej. `$exe = ps12exe .\a.ps1`).
-- **exe21sp**: acepta rutas de exe por pipeline (ej. `Get-ChildItem *.exe | exe21sp` o `".\app.exe" | exe21sp`).
+- **exe21sp**: acepta rutas o URL de exe por la canalización (p. ej. `Get-ChildItem *.exe | exe21sp` o `".\app.exe" | exe21sp`).
 - **exe21sp**: si no se especifica `-outputFile` y la salida estándar **no** está redirigida, el script descompilado se guarda en un `.ps1` con el mismo nombre base que el exe en el mismo directorio.
 - **exe21sp**: si no se especifica `-outputFile` y la salida estándar **sí** está redirigida, el script descompilado se escribe en la salida estándar.
 
@@ -104,11 +104,10 @@ exe21sp -inputFile .\target.exe -outputFile .\target.ps1
 ```powershell
 ps12exeGUI [[-ConfigFile] '<archivo de configuración>'] [-PS1File '<archivo de código>'] [-Localize '<código de idioma>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 
-ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>'] [-UIMode
- 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 ```
 
-```Texto
+```text
 ConfigFile : El archivo de configuración que desea cargar.
 PS1File    : El archivo de script a compilar.
 Localize   : El código de idioma que desea usar.
@@ -448,3 +447,7 @@ En comparación con [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS
 | 🌍 Soporte multilingüe y GUI de solo script                        | Mejora el soporte multilingüe y la GUI de solo script, incluyendo el modo oscuro                                                       |
 | 📖 Separación de archivos cs de archivos ps1                       | Facilita la lectura y el mantenimiento                                                                                                 |
 | 🚀 Otras mejoras                                                   | ¡Y muchas más!                                                                                                                         |
+
+## Puntos de estrellas a lo largo del tiempo ⭐
+
+[![Puntos de estrellas a lo largo del tiempo](https://starchart.cc/steve02081504/ps12exe.svg?variant=adaptive)](https://starchart.cc/steve02081504/ps12exe)

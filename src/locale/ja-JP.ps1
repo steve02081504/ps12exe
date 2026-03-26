@@ -33,7 +33,7 @@
 	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<言語コード>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "PowerShell スクリプトファイルの内容の文字列で、``-Content`` と同じです"
-			inputFile		 = "実行可能ファイルに変換したい PowerShell スクリプトファイルのパスまたは URL（ファイルは UTF8 または UTF16 でエンコードされている必要があります）"
+			inputFile		 = "変換元の PowerShell スクリプトのパスまたは URL（ファイルは UTF-8 または UTF-16 エンコードである必要があります）。"
 			Content			 = "実行可能ファイルに変換したい PowerShell スクリプトの内容"
 			outputFile		 = "ターゲットの実行可能ファイル名またはディレクトリ。デフォルトは ``'.exe'`` 拡張子を持つ ``inputFile`` です"
 			CompilerOptions	 = "追加のコンパイラオプション（参照： ``https://msdn.microsoft.com/en-us/library/78f4aasd.aspx``）"
@@ -60,7 +60,7 @@
 			virtualize		 = "アプリケーションの仮想化が有効になっています（x86 ランタイムを強制）"
 			longPaths		 = "OS で有効になっている場合、長いパス（260 文字以上）を有効にします（Windows 10 以上にのみ適用）"
 			targetRuntime	 = "ターゲット ランタイム バージョン、既定値は ``'Framework4.0'``、``'Framework2.0'`` がサポートされています"
-			SkipVersionCheck = "ps12exeの新しいバージョンの確認をスキップします"
+			SkipVersionCheck = "ps12exe の新しいバージョンの確認をスキップします。"
 			GuestMode		 = "ネイティブ ファイルへのアクセスを防ぐために、スクリプトをコンパイルする際に保護を追加します"
 			PreprocessOnly	 = "入力スクリプトをプリプロセス処理し、コンパイルせずに返します"
 			GolfMode		 = "golf モードを有効にします、略語と一般的な関数を追加します"

@@ -60,7 +60,7 @@ ps12exeGUI
 ps12exe .\ソース.ps1 .\ターゲット.exe
 ```
 
-`ソース.ps1` を `ターゲット.exe` にコンパイルします（`.\ソース.ps1` を省略した場合は `.\ソース.exe` に出力されます）。
+`ソース.ps1` を `ターゲット.exe` にコンパイルします（`.\ターゲット.exe` を省略した場合は `.\ソース.exe` に出力されます）。
 
 ```powershell
 '"Hello World!"' | ps12exe
@@ -74,28 +74,28 @@ ps12exe https://raw.githubusercontent.com/steve02081504/ps12exe/master/src/GUI/M
 
 インターネットから `Main.ps1` を実行ファイルにコンパイルして `.\Main.exe` に出力します。
 
-### 自己ホスティング型ウェブサービス
-
-```powershell
-Start-ps12exeWebServer
-```
-
-ユーザーがオンラインで PowerShell コードをコンパイルできるようにする Web サービスを開始します。
-
 ### exe から ps1 を復元（exe21sp）
 
 ```powershell
 exe21sp -inputFile .\target.exe -outputFile .\target.ps1
 ```
 
-`exe21sp` は ps12exe が生成した exe に埋め込まれている PowerShell スクリプトを取り出し、`.ps1` ファイルとして保存するか、標準出力に書き出します。ps12exe と同様に `$LastExitCode` で結果を表します：0 = 成功、1 = 入力/解析エラー（例：ps12exe 生成 exe でない）、2 = 呼び出しエラー（例：リダイレクト時に入力なし）、3 = リソース/内部エラー（例：ファイルなし）。
+`exe21sp` は ps12exe が生成した exe（ローカルパスまたは URL）に埋め込まれた PowerShell スクリプトを取り出し、`.ps1` ファイルとして保存するか、標準出力に書き出します。ps12exe と同様に `$LastExitCode` で結果を表します：0 = 成功、1 = 入力/解析エラー（例：ps12exe 生成 exe でない）、2 = 呼び出しエラー（例：リダイレクト時に入力なし）、3 = リソース/内部エラー（例：ファイルなし）。
 
 ### パイプラインとリダイレクト
 
 - **ps12exe**：標準出力（または標準入力/標準エラー）がリダイレクトされているとき、ps12exe は生成した exe のパスのみを標準出力に書き、キャプチャできるようにします（例：`$exe = ps12exe .\a.ps1`）。
-- **exe21sp**：パイプライン入力で exe パスを受け取れます（例：`Get-ChildItem *.exe | exe21sp` や `".\app.exe" | exe21sp`）。
+- **exe21sp**：パイプライン入力で exe のパスまたは URL を受け取れます（例：`Get-ChildItem *.exe | exe21sp` や `".\app.exe" | exe21sp`）。
 - **exe21sp**：`-outputFile` を指定せず、標準出力がリダイレクト**されていない**ときは、反コンパイル結果を exe と同じディレクトリ・同じベース名の `.ps1` に保存します。
 - **exe21sp**：`-outputFile` を指定せず、標準出力がリダイレクト**されている**ときは、反コンパイル結果を標準出力に書き出します。
+
+### 自己ホスト型 Web サーバー
+
+```powershell
+Start-ps12exeWebServer
+```
+
+ブラウザなどから PowerShell スクリプトをオンラインでコンパイルできる Web サーバーを起動します。
 
 ## パラメータ
 
@@ -280,7 +280,7 @@ elseif
 (Test-Path $env:LOCALAPPDATA/esh) { "$env:LOCALAPPDATA/esh" }
 ```
 
-`#_!!` 行そのものは削除されます。
+行頭の `#_!!` は取り除かれます。
 
 #### `#_require <モジュールリスト>`
 
@@ -445,3 +445,7 @@ $Host.UI.RawUI.FlushInputBuffer()
 | 🌍 多言語サポート、純スクリプト GUI                             | より良い多言語サポート、純スクリプト GUI、ダークモード対応                                             |
 | 📖 cs ファイルを ps1 ファイルから分離                           | 読みやすく、保守しやすく                                                                               |
 | 🚀その他多数の改善                                              | and more...                                                                                            |
+
+## 時間経過での星の数 ⭐
+
+[![時間経過での星の数](https://starchart.cc/steve02081504/ps12exe.svg?variant=adaptive)](https://starchart.cc/steve02081504/ps12exe)

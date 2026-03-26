@@ -33,7 +33,7 @@
 	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<código de idioma>'] [-help]"
 		PrarmsData = [ordered]@{
 			input			 = "La cadena del contenido del archivo de script de PowerShell, igual que ``-Content``."
-			inputFile		 = "La ruta o URL del archivo de script de PowerShell que desea convertir en un archivo ejecutable (el archivo debe estar codificado en UTF8 o UTF16)"
+			inputFile		 = "Ruta o URL del script de PowerShell a convertir (el archivo debe estar codificado en UTF-8 o UTF-16)."
 			Content			 = "El contenido del script de PowerShell que desea convertir en un archivo ejecutable"
 			outputFile		 = "El nombre del archivo o carpeta de destino, por defecto es el ``inputFile`` con la extensión ``'.exe'``"
 			CompilerOptions	 = "Opciones adicionales del compilador (ver ``https://msdn.microsoft.com/en-us/library/78f4aasd.aspx``)"
@@ -79,7 +79,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 			ConfigFile	= "El archivo de configuración que desea cargar."
 			PS1File	   = "El archivo de script a compilar."
 			Localize   = "El código de idioma que desea usar."
-			UIMode	   = "El modo de interfaz de usuario que desea usar."
+			UIMode	   = "Modo de interfaz."
 			help	   = "Mostrar esta información de ayuda."
 		}
 	}
@@ -87,7 +87,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 		title	   = "Uso:"
 		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<código de idioma>'] [-help]"
 		PrarmsData = [ordered]@{
-			action	 = "El método que desea ejecutar."
+			action	 = "Acción a ejecutar."
 			Localize = "El código de idioma que desea usar."
 			help	 = "Mostrar esta información de ayuda."
 		}
@@ -99,11 +99,11 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>']
 	[-Localize '<código de idioma>'] [-help]"
 		PrarmsData = [ordered]@{
 			HostUrl			  = "La dirección del servidor HTTP que se registrará."
-			MaxCompileThreads = "El número maximo de hilos de compilación."
-			MaxCompileTime	  = "El tiempo maximo de compilación (segundos)."
+			MaxCompileThreads = "El número máximo de hilos de compilación."
+			MaxCompileTime	  = "El tiempo máximo de compilación (segundos)."
 			ReqLimitPerMin	  = "El número de solicitudes por minuto para cada IP."
-			MaxCachedFileSize = "El tamaño maximo de archivo caché."
-			MaxScriptFileSize = "El tamaño maximo de archivo de código."
+			MaxCachedFileSize = "El tamaño máximo de archivo en caché."
+			MaxScriptFileSize = "El tamaño máximo de archivo de script."
 			CacheDir		  = "El directorio donde se almacenan los archivos caché."
 			Localize		  = "El código de idioma para el registro en el lado del servidor."
 			help			  = "Mostrar esta información de ayuda."

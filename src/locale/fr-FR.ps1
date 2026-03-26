@@ -53,7 +53,7 @@
 			noError			 = "Le fichier exécutable généré ne produira pas de sortie d’erreur (y compris les flux d’avertissements et de débogage)."
 			noVisualStyles	 = "Désactiver les styles visuels pour les applications GUI Windows générées (utilisé uniquement avec ``-noConsole``)."
 			exitOnCancel	 = "Quitter le programme lorsque ``Annuler`` ou ``'X'`` est sélectionné dans la zone de saisie ``Read-Host`` (utilisé uniquement avec ``-noConsole``)."
-			DPIAware		 = "Si le mise à l’échelle de l’affichage est activée, les contrôles de l’interface graphique seront mis à l’échelle autant que possible."
+			DPIAware		 = "Si la mise à l’échelle de l’affichage est activée, les contrôles de l’interface graphique seront mis à l’échelle autant que possible."
 			winFormsDPIAware = "Si la mise à l’échelle de l’affichage est activée, WinForms utilisera la mise à l’échelle DPI (nécessite Windows 10 et .Net 4.7 ou version ultérieure)."
 			requireAdmin	 = "Si le contrôle de compte d’utilisateur est activé, le fichier exécutable compilé ne peut s’exécuter que dans un contexte élevé (une boîte de dialogue de contrôle de compte d’utilisateur s’affichera si nécessaire)."
 			supportOS		 = "Utiliser les fonctionnalités de la dernière version de Windows (exécutez ``[Environment]::OSVersion`` pour voir la différence)."
@@ -61,9 +61,9 @@
 			longPaths		 = "Si activé sur le système d’exploitation, active les chemins longs (> 260 caractères) (uniquement pour Windows 10 ou version ultérieure)."
 			targetRuntime	 = "Version de l’environnement d’exécution cible, par défaut ``'Framework4.0'``, prend en charge ``'Framework2.0'``."
 			SkipVersionCheck = "Ignorer la vérification de la nouvelle version de ps12exe."
-			GuestMode		 = "Compiler le script avec une protection supplémentaire, éviter l’accès aux fichiers natifs."
+			GuestMode		 = "Compiler le script avec une protection supplémentaire, empêchant l’accès aux fichiers natifs."
 			PreprocessOnly	 = "Prétraite le script d'entrée et le retourne sans compilation."
-			GolfMode		 = "Activer le mode golf, ajoute des abreviations et des fonctions courantes au script."
+			GolfMode		 = "Activer le mode golf : ajoute des abréviations et des fonctions courantes au script."
 			Localize		 = "Spécifier la langue de localisation."
 			Help			 = "Affiche cette aide."
 		}
@@ -79,7 +79,7 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 			ConfigFile	= "Fichier de configuration à charger."
 			PS1File	   = "Fichier de script à compiler."
 			Localize   = "Code de langue à utiliser."
-			UIMode	   = "Mode d’interface utilisateur à utiliser."
+			UIMode	   = "Mode d’interface utilisateur."
 			help	   = "Affiche cette aide."
 		}
 	}
