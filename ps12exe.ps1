@@ -297,7 +297,7 @@ function Show-Help {
 			$versionOnline = Get-Content $env:TEMP/ps12exe_version.txt -Encoding utf8 | Select-Object -First 1
 			if ((-not $nested) -and (-not $SkipVersionCheck) -and ($versionNow -ne $versionOnline)) {
 				try {
-					$ForegroundColor = $Host.UI.RawUI.ForegroundColor
+					$ForegroundColor = try { $Host.UI.RawUI.ForegroundColor } catch { 'White' }
 					$Host.UI.RawUI.ForegroundColor = "Yellow"
 				}
 				catch {}
