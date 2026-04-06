@@ -29,7 +29,7 @@ function Write-I18n {
 		[System.Management.Automation.ErrorCategory]$Category = 'NotSpecified',
 		$TargetObject,
 		[System.Exception]$Exception,
-		[ConsoleColor]$ForegroundColor = $(try { $Host.UI.RawUI.ForegroundColor } catch { 'White' })
+		[ConsoleColor]$ForegroundColor = $(try { [ConsoleColor]($Host.UI.RawUI.ForegroundColor) } catch { 'White' })
 	)
 	$formatForF = if ($null -eq $FormatArgs) { @() } else { @($FormatArgs) }
 	$template = if ($null -ne $script:I18nData -and $script:I18nData.ContainsKey($Mid)) {
