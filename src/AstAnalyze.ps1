@@ -17,7 +17,7 @@ AI prompt: 用你所知的最刁钻的方式和最花哨的技术写一段powers
 我需要测试一段评估程序是不是常量程序的程序
 #>
 function AstAnalyze([System.Management.Automation.Language.ScriptBlockAst]$Ast) {
-	$script:ConstCommands = @('Write-Host', 'echo', 'Write-Output', 'Write-Debug', 'Write-Information', 'ConvertFrom-Json', 'ConvertTo-Json', 'Write-Host')
+	$script:ConstCommands = @('Write-Host', 'echo', 'Write-Output', 'Write-Debug', 'Write-Information', 'ConvertFrom-Json', 'ConvertTo-Json', 'Write-Host', 'Set-StrictMode')
 	$script:ConstVariables = @('?', '^', '$', 'Error', 'false', 'IsCoreCLR', 'IsLinux', 'IsMacOS', 'IsWindows', 'null', 'true', 'PSEXEScript', 'Write-Host', 'MyInvocation')
 	$script:ConstTypes = @('Boolean', 'Char', 'DateTime', 'Decimal', 'Double', 'Int16', 'Int32', 'Int64', 'Int8', 'Int', 'Single', 'String', 'UInt16', 'UInt32', 'UInt64', 'UInt8', 'Void', 'Regex', 'System.Text.RegularExpressions.RegexOptions', 'HashTable', 'OrderedDictionary', 'PSObject', 'PSVariable', 'PSNoteProperty', 'PSMemberInfo', 'PSCustomObject', 'Math', 'Array', 'ref', 'Guid')
 	$script:ConstAttributes = @('cmdletbinding', 'cmdlet', 'parameter', 'alias')
