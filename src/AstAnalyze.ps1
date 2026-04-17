@@ -22,6 +22,7 @@ function AstAnalyze([System.Management.Automation.Language.ScriptBlockAst]$Ast) 
 	$script:ConstTypes = @('Boolean', 'Char', 'DateTime', 'Decimal', 'Double', 'Int16', 'Int32', 'Int64', 'Int8', 'Int', 'Single', 'String', 'UInt16', 'UInt32', 'UInt64', 'UInt8', 'Void', 'Regex', 'System.Text.RegularExpressions.RegexOptions', 'HashTable', 'OrderedDictionary', 'PSObject', 'PSVariable', 'PSNoteProperty', 'PSMemberInfo', 'PSCustomObject', 'Math', 'Array', 'ref', 'Guid')
 	$script:ConstAttributes = @('cmdletbinding', 'cmdlet', 'parameter', 'alias')
 	$script:EffectVariables = @('ConfirmPreference', 'DebugPreference', 'EnabledExperimentalFeatures', 'ErrorActionPreference', 'ErrorView', 'ExecutionContext', 'FormatEnumerationLimit', 'HOME', 'Host', 'InformationPreference', 'input', 'MaximumHistoryCount', 'NestedPromptLevel', 'OutputEncoding', 'PID', 'PROFILE', 'ProgressPreference', 'PSBoundParameters', 'PSCommandPath', 'PSCulture', 'PSDefaultParameterValues', 'PSEdition', 'PSEmailServer', 'PSGetAPI', 'PSHOME', 'PSNativeCommandArgumentPassing', 'PSNativeCommandUseErrorActionPreference', 'PSScriptRoot', 'PSSessionApplicationName', 'PSSessionConfigurationName', 'PSSessionOption', 'PSStyle', 'PSUICulture', 'PSVersionTable', 'PWD', 'ShellId', 'StackTrace', 'VerbosePreference', 'WarningPreference', 'WhatIfPreference')
+	$script:BuiltInCommands = @()
 	$script:AnalyzeResult = @{
 		IsConst                  = $true
 		ImporttedExternalScripts = $false
@@ -40,9 +41,53 @@ function AstAnalyze([System.Management.Automation.Language.ScriptBlockAst]$Ast) 
 		}
 		return $false
 	}
+	function Get-StaticGetCommandNameArgument([System.Management.Automation.Language.CommandAst]$cmdAst) {
+		try {
+			$binding = [System.Management.Automation.Language.StaticParameterBinder]::BindCommand($cmdAst, $true)
+			if (-not $binding.BoundParameters.ContainsKey('Name')) {
+				return $null
+			}
+			$argAst = $binding.BoundParameters['Name'].Value
+			if ($argAst -isnot [System.Management.Automation.Language.StringConstantExpressionAst]) {
+				return $null
+			}
+			return $argAst.Value
+		}
+		catch {
+			return $null
+		}
+	}
+	function Test-ConstGetCommandCmdlet([System.Management.Automation.Language.CommandAst]$cmdAst) {
+		$verb = $cmdAst.CommandElements[0].Value
+		if ($null -eq $verb) {
+			return $false
+		}
+		if (@('gcm', 'get-command') -notcontains $verb.ToLowerInvariant()) {
+			return $false
+		}
+		$staticName = Get-StaticGetCommandNameArgument $cmdAst
+		if (-not $staticName) {
+			return $false
+		}
+		try {
+			$cmdInfo = Get-Command -Name $staticName -ErrorAction Stop
+			if ($cmdInfo.Source -match '^Microsoft\.PowerShell\.') {
+				return $true
+			}
+		}
+		catch { <# ignore #> }
+		if (-not $script:BuiltInCommands.Count) {
+			$script:BuiltInCommands = powershell -noprofile -nologo -Command 'gcm -ListImported -Type @(''Cmdlet'',''Function'',''Alias'') *|%{$_.Name}'
+		}
+		return $script:BuiltInCommands -contains $staticName
+	}
 	function AstMapper($Ast) {
 		if ($Ast -is [System.Management.Automation.Language.CommandAst]) {
-			if ($script:ConstCommands -notcontains $Ast.CommandElements[0].Value) {
+			$isAllowedConstCmd = $script:ConstCommands -contains $Ast.CommandElements[0].Value
+			if ($script:AnalyzeResult.IsConst -and (-not $isAllowedConstCmd) -and (Test-ConstGetCommandCmdlet $Ast)) {
+				$isAllowedConstCmd = $true
+			}
+			if (-not $isAllowedConstCmd) {
 				$script:AnalyzeResult.IsConst = $false
 				$script:AnalyzeResult.UsedNonConstFunctions += $Ast.CommandElements[0].Value
 			}
@@ -104,6 +149,6 @@ function AstAnalyze([System.Management.Automation.Language.ScriptBlockAst]$Ast) 
 	$script:AnalyzeResult.UsedNonConstVariables = $script:AnalyzeResult.UsedNonConstVariables | Sort-Object -Unique | Where-Object { $_ }
 	$script:AnalyzeResult.UsedNonConstFunctions = $script:AnalyzeResult.UsedNonConstFunctions | Sort-Object -Unique | Where-Object { $_ }
 	$local:AnalyzeResult = $script:AnalyzeResult
-	Remove-Variable -Name @('ConstCommands', 'ConstVariables', 'ConstTypes', 'EffectVariables', 'AnalyzeResult') -Scope Script
+	Remove-Variable -Name @('ConstCommands', 'ConstVariables', 'ConstTypes', 'EffectVariables', 'AnalyzeResult', 'BuiltInCommands') -Scope Script
 	return $local:AnalyzeResult
 }
