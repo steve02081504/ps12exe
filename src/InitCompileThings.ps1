@@ -40,6 +40,9 @@ else {
 	}
 }
 
+$smaRef = @($referenceAssembies) | Where-Object { $_ -and ([IO.Path]::GetFileName($_) -ieq 'System.Management.Automation.dll') } | Select-Object -First 1
+$isPwsh20Sma = $smaRef -and [Reflection.AssemblyName]::GetAssemblyName($smaRef).Version.Major -lt 3
+
 . $PSScriptRoot\BuildFrame.ps1
 
 [string[]]$Constants = @()
@@ -56,7 +59,7 @@ if ($noVisualStyles) { $Constants += "noVisualStyles" }
 if ($exitOnCancel) { $Constants += "exitOnCancel" }
 if ($UNICODEEncoding) { $Constants += "UNICODEEncoding" }
 if ($winFormsDPIAware) { $Constants += "winFormsDPIAware" }
-if ($targetRuntime -eq 'Framework2.0') { $Constants += "Pwsh20" }
+if ($isPwsh20Sma) { $Constants += "Pwsh20" }
 
 if (-not $TempDir) {
 	$TempDir = $TempTempDir = [System.IO.Path]::GetTempPath() + [System.IO.Path]::GetRandomFileName()

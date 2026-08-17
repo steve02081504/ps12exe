@@ -1,7 +1,7 @@
 ﻿$type = ('System.Collections.Generic.Dictionary`2') -as "Type"
 $type = $type.MakeGenericType(@([String], [String]) )
 $o = [Activator]::CreateInstance($type)
-if ($targetRuntime -eq 'Framework2.0') {
+if ($isPwsh20Sma) {
 	$o.Add("CompilerVersion", "v3.5")
 }
 else { $o.Add("CompilerVersion", "v4.0") }

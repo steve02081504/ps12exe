@@ -718,7 +718,7 @@ try {
 		if (!$TinySharpSuccess) {
 			Write-I18n Host CompilingFile
 			Write-TaskbarProgress -Percent 25
-			if ($targetRuntime -eq 'Framework2.0') { $TargetFramework = ".NETFramework,Version=v2.0" }
+			if ($isPwsh20Sma) { $TargetFramework = ".NETFramework,Version=v2.0" }
 			if ($PSVersionTable.PSEdition -eq "Core") {
 				# unfinished!
 				if (!$TargetFramework) {

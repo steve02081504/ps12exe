@@ -92,6 +92,17 @@ if ($LASTEXITCODE) { exit $LASTEXITCODE }
 		throw "Write-Error should appear before success output (pwsh order), got: $($errOrder.Output)"
 	}
 
+	# Framework2.0：PS2 引擎缺失时仍应能编过（引用需含 System.Core，否则 CS0012 IDynamicMetaObjectProvider）
+	$fw20Ps1 = Join-Path $buildDir 'fw20-err-order.ps1'
+	$fw20Exe = Join-Path $buildDir 'fw20-err-order.exe'
+	Set-Content -LiteralPath $fw20Ps1 -Encoding UTF8 -Value "Write-Error 'a'; Write-Output '123'"
+	ps12exe -inputFile $fw20Ps1 -outputFile $fw20Exe -targetRuntime Framework2.0 | Write-Host
+	if (-not (Test-Path -LiteralPath $fw20Exe)) { throw 'Framework2.0 compile produced no exe' }
+	$fw20 = Invoke-ExeCaptureMergedOutput -ExePath $fw20Exe
+	if ($fw20.Output -notmatch '(?s)a.*123') {
+		throw "Framework2.0 exe output mismatch, got: $($fw20.Output)"
+	}
+
 	# Pipeline/redirection: when stdout is redirected, ps12exe outputs only the exe path
 	Set-Content -LiteralPath (Join-Path $buildDir 'redirect_test.ps1') -Value "Write-Output 'redirect-test'" -Encoding UTF8
 	$expectedExePath = [System.IO.Path]::GetFullPath((Join-Path $buildDir 'redirect_test.exe'))
