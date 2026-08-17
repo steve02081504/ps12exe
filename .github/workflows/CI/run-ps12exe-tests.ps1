@@ -13,6 +13,17 @@ try {
 	Import-Module $repoRoot -Force
 	New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
 
+	# winpwsh：引用收集不得往 $error 塞 Load 失败（EAP Stop 下会冒充编译失败，打出 CompilationFailed / OppsSomethingWentWrong）
+	$error.Clear()
+	$errCleanPs1 = Join-Path $buildDir 'error-clean.ps1'
+	$errCleanExe = Join-Path $buildDir 'error-clean.exe'
+	Set-Content -LiteralPath $errCleanPs1 -Encoding UTF8 -Value "Write-Error 'a'; Write-Output 'error-clean'"
+	ps12exe -inputFile $errCleanPs1 -outputFile $errCleanExe | Write-Host
+	if (-not (Test-Path -LiteralPath $errCleanExe)) { throw 'error-clean compile produced no exe' }
+	if ($error.Count) {
+		throw "ps12exe polluted `$error during successful compile: $($error | Out-String)"
+	}
+
 	# 构建主 exe
 	& $repoRoot/ps12exe.ps1 $repoRoot/ps12exe.ps1 $repoRoot/build/ps12exe.exe -Verbose | Write-Host
 	if (-not (Test-Path (Join-Path $buildDir 'ps12exe.exe'))) { throw 'ps12exe.exe not built' }
@@ -92,6 +103,56 @@ if ($LASTEXITCODE) { exit $LASTEXITCODE }
 		throw "Write-Error should appear before success output (pwsh order), got: $($errOrder.Output)"
 	}
 
+	# exe 宿主内嵌套跑 ps12exe（issue 60）：控制组编译到新路径必须成功；复现组目标是宿主自身（被占用）时，失败原因必须对用户可见，不能只打出"编译失败！"就没了
+	# 根因不在 ps12exe.ps1 的输出方式，而在 default.cs 编译出的宿主如何渲染 Streams.Error：
+	# PSRunnerEntry.Main 里 Streams.Error.DataAdded 是纯异步单次回调，回调本身一旦抛异常（比如 Console.ForegroundColor
+	# 在个别宿主控制台状态下会抛 IOException）会被 PS 引擎的事件分发悄悄吞掉——没有崩溃、没有第二次机会，这条错误就彻底消失，
+	# 且不影响后续脚本继续跑（所以"编译失败！"这种后续提示还能正常出现，非常具有迷惑性）。
+	# 修复方式：DataAdded 回调自身加 try/catch 兜底 + 记录已渲染下标；EndInvoke 后对 Streams.Error 做一次收尾扫描，
+	# 把回调没成功渲染的错误补上。这是这两个宿主测试用例真正要守住的不变式，不是"能不能编译成功"这么简单。
+	$nestedDir = Join-Path $buildDir 'nested'
+	New-Item -ItemType Directory -Path $nestedDir -Force | Out-Null
+	$nestedInnerPs1 = Join-Path $nestedDir 'inner.ps1'
+	Set-Content -LiteralPath $nestedInnerPs1 -Encoding UTF8 -Value "Write-Output 'inner-ok'"
+
+	$nestedOkHostPs1 = Join-Path $nestedDir 'host-ok.ps1'
+	$nestedOkHostExe = Join-Path $nestedDir 'host-ok.exe'
+	$nestedOkInnerExe = Join-Path $nestedDir 'inner-ok.exe'
+	Set-Content -LiteralPath $nestedOkHostPs1 -Encoding UTF8 -Value @"
+Import-Module '$repoRoot' -Force
+`$Error.Clear()
+ps12exe -inputFile '$nestedInnerPs1' -outputFile '$nestedOkInnerExe' -SkipVersionCheck
+Write-Host "NESTED_LASTEXITCODE=`$LastExitCode"
+Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
+"@
+	ps12exe -inputFile $nestedOkHostPs1 -outputFile $nestedOkHostExe | Write-Host
+	$nestedOk = Invoke-ExeCaptureMergedOutput -ExePath $nestedOkHostExe -TimeoutSeconds 60
+	if (-not (Test-Path -LiteralPath $nestedOkInnerExe)) {
+		throw "nested ps12exe (control) did not produce inner exe, host output: $($nestedOk.Output)"
+	}
+	if ($nestedOk.Output -notmatch 'NESTED_LASTEXITCODE=0') {
+		throw "nested ps12exe (control) did not report success exit code, got: $($nestedOk.Output)"
+	}
+
+	$nestedFailHostPs1 = Join-Path $nestedDir 'host-fail.ps1'
+	$nestedFailHostExe = Join-Path $nestedDir 'host-fail.exe'
+	Set-Content -LiteralPath $nestedFailHostPs1 -Encoding UTF8 -Value @"
+Import-Module '$repoRoot' -Force
+`$Error.Clear()
+ps12exe -inputFile '$nestedInnerPs1' -outputFile `$PSCommandPath -SkipVersionCheck
+Write-Host "NESTED_LASTEXITCODE=`$LastExitCode"
+Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
+`$Error | ForEach-Object { Write-Host "NESTED_ERROR_TEXT: `$_" }
+"@
+	ps12exe -inputFile $nestedFailHostPs1 -outputFile $nestedFailHostExe | Write-Host
+	$nestedFail = Invoke-ExeCaptureMergedOutput -ExePath $nestedFailHostExe -TimeoutSeconds 60
+	if ($nestedFail.Output -notmatch 'NESTED_LASTEXITCODE=[1-3]') {
+		throw "nested ps12exe (self-overwrite) should fail with a documented LastExitCode, got: $($nestedFail.Output)"
+	}
+	if ($nestedFail.Output -notmatch '(?i)CS0016|being used by another process') {
+		throw "nested ps12exe swallowed the real compile failure reason (issue 60), got: $($nestedFail.Output)"
+	}
+
 	# Framework2.0：PS2 引擎缺失时仍应能编过（引用需含 System.Core，否则 CS0012 IDynamicMetaObjectProvider）
 	$fw20Ps1 = Join-Path $buildDir 'fw20-err-order.ps1'
 	$fw20Exe = Join-Path $buildDir 'fw20-err-order.exe'
@@ -104,10 +165,17 @@ if ($LASTEXITCODE) { exit $LASTEXITCODE }
 	}
 
 	# Pipeline/redirection: when stdout is redirected, ps12exe outputs only the exe path
-	Set-Content -LiteralPath (Join-Path $buildDir 'redirect_test.ps1') -Value "Write-Output 'redirect-test'" -Encoding UTF8
-	$expectedExePath = [System.IO.Path]::GetFullPath((Join-Path $buildDir 'redirect_test.exe'))
-	$capturedPath = & $repoRoot/ps12exe.ps1 -inputFile (Join-Path $buildDir 'redirect_test.ps1') 2>$null
-	if ([System.IO.Path]::GetFullPath($capturedPath) -ne $expectedExePath) { throw "ps12exe redirect: expected path $expectedExePath , got: $capturedPath" }
+	$redirectPs1 = Join-Path $buildDir 'redirect_test.ps1'
+	$redirectExe = Join-Path $buildDir 'redirect_test.exe'
+	Set-Content -LiteralPath $redirectPs1 -Value "Write-Output 'redirect-test'" -Encoding UTF8
+	$expectedExePath = [System.IO.Path]::GetFullPath($redirectExe)
+	$capturedPath = & $repoRoot/ps12exe.ps1 -inputFile $redirectPs1 -outputFile $redirectExe 2>$null
+	if ([string]::IsNullOrWhiteSpace($capturedPath)) {
+		throw "ps12exe redirect: stdout empty after compile (expected path $expectedExePath)"
+	}
+	if ([System.IO.Path]::GetFullPath($capturedPath) -ne $expectedExePath) {
+		throw "ps12exe redirect: expected path $expectedExePath , got: $capturedPath"
+	}
 
 	# 供 workflow 上传产物：将 exe 拷到仓库根
 	Copy-Item -LiteralPath (Join-Path $buildDir 'ps12exe.exe') -Destination (Join-Path $repoRoot 'ps12exe.exe') -Force

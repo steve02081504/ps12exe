@@ -339,6 +339,13 @@ $Params.Remove('PreprocessOnly') | Out-Null # Remove PreprocessOnly from params 
 function bytesOfString([string]$str) {
 	if ($str) { [system.Text.Encoding]::UTF8.GetBytes($str).Count } else { 0 }
 }
+function Test-StdoutRedirected {
+	# Console redirect (pipe / 1>file). In interactive ConsoleHost, `$exe = ps12exe` captures stdout
+	# without setting IsOutputRedirected — still stdout capture, not stderr (2>$null alone).
+	if ([System.Console]::IsOutputRedirected) { return $true }
+	$line = (Get-PSCallStack)[1].InvocationInfo.Line
+	return $line -match '\$\w+\s*='
+}
 #_if PSScript #在PSEXE中主机永远是winpwsh，所以不会内嵌
 if (!$nested) {
 #_endif
@@ -611,7 +618,7 @@ function UsingWinPowershell($Boundparameters) {
 }
 if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerShell -and (Get-Command powershell -ErrorAction Ignore)) {
 	UsingWinPowershell $Params
-	if ([System.Console]::IsOutputRedirected -or [System.Console]::IsInputRedirected -or [System.Console]::IsErrorRedirected) {
+	if (Test-StdoutRedirected) {
 		Write-Output $outputFile
 	}
 	return
@@ -815,7 +822,7 @@ try {
 			}
 		}
 	}
-	if (!$nested -and [System.Console]::IsOutputRedirected) {
+	if (!$nested -and (Test-StdoutRedirected)) {
 		Write-Output $outputFile
 	}
 }
@@ -858,10 +865,10 @@ $($_ | Format-List | Out-String)
 		}
 		Write-I18n Host OppsSomethingWentWrong -ForegroundColor Yellow
 		if ($versionNow -eq '0.0.0') {} # dev version, do noting
-		if ($versionNow -ne $versionOnline) {
+		elseif ($versionNow -ne $versionOnline) {
 			Write-I18n Host TryUpgrade $versionOnline -ForegroundColor Yellow
 		}
-		elseif (![System.Console]::IsOutputRedirected) {
+		elseif (-not (Test-StdoutRedirected)) {
 			Write-I18n Host EnterToSubmitIssue -ForegroundColor Yellow
 			Read-Host | Out-Null
 			Start-Process $githubfeedback

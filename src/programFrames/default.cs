@@ -1656,12 +1656,18 @@ namespace PSRunnerNS {
 		public override void WriteLine(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value) {
 			#if !noOutput
 			#if !noConsole
-				ConsoleColor fgc = Console.ForegroundColor, bgc = Console.BackgroundColor;
-				Console.ForegroundColor = foregroundColor;
-				Console.BackgroundColor = backgroundColor;
-				Console.WriteLine(value);
-				Console.ForegroundColor = fgc;
-				Console.BackgroundColor = bgc;
+				// 上色本身可能因宿主控制台状态异常而抛错（比如句柄暂时无效）；上色失败也不能让这行内容干脆不出现。
+				try {
+					ConsoleColor fgc = Console.ForegroundColor, bgc = Console.BackgroundColor;
+					Console.ForegroundColor = foregroundColor;
+					Console.BackgroundColor = backgroundColor;
+					Console.WriteLine(value);
+					Console.ForegroundColor = fgc;
+					Console.BackgroundColor = bgc;
+				}
+				catch {
+					Console.WriteLine(value);
+				}
 			#else
 				if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
 					MessageBox.Show(value, rawUI.WindowTitle);
@@ -1671,12 +1677,18 @@ namespace PSRunnerNS {
 
 		#if !(noError || noConsole)
 		private void WriteLineInternal(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value) {
-			ConsoleColor fgc = Console.ForegroundColor, bgc = Console.BackgroundColor;
-			Console.ForegroundColor = foregroundColor;
-			Console.BackgroundColor = backgroundColor;
-			Console.WriteLine(value);
-			Console.ForegroundColor = fgc;
-			Console.BackgroundColor = bgc;
+			// 同上：ERROR/WARNING/DEBUG 走这条路，上色失败绝不能让失败原因本身消失（issue 60）。
+			try {
+				ConsoleColor fgc = Console.ForegroundColor, bgc = Console.BackgroundColor;
+				Console.ForegroundColor = foregroundColor;
+				Console.BackgroundColor = backgroundColor;
+				Console.WriteLine(value);
+				Console.ForegroundColor = fgc;
+				Console.BackgroundColor = bgc;
+			}
+			catch {
+				Console.WriteLine(value);
+			}
 		}
 		#endif
 
@@ -2011,7 +2023,6 @@ namespace PSRunnerNS {
 
 				me.Inited = true;
 				me.pwsh.EndInvoke(asyncResult);
-
 				me.pwsh.Stop();
 
 				if (me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed)

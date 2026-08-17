@@ -4,7 +4,7 @@
 		[System.AppDomain]::CurrentDomain.Load($n).Location
 	}
 	catch {
-		$Error.Remove(0)
+		$error.RemoveAt(0)
 	}
 }
 $referenceAssembies = if ($targetRuntime -eq 'Framework2.0') {
@@ -20,7 +20,7 @@ else {
 	# [int].Assembly.Location 等基础类型的程序集也是它。
 	GetAssembly "mscorlib"
 	if ($PSVersionTable.PSEdition -eq "Core") { GetAssembly "System.Runtime" }
-	GetAssembly "System.IO.Compression"
+	GetAssembly "System.IO.Compression" $(if ($PSVersionTable.PSEdition -ne "Core") { "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" })
 	GetAssembly "System.Management.Automation"
 
 	# If noConsole is true, add System.Windows.Forms.dll and System.Drawing.dll to the reference assemblies

@@ -48,6 +48,15 @@ elseif (-not $Full) {
 	Write-Output "CI (incremental): RunPs12exe=$runPs12exe RunExe21sp=$runExe21sp RunTinysharp=$runTinysharp"
 }
 
-if ($runPs12exe) { & (Join-Path $ciDir 'run-ps12exe-tests.ps1') }
-if ($runExe21sp) { & (Join-Path $ciDir 'run-exe21sp-tests.ps1') }
-if ($runTinysharp) { & (Join-Path $ciDir 'run-tinysharp-tests.ps1') }
+if ($runPs12exe) {
+	& powershell -NoProfile -File (Join-Path $ciDir 'run-ps12exe-tests.ps1')
+	if ($LastExitCode) { exit $LastExitCode }
+}
+if ($runExe21sp) {
+	& powershell -NoProfile -File (Join-Path $ciDir 'run-exe21sp-tests.ps1')
+	if ($LastExitCode) { exit $LastExitCode }
+}
+if ($runTinysharp) {
+	& powershell -NoProfile -File (Join-Path $ciDir 'run-tinysharp-tests.ps1')
+	if ($LastExitCode) { exit $LastExitCode }
+}
