@@ -14,8 +14,9 @@ $pathToGroups = @{
 		'src/CodeDomCompiler.ps1', 'src/CodeAnalysisCompiler.ps1', 'src/ExeSinker.ps1',
 		'src/InitCompileThings.ps1', 'src/ConstProgramCheck.ps1', 'src/ReadScriptFile.ps1',
 		'src/GUI/', 'src/Interact/main.ps1', 'src/WebServer/',
+		'src/programFrames/default.cs', 'src/programFrames/DllExport.cs',
 		'src/LocaleLoader.ps1', 'src/HelpShower.ps1', 'src/predicate.ps1',
-		'.github/workflows/CI/run-ps12exe-tests.ps1'
+		'.github/workflows/CI/run-ps12exe-tests.ps1', '.github/workflows/CI/test-helpers.ps1'
 	)
 	'exe21sp'    = @(
 		'exe21sp.ps1', 'src/Interact/exe21sp.ps1', 'src/programFrames/exe21sp.cs',
@@ -29,7 +30,7 @@ $pathToGroups = @{
 
 # 反向：组 -> 匹配用的路径前缀/精确
 $groupPatterns = @{
-	ps12exe   = @('ps12exe.ps1', 'ps12exe.psm1', 'ps12exe.psd1', 'src/CodeDom', 'src/CodeAnalysis', 'src/ExeSinker', 'src/InitCompile', 'src/ConstProgramCheck', 'src/ReadScriptFile', 'src/GUI/', 'src/Interact/main', 'src/WebServer/', 'src/LocaleLoader', 'src/HelpShower', 'src/predicate', '.github/workflows/CI/run-ps12exe')
+	ps12exe   = @('ps12exe.ps1', 'ps12exe.psm1', 'ps12exe.psd1', 'src/CodeDom', 'src/CodeAnalysis', 'src/ExeSinker', 'src/InitCompile', 'src/ConstProgramCheck', 'src/ReadScriptFile', 'src/GUI/', 'src/Interact/main', 'src/WebServer/', 'src/programFrames/default.cs', 'src/programFrames/DllExport.cs', 'src/LocaleLoader', 'src/HelpShower', 'src/predicate', '.github/workflows/CI/run-ps12exe', '.github/workflows/CI/test-helpers')
 	exe21sp   = @('exe21sp.ps1', 'src/Interact/exe21sp', 'src/programFrames/exe21sp.cs', '.github/workflows/CI/run-exe21sp')
 	tinysharp = @('src/programFrames/TinySharp.cs', 'src/TinySharpCompiler', 'src/ConstProgramCheck', '.github/workflows/CI/run-tinysharp')
 }

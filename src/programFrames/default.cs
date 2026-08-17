@@ -1992,38 +1992,22 @@ namespace PSRunnerNS {
 				}
 				colInput.Complete();
 
-				PSDataCollection<PSObject> colOutput = new PSDataCollection<PSObject>();
-
 				for(int i = 0; i < args.Length; i++) {
 					if (!Regex.IsMatch(args[i], @"^(-|\$)\w*$"))
 						args[i] = "\'"+args[i].Replace("'", "''")+"\'";
 				}
 
 				me.pwsh.Runspace.SessionStateProxy.SetVariable("PSEXEInput", colInput);
-				me.pwsh.AddScript("$PSEXEInput|PSEXEMainFunction "+String.Join(" ", args)+"|Out-String -Stream");
-
-				// 使用 BeginInvoke 的重载，传入 colOutput
-				IAsyncResult asyncResult = me.pwsh.BeginInvoke<string, PSObject>(new PSDataCollection<string> (), colOutput);
-
-				// 在单独的线程中处理输出和错误
-				System.Threading.ThreadPool.QueueUserWorkItem(_ => {
-					try {
-						foreach (PSObject outputItem in colOutput)
-							me.ui.WriteLine(outputItem.ToString());
-						foreach (ErrorRecord errorItem in me.pwsh.Streams.Error)
-							me.ui.WriteErrorRecord(errorItem);
-					}
-					catch (Exception ex) {
-						me.ui.WriteErrorLine(ex.Message);
-						me.ExitCode = 1;
-					}
-					finally {
-						mre.Set(); //确保所有输出都已处理
-					}
-				});
+				// Out-Default 走 host UI；勿用 Out-String/输出收集，否则 native 子进程 stdout 会变成管道（非 TTY）
+				me.pwsh.AddScript("$PSEXEInput|PSEXEMainFunction "+String.Join(" ", args));
+				me.pwsh.AddCommand("Out-Default");
+				me.pwsh.Streams.Error.DataAdded += (sender, eventargs) => {
+					me.ui.WriteErrorRecord(((PSDataCollection<ErrorRecord>)sender)[eventargs.Index]);
+				};
+				IAsyncResult asyncResult = me.pwsh.BeginInvoke();
 
 				while (!mre.WaitOne(100))
-					if (me.ShouldExit) break;
+					if (me.ShouldExit || asyncResult.IsCompleted) break;
 
 				me.Inited = true;
 				me.pwsh.EndInvoke(asyncResult);

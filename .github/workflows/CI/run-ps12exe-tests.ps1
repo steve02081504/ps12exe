@@ -36,6 +36,62 @@ try {
 	}
 	& $repoRoot/build/hello.exe | Write-Host
 
+	# Native child stdout TTY（issue 59）：独立 console 下 `& powershell` 的 stdout 必须是 console，不能被宿主 Out-String 收成管道
+	$ttyDir = Join-Path $buildDir 'tty'
+	New-Item -ItemType Directory -Path $ttyDir -Force | Out-Null
+	$ttyChildPs1 = Join-Path $ttyDir 'child.ps1'
+	$ttyProbePs1 = Join-Path $ttyDir 'probe.ps1'
+	$ttyProbeExe = Join-Path $ttyDir 'probe.exe'
+	$ttyChildFlag = Join-Path $ttyDir 'child-redirected.txt'
+	$ttyHostJson = Join-Path $ttyDir 'host.json'
+	Set-Content -LiteralPath $ttyChildPs1 -Encoding UTF8 -Value @'
+[System.IO.File]::WriteAllText($env:PS12EXE_TTY_CHILD, ([Console]::IsOutputRedirected).ToString())
+'@
+	Set-Content -LiteralPath $ttyProbePs1 -Encoding UTF8 -Value @'
+@{
+	hostName = $Host.Name
+	inRedirected = [Console]::IsInputRedirected
+	outRedirected = [Console]::IsOutputRedirected
+} | ConvertTo-Json -Compress | Set-Content -LiteralPath $env:PS12EXE_TTY_HOST -Encoding UTF8
+Remove-Item -LiteralPath $env:PS12EXE_TTY_CHILD -ErrorAction Ignore
+$powershell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+& $powershell -NoProfile -NonInteractive -File $env:PS12EXE_TTY_CHILD_PS1
+if ($LASTEXITCODE) { exit $LASTEXITCODE }
+'@
+	ps12exe -inputFile $ttyProbePs1 -outputFile $ttyProbeExe | Write-Host
+	$env:PS12EXE_TTY_CHILD = $ttyChildFlag
+	$env:PS12EXE_TTY_HOST = $ttyHostJson
+	$env:PS12EXE_TTY_CHILD_PS1 = $ttyChildPs1
+	$ttyExit = Invoke-ExeWithPrivateConsole -ExePath $ttyProbeExe
+	if ($ttyExit -ne 0) { throw "tty probe exit $ttyExit" }
+	$ttyHost = Get-Content -LiteralPath $ttyHostJson -Raw | ConvertFrom-Json
+	if ($ttyHost.outRedirected) { throw "tty probe host stdout redirected (private console expected): $ttyHostJson" }
+	$ttyChildRedirected = Get-Content -LiteralPath $ttyChildFlag -Raw
+	if ($ttyChildRedirected.Trim() -ne 'False') {
+		throw "native child stdout redirected under console EXE (issue 59): $ttyChildRedirected"
+	}
+
+	# 宿主 stdout 被管道接走时，native 输出仍应出现在捕获结果里
+	$echoPs1 = Join-Path $buildDir 'native-echo.ps1'
+	$echoExe = Join-Path $buildDir 'native-echo.exe'
+	Set-Content -LiteralPath $echoPs1 -Encoding UTF8 -Value "cmd /c echo native-hello"
+	ps12exe -inputFile $echoPs1 -outputFile $echoExe | Write-Host
+	$echoOut = & $echoExe
+	if ("$echoOut" -notmatch 'native-hello') { throw "redirected native stdout lost, got: $echoOut" }
+
+	# Write-Error 与成功输出的先后应与 pwsh 一致（错误先于后续 Write-Output）
+	$errOrderPs1 = Join-Path $buildDir 'err-order.ps1'
+	$errOrderExe = Join-Path $buildDir 'err-order.exe'
+	Set-Content -LiteralPath $errOrderPs1 -Encoding UTF8 -Value "Write-Error 'err-a'; Write-Output 'out-b'"
+	ps12exe -inputFile $errOrderPs1 -outputFile $errOrderExe | Write-Host
+	$errOrder = Invoke-ExeCaptureMergedOutput -ExePath $errOrderExe
+	if ([string]::IsNullOrWhiteSpace($errOrder.Output)) {
+		throw "err-order exe produced no captured output"
+	}
+	if ($errOrder.Output -notmatch '(?s)err-a.*out-b') {
+		throw "Write-Error should appear before success output (pwsh order), got: $($errOrder.Output)"
+	}
+
 	# Pipeline/redirection: when stdout is redirected, ps12exe outputs only the exe path
 	Set-Content -LiteralPath (Join-Path $buildDir 'redirect_test.ps1') -Value "Write-Output 'redirect-test'" -Encoding UTF8
 	$expectedExePath = [System.IO.Path]::GetFullPath((Join-Path $buildDir 'redirect_test.exe'))

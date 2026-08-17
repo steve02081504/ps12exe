@@ -121,3 +121,61 @@ public class CIWindowHelper {
 	}
 	return $p.ExitCode
 }
+
+# 经 cmd 把 stdout/stderr 接到同一文件，保留进程内写入顺序。
+function Invoke-ExeCaptureMergedOutput {
+	param(
+		[string]$ExePath,
+		[int]$TimeoutSeconds = 30
+	)
+	$exePath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ExePath)
+	if (-not (Test-Path -LiteralPath $exePath -PathType Leaf)) {
+		throw "Exe not found: $exePath"
+	}
+	$outFile = Join-Path ([System.IO.Path]::GetDirectoryName($exePath)) ('merged-{0}.txt' -f [guid]::NewGuid().ToString('N'))
+	$cmdLine = '"{0}" 1>"{1}" 2>&1' -f $exePath, $outFile
+	$psi = [System.Diagnostics.ProcessStartInfo]@{
+		FileName         = $env:ComSpec
+		Arguments        = "/s /c `"$cmdLine`""
+		UseShellExecute  = $false
+		CreateNoWindow   = $true
+		WorkingDirectory = [System.IO.Path]::GetDirectoryName($exePath)
+	}
+	$p = [System.Diagnostics.Process]::Start($psi)
+	try {
+		if (-not $p.WaitForExit($TimeoutSeconds * 1000)) {
+			throw "Merged-output exe timed out: $exePath"
+		}
+		$output = Get-Content -LiteralPath $outFile -Raw -ErrorAction SilentlyContinue
+		return [pscustomobject]@{
+			ExitCode = $p.ExitCode
+			Output   = $output
+		}
+	} finally {
+		if (-not $p.HasExited) { $p.Kill() }
+		$p.Dispose()
+		Remove-Item -LiteralPath $outFile -Force -ErrorAction SilentlyContinue
+	}
+}
+
+# 给控制台 EXE 单独开一个 hidden console，避免当前进程 stdout 已重定向时子进程继承管道。
+# 用于 TTY / isatty 类测试：结果应写文件，不要靠捕获本函数的 stdout。
+function Invoke-ExeWithPrivateConsole {
+	param(
+		[string]$ExePath,
+		[int]$TimeoutSeconds = 30
+	)
+	$exePath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ExePath)
+	if (-not (Test-Path -LiteralPath $exePath -PathType Leaf)) {
+		throw "Exe not found: $exePath"
+	}
+	$p = Start-Process -FilePath $exePath -WorkingDirectory ([System.IO.Path]::GetDirectoryName($exePath)) -PassThru -WindowStyle Hidden
+	try {
+		if (-not $p.WaitForExit($TimeoutSeconds * 1000)) {
+			throw "Private console exe timed out: $exePath"
+		}
+		return $p.ExitCode
+	} finally {
+		if (-not $p.HasExited) { $p.Kill() }
+	}
+}
