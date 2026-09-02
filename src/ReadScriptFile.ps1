@@ -49,6 +49,7 @@ function ReadScriptFile($File) {
 }
 . $PSScriptRoot\predicate.ps1
 . $PSScriptRoot\PSObjectToString.ps1
+. $PSScriptRoot\AstAnalyze.ps1
 function Preprocessor($Content, $FilePath) {
 	$Result = @()
 	$requiredModules = @()
@@ -100,6 +101,49 @@ function Preprocessor($Content, $FilePath) {
 			$file = "$ScriptRoot/$file"
 		}
 		$file
+	}
+	# 校验 pragma 子表达式是否只使用白名单内的 path 相关命令/变量。
+	# 返回：$true 表示安全；否则返回一个含具体原因的字符串数组。
+	function Test-PragmaExpressionSafe([string]$Expr) {
+		$PragmaSafeCommands = @('gcm', 'get-command', 'join-path', 'split-path', 'resolve-path', 'convert-path', 'get-item', 'test-path', 'get-childitem')
+		if (-not $GuestMode) { $PragmaSafeCommands += 'get-content' }
+		$PragmaSafeVariables = @('PSScriptRoot', 'ScriptRoot', 'HOME', 'PWD', 'PSCommandPath')
+		$Errors = [System.Collections.Generic.List[string]]::new()
+		$Tokens = $null
+		$ParseErrors = $null
+		$Ast = [System.Management.Automation.Language.Parser]::ParseInput($Expr, [ref]$Tokens, [ref]$ParseErrors)
+		if ($ParseErrors) {
+			$Errors.Add("parse: $($ParseErrors[0].Message)")
+			return $Errors.ToArray()
+		}
+		$Result = AstAnalyze $Ast
+		if ($Result.ImporttedExternalScripts) { $Errors.Add('external script invocation') }
+		if ($Result.UsedNonConstTypes) { $Errors.Add("type members: $($Result.UsedNonConstTypes -join ', ')") }
+		if ($Result.UsedInstanceMethods) { $Errors.Add("instance methods: $($Result.UsedInstanceMethods -join ', ')") }
+		foreach ($f in $Result.UsedNonConstFunctions) {
+			if ($PragmaSafeCommands -notcontains $f.ToLowerInvariant()) { $Errors.Add("command: $f") }
+		}
+		foreach ($v in $Result.UsedNonConstVariables) {
+			if ($PragmaSafeVariables -notcontains $v) { $Errors.Add("variable: `$$v") }
+		}
+		return $Errors.ToArray()
+	}
+	# 校验通过后对 pragma 值进行 PowerShell 字符串展开（求值 $(...) 子表达式）。
+	# 展开时临时把 $PSScriptRoot 指向被编译脚本所在目录，使子表达式内能直接引用它。
+	function Expand-PragmaExpression([string]$Value, [string]$PragmaName) {
+		$Unsafe = Test-PragmaExpressionSafe ('"' + $Value + '"')
+		if ($Unsafe) {
+			Write-I18n Error PragmaUnsafeExpression $($PragmaName, ($Unsafe -join '; ')) -Category ReadError
+			throw
+		}
+		$PSScriptRootBackup = $PSScriptRoot
+		$PSScriptRoot = $ScriptRoot
+		try {
+			return $ExecutionContext.InvokeCommand.ExpandString($Value)
+		}
+		finally {
+			$PSScriptRoot = $PSScriptRootBackup
+		}
 	}
 	$Content = $Result |
 	# 处理#_pragma
@@ -153,13 +197,24 @@ function Preprocessor($Content, $FilePath) {
 			}
 			elseif ($ParamList[$pragmaname].ParameterType -eq [string] -or $ParamList[$pragmaname + "File"].ParameterType -eq [string]) {
 				if ($value -match '^\"(?<value>[^\"]*)\"\s*(?!#.*)') {
-					$value = $Matches["value"].Replace('$PSScriptRoot', $ScriptRoot)
+					$value = $Matches["value"]
+					if ($value -match '\$\(') {
+						$value = Expand-PragmaExpression $value $pragmaname
+					}
+					else {
+						$value = $value.Replace('$PSScriptRoot', $ScriptRoot)
+					}
 				}
 				elseif ($value -match "^\'(?<value>[^\']*)\'\s*(?!#.*)") {
 					$value = $Matches["value"]
 				}
 				else {
-					$value = $value.Replace('$PSScriptRoot', $ScriptRoot)
+					if ($value -match '\$\(') {
+						$value = Expand-PragmaExpression $value $pragmaname
+					}
+					else {
+						$value = $value.Replace('$PSScriptRoot', $ScriptRoot)
+					}
 				}
 				if ($ParamList[$pragmaname].ParameterType -eq [string]) {
 					$Params[$pragmaname] = $value

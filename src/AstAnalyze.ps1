@@ -21,6 +21,7 @@ function AstAnalyze([System.Management.Automation.Language.ScriptBlockAst]$Ast) 
 	$script:ConstVariables = @('?', '^', '$', 'Error', 'false', 'IsCoreCLR', 'IsLinux', 'IsMacOS', 'IsWindows', 'null', 'true', 'PSEXEScript', 'Write-Host', 'MyInvocation')
 	$script:ConstTypes = @('Boolean', 'Char', 'DateTime', 'Decimal', 'Double', 'Int16', 'Int32', 'Int64', 'Int8', 'Int', 'Single', 'String', 'UInt16', 'UInt32', 'UInt64', 'UInt8', 'Void', 'Regex', 'System.Text.RegularExpressions.RegexOptions', 'HashTable', 'OrderedDictionary', 'PSObject', 'PSVariable', 'PSNoteProperty', 'PSMemberInfo', 'PSCustomObject', 'Math', 'Array', 'ref', 'Guid')
 	$script:ConstAttributes = @('cmdletbinding', 'cmdlet', 'parameter', 'alias')
+	$script:CommonHarmlessMethods = @('ToString', 'GetType', 'GetHashCode', 'Equals', 'CompareTo', 'ToUpper', 'ToUpperInvariant', 'ToLower', 'ToLowerInvariant', 'Trim', 'TrimStart', 'TrimEnd', 'PadLeft', 'PadRight', 'Split', 'Substring', 'Contains', 'StartsWith', 'EndsWith', 'IndexOf', 'LastIndexOf', 'IndexOfAny', 'LastIndexOfAny', 'ToCharArray', 'Replace', 'ToArray', 'ToList', 'Clone')
 	$script:EffectVariables = @('ConfirmPreference', 'DebugPreference', 'EnabledExperimentalFeatures', 'ErrorActionPreference', 'ErrorView', 'ExecutionContext', 'FormatEnumerationLimit', 'HOME', 'Host', 'InformationPreference', 'input', 'MaximumHistoryCount', 'NestedPromptLevel', 'OutputEncoding', 'PID', 'PROFILE', 'ProgressPreference', 'PSBoundParameters', 'PSCommandPath', 'PSCulture', 'PSDefaultParameterValues', 'PSEdition', 'PSEmailServer', 'PSGetAPI', 'PSHOME', 'PSNativeCommandArgumentPassing', 'PSNativeCommandUseErrorActionPreference', 'PSScriptRoot', 'PSSessionApplicationName', 'PSSessionConfigurationName', 'PSSessionOption', 'PSStyle', 'PSUICulture', 'PSVersionTable', 'PWD', 'ShellId', 'StackTrace', 'VerbosePreference', 'WarningPreference', 'WhatIfPreference')
 	$script:BuiltInCommands = @()
 	$script:AnalyzeResult = @{
@@ -29,6 +30,7 @@ function AstAnalyze([System.Management.Automation.Language.ScriptBlockAst]$Ast) 
 		UsedNonConstVariables    = @()
 		UsedNonConstFunctions    = @()
 		UsedNonConstTypes        = @()
+		UsedInstanceMethods      = @()
 	}
 	$script:ConstTypes = $script:ConstTypes | ForEach-Object { ($_ -as [Type]).FullName } | Where-Object { $_ -ne $null }
 	function IsConstType([string]$typename) {
@@ -110,6 +112,12 @@ function AstAnalyze([System.Management.Automation.Language.ScriptBlockAst]$Ast) 
 					$script:AnalyzeResult.IsConst = $false
 					$script:AnalyzeResult.UsedNonConstFunctions += "[$($Ast.Expression.TypeName)]::$($Ast.Member.Value)"
 				}
+				elseif (-not ($script:CommonHarmlessMethods -contains $Ast.Member.Value)) {
+					$script:AnalyzeResult.IsConst = $false
+					if (-not ($script:AnalyzeResult.UsedInstanceMethods -contains $Ast.Member.Value)) {
+						$script:AnalyzeResult.UsedInstanceMethods += $Ast.Member.Value
+					}
+				}
 			}
 		}
 		elseif ($Ast -is [System.Management.Automation.Language.TypeExpressionAst]) {
@@ -149,6 +157,6 @@ function AstAnalyze([System.Management.Automation.Language.ScriptBlockAst]$Ast) 
 	$script:AnalyzeResult.UsedNonConstVariables = $script:AnalyzeResult.UsedNonConstVariables | Sort-Object -Unique | Where-Object { $_ }
 	$script:AnalyzeResult.UsedNonConstFunctions = $script:AnalyzeResult.UsedNonConstFunctions | Sort-Object -Unique | Where-Object { $_ }
 	$local:AnalyzeResult = $script:AnalyzeResult
-	Remove-Variable -Name @('ConstCommands', 'ConstVariables', 'ConstTypes', 'EffectVariables', 'AnalyzeResult', 'BuiltInCommands') -Scope Script
+	Remove-Variable -Name @('ConstCommands', 'ConstVariables', 'ConstTypes', 'EffectVariables', 'AnalyzeResult', 'BuiltInCommands', 'CommonHarmlessMethods') -Scope Script
 	return $local:AnalyzeResult
 }

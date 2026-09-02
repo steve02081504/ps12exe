@@ -217,6 +217,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		UnknownPragma							  = "未知的 pragma：{0}"
 		UnknownPragmaBadParameterType			  = "未知的pragma：{0}，无法分析类型{1}。"
 		UnknownPragmaBoolValue					  = "未知的pragma值：{0}，无法将其视为bool。"
+		PragmaUnsafeExpression					  = "pragma {0} 中的表达式不安全：{1}"
 		DllExportDelNoneTypeArg					  = "{0}：{1}是无类型参数，假设它是字符串。"
 		DllExportUsing							  = "您正在使用 #_DllExport，此宏尚在开发中，尚未支持。"
 	}

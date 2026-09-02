@@ -191,6 +191,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Localize '<language code>'] [-UIMode 'Dar
 		UnknownPragma							  = "Unknown pragma: {0}"
 		UnknownPragmaBadParameterType			  = "Unknown pragma: {0}, as type {1} can't analyse."
 		UnknownPragmaBoolValue					  = "Unknown pragma value: {0}, can't take it as a boolean."
+		PragmaUnsafeExpression					  = "Unsafe expression in pragma {0}: {1}"
 		DllExportDelNoneTypeArg					  = "{0}: {1} is a none type parameter, assuming it's a string."
 		DllExportUsing							  = "You are using #_DllExport, this macro is in dev and not yet supported."
 	}

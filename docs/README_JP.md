@@ -341,6 +341,8 @@ pragma コマンドは任意のコンパイルパラメータを設定できま�
 #_pragma title "title" # exe のタイトルを設定する
 ```
 
+文字列型の pragma 値には `$(...)` 部分式を記述でき、プリプロセス時に評価されます（例：`#_pragma icon $(Join-Path $env:USERPROFILE 'foo.ico')`）。許可されるのはホワイトリストに含まれる path 関連コマンド（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`、および GuestMode 以外での `Get-Content`）、変数（`$env:*`、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）、および一般的な無害なインスタンスメソッド（例：`ToUpper`、`Trim`、`Split`、`ToString`）のみです。それ以外はコンパイルを中断します。単引用符で囲んだ値は完全にリテラルとして扱われます。
+
 #### `#_balus`
 
 ```powershell

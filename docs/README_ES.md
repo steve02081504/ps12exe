@@ -343,6 +343,8 @@ El comando pragma puede establecer cualquier parámetro de compilación:
 #_pragma title "title" #Establecer título del exe
 ```
 
+Los valores de pragma de tipo cadena también pueden contener subexpresiones `$(...)`, que se evalúan en tiempo de preprocesamiento, p. ej. `#_pragma icon $(Join-Path $env:USERPROFILE 'foo.ico')`. Solo se permiten comandos relacionados con rutas en la lista blanca (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, más `Get-Content` fuera del modo invitado), variables (`$env:*`, `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) y métodos de instancia inofensivos comunes (p. ej. `ToUpper`, `Trim`, `Split`, `ToString`); cualquier otra cosa aborta la compilación. Los valores entre comillas simples permanecen completamente literales.
+
 #### `#_balus`
 
 ```powershell

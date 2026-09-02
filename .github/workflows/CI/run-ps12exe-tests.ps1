@@ -177,6 +177,50 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 		throw "ps12exe redirect: expected path $expectedExePath , got: $capturedPath"
 	}
 
+	# #_pragma $(...) 子表达式求值（issue 60）：AST 白名单 + 访客模式安全
+	# 直接对 Preprocessor 单测：非访客模式允许白名单内的 path 命令，拒绝实例方法/危险命令；访客模式额外拒绝 Get-Content。
+	$script:GuestMode = $false
+	$script:Params = @{}
+	$ParamList = @{
+		iconFile = @{ ParameterType = [string] }
+		title	= @{ ParameterType = [string] }
+	}
+	function Write-I18n {
+		param($PipeLineType, $Mid, $FormatArgs, $Category)
+		if ($PipeLineType -eq 'Error') { throw "PragmaError:$Mid" }
+	}
+	. (Join-Path $repoRoot 'src/ReadScriptFile.ps1')
+	function Invoke-PragmaTest([string]$pragma, [bool]$guest, [string]$expect, [string]$assertParam = 'iconFile') {
+		$script:GuestMode = $guest
+		$script:Params = @{}
+		$rejected = $false
+		try { [void](Preprocessor @($pragma) "C:\compiled\main.ps1") } catch { $rejected = $true; $Error.Clear() }
+		$actual = if ($rejected) { 'REJECTED' } else { $script:Params[$assertParam] }
+		if ($expect -eq 'REJECTED') {
+			if (-not $rejected) { throw "pragma should be rejected: [$pragma] guest=$guest got value: $actual" }
+		}
+		else {
+			if ($rejected) { throw "pragma should resolve: [$pragma] guest=$guest was rejected" }
+			if ("$actual" -ne $expect) { throw "pragma value mismatch: [$pragma] guest=$guest expected [$expect] got [$actual]" }
+		}
+	}
+	$userProfileFoo = Join-Path $env:USERPROFILE 'foo.ico'
+	$pwshSource = (Get-Command pwsh).Source
+	$secretFile = Join-Path $buildDir 'pragma-secret.txt'
+	Set-Content -LiteralPath $secretFile -Encoding UTF8 -Value 'secret-value'
+	$env:PRAGMA_SECRET = $secretFile
+	Invoke-PragmaTest '#_pragma iconFile $(Join-Path $env:USERPROFILE "foo.ico")' $false $userProfileFoo
+	Invoke-PragmaTest '#_pragma iconFile $(Join-Path $env:USERPROFILE "foo.ico")' $true $userProfileFoo
+	Invoke-PragmaTest '#_pragma iconFile $((Get-Command pwsh).Source)' $false $pwshSource
+	Invoke-PragmaTest '#_pragma iconFile $((Join-Path $env:USERPROFILE "Foo.ico").ToLower())' $false (Join-Path $env:USERPROFILE 'foo.ico')
+	Invoke-PragmaTest '#_pragma iconFile $((Get-Item C:\Windows).Delete())' $false 'REJECTED'
+	Invoke-PragmaTest '#_pragma iconFile $(Remove-Item C:\x -Recurse)' $false 'REJECTED'
+	Invoke-PragmaTest '#_pragma iconFile $(Get-Content $env:PRAGMA_SECRET)' $false 'secret-value'
+	Invoke-PragmaTest '#_pragma iconFile $(Get-Content $env:PRAGMA_SECRET)' $true 'REJECTED'
+	Invoke-PragmaTest '#_pragma iconFile $PSScriptRoot/foo.ico' $false 'C:\compiled/foo.ico'
+	Invoke-PragmaTest '#_pragma title "prefix$(Split-Path $PSScriptRoot -Leaf)suffix"' $false 'prefixcompiledsuffix' 'title'
+	Remove-Item Env:\PRAGMA_SECRET -ErrorAction SilentlyContinue
+
 	# 供 workflow 上传产物：将 exe 拷到仓库根
 	Copy-Item -LiteralPath (Join-Path $buildDir 'ps12exe.exe') -Destination (Join-Path $repoRoot 'ps12exe.exe') -Force
 } catch {}

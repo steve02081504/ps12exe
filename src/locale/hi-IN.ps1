@@ -191,6 +191,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		UnknownPragma							  = "अज्ञात pragma: {0}"
 		UnknownPragmaBadParameterType			  = "अज्ञात pragma: {0}, प्रकार {1} का विश्लेषण नहीं किया जा सकता है।"
 		UnknownPragmaBoolValue					  = "अज्ञात pragma मान: {0}, इसे बूलियन के रूप में नहीं ले सकता।"
+		PragmaUnsafeExpression					  = "pragma {0} में असुरक्षित अभिव्यक्ति: {1}"
 		DllExportDelNoneTypeArg					  = "{0}: {1} एक गैर-प्रकार का पैरामीटर है, मान लें कि यह एक स्ट्रिंग है।"
 		DllExportUsing							  = "आप #_DllExport का उपयोग कर रहे हैं, यह मैक्रो अभी भी विकास के अधीन है और अभी तक समर्थित नहीं है।"
 	}

@@ -343,6 +343,8 @@ Compiled file written -> 2560 bytes
 #_pragma title "title" #एक्सई शीर्षक सेट करें
 ```
 
+स्ट्रिंग pragma मानों में `$(...)` उप-अभिव्यक्तियाँ भी हो सकती हैं, जिनका मूल्यांकन प्रीप्रोसेस समय पर किया जाता है, जैसे `#_pragma icon $(Join-Path $env:USERPROFILE 'foo.ico')`। केवल श्वेतसूचीबद्ध पथ-संबंधित कमांड (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, और GuestMode के बाहर `Get-Content`), चर (`$env:*`, `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) और सामान्य हानिरहित इंस्टेंस विधियाँ (जैसे `ToUpper`, `Trim`, `Split`, `ToString`) की अनुमति है; अन्य कुछ भी संकलन रोक देता है। एकल उद्धरण वाले मान पूरी तरह से शाब्दिक रहते हैं।
+
 #### `#_balus`
 
 ```powershell

@@ -191,6 +191,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 		UnknownPragma							  = "未知の pragma：{0}"
 		UnknownPragmaBadParameterType			  = "未知の pragma：{0}。型 {1} は解析できません。"
 		UnknownPragmaBoolValue					  = "未知の pragma 値：{0}。ブール値として解釈できません。"
+		PragmaUnsafeExpression					  = "pragma {0} に安全でない式があります：{1}"
 		DllExportDelNoneTypeArg					  = "{0}：{1} は無型パラメーターです。文字列として扱います。"
 		DllExportUsing							  = "#_DllExport を使用しています。このマクロはまだ開発中であり、サポートされていません。"
 	}

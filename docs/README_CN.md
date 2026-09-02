@@ -343,6 +343,8 @@ pragma命令可以设置任何编译参数：
 #_pragma title "title" #设置exe标题
 ```
 
+字符串类型的 pragma 值也可以包含 `$(...)` 子表达式，并在预处理时求值，例如 `#_pragma icon $(Join-Path $env:USERPROFILE 'foo.ico')`。仅允许白名单内的 path 相关命令（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`，以及非访客模式下的 `Get-Content`）、变量（`$env:*`、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）和常见无害实例方法（如 `ToUpper`、`Trim`、`Split`、`ToString`）；其他内容将中止编译。单引号值保持完全字面。
+
 #### `#_balus`
 
 ```powershell
