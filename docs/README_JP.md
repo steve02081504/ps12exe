@@ -24,6 +24,14 @@ ps12exe は、PowerShell スクリプト（.ps1）から実行可能ファイル
 [![Español](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Spain.png)](./README_ES.md)
 [![हिन्दी](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/India.png)](./README_HI.md)
 
+## 利用しているプロジェクト
+
+- [fount](https://github.com/steve02081504/fount)
+- [SessionTracker](https://github.com/quinncthirtyone/SessionTracker)
+- [GStreamer-Glass](https://github.com/Geofferey/GStreamer-Glass)
+- [MailboxManager](https://github.com/TestGroundControl/MailboxManager)
+- [always-accompany](https://github.com/beilusaiying/always-accompany)
+
 ## インストール
 
 ```powershell

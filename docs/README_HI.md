@@ -24,6 +24,14 @@ ps12exe एक PowerShell मॉड्यूल है जो आपको .ps1 
 [![Français](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/France.png)](./README_FR.md)
 [![Español](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Spain.png)](./README_ES.md)
 
+## इसका उपयोग करने वाले
+
+- [fount](https://github.com/steve02081504/fount)
+- [SessionTracker](https://github.com/quinncthirtyone/SessionTracker)
+- [GStreamer-Glass](https://github.com/Geofferey/GStreamer-Glass)
+- [MailboxManager](https://github.com/TestGroundControl/MailboxManager)
+- [always-accompany](https://github.com/beilusaiying/always-accompany)
+
 ## स्थापित करना
 
 ```powershell

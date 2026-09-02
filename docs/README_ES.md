@@ -24,6 +24,14 @@ ps12exe es un módulo de PowerShell que permite crear ejecutables a partir de sc
 [![Français](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/France.png)](./README_FR.md)
 [![हिन्दी](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/India.png)](./README_HI.md)
 
+## Utilizado por
+
+- [fount](https://github.com/steve02081504/fount)
+- [SessionTracker](https://github.com/quinncthirtyone/SessionTracker)
+- [GStreamer-Glass](https://github.com/Geofferey/GStreamer-Glass)
+- [MailboxManager](https://github.com/TestGroundControl/MailboxManager)
+- [always-accompany](https://github.com/beilusaiying/always-accompany)
+
 ## Instalación
 
 ```powershell

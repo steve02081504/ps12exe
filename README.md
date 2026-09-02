@@ -25,6 +25,14 @@ ps12exe is a PowerShell module that allows you to create an executable file from
 [![Español](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Spain.png)](./docs/README_ES.md)
 [![हिन्दी](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/India.png)](./docs/README_HI.md)
 
+## Used by
+
+- [fount](https://github.com/steve02081504/fount)
+- [SessionTracker](https://github.com/quinncthirtyone/SessionTracker)
+- [GStreamer-Glass](https://github.com/Geofferey/GStreamer-Glass)
+- [MailboxManager](https://github.com/TestGroundControl/MailboxManager)
+- [always-accompany](https://github.com/beilusaiying/always-accompany)
+
 ## Install
 
 ```powershell

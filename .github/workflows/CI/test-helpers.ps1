@@ -122,6 +122,15 @@ public class CIWindowHelper {
 	return $p.ExitCode
 }
 
+# 强杀进程树（超时时 cmd 的 kill 不会带走子进程，孤儿会继续占用/锁住文件）。
+function Stop-ProcessTree {
+	param([int]$ProcessId)
+	if ($ProcessId -le 0) { return }
+	try {
+		& "$env:SystemRoot\System32\taskkill.exe" /PID $ProcessId /T /F 2>&1 | Out-Null
+	} catch {}
+}
+
 # 经 cmd 把 stdout/stderr 接到同一文件，保留进程内写入顺序。
 function Invoke-ExeCaptureMergedOutput {
 	param(
@@ -152,7 +161,7 @@ function Invoke-ExeCaptureMergedOutput {
 			Output   = $output
 		}
 	} finally {
-		if (-not $p.HasExited) { $p.Kill() }
+		if (-not $p.HasExited) { Stop-ProcessTree -ProcessId $p.Id }
 		$p.Dispose()
 		Remove-Item -LiteralPath $outFile -Force -ErrorAction SilentlyContinue
 	}
@@ -176,6 +185,6 @@ function Invoke-ExeWithPrivateConsole {
 		}
 		return $p.ExitCode
 	} finally {
-		if (-not $p.HasExited) { $p.Kill() }
+		if (-not $p.HasExited) { Stop-ProcessTree -ProcessId $p.Id }
 	}
 }

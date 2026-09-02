@@ -126,7 +126,8 @@ Write-Host "NESTED_LASTEXITCODE=`$LastExitCode"
 Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 "@
 	ps12exe -inputFile $nestedOkHostPs1 -outputFile $nestedOkHostExe | Write-Host
-	$nestedOk = Invoke-ExeCaptureMergedOutput -ExePath $nestedOkHostExe -TimeoutSeconds 60
+	# CI runner 上每次编译约需 85s（见各编译点日志间隔），嵌套 run 内部还要再做一次完整编译，超时给足余量
+	$nestedOk = Invoke-ExeCaptureMergedOutput -ExePath $nestedOkHostExe -TimeoutSeconds 300
 	if (-not (Test-Path -LiteralPath $nestedOkInnerExe)) {
 		throw "nested ps12exe (control) did not produce inner exe, host output: $($nestedOk.Output)"
 	}
@@ -145,7 +146,7 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 `$Error | ForEach-Object { Write-Host "NESTED_ERROR_TEXT: `$_" }
 "@
 	ps12exe -inputFile $nestedFailHostPs1 -outputFile $nestedFailHostExe | Write-Host
-	$nestedFail = Invoke-ExeCaptureMergedOutput -ExePath $nestedFailHostExe -TimeoutSeconds 60
+	$nestedFail = Invoke-ExeCaptureMergedOutput -ExePath $nestedFailHostExe -TimeoutSeconds 300
 	if ($nestedFail.Output -notmatch 'NESTED_LASTEXITCODE=[1-3]') {
 		throw "nested ps12exe (self-overwrite) should fail with a documented LastExitCode, got: $($nestedFail.Output)"
 	}

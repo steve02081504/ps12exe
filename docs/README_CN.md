@@ -24,6 +24,14 @@ ps12exe 是一个 PowerShell 模块，用于从 .ps1 脚本生成可执行文件
 [![Español](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/Spain.png)](./README_ES.md)
 [![हिन्दी](https://raw.githubusercontent.com/gosquared/flags/master/flags/flags/shiny/48/India.png)](./README_HI.md)
 
+## 使用它的项目
+
+- [fount](https://github.com/steve02081504/fount)
+- [SessionTracker](https://github.com/quinncthirtyone/SessionTracker)
+- [GStreamer-Glass](https://github.com/Geofferey/GStreamer-Glass)
+- [MailboxManager](https://github.com/TestGroundControl/MailboxManager)
+- [always-accompany](https://github.com/beilusaiying/always-accompany)
+
 ## 安装
 
 ```powershell
