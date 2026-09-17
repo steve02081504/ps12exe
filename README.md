@@ -110,33 +110,82 @@ Starts a web server that can be used to compile PowerShell scripts online.
 
 ### Quick Comparison 🏁
 
-| Comparison Content                                   | ps12exe                                        | [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5) |
-| ---------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Pure script repository 📦                            | ✔️ All text files except images & dependencies | ❌ Contains exe files with open source license                                                                  |
-| Command to generate hello world 🌍                   | 😎`'"Hello World!"' \| ps12exe`                | 🤔`echo "Hello World!" *> a.ps1; PS2EXE a.ps1; rm a.ps1`                                                        |
-| Size of the generated hello world executable file 💾 | 🥰1024 bytes                                   | 😨25088 bytes                                                                                                   |
-| GUI multilingual support 🌐                          | ✔️                                             | ❌                                                                                                              |
-| Syntax check during compilation ✔️                   | ✔️                                             | ❌                                                                                                              |
-| Preprocessing feature 🔄                             | ✔️                                             | ❌                                                                                                              |
-| `-extract` and other special parameter parsing 🧹    | 🗑️ Removed                                     | 🥲 Requires source code modification                                                                            |
-| PR welcome level 🤝                                  | 🥰 Welcome!                                    | 🤷 14 PRs, 13 of which were closed                                                                              |
+| Comparison Content                                | ps12exe                                                                                | [`MScholtes/PS2EXE@1.0.18`](https://github.com/MScholtes/PS2EXE/tree/05c62615)                     |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Pure script repository 📦                         | ✔️ All text files except images & bundled helper DLLs                                  | ❌ Ships `Win-PS2EXE.exe` with an open source license                                              |
+| Command to generate hello world 🌍                | 😎`'"Hello World!"' \| ps12exe`                                                        | 🤔`echo "Hello World!" *> a.ps1; PS2EXE a.ps1; rm a.ps1`                                           |
+| Constant hello world executable 💾                | 🥰1024 bytes (constant-evaluated at compile time)                                      | ❌ Not supported; 25088 bytes                                                                      |
+| Non-constant hello world executable 💾            | 🥰14848 bytes                                                                          | 😨25088 bytes                                                                                      |
+| Compile-time constant evaluation ⚡               | ✔️                                                                                     | ❌                                                                                                 |
+| PowerShell Core (7+) / cross-platform target 🧬   | ✔️ `-targetRuntime Core` (Windows / Linux / macOS)                                     | ❌ Windows PowerShell 5.1 only                                                                     |
+| GUI multilingual support 🌐                       | ✔️ (7 languages, dark mode)                                                            | ❌                                                                                                 |
+| Syntax check during compilation ✔️                | ✔️                                                                                     | ❌                                                                                                 |
+| Preprocessing feature 🔄                          | ✔️                                                                                     | ❌                                                                                                 |
+| `-extract` and other special parameter parsing 🧹 | 🗑️ Removed (use the `exe21sp` tool instead)                                            | 🥲 Requires source code modification                                                               |
+| PR welcome level 🤝                               | 🥰 Welcome!                                                                            | 🤷 14 PRs, 13 of which were closed                                                                 |
+| Political / DEI / stance bias 🕊️                  | ✔️ None; any valuable PR is welcome — from a human, an AI, or a monkey at a typewriter | ❌ Readme takes an anti-AI stance ("artificial intelligence is killing creativity and our nature") |
+
+ps12exe's developer does not use this project to promote a political, DEI or other ideological stance — any valuable PR is welcome, whether it comes from a human, an AI, or a monkey at a typewriter.
+
+### Size & Speed Benchmark 🔬
+
+Measured on Windows 11 with PowerShell 7.6.6 (.NET 10) and Windows PowerShell 5.1, 20 warm runs each. The process-creation floor (`cmd /c exit`) is ~15 ms. Reproduce with `pwsh -File ./tools/Benchmark/Compare-Compilers.ps1 -IncludeCore`.
+
+| Build                                              | Output size | Warm startup |
+| -------------------------------------------------- | ----------- | ------------ |
+| Windows PowerShell 5.1 running the script directly | —           | ~235 ms      |
+| ps12exe · constant · Framework4.0                  | 1024 bytes  | ~41 ms       |
+| ps12exe · non-constant · Framework4.0              | 14848 bytes | ~315 ms      |
+| PS2EXE 1.0.18 · non-constant                       | 25088 bytes | ~245 ms      |
+| -------------------------------------------------- | ----------- | ------------ |
+| pwsh 7 running the script directly                 | —           | ~450 ms      |
+| ps12exe · constant · Core                          | ~169 KB     | ~70 ms       |
+| ps12exe · non-constant · Core                      | ~185 KB     | ~395 ms      |
+| PS2EXE 1.0.18 · non-constant · Core                | not support | not support  |
+
+A constant script is evaluated at compile time, so its exe is 1 KB and never starts PowerShell — about 24× smaller and 6× faster to launch than a PS2EXE hello world. Non-constant exes are ~40% smaller than PS2EXE's, and for top-level-variable-heavy scripts they also run faster, because the script executes inside a function (local scope) rather than at global scope.
+
+The compiler itself is installed as a PowerShell module:
+
+| Compiler package         | Unpacked | Compressed |
+| ------------------------ | -------- | ---------- |
+| ps12exe (current master) | ~1.29 MB | ~513 KB    |
+| PS2EXE 1.0.18            | ~171 KB  | ~46 KB     |
+
+ps12exe's module is larger because it is a dependency-free, pure-script compiler that bundles trimmed [AsmResolver](https://github.com/Washi1337/AsmResolver) binaries (used to emit the 1 KB constant exes and to unpack payloads), 7 localizations and a pure-script GUI; PS2EXE ships almost nothing and relies on the .NET Framework compiler built into Windows.
+
+### Compiled-EXE Runtime Behaviour 🖥️
+
+Whether native child processes started by the EXE see a real console TTY ([#59](https://github.com/steve02081504/ps12exe/issues/59)), whether the script can read raw stdin ([#62](https://github.com/steve02081504/ps12exe/issues/62)), and whether the special path variables resolve — all verified from a real console window on Windows 11:
+
+| Capability                                        | ps12exe                              | [`MScholtes/PS2EXE@1.0.18`](https://github.com/MScholtes/PS2EXE/tree/05c62615) |
+| ------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------ |
+| Native child process sees a console TTY (`isTTY`) | ✔️                                   | ❌                                                                             |
+| Raw stdin (`[Console]::In`) readable              | ✔️ (unless the script uses `$input`) | ❌                                                                             |
+| `$PSCommandPath` / `$PSScriptRoot` resolve        | ✔️ (exe path / exe directory)        | ❌                                                                             |
+
+PS2EXE 1.0.18 always pipes script output through `Out-String` and eagerly drains redirected stdin before the script runs, so native children lose the console handle and stdin reaches EOF; ps12exe runs the script through the host (`Out-Default`) and only drains stdin when the script actually uses `$input`. PS2EXE also leaves `$PSCommandPath`/`$PSScriptRoot` empty inside the compiled program (it offers its own `$ScriptRoot` instead), while ps12exe maps both to the generated exe.
 
 ### Detailed Comparison 🔍
 
-Compared to [`MScholtes/PS2EXE@678a892`](https://github.com/MScholtes/PS2EXE/tree/678a89270f4ef4b636b69db46b31e1b4e0a9e1c5), this project brings the following improvements:
+Compared to [`MScholtes/PS2EXE@1.0.18`](https://github.com/MScholtes/PS2EXE/tree/05c62615), this project brings the following improvements:
 
-| Improvement Content                                          | Description                                                                                               |
-| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| ✔️ Syntax check during compilation                           | Syntax check during compilation to improve code quality                                                   |
-| 🔄 Powerful preprocessing feature                            | Preprocess the script before compilation, no need to copy and paste all content into the script           |
-| 🛠️ `-CompilerOptions` parameter                              | New parameter, allowing you to further customize the generated executable file                            |
-| 📦️ `-Minifyer` parameter                                    | Preprocess the script before compilation to generate a smaller executable file                            |
-| 🌐 Support for compiling scripts and included files from URL | Support for downloading icons from URL                                                                    |
-| 🖥️ Optimization of `-noConsole` parameter                    | Optimized option handling and window title display, you can now set the title of the custom pop-up window |
-| 🧹 Removed exe files                                         | Removed exe files from the code repository                                                                |
-| 🌍 Multilingual support, pure script GUI                     | Better multilingual support, pure script GUI, support for dark mode                                       |
-| 📖 Separated cs files from ps1 files                         | Easier to read and maintain                                                                               |
-| 🚀 More improvements                                         | And more...                                                                                               |
+| Improvement Content                                           | Description                                                                                        |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| ✔️ Syntax check during compilation                            | Syntax check during compilation to improve code quality                                            |
+| ⚡ Compile-time constant evaluation                           | Side-effect-free scripts are evaluated at build time and emitted as ~1 KB exes                     |
+| 🧬 PowerShell Core / cross-platform target                    | `-targetRuntime Core` targets PowerShell 7+ on Windows, Linux and macOS                            |
+| 🔄 Powerful preprocessing feature                             | Preprocess the script before compilation, no need to copy and paste all content into the script    |
+| 🛠️ `-CompilerOptions` parameter                               | New parameter, allowing you to further customize the generated executable file                     |
+| 📦️ `-Minifyer` parameter                                      | Preprocess the script before compilation to generate a smaller executable file                     |
+| 🌐 Support for compiling scripts and included files from URL  | Support for downloading icons from URL                                                             |
+| 🖥️ Optimization of `-noConsole` parameter                     | Optimized option handling and window title display, you can now set the title of the custom pop-up |
+| ✍️ Code signing and icon auto-conversion                      | Sign output with a PFX certificate or a store thumbprint, and convert icons automatically          |
+| 🧰 Extras: `exe21sp`, web server, context menu, interact mode | Decompile exes, compile online, right-click compile and more                                       |
+| 🧹 Removed exe files                                          | Removed exe files from the code repository                                                         |
+| 🌍 Multilingual support, pure script GUI                      | Better multilingual support, pure script GUI, support for dark mode                                |
+| 📖 Separated cs files from ps1 files                          | Easier to read and maintain                                                                        |
+| 🚀 More improvements                                          | And more...                                                                                        |
 
 See the [localized readme](https://steve02081504.github.io/ps12exe/readme) for more details.
 
