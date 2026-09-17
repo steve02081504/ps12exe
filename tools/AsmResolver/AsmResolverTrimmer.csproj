@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Not shipped. This project exists only so the IL Linker (illink) can be run over
+    AsmResolver with a root assembly that mirrors ps12exe's real API usage.
+    See Update-AsmResolver.ps1.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework Condition="'$(TargetFramework)' == ''">net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>AsmResolverRoot</AssemblyName>
+    <RootNamespace>AsmResolverRoot</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- Only used to make the SDK bring in Microsoft.NET.ILLink.Tasks; we invoke illink ourselves. -->
+    <PublishTrimmed>true</PublishTrimmed>
+    <SuppressTrimAnalysisWarnings>true</SuppressTrimAnalysisWarnings>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <Deterministic>true</Deterministic>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+  </PropertyGroup>
+
+  <!-- The root source is exactly the code ps12exe compiles at runtime (TinySharp) plus the
+       exe21sp extractor, so the trimmed API surface tracks ps12exe automatically. -->
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\src\programFrames\TinySharp.cs" Link="extern\TinySharp.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\src\programFrames\exe21sp.cs" Link="extern\exe21sp.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(AsmResolverLibDir)' != ''">
+    <Reference Include="AsmResolver"><HintPath>$(AsmResolverLibDir)\AsmResolver.dll</HintPath></Reference>
+    <Reference Include="AsmResolver.DotNet"><HintPath>$(AsmResolverLibDir)\AsmResolver.DotNet.dll</HintPath></Reference>
+    <Reference Include="AsmResolver.PE"><HintPath>$(AsmResolverLibDir)\AsmResolver.PE.dll</HintPath></Reference>
+    <Reference Include="AsmResolver.PE.File"><HintPath>$(AsmResolverLibDir)\AsmResolver.PE.File.dll</HintPath></Reference>
+    <Reference Include="AsmResolver.PE.Win32Resources"><HintPath>$(AsmResolverLibDir)\AsmResolver.PE.Win32Resources.dll</HintPath></Reference>
+  </ItemGroup>
+
+</Project>
