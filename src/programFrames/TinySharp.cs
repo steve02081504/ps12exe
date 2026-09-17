@@ -449,7 +449,7 @@ namespace TinySharp {
 				if (!CreateCompressor(3u, IntPtr.Zero, out handle))
 					return null;
 				try {
-					byte[] buffer = new byte[input.Length + input.Length / 2 + 1024];
+					byte[] buffer = new byte[input.Length + (input.Length / 2) + 1024];
 					IntPtr resultSize;
 					if (!Compress(handle, input, (IntPtr)input.Length, buffer, (IntPtr)buffer.Length, out resultSize))
 						return null;
