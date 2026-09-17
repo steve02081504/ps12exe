@@ -50,21 +50,29 @@ function Format-Size([long]$bytes) {
 
 $measurements = @{}
 
+# 非交互运行时（CI、输出被捕获的终端）stdin 是永不关闭的管道；PS2EXE 生成的 exe 会把重定向的 stdin
+# 一直读到 EOF，一旦继承这种管道就会看起来卡死。此时给被测进程一个立即 EOF 的空 stdin，其余行为不变。
+$stdinIsRedirected = [System.Console]::IsInputRedirected
+function Invoke-MeasuredTarget([string]$exe, [string[]]$argv) {
+	if ($stdinIsRedirected) { $null | & $exe @argv *> $null }
+	else { & $exe @argv *> $null }
+}
+
 function Measure-Exe([string]$Id, [string]$Label, [string]$Path) {
 	$size = (Get-Item -LiteralPath $Path).Length
-	& $Path *> $null
+	Invoke-MeasuredTarget $Path @()
 	$sw = [System.Diagnostics.Stopwatch]::StartNew()
-	for ($i = 0; $i -lt $Runs; $i++) { & $Path *> $null }
+	for ($i = 0; $i -lt $Runs; $i++) { Invoke-MeasuredTarget $Path @() }
 	$sw.Stop()
 	$measurements[$Id] = [pscustomobject]@{ Label = $Label; Bytes = [long]$size; Ms = [math]::Round($sw.Elapsed.TotalMilliseconds / $Runs) }
 }
 
 function Measure-Script([string]$Id, [string]$Label, [string[]]$Argv) {
 	$exe = $Argv[0]
-	$rest = @($Argv[1..($Argv.Count - 1)])
-	& $exe @rest *> $null
+	$rest = if ($Argv.Count -gt 1) { @($Argv[1..($Argv.Count - 1)]) } else { @() }
+	Invoke-MeasuredTarget $exe $rest
 	$sw = [System.Diagnostics.Stopwatch]::StartNew()
-	for ($i = 0; $i -lt $Runs; $i++) { & $exe @rest *> $null }
+	for ($i = 0; $i -lt $Runs; $i++) { Invoke-MeasuredTarget $exe $rest }
 	$sw.Stop()
 	$measurements[$Id] = [pscustomobject]@{ Label = $Label; Bytes = [long]0; Ms = [math]::Round($sw.Elapsed.TotalMilliseconds / $Runs) }
 }

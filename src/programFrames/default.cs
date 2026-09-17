@@ -1929,11 +1929,10 @@ namespace PSRunnerNS {
 			#if Pwsh20
 				this.PSRunSpace = RunspaceFactory.CreateRunspace(host);
 			#else
-				#if CoreHost
-					InitialSessionState iss = InitialSessionState.CreateDefault();
-				#else
-					InitialSessionState iss = InitialSessionState.CreateDefault2();
-				#endif
+				// 完整默认 ISS（含 Utility/Management 等内置管理单元）：自身创建稍慢，但首个 cmdlet
+				// 调用不必再走模块自动发现。CreateDefault2 的轻量 ISS 会把这份开销推迟到第一管道命令，
+				// 对 hello world 实测反而慢约 70ms（见 tools/Benchmark）。
+				InitialSessionState iss = InitialSessionState.CreateDefault();
 				this.PSRunSpace = RunspaceFactory.CreateRunspace(host, iss);
 			#endif
 			TimerMark("ctor:runspace-create");

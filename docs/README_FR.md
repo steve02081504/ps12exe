@@ -473,10 +473,10 @@ Mesuré sous Windows 11 avec PowerShell 7.6.6 (.NET 10) et Windows PowerShell 5.
 
 | Build                                                  | Taille de sortie   | Démarrage à chaud  |
 | ------------------------------------------------------ | ------------------ | ------------------ |
-| Windows PowerShell 5.1 exécutant le script directement | —                  | ~235 ms            |
-| ps12exe · constant · Framework4.0                      | 1 024 octets       | ~41 ms             |
-| ps12exe · non constant · Framework4.0                  | 14 848 octets      | ~315 ms            |
-| PS2EXE 1.0.18 · non constant                           | 25 088 octets      | ~245 ms            |
+| Windows PowerShell 5.1 exécutant le script directement | —                  | ~245 ms            |
+| ps12exe · constant · Framework4.0                      | 1 024 octets       | ~33 ms             |
+| ps12exe · non constant · Framework4.0                  | 14 848 octets      | ~210 ms            |
+| PS2EXE 1.0.18 · non constant                           | 25 088 octets      | ~223 ms            |
 | ------------------------------------------------------ | ------------------ | ------------------ |
 | pwsh 7 exécutant le script directement                 | —                  | ~450 ms            |
 | ps12exe · constant · Core                              | ~169 Ko            | ~70 ms             |
