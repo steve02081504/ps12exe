@@ -41,9 +41,9 @@ function Restore-ps12exeContextMenuState {
 	}
 }
 
-# 启动 exe，等待其弹出窗口后向该进程的主窗口发送 VK_RETURN（用于关闭 MessageBox）。
+# 启动 exe，向该进程的主窗口持续发送 VK_RETURN（用于关闭 MessageBox），直到进程退出或超时。
 # 返回进程的 ExitCode（等待进程退出后读取）。
-# $TimeoutSeconds: 等待窗口出现和等待进程退出的总超时。
+# $TimeoutSeconds: 从启动到强制结束的总超时。
 function Invoke-ExeAndSendEnterToWindow {
 	param(
 		[string]$ExePath,
@@ -107,17 +107,22 @@ public class CIWindowHelper {
 		WorkingDirectory        = [System.IO.Path]::GetDirectoryName($exePath)
 	}
 	$p = [System.Diagnostics.Process]::Start($psi)
+	$sawWindow = $false
 	try {
+		# 窗口可能在消息框完成初始化（设置默认按钮）之前就被枚举到，此时发出的回车会被丢弃。
+		# 因此找到窗口后不能只发一次就停，必须持续发到进程退出为止。
 		$deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
-		while ([DateTime]::UtcNow -lt $deadline) {
+		while ([DateTime]::UtcNow -lt $deadline -and -not $p.HasExited) {
+			if ([CIWindowHelper]::SendEnterToProcessMainWindow($p.Id)) { $sawWindow = $true }
 			Start-Sleep -Milliseconds 200
-			$sent = [CIWindowHelper]::SendEnterToProcessMainWindow($p.Id)
-			if ($sent) { break }
-			if ($p.HasExited) { return $p.ExitCode }
 		}
-		$p.WaitForExit([int](($deadline - [DateTime]::UtcNow).TotalMilliseconds))
+		# 最后一次回车后的退出宽限，避免刚点掉消息框就被 Kill。
+		if (-not $p.HasExited) { $p.WaitForExit(2000) | Out-Null }
 	} finally {
-		if (-not $p.HasExited) { $p.Kill() }
+		if (-not $p.HasExited) {
+			Write-Warning ("Invoke-ExeAndSendEnterToWindow: killed {0} after {1}s (window seen: {2})" -f $ExePath, $TimeoutSeconds, $sawWindow)
+			$p.Kill()
+		}
 	}
 	return $p.ExitCode
 }
