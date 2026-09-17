@@ -1,4 +1,4 @@
-// Uses AsmResolver to read embedded script resources from a ps12exe-built exe
+﻿// Uses AsmResolver to read embedded script resources from a ps12exe-built exe
 // and return the original PowerShell script text. Exposed via the exe21sp PowerShell helper.
 using System;
 using System.IO;
@@ -22,51 +22,74 @@ namespace exe21sp {
 		public static string ExtractScriptFromExe(string exePath) {
 			if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
 				return null;
-			// First, try the standard program frame: embedded main.par resource.
-			var script = TryExtractFromMainPar(exePath);
+			// First, try the standard program frame: embedded main.ps1 resource.
+			var script = TryExtractFromFrame(exePath);
 			if (script != null)
 				return script;
 
-			// Fallback: TinySharp-compiled minimal exe (no main.par).
+			// Fallback: TinySharp-compiled minimal exe (no script resource).
 			return TryExtractFromTinySharp(exePath);
 		}
 
-		private static string TryExtractFromMainPar(string exePath) {
+		private static string TryExtractFromFrame(string exePath) {
 			try {
 				var module = ModuleDefinition.FromFile(exePath);
-				foreach (var resource in module.Resources) {
-					if (!resource.IsEmbedded)
-						continue;
+				var script = TryExtractFromModule(module);
+				if (script != null)
+					return script;
 
-					string name = object.ReferenceEquals(resource.Name, null) ? null : resource.Name.ToString();
-					if (string.Equals(name, "main.par", StringComparison.OrdinalIgnoreCase)) {
-						var raw = resource.GetData();
-						if (raw == null || raw.Length == 0)
-							return null;
-
-						using (var ms = new MemoryStream(raw))
-						using (var gzip = new GZipStream(ms, CompressionMode.Decompress))
-						using (var reader = new StreamReader(gzip, Encoding.UTF8)) {
-							return reader.ReadToEnd();
-						}
-					}
-
-					// Fallback: some frames may embed the plain script as a .ps1 resource instead of main.par.
-					if (name != null && name.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase)) {
-						var raw = resource.GetData();
-						if (raw == null || raw.Length == 0)
-							continue;
-
-						using (var ms = new MemoryStream(raw))
-						// Detect encoding from BOM when present; default to UTF-8 without BOM.
-						using (var reader = new StreamReader(ms, Encoding.UTF8, detectEncodingFromByteOrderMarks: true)) {
-							return reader.ReadToEnd();
-						}
-					}
-				}
+				// Non-const exes wrap the real assembly (gzip) in the launcher's "main" resource.
+				// Unwrap it and look for the main.ps1 script resource inside that payload.
+				var payload = TryGetLauncherPayload(module);
+				if (payload != null)
+					return TryExtractFromModule(ModuleDefinition.FromBytes(payload));
 			}
 			catch {
 				// Not a valid .NET module or read error.
+			}
+			return null;
+		}
+
+		private static string TryExtractFromModule(ModuleDefinition module) {
+			foreach (var resource in module.Resources) {
+				if (!resource.IsEmbedded)
+					continue;
+
+				string name = object.ReferenceEquals(resource.Name, null) ? null : resource.Name.ToString();
+				// 脚本以未压缩的 .ps1 资源内嵌（标准 frame 是 main.ps1）。
+				if (name != null && name.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase)) {
+					var raw = resource.GetData();
+					if (raw == null || raw.Length == 0)
+						continue;
+
+					using (var ms = new MemoryStream(raw))
+					// Detect encoding from BOM when present; default to UTF-8 without BOM.
+					using (var reader = new StreamReader(ms, Encoding.UTF8, detectEncodingFromByteOrderMarks: true)) {
+						return reader.ReadToEnd();
+					}
+				}
+			}
+			return null;
+		}
+
+		private static byte[] TryGetLauncherPayload(ModuleDefinition module) {
+			foreach (var resource in module.Resources) {
+				if (!resource.IsEmbedded)
+					continue;
+				string name = object.ReferenceEquals(resource.Name, null) ? null : resource.Name.ToString();
+				if (!string.Equals(name, "main", StringComparison.OrdinalIgnoreCase))
+					continue;
+
+				var raw = resource.GetData();
+				if (raw == null || raw.Length == 0)
+					return null;
+
+				using (var ms = new MemoryStream(raw))
+				using (var gzip = new GZipStream(ms, CompressionMode.Decompress))
+				using (var outMs = new MemoryStream()) {
+					gzip.CopyTo(outMs);
+					return outMs.ToArray();
+				}
 			}
 			return null;
 		}

@@ -27,7 +27,7 @@ function Get-Exe21spContentFromPipeline {
 }
 
 try {
-	# 1) 普通程序框架 exe（嵌入 main.par）或 TinySharp 常量化
+	# 1) 普通 exe（非常量默认打包，嵌入 main.ps1）或 TinySharp 常量化
 	$normalScript = "Write-Output 'normal-embed'"
 	$normalScript | ps12exe -outputFile $repoRoot/build/normal.exe -Verbose | Write-Host
 	$extracted = Get-Exe21spContent 'build/normal.exe'
@@ -65,6 +65,14 @@ try {
 		$e5 = Get-Exe21spContent 'build/ts_gui_42.exe'
 		if ($e5 -notmatch "tinysharp-gui-42" -or $e5 -notmatch "exit 42") { throw "exe21sp TinySharp GUI 42: expected content+exit 42, got: $e5" }
 	}
+
+	# 6) 非常量 exe（默认打包：压缩负载 + launcher）：exe21sp 需能解包并还原脚本
+	$packedScript = "Get-Date | Out-Null; Write-Output 'packed-embed'"
+	$packedScript | ps12exe -outputFile $repoRoot/build/packed.exe -Verbose | Write-Host
+	$e6 = Get-Exe21spContent 'build/packed.exe'
+	if ($e6 -notmatch 'packed-embed') { throw "exe21sp packed: expected 'packed-embed' in: $e6" }
+	$packedRun = & $repoRoot/build/packed.exe
+	if ("$packedRun" -notmatch 'packed-embed') { throw "packed exe output mismatch: $packedRun" }
 
 	# exe21sp without -outputFile and without redirect: saves to <exe>.ps1 in same directory (call without pipe; when stdout is not redirected, exe21sp writes to file)
 	$normalExeFull = [System.IO.Path]::GetFullPath((Join-Path $repoRoot 'build/normal.exe'))

@@ -47,6 +47,10 @@ try {
 	}
 	& $repoRoot/build/hello.exe | Write-Host
 
+	# 非常量 exe 默认走“压缩负载 + 内存 launcher”，pathtest.exe 已覆盖 $PSCommandPath/$PSScriptRoot。
+	$packedSize = (Get-Item -LiteralPath $repoRoot/build/pathtest.exe).Length
+	if ($packedSize -ge 25088) { throw "non-const exe is not packed by default (size=$packedSize)" }
+
 	# Native child stdout TTY（issue 59）：独立 console 下 `& powershell` 的 stdout 必须是 console，不能被宿主 Out-String 收成管道
 	$ttyDir = Join-Path $buildDir 'tty'
 	New-Item -ItemType Directory -Path $ttyDir -Force | Out-Null

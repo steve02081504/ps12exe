@@ -5,7 +5,7 @@
 
 .DESCRIPTION
 	Uses AsmResolver to read script payload from exe:
-	- For exe built with standard program frame (CodeDom/CodeAnalysis): reads embedded .NET manifest resource "main.par", GZip-decompresses and decodes as UTF-8 to get the original script.
+	- For exe built with the standard program frame (CodeDom/CodeAnalysis): reads the embedded .NET manifest resource "main.ps1" as UTF-8 to get the original script. Packed exes first unwrap the gzip-compressed "main" launcher payload and look inside it.
 	- For minimal exe compiled with TinySharp: parses its CIL and PE image, restores the output string and exit code captured by TinySharp,
 	  and generates a minimal ps1 containing only that string (and optional exit statement) to equivalently reproduce the behavior.
 

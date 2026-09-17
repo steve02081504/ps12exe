@@ -96,22 +96,10 @@ if (-not $TempDir) {
 	New-Item -Path $TempTempDir -ItemType Directory | Out-Null
 }
 $TempDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($TempDir)
+# 脚本以未压缩的 main.ps1 资源内嵌；打包时整块负载还会再 gzip 一遍，这里先压反而不可压。
 [byte[]]$scriptBytes = [System.Text.Encoding]::UTF8.GetBytes($Content)
-$parPath = Join-Path $TempDir 'main.par'
-
-$fileStream = [System.IO.File]::Create($parPath)
-try {
-	$gzip = New-Object System.IO.Compression.GZipStream($fileStream, [System.IO.Compression.CompressionMode]::Compress)
-	try {
-		$gzip.Write($scriptBytes, 0, $scriptBytes.Length)
-	}
-	finally {
-		$gzip.Dispose()
-	}
-}
-finally {
-	$fileStream.Dispose()
-}
+$scriptPath = Join-Path $TempDir 'main.ps1'
+[System.IO.File]::WriteAllBytes($scriptPath, $scriptBytes)
 if ($iconFile -match "^(https?|ftp)://") {
 	try {
 		# 首先尝试从URL中获取文件扩展名

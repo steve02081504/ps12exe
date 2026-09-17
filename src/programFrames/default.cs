@@ -7,7 +7,6 @@ using System.Text;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 using System.IO;
-using System.IO.Compression;
 #if !Pwsh20
 	using System.Management.Automation.Language;
 #endif
@@ -610,7 +609,7 @@ namespace PSRunnerNS {
 			form.FormBorderStyle = FormBorderStyle.FixedDialog;
 			form.StartPosition = FormStartPosition.CenterScreen;
 			try {
-				form.Icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
+				form.Icon = Icon.ExtractAssociatedIcon(Assembly.GetEntryAssembly().Location);
 			} catch {}
 			form.MinimizeBox = false;
 			form.MaximizeBox = false;
@@ -700,7 +699,7 @@ namespace PSRunnerNS {
 			form.FormBorderStyle = FormBorderStyle.FixedDialog;
 			form.StartPosition = FormStartPosition.CenterScreen;
 			try {
-				form.Icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
+				form.Icon = Icon.ExtractAssociatedIcon(Assembly.GetEntryAssembly().Location);
 			} catch {}
 			form.MinimizeBox = false;
 			form.MaximizeBox = false;
@@ -835,7 +834,7 @@ namespace PSRunnerNS {
 			form.FormBorderStyle = FormBorderStyle.FixedDialog;
 			form.StartPosition = FormStartPosition.CenterScreen;
 			try {
-				form.Icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);
+				form.Icon = Icon.ExtractAssociatedIcon(Assembly.GetEntryAssembly().Location);
 			} catch {}
 			form.MinimizeBox = false;
 			form.MaximizeBox = false;
@@ -1895,7 +1894,9 @@ namespace PSRunnerNS {
 		#endif
 		[System.Diagnostics.Conditional("StartupTiming")]
 		internal static void TimerMark(string s) {
-			System.Console.Error.WriteLine("[timing] " + s + ": " + TimerSw.Elapsed.TotalMilliseconds.ToString("F1") + " ms");
+			#if StartupTiming
+				System.Console.Error.WriteLine("[timing] " + s + ": " + TimerSw.Elapsed.TotalMilliseconds.ToString("F1") + " ms");
+			#endif
 		}
 
 		private bool shouldExit;
@@ -1938,15 +1939,14 @@ namespace PSRunnerNS {
 			this.pwsh = PowerShell.Create();
 			this.pwsh.Runspace = PSRunSpace;
 			TimerMark("ctor:pwsh-create");
-			string exepath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+			string exepath = Assembly.GetEntryAssembly().Location;
 			Assembly executingAssembly = Assembly.GetExecutingAssembly();
 			string script;
-			using (Stream scriptstream = executingAssembly.GetManifestResourceStream("main.par")) {
-				using (var gzip = new GZipStream(scriptstream, CompressionMode.Decompress)) {
-					using (var scriptreader = new StreamReader(gzip, Encoding.UTF8)) {
-						script = scriptreader.ReadToEnd();
-						this.PSRunSpace.SessionStateProxy.SetVariable("PSEXEscript", script);
-					}
+			// 脚本以未压缩的 main.ps1 资源内嵌（打包时整块负载还会 gzip，这里不单独压）。
+			using (Stream scriptstream = executingAssembly.GetManifestResourceStream("main.ps1")) {
+				using (var scriptreader = new StreamReader(scriptstream, Encoding.UTF8)) {
+					script = scriptreader.ReadToEnd();
+					this.PSRunSpace.SessionStateProxy.SetVariable("PSEXEscript", script);
 				}
 			}
 			TimerMark("ctor:read-script");
