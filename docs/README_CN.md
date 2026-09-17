@@ -426,6 +426,26 @@ ipconfig | Out-String
 $Host.UI.RawUI.FlushInputBuffer()
 ```
 
+### 标准输入与 `$input`
+
+编译后的 exe 只会在脚本**顶层**用到 `$input` 时，才把被重定向的标准输入逐行读入并作为管道输入传给脚本：
+
+- 用到 `$input`：行为与 PS2EXE 一致，stdin 被当作管道输入消费完，原始 stdin（`[Console]::In` / `Console.OpenStandardInput()`）随之到达 EOF。
+- 没用到 `$input`：完全不读 stdin，原始标准输入原样保留，启动时也不会等待 stdin（父进程即使一直不关闭管道也不会卡住），native 子进程仍能继承 stdin。
+
+判断只看脚本顶层：函数、脚本块、类内部的 `$input` 是它们各自的管道输入，与宿主无关，不计入。
+
+例如脚本里写 `[Console]::In.ReadToEnd()` 且没有用到 `$input`，编译后 `echo hi | .\tool.exe` 就能拿到 `hi`。
+
+### 常量求值
+
+对于只含常量、无副作用的脚本，ps12exe 会在编译期求值，并把结果直接编进极小的 exe（TinySharp 路径，通常 1KB 上下）；超时（默认 7 秒）或结果过长时会退回普通编译。如果求值环境与运行期不一致，或你本来就想要完整的 PowerShell 宿主，可以在脚本里加下面任一 pragma 显式放弃该优化：
+
+- `#_pragma noConstEval`：声明本脚本不是常量，跳过常量求值。
+- `#_pragma constEvalTimeout`：声明本次常量求值已超时，直接按超时回退。
+
+两者在编译期按关键字匹配脚本内容，放在任意一行即可；退回普通宿主后这两行就是普通注释。
+
 ## 优势对比 🏆
 
 ### 快速比对 🏁

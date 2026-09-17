@@ -189,6 +189,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		ConstEvalTooLongFallback				  = "常量结果太长，退回正常程序框架"
 		ConstEvalTimeoutFallback				  = "常量计算{0}秒，超时。退回正常程序框架"
 		ConstEvalThrowErrorFallback				  = "常量计算抛出错误，退回正常程序框架"
+		ConstEvalNotConstFallback				  = "脚本声明自己不是常量，退回正常程序框架"
 		TryingTinySharpCompile					  = "结果为常量，尝试 TinySharp 编译器..."
 		TinySharpFailedFallback					  = "TinySharp 编译器错误，退回正常程序框架"
 		ForceX86byVirtualization				  = "已激活应用程序虚拟化，强制使用x86平台。"

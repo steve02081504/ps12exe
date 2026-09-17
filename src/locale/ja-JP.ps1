@@ -187,6 +187,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 		ConstEvalTooLongFallback				  = "定数結果が長すぎるため、通常のプログラムフレームにフォールバックします"
 		ConstEvalTimeoutFallback				  = "定数の評価が {0} 秒後にタイムアウトしました。通常のプログラムフレームにフォールバックします"
 		ConstEvalThrowErrorFallback				  = "定数の評価中にエラーが発生しました。通常のプログラムフレームにフォールバックします"
+		ConstEvalNotConstFallback				  = "スクリプトが非定数であると宣言されたため、通常のプログラムフレームにフォールバックします"
 		InvalidArchitecture						  = "無効なプラットフォーム {0} です。AnyCpu を使用します"
 		UnknownPragma							  = "未知の pragma：{0}"
 		UnknownPragmaBadParameterType			  = "未知の pragma：{0}。型 {1} は解析できません。"

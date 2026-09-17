@@ -426,6 +426,26 @@ ipconfig | Out-String
 $Host.UI.RawUI.FlushInputBuffer()
 ```
 
+### Entrada estándar y `$input`
+
+Un exe compilado solo lee la entrada estándar redirigida (línea por línea, como entrada de canalización) cuando el script usa `$input` en su **nivel superior**:
+
+- Si se usa `$input`: se comporta como PS2EXE — stdin se consume como entrada de canalización, por lo que la stdin sin procesar (`[Console]::In` / `Console.OpenStandardInput()`) alcanza EOF después.
+- Si no se usa `$input`: no se lee stdin en absoluto; la entrada estándar sin procesar se deja intacta y el inicio no espera a stdin (un proceso padre que mantiene la tubería abierta ya no lo bloquea), y los procesos hijos todavía pueden heredar stdin.
+
+Solo cuenta el nivel superior del script: un `$input` dentro de funciones, bloques de script o clases es la entrada de canalización de ese ámbito y se ignora.
+
+Por ejemplo, si el script llama a `[Console]::In.ReadToEnd()` y nunca usa `$input`, tras compilar, `echo hi | .\tool.exe` recibe `hi`.
+
+### Evaluación de constantes
+
+Para scripts que solo contienen constantes y no tienen efectos secundarios, ps12exe los evalúa en tiempo de compilación e integra el resultado directamente en un exe diminuto (la ruta TinySharp, normalmente alrededor de 1 KB); vuelve a la compilación normal cuando la evaluación agota el tiempo de espera (7 segundos por defecto) o el resultado es demasiado largo. Si el entorno de evaluación difiere del de ejecución, o simplemente quiere el host completo de PowerShell, añada cualquiera de los siguientes pragmas para renunciar explícitamente a esa optimización:
+
+- `#_pragma noConstEval`: declara que este script no es una constante; omite la evaluación de constantes.
+- `#_pragma constEvalTimeout`: declara que esta evaluación de constantes ya agotó el tiempo; aplica el mismo retroceso que en caso de tiempo de espera.
+
+Ambos se buscan por palabra clave en el script en tiempo de compilación, por lo que pueden ir en cualquier línea; tras el retroceso al host normal, esas líneas son solo comentarios normales.
+
 ## Comparación de Ventajas 🏆
 
 ### Comparación Rápida 🏁

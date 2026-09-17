@@ -45,6 +45,34 @@ $isPwsh20Sma = $smaRef -and [Reflection.AssemblyName]::GetAssemblyName($smaRef).
 
 . $PSScriptRoot\BuildFrame.ps1
 
+# 是否在脚本顶层使用了 $input：只有用到时才把重定向的标准输入逐行读成管道输入（issue 62）。
+# 只扫描脚本顶层（也就是会被包进 PSEXEMainFunction 的那个 $input）；函数、脚本块、类内部的 $input
+# 是它们各自的管道输入，与宿主无关，不计入。解析失败/无 AST 时保守起见仍读取输入。
+$ScriptUsesInput = $true
+if ($AST) {
+	$ScriptUsesInput = $false
+	foreach ($inputVar in $AST.FindAll({
+		param($node)
+		$node -is [System.Management.Automation.Language.VariableExpressionAst] -and $node.VariablePath.UserPath -eq 'input'
+	}, $true)) {
+		$parentNode = $inputVar.Parent
+		$inNestedScope = $false
+		while ($parentNode) {
+			if ($parentNode -is [System.Management.Automation.Language.FunctionDefinitionAst] -or
+				$parentNode -is [System.Management.Automation.Language.ScriptBlockExpressionAst] -or
+				$parentNode -is [System.Management.Automation.Language.TypeDefinitionAst]) {
+				$inNestedScope = $true
+				break
+			}
+			$parentNode = $parentNode.Parent
+		}
+		if (-not $inNestedScope) {
+			$ScriptUsesInput = $true
+			break
+		}
+	}
+}
+
 [string[]]$Constants = @()
 
 $Constants += $threadingModel
@@ -60,6 +88,8 @@ if ($exitOnCancel) { $Constants += "exitOnCancel" }
 if ($UNICODEEncoding) { $Constants += "UNICODEEncoding" }
 if ($winFormsDPIAware) { $Constants += "winFormsDPIAware" }
 if ($isPwsh20Sma) { $Constants += "Pwsh20" }
+if ($ScriptUsesInput) { $Constants += "ReadInput" }
+if ($StartupTiming) { $Constants += "StartupTiming" }
 
 if (-not $TempDir) {
 	$TempDir = $TempTempDir = [System.IO.Path]::GetTempPath() + [System.IO.Path]::GetRandomFileName()

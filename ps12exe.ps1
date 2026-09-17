@@ -251,7 +251,10 @@ Param(
 	[Switch]$nested,
 	# internal. do not use it unless you know what you are doing.
 	[Parameter(DontShow)]
-	[string]$DllExportList
+	[string]$DllExportList,
+	# dev. do not use it unless you know what you are doing.
+	[Parameter(DontShow)]
+	[Switch]$StartupTiming
 )
 $global:LastExitCode = 0 # 无错误
 $Verbose = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent

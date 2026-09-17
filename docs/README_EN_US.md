@@ -427,6 +427,26 @@ ipconfig | Out-String
 $Host.UI.RawUI.FlushInputBuffer()
 ```
 
+### Standard Input and `$input`
+
+A compiled exe only reads a redirected standard input (line by line, as pipeline input) when the script uses `$input` at its **top level**:
+
+- If `$input` is used: behaves like PS2EXE — stdin is consumed as pipeline input, so raw stdin (`[Console]::In` / `Console.OpenStandardInput()`) reaches EOF afterwards.
+- If `$input` is not used: stdin is not read at all; the raw standard input is left untouched and startup does not wait for stdin (a parent that keeps the pipe open no longer blocks it), and child processes can still inherit stdin.
+
+Only the script's top level counts: a `$input` inside functions, script blocks or classes is that scope's own pipeline input and is ignored.
+
+For example, if the script calls `[Console]::In.ReadToEnd()` and never uses `$input`, then after compiling, `echo hi | .\tool.exe` receives `hi`.
+
+### Constant Evaluation
+
+For constant-only, side-effect-free scripts, ps12exe evaluates them at compile time and emits the result as a tiny exe (the TinySharp path, usually around 1KB); it falls back to the normal build when evaluation times out (7 seconds by default) or the result is too long. If the evaluation environment differs from runtime, or you simply want the full PowerShell host, add either pragma below to opt out of that optimization explicitly:
+
+- `#_pragma noConstEval`: declare this script is not a constant; skip constant evaluation.
+- `#_pragma constEvalTimeout`: declare constant evaluation already timed out; fall back as if it had timed out.
+
+Both are matched by keyword in the script at compile time, so they can go on any line; after falling back to the normal host they are just ordinary comments.
+
 ## Comparative Advantages 🏆
 
 ### Quick Comparison 🏁

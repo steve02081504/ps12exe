@@ -222,6 +222,90 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 	Invoke-PragmaTest '#_pragma title "prefix$(Split-Path $PSScriptRoot -Leaf)suffix"' $false 'prefixcompiledsuffix' 'title'
 	Remove-Item Env:\PRAGMA_SECRET -ErrorAction SilentlyContinue
 
+	# Const-eval 回退（issue 63）：所有回退路径（超时/超长/异常/显式声明）都必须把 IsConst 置回 $false。
+	# 否则下游会拿从未赋值的 $RowResult 去走 TinySharp，编出一个只输出空行的哑 exe（默认宿主编译被跳过）。
+	# #_pragma constEvalTimeout / #_pragma noConstEval 是脚本可用的显式逃生舱，也让本测试无需真的等 7 秒超时。
+	# 先单测 ConstProgramCheck.ps1 的回退分支，避免为造超时再跑一次完整宿主编译。
+	$constTimeoutPs1 = Join-Path $buildDir 'const-timeout.ps1'
+	Set-Content -LiteralPath $constTimeoutPs1 -Encoding UTF8 -Value @'
+#_pragma constEvalTimeout
+'const-eval-timeout-fallback-ok'
+'@
+	$AstAnalyzeResult = @{ IsConst = $true }
+	$Content = Get-Content -LiteralPath $constTimeoutPs1 -Raw
+	. (Join-Path $repoRoot 'src/ConstProgramCheck.ps1')
+	if ($AstAnalyzeResult.IsConst) {
+		throw 'constEvalTimeout pragma left IsConst=$true (issue 63): should fall back to the normal program frame'
+	}
+
+	$constNoEvalPs1 = Join-Path $buildDir 'const-noeval.ps1'
+	Set-Content -LiteralPath $constNoEvalPs1 -Encoding UTF8 -Value @'
+#_pragma noConstEval
+'const-noeval-fallback-ok'
+'@
+	$AstAnalyzeResult = @{ IsConst = $true }
+	$Content = Get-Content -LiteralPath $constNoEvalPs1 -Raw
+	. (Join-Path $repoRoot 'src/ConstProgramCheck.ps1')
+	if ($AstAnalyzeResult.IsConst) {
+		throw 'noConstEval pragma left IsConst=$true (issue 63): should skip const eval'
+	}
+
+	# 端到端：带逃生舱 pragma 的脚本必须回退成可用的普通宿主 exe（而不是哑 exe），
+	# 且预处理器不得把它当未知 pragma 报错。
+	$constE2ePs1 = Join-Path $buildDir 'const-fallback-e2e.ps1'
+	$constE2eExe = Join-Path $buildDir 'const-fallback-e2e.exe'
+	Set-Content -LiteralPath $constE2ePs1 -Encoding UTF8 -Value @'
+#_pragma constEvalTimeout
+'const-fallback-e2e-ok'
+'@
+	ps12exe -inputFile $constE2ePs1 -outputFile $constE2eExe | Write-Host
+	$constE2e = Invoke-ExeCaptureMergedOutput -ExePath $constE2eExe
+	if ($constE2e.Output -notmatch 'const-fallback-e2e-ok') {
+		throw "const-eval fallback produced a broken exe (issue 63), got: $($constE2e.Output)"
+	}
+
+	# 标准输入按需消费（issue 62）：脚本顶层不用 $input 时，重定向 stdin 不被读取，
+	# 父进程一直保持管道打开也不会阻塞启动；用到 $input 的脚本仍能收到管道输入。
+	$stdinDir = Join-Path $buildDir 'stdin'
+	New-Item -ItemType Directory -Path $stdinDir -Force | Out-Null
+
+	$noInputPs1 = Join-Path $stdinDir 'no-input.ps1'
+	$noInputExe = Join-Path $stdinDir 'no-input.exe'
+	Set-Content -LiteralPath $noInputPs1 -Encoding UTF8 -Value @'
+$null = [System.IO.File]::Exists('')
+'no-input-ok'
+'@
+	ps12exe -inputFile $noInputPs1 -outputFile $noInputExe | Write-Host
+	$psi = [System.Diagnostics.ProcessStartInfo]::new($noInputExe)
+	$psi.RedirectStandardInput = $true
+	$psi.RedirectStandardOutput = $true
+	$psi.UseShellExecute = $false
+	$p = [System.Diagnostics.Process]::Start($psi)
+	try {
+		if (-not $p.WaitForExit(10000)) {
+			throw 'compiled exe blocked on an open redirected stdin even though the script never uses $input (issue 62)'
+		}
+		$noInputOut = $p.StandardOutput.ReadToEnd()
+		if ($noInputOut -notmatch 'no-input-ok') {
+			throw "no-input exe output mismatch: $noInputOut"
+		}
+	}
+	finally {
+		if (-not $p.HasExited) { Stop-ProcessTree -ProcessId $p.Id }
+		$p.Dispose()
+	}
+
+	$withInputPs1 = Join-Path $stdinDir 'with-input.ps1'
+	$withInputExe = Join-Path $stdinDir 'with-input.exe'
+	Set-Content -LiteralPath $withInputPs1 -Encoding UTF8 -Value @'
+'input=[' + ((@($input) -join ',')) + ']'
+'@
+	ps12exe -inputFile $withInputPs1 -outputFile $withInputExe | Write-Host
+	$withInputOut = 'a', 'b' | & $withInputExe
+	if ("$withInputOut" -notmatch 'input=\[a,b\]') {
+		throw "compiled exe did not receive redirected stdin as pipeline input (`$input): $withInputOut"
+	}
+
 	# 供 workflow 上传产物：将 exe 拷到仓库根
 	Copy-Item -LiteralPath (Join-Path $buildDir 'ps12exe.exe') -Destination (Join-Path $repoRoot 'ps12exe.exe') -Force
 } catch {}

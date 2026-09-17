@@ -1888,6 +1888,16 @@ namespace PSRunnerNS {
 	}
 
 	internal class PSRunner: PSRunnerInterface {
+		// 启动计时
+		// 需要计时时用 ps12exe -StartupTiming 编译，计时输出走 stderr。
+		#if StartupTiming
+		internal static System.Diagnostics.Stopwatch TimerSw = System.Diagnostics.Stopwatch.StartNew();
+		#endif
+		[System.Diagnostics.Conditional("StartupTiming")]
+		internal static void TimerMark(string s) {
+			System.Console.Error.WriteLine("[timing] " + s + ": " + TimerSw.Elapsed.TotalMilliseconds.ToString("F1") + " ms");
+		}
+
 		private bool shouldExit;
 
 		private int exitCode;
@@ -1909,15 +1919,25 @@ namespace PSRunnerNS {
 		public PowerShell pwsh;
 
 		public PSRunner() {
+			TimerMark("ctor:enter");
 			this.shouldExit = false;
 			this.exitCode = 0;
 			this.ui = new PSRunnerUI();
+			TimerMark("ctor:ui");
 			this.host = new PSRunnerHost(this, ui);
-			this.PSRunSpace = RunspaceFactory.CreateRunspace(host);
+			#if Pwsh20
+				this.PSRunSpace = RunspaceFactory.CreateRunspace(host);
+			#else
+				InitialSessionState iss = InitialSessionState.CreateDefault2();
+				this.PSRunSpace = RunspaceFactory.CreateRunspace(host, iss);
+			#endif
+			TimerMark("ctor:runspace-create");
 			this.PSRunSpace.ApartmentState = System.Threading.ApartmentState.$threadingModel;
 			this.PSRunSpace.Open();
+			TimerMark("ctor:runspace-open");
 			this.pwsh = PowerShell.Create();
 			this.pwsh.Runspace = PSRunSpace;
+			TimerMark("ctor:pwsh-create");
 			string exepath = System.Reflection.Assembly.GetExecutingAssembly().Location;
 			Assembly executingAssembly = Assembly.GetExecutingAssembly();
 			string script;
@@ -1929,6 +1949,7 @@ namespace PSRunnerNS {
 					}
 				}
 			}
+			TimerMark("ctor:read-script");
 			script = "function PSEXEMainFunction{"+script+"}";
 			#if Pwsh20
 				this.pwsh.AddScript(script);
@@ -1937,12 +1958,15 @@ namespace PSRunnerNS {
 				Token[] tokens;
 				ParseError[] errors;
 				ScriptBlockAst AST = Parser.ParseInput(script, exepath, out tokens, out errors);
+				TimerMark("ctor:parse");
 				this.PSRunSpace.SessionStateProxy.SetVariable("PSEXEIniter", AST.GetScriptBlock());
+				TimerMark("ctor:getscriptblock");
 				if(errors.Length > 0)
 					throw new System.InvalidProgramException(errors[0].Message);
 				this.pwsh.AddScript(".$PSEXEIniter");
 			}
 			#endif
+			TimerMark("ctor:done");
 		}
 		public void Dispose() {
 			if (pwsh != null) pwsh.Dispose();
@@ -1969,6 +1993,35 @@ namespace PSRunnerNS {
 			#if !noVisualStyles && noConsole
 			Application.EnableVisualStyles();
 			#endif
+
+			FixModulePath();
+		}
+
+		// 把自己的模块目录前置；这里做同样的事，保证轻量 ISS 下命令仍能正确自动加载（issue 61）。
+		static void FixModulePath() {
+			try {
+				string docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+				string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+				string systemRoot = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+				string[] preferred = new string[] {
+					string.IsNullOrEmpty(docs) ? null : Path.Combine(Path.Combine(docs, "WindowsPowerShell"), "Modules"),
+					string.IsNullOrEmpty(programFiles) ? null : Path.Combine(Path.Combine(programFiles, "WindowsPowerShell"), "Modules"),
+					string.IsNullOrEmpty(systemRoot) ? null : Path.Combine(Path.Combine(systemRoot, Path.Combine("System32", Path.Combine("WindowsPowerShell", Path.Combine("v1.0", "Modules"))))),
+				};
+				List<string> parts = new List<string>();
+				foreach (string path in preferred) {
+					if (!string.IsNullOrEmpty(path) && !parts.Contains(path)) parts.Add(path);
+				}
+				string existing = Environment.GetEnvironmentVariable("PSModulePath");
+				if (!string.IsNullOrEmpty(existing)) {
+					foreach (string path in existing.Split(';')) {
+						if (!string.IsNullOrEmpty(path) && !parts.Contains(path)) parts.Add(path);
+					}
+				}
+				Environment.SetEnvironmentVariable("PSModulePath", string.Join(";", parts.ToArray()));
+			} catch {
+				// 模块路径修正失败不应影响启动
+			}
 		}
 	}
 	static class PSRunnerEntry {
@@ -1977,8 +2030,14 @@ namespace PSRunnerNS {
 		// EXEMain
 		[$threadingModelThread]
 		private static int Main(string[] args) {
+			#if StartupTiming
+				PSRunner.TimerSw.Restart();
+			#endif
+			PSRunner.TimerMark("main:enter");
 			PSRunner.BaseInit();
+			PSRunner.TimerMark("main:baseinit");
 			me = new PSRunner();
+			PSRunner.TimerMark("main:ctor-done");
 			System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);
 
 			try {
@@ -1995,35 +2054,48 @@ namespace PSRunnerNS {
 				};
 				#endif
 
-				PSDataCollection<string> colInput = new PSDataCollection<string> ();
-				if (Console_Info.IsInputRedirected()) { // read standard input
-					string sItem;
-					while ((sItem = Console.ReadLine()) != null) { // add to powershell pipeline
-						colInput.Add(sItem);
-					}
-				}
-				colInput.Complete();
-
 				for(int i = 0; i < args.Length; i++) {
 					if (!Regex.IsMatch(args[i], @"^(-|\$)\w*$"))
 						args[i] = "\'"+args[i].Replace("'", "''")+"\'";
 				}
 
-				me.pwsh.Runspace.SessionStateProxy.SetVariable("PSEXEInput", colInput);
+				#if ReadInput
+					// 仅当编译期检测到脚本顶层使用 $input 时（ReadInput）才读取重定向的标准输入：
+					// 否则保留原始 stdin，且不在启动时等待 stdin（issue 62）。
+					PSDataCollection<string> colInput = new PSDataCollection<string> ();
+					if (Console_Info.IsInputRedirected()) { // read standard input
+						string sItem;
+						while ((sItem = Console.ReadLine()) != null) { // add to powershell pipeline
+							colInput.Add(sItem);
+						}
+					}
+					colInput.Complete();
+
+					me.pwsh.Runspace.SessionStateProxy.SetVariable("PSEXEInput", colInput);
+					me.pwsh.AddScript("$PSEXEInput|PSEXEMainFunction "+String.Join(" ", args));
+				#else
+					// 脚本顶层不用 $input：完全不带管道输入，也不设置 $PSEXEInput
+					me.pwsh.AddScript("PSEXEMainFunction "+String.Join(" ", args));
+				#endif
 				// Out-Default 走 host UI；勿用 Out-String/输出收集，否则 native 子进程 stdout 会变成管道（非 TTY）
-				me.pwsh.AddScript("$PSEXEInput|PSEXEMainFunction "+String.Join(" ", args));
 				me.pwsh.AddCommand("Out-Default");
 				me.pwsh.Streams.Error.DataAdded += (sender, eventargs) => {
 					me.ui.WriteErrorRecord(((PSDataCollection<ErrorRecord>)sender)[eventargs.Index]);
 				};
 				IAsyncResult asyncResult = me.pwsh.BeginInvoke();
+				PSRunner.TimerMark("main:begininvoke");
 
-				while (!mre.WaitOne(100))
-					if (me.ShouldExit || asyncResult.IsCompleted) break;
+				System.Threading.WaitHandle[] waitHandles = new System.Threading.WaitHandle[] { mre, asyncResult.AsyncWaitHandle };
+				while (System.Threading.WaitHandle.WaitAny(waitHandles, 10) == System.Threading.WaitHandle.WaitTimeout) {
+					if (me.ShouldExit) break;
+				}
 
+				PSRunner.TimerMark("main:pipeline-completed");
 				me.Inited = true;
 				me.pwsh.EndInvoke(asyncResult);
+				PSRunner.TimerMark("main:endinvoke");
 				me.pwsh.Stop();
+				PSRunner.TimerMark("main:stop");
 
 				if (me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed)
 					me.ui.WriteErrorLine(me.pwsh.InvocationStateInfo.Reason.Message);

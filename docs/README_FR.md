@@ -426,6 +426,26 @@ ipconfig | Out-String
 $Host.UI.RawUI.FlushInputBuffer()
 ```
 
+### Entrée standard et `$input`
+
+Un exe compilé ne lit l'entrée standard redirigée (ligne par ligne, comme entrée de pipeline) que lorsque le script utilise `$input` au **niveau supérieur** :
+
+- Si `$input` est utilisé : comportement identique à PS2EXE — stdin est consommé comme entrée de pipeline, de sorte que le stdin brut (`[Console]::In` / `Console.OpenStandardInput()`) atteint EOF ensuite.
+- Si `$input` n'est pas utilisé : stdin n'est pas lu du tout ; l'entrée standard brute reste intacte et le démarrage n'attend pas stdin (un parent qui garde le pipe ouvert ne bloque plus le programme), et les processus enfants peuvent toujours hériter de stdin.
+
+Seul le niveau supérieur du script compte : un `$input` dans des fonctions, des blocs de script ou des classes est l'entrée de pipeline propre à cette portée et est ignoré.
+
+Par exemple, si le script appelle `[Console]::In.ReadToEnd()` et n'utilise jamais `$input`, après compilation, `echo hi | .\tool.exe` reçoit `hi`.
+
+### Évaluation des constantes
+
+Pour les scripts uniquement constants et sans effet de bord, ps12exe les évalue à la compilation et intègre le résultat directement dans un exe minuscule (le chemin TinySharp, généralement autour de 1 Ko) ; il revient à la compilation normale lorsque l'évaluation dépasse le délai d'attente (7 secondes par défaut) ou que le résultat est trop long. Si l'environnement d'évaluation diffère de l'exécution, ou si vous voulez simplement l'hôte PowerShell complet, ajoutez l'un des pragmas ci-dessous pour refuser explicitement cette optimisation :
+
+- `#_pragma noConstEval` : déclare que ce script n'est pas une constante ; ignore l'évaluation des constantes.
+- `#_pragma constEvalTimeout` : déclare que cette évaluation de constante a déjà expiré ; applique le même repli qu'en cas de délai dépassé.
+
+Les deux sont mis en correspondance par mot-clé dans le script à la compilation, donc ils peuvent figurer sur n'importe quelle ligne ; après le repli vers l'hôte normal, ces lignes ne sont que des commentaires ordinaires.
+
 ## Comparaison des avantages 🏆
 
 ### Comparaison rapide 🏁

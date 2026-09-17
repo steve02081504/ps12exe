@@ -54,6 +54,8 @@ function Preprocessor($Content, $FilePath) {
 	$Result = @()
 	$requiredModules = @()
 	$requireFlag = $False
+	# 常量求值的逃生舱 pragma，由 ConstProgramCheck.ps1 直接关键词匹配处理；这里仅放行，避免报未知 pragma
+	$ConstEvalPragmas = @('noConstEval', 'constEvalTimeout')
 	# 处理#_if <PSEXE/PSScript>、#_else、#_endif
 	for ($index = 0; $index -lt $Content.Count; $index++) {
 		$Line = $Content[$index]
@@ -151,6 +153,7 @@ function Preprocessor($Content, $FilePath) {
 		$_ # 对于#_pragma，我们不在预处理时移除它：考虑到它可能被用于$PSEXEscript中
 		if ($_ -match "^\s*#_pragma\s+(?<pragmaname>[a-zA-Z_][a-zA-Z_0-9]+)\s*(?!#.*)$") {
 			$pragmaname = $Matches["pragmaname"]
+			if ($ConstEvalPragmas -contains $pragmaname) { return }
 			$value = $true
 			if ($pragmaname.StartsWith("no")) {
 				$pragmaname = $pragmaname.Substring(2)
@@ -168,6 +171,7 @@ function Preprocessor($Content, $FilePath) {
 		}
 		elseif ($_ -match "^\s*#_pragma\s+(?<pragmaname>[a-zA-Z_][a-zA-Z_0-9]+)\s+(?<rest>.+)\s*$") {
 			$pragmaname = $Matches["pragmaname"]
+			if ($ConstEvalPragmas -contains $pragmaname) { return }
 			$value = $Matches["rest"]
 			if ($ParamList[$pragmaname].ParameterType -eq [Switch] -or $ParamList["no$pragmaname"].ParameterType -eq [Switch]) {
 				if ($value.IndexOf("#") -ge 0) {
