@@ -165,7 +165,7 @@ requireAdmin     : 如果启用了UAC，编译的可执行文件只能在提升�
 supportOS        : 使用最新Windows版本的功能（执行[Environment]::OSVersion以查看差异）
 virtualize       : 已激活应用程序虚拟化（强制x86运行时）
 longPaths        : 如果在OS上启用，启用长路径（> 260个字符）（仅适用于Windows 10或更高版本）
-targetRuntime    : 目标运行时版本，默认为 'Framework4.0'，支持 'Framework2.0'
+targetRuntime    : 目标运行时版本，默认为 'Framework4.0'，支持 'Framework2.0' 与 'Core'；'Core' 编译为 PowerShell Core (.NET) 可执行程序（需要编译机与目标机都装有 PowerShell Core 与 .NET，且产物体积大很多）。
 SkipVersionCheck : 跳过ps12exe的新版本检查
 GuestMode        : 在额外的保护下编译脚本，避免本机文件被访问
 PreprocessOnly   : 预处理输入脚本并在不编译的情况下返回它

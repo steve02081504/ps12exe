@@ -74,6 +74,17 @@ try {
 	$packedRun = & $repoRoot/build/packed.exe
 	if ("$packedRun" -notmatch 'packed-embed') { throw "packed exe output mismatch: $packedRun" }
 
+	# 7) Core exe（dotnet 单文件）：exe21sp 需能穿透单文件 bundle 找到托管负载并解包还原脚本
+	if (-not (Get-Command dotnet -ErrorAction Ignore)) { throw 'Core target requires the .NET SDK (dotnet)' }
+	$coreScript = "Get-Date | Out-Null; Write-Output 'core-packed-embed'"
+	$coreScript | ps12exe -targetRuntime Core -outputFile $repoRoot/build/core_packed.exe -Verbose | Write-Host
+	$e7 = Get-Exe21spContent 'build/core_packed.exe'
+	if ($e7 -notmatch 'core-packed-embed') { throw "exe21sp Core: expected 'core-packed-embed' in: $e7" }
+	# 7b) Windows PowerShell（.NET Framework 无 BrotliStream）下：转交 pwsh 解压后同样能还原
+	$coreExeEsc = (Join-Path $repoRoot 'build/core_packed.exe') -replace "'", "''"
+	$e7WinPs = powershell -NoProfile -Command "Import-Module '$repoEsc' -Force; exe21sp -inputFile '$coreExeEsc'" | Out-String
+	if ($e7WinPs -notmatch 'core-packed-embed') { throw "exe21sp Core under Windows PowerShell: expected 'core-packed-embed' in: $e7WinPs" }
+
 	# exe21sp without -outputFile and without redirect: saves to <exe>.ps1 in same directory (call without pipe; when stdout is not redirected, exe21sp writes to file)
 	$normalExeFull = [System.IO.Path]::GetFullPath((Join-Path $repoRoot 'build/normal.exe'))
 	$expectedPs1Path = [System.IO.Path]::GetDirectoryName($normalExeFull) + [System.IO.Path]::DirectorySeparatorChar + [System.IO.Path]::GetFileNameWithoutExtension($normalExeFull) + '.ps1'

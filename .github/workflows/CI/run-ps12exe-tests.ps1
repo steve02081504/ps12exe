@@ -169,6 +169,18 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 		throw "Framework2.0 exe output mismatch, got: $($fw20.Output)"
 	}
 
+	# Core（.NET）：dotnet publish 单文件 + Brotli 负载，产物框架依赖（目标机需 pwsh 与匹配的 .NET 运行时）
+	if (-not (Get-Command dotnet -ErrorAction Ignore)) { throw 'Core target requires the .NET SDK (dotnet)' }
+	$corePs1 = Join-Path $buildDir 'core-run.ps1'
+	$coreExe = Join-Path $buildDir 'core-run.exe'
+	Set-Content -LiteralPath $corePs1 -Encoding UTF8 -Value "Get-Date | Out-Null; Write-Output 'core-run-ok'"
+	ps12exe -inputFile $corePs1 -outputFile $coreExe -targetRuntime Core | Write-Host
+	if (-not (Test-Path -LiteralPath $coreExe)) { throw 'Core compile produced no exe' }
+	$core = Invoke-ExeCaptureMergedOutput -ExePath $coreExe
+	if ($core.Output -notmatch 'core-run-ok') {
+		throw "Core exe output mismatch, got: $($core.Output)"
+	}
+
 	# Pipeline/redirection: when stdout is redirected, ps12exe outputs only the exe path
 	$redirectPs1 = Join-Path $buildDir 'redirect_test.ps1'
 	$redirectExe = Join-Path $buildDir 'redirect_test.exe'
@@ -190,9 +202,11 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 		iconFile = @{ ParameterType = [string] }
 		title	= @{ ParameterType = [string] }
 	}
+	$script:i18nWarnings = [System.Collections.Generic.List[string]]::new()
 	function Write-I18n {
 		param($PipeLineType, $Mid, $FormatArgs, $Category)
 		if ($PipeLineType -eq 'Error') { throw "PragmaError:$Mid" }
+		if ($PipeLineType -eq 'Warning') { $script:i18nWarnings.Add($Mid) }
 	}
 	. (Join-Path $repoRoot 'src/ReadScriptFile.ps1')
 	function Invoke-PragmaTest([string]$pragma, [bool]$guest, [string]$expect, [string]$assertParam = 'iconFile') {
@@ -225,6 +239,32 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 	Invoke-PragmaTest '#_pragma iconFile $PSScriptRoot/foo.ico' $false 'C:\compiled/foo.ico'
 	Invoke-PragmaTest '#_pragma title "prefix$(Split-Path $PSScriptRoot -Leaf)suffix"' $false 'prefixcompiledsuffix' 'title'
 	Remove-Item Env:\PRAGMA_SECRET -ErrorAction SilentlyContinue
+
+	# 嵌套 #_if：#_endif 必须与最近的 #_if 配对，外层分支不能被内层 #_endif 提前截断；嵌套即有一支死代码，需告警。
+	$script:i18nWarnings.Clear()
+	$nestedIfResult = Preprocessor @(
+		'#_if PSEXE'
+		'outer-true'
+		'#_if PSScript'
+		'inner-false'
+		'#_else'
+		'inner-true'
+		'#_endif'
+		'outer-tail'
+		'#_else'
+		'outer-false'
+		'#_endif'
+	) 'C:\compiled\main.ps1'
+	$nestedIfText = $nestedIfResult -join "`n"
+	foreach ($expected in @('outer-true', 'inner-true', 'outer-tail')) {
+		if ($nestedIfText -notmatch $expected) { throw "nested #_if dropped '$expected': $nestedIfText" }
+	}
+	foreach ($unexpected in @('inner-false', 'outer-false')) {
+		if ($nestedIfText -match $unexpected) { throw "nested #_if kept '$unexpected': $nestedIfText" }
+	}
+	if ($script:i18nWarnings -notcontains 'PreprocessNestedIfDeadCode') {
+		throw "nested #_if did not warn about dead code, warnings: $($script:i18nWarnings -join ', ')"
+	}
 
 	# Const-eval 回退（issue 63）：所有回退路径（超时/超长/异常/显式声明）都必须把 IsConst 置回 $false。
 	# 否则下游会拿从未赋值的 $RowResult 去走 TinySharp，编出一个只输出空行的哑 exe（默认宿主编译被跳过）。

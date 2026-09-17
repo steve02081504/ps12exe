@@ -1,6 +1,7 @@
 ﻿// Uses AsmResolver to read embedded script resources from a ps12exe-built exe
 // and return the original PowerShell script text. Exposed via the exe21sp PowerShell helper.
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
@@ -8,6 +9,11 @@ using AsmResolver.DotNet;
 using AsmResolver.PE.File;
 
 namespace exe21sp {
+	/// <summary>
+	/// 当前宿主没有 BrotliStream（.NET Framework 不提供），需要转交 pwsh / .NET Core 解压。
+	/// </summary>
+	public sealed class BrotliUnavailableException : Exception { }
+
 	public static class Extractor {
 		/// <summary>
 		/// Extracts the embedded PowerShell script from a ps12exe-built executable.
@@ -32,22 +38,52 @@ namespace exe21sp {
 		}
 
 		private static string TryExtractFromFrame(string exePath) {
-			try {
-				var module = ModuleDefinition.FromFile(exePath);
-				var script = TryExtractFromModule(module);
-				if (script != null)
-					return script;
+			// 普通托管 exe 的镜像在偏移 0；Core 的单文件 exe 是原生 apphost 后追加托管负载，
+			// 因此扫描文件内所有内嵌 PE 镜像，逐个尝试提取。
+			foreach (var image in EnumerateEmbeddedImages(File.ReadAllBytes(exePath))) {
+				try {
+					var module = ModuleDefinition.FromBytes(image);
+					var script = TryExtractFromModule(module);
+					if (script != null)
+						return script;
 
-				// Non-const exes wrap the real assembly (gzip) in the launcher's "main" resource.
-				// Unwrap it and look for the main.ps1 script resource inside that payload.
-				var payload = TryGetLauncherPayload(module);
-				if (payload != null)
-					return TryExtractFromModule(ModuleDefinition.FromBytes(payload));
-			}
-			catch {
-				// Not a valid .NET module or read error.
+					// Non-const exes wrap the real assembly in the launcher's "main" resource.
+					// Unwrap it and look for the main.ps1 script resource inside that payload.
+					var payload = TryGetLauncherPayload(module);
+					if (payload != null)
+						return TryExtractFromModule(ModuleDefinition.FromBytes(payload));
+				}
+				catch (BrotliUnavailableException) {
+					// 需要 .NET Core 才能解压的 Core 负载，交给上层转交 pwsh。
+					throw;
+				}
+				catch {
+					// 非有效 .NET 模块（如原生 apphost）或读取错误。
+				}
 			}
 			return null;
+		}
+
+		/// <summary>
+		/// 逐个产出文件内疑似 PE 镜像的字节切片（从每个 "MZ" 且带有效 PE 头的偏移到文件末尾）。
+		/// 单文件发布的 exe 把托管程序集追加在原生 apphost 之后，需要这样找出来。
+		/// </summary>
+		private static IEnumerable<byte[]> EnumerateEmbeddedImages(byte[] fileBytes) {
+			for (int offset = 0; offset + 0x40 <= fileBytes.Length; offset++) {
+				if (fileBytes[offset] != 'M' || fileBytes[offset + 1] != 'Z')
+					continue;
+				uint peHeaderOffset = BitConverter.ToUInt32(fileBytes, offset + 0x3C);
+				if (peHeaderOffset < 0x40 || peHeaderOffset > 0x1000)
+					continue;
+				long peOffset = offset + (long)peHeaderOffset;
+				if (peOffset + 4 > fileBytes.Length)
+					continue;
+				if (fileBytes[peOffset] != 'P' || fileBytes[peOffset + 1] != 'E' || fileBytes[peOffset + 2] != 0 || fileBytes[peOffset + 3] != 0)
+					continue;
+				var image = new byte[fileBytes.Length - offset];
+				Buffer.BlockCopy(fileBytes, offset, image, 0, image.Length);
+				yield return image;
+			}
 		}
 
 		private static string TryExtractFromModule(ModuleDefinition module) {
@@ -84,14 +120,35 @@ namespace exe21sp {
 				if (raw == null || raw.Length == 0)
 					return null;
 
-				using (var ms = new MemoryStream(raw))
-				using (var gzip = new GZipStream(ms, CompressionMode.Decompress))
+				return DecompressLauncherPayload(raw);
+			}
+			return null;
+		}
+
+		/// <summary>
+		/// 解压 launcher 的 "main" 负载：Windows PowerShell 构建是 gzip，Core 构建是 Brotli。
+		/// BrotliStream 不在 .NET Framework 中，故用反射取；不可用时抛 <see cref="BrotliUnavailableException"/>，
+		/// 由 exe21sp 转交 pwsh 处理。
+		/// </summary>
+		private static byte[] DecompressLauncherPayload(byte[] raw) {
+			using (var ms = new MemoryStream(raw)) {
+				// gzip 流以 1F 8B 开头；否则视为 Brotli（Brotli 无固定魔数）。
+				Stream decompressor = raw.Length >= 2 && raw[0] == 0x1F && raw[1] == 0x8B
+					? new GZipStream(ms, CompressionMode.Decompress)
+					: CreateBrotliDecompressor(ms);
+				using (decompressor)
 				using (var outMs = new MemoryStream()) {
-					gzip.CopyTo(outMs);
+					decompressor.CopyTo(outMs);
 					return outMs.ToArray();
 				}
 			}
-			return null;
+		}
+
+		private static Stream CreateBrotliDecompressor(Stream source) {
+			var brotliType = Type.GetType("System.IO.Compression.BrotliStream, System.IO.Compression.Brotli", false);
+			if (brotliType == null)
+				throw new BrotliUnavailableException();
+			return (Stream)Activator.CreateInstance(brotliType, source, CompressionMode.Decompress);
 		}
 
 		private static string TryExtractFromTinySharp(string exePath) {

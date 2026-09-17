@@ -64,7 +64,7 @@
 			supportOS		 = "使用最新Windows版本的功能（执行``[Environment]::OSVersion``以查看差异）"
 			virtualize		 = "已激活应用程序虚拟化（强制x86运行时）"
 			longPaths		 = "如果在OS上启用，启用长路径（> 260个字符）（仅适用于Windows 10或更高版本）"
-			targetRuntime	 = "目标运行时版本，默认为 ``'Framework4.0'``，支持 ``'Framework2.0'``"
+			targetRuntime	 = "目标运行时版本，默认为 ``'Framework4.0'``，支持 ``'Framework2.0'`` 与 ``'Core'``；``'Core'`` 编译为 PowerShell Core (.NET) 可执行程序（需要编译机与目标机都装有 PowerShell Core 与 .NET，且产物体积大很多）。"
 			SkipVersionCheck = "跳过ps12exe的新版本检查"
 			GuestMode		 = "在额外保护下编译脚本，阻止访问本机文件。"
 			PreprocessOnly	 = "预处理输入脚本并在不编译的情况下返回它"
@@ -145,6 +145,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		PreprocessScriptDone					  = "预处理{0}完成"
 		PreprocessOnlyDone						  = "预处理完成"
 		PreprocessUnknownIfCondition			  = "未知条件：{0}`n假定为 false."
+		PreprocessNestedIfDeadCode				  = "嵌套的 #_if {0} 位于 #_if {1} 内：外层条件已决定该分支，另一支是死代码。"
 		PreprocessMissingEndIf					  = "缺少endif：{0}"
 		# 压缩
 		MinifyingScript							  = "正在压缩脚本..."
@@ -210,7 +211,13 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		TryUpgrade								  = "最新版本是{0}，尝试升级?"
 		EnterToSubmitIssue						  = "如需帮助，按回车提交issue。"
 		OppsSomethingWentWrong					  = "我去，出错了。"
-		RoslynFailedFallback					  = "Roslyn编译失败`n正在回退到使用带有CodeDom的Windows PowerShell...`n你可能想要在将来将 -UseWindowsPowerShell 添加到参数中以跳过此回退`n...或提交 PR 到 ps12exe 仓库来修复此问题！"
+		CoreCompilePublishing					  = "正在使用 .NET SDK 发布单文件可执行程序..."
+		CoreCompileNeedDotnet					  = "PowerShell Core 编译需要 .NET SDK（dotnet）。请安装它，或传入 -targetRuntime Framework4.0。"
+		CoreCompileUnsupported					  = "PowerShell Core 编译器暂不支持以下选项：{0}"
+		CoreCompileNeedPwsh						  = "当前是 Windows PowerShell；-targetRuntime Core 需要安装 PowerShell Core (pwsh) 并加入 PATH。"
+		CoreCompileNeedWindowsPowerShell		  = "未找到 Windows PowerShell；请传入 -targetRuntime Core 来编译 PowerShell Core 可执行程序。"
+		CoreCompileNeedPwshHost					  = "已编译的 ps12exe.exe 无法编译 PowerShell Core 程序；请在 pwsh 下通过模块/脚本运行 ps12exe。"
+		CoreCompileHint						  = "如果这是 PowerShell Core 专属脚本，请传入 -targetRuntime Core（需要编译机和目标机都安装 PowerShell Core 与 .NET，且产物体积大很多）。"
 		# 访客模式与 Pragma
 		GuestModeFileTooLarge					  = "文件{0}太大，无法读取。"
 		GuestModeIconFileTooLarge				  = "图标{0}太大，无法读取。"
@@ -309,6 +316,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		TinySharpCannotReadText		 = "该可执行文件是 .NET 程序集，但不符合 TinySharp 布局（无法读取 .text）。"
 		TinySharpPayloadNotRecovered = "该可执行文件是 .NET 程序集，但不符合 TinySharp 布局；无法恢复脚本负载。"
 		NoEmbeddedScript			 = '在 "{0}" 中未找到嵌入脚本（不是 ps12exe 构建的 exe，或无法恢复负载）。'
+		CoreExtractNeedsPwsh		 = '该 exe 的负载是 Brotli 压缩的（PowerShell Core 构建）。请安装 PowerShell 7 (pwsh) 以便 exe21sp 解压。'
 		FileNotFound				 = "文件不存在：{0}"
 		InputUrlFailed				 = "无法从 URL 读取：{0}"
 	}

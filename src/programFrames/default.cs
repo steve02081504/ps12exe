@@ -1929,7 +1929,11 @@ namespace PSRunnerNS {
 			#if Pwsh20
 				this.PSRunSpace = RunspaceFactory.CreateRunspace(host);
 			#else
-				InitialSessionState iss = InitialSessionState.CreateDefault2();
+				#if CoreHost
+					InitialSessionState iss = InitialSessionState.CreateDefault();
+				#else
+					InitialSessionState iss = InitialSessionState.CreateDefault2();
+				#endif
 				this.PSRunSpace = RunspaceFactory.CreateRunspace(host, iss);
 			#endif
 			TimerMark("ctor:runspace-create");
@@ -1939,10 +1943,14 @@ namespace PSRunnerNS {
 			this.pwsh = PowerShell.Create();
 			this.pwsh.Runspace = PSRunSpace;
 			TimerMark("ctor:pwsh-create");
-			string exepath = Assembly.GetEntryAssembly().Location;
+			#if CoreHost
+				string exepath = System.Environment.ProcessPath;
+			#else
+				string exepath = Assembly.GetEntryAssembly().Location;
+			#endif
 			Assembly executingAssembly = Assembly.GetExecutingAssembly();
 			string script;
-			// 脚本以未压缩的 main.ps1 资源内嵌（打包时整块负载还会 gzip，这里不单独压）。
+			// 脚本以 main.ps1 资源内嵌在负载程序集里；负载本身在打包时会被整体压缩。
 			using (Stream scriptstream = executingAssembly.GetManifestResourceStream("main.ps1")) {
 				using (var scriptreader = new StreamReader(scriptstream, Encoding.UTF8)) {
 					script = scriptreader.ReadToEnd();

@@ -5,7 +5,8 @@
 
 .DESCRIPTION
 	Uses AsmResolver to read script payload from exe:
-	- For exe built with the standard program frame (CodeDom/CodeAnalysis): reads the embedded .NET manifest resource "main.ps1" as UTF-8 to get the original script. Packed exes first unwrap the gzip-compressed "main" launcher payload and look inside it.
+	- For exe built with the standard program frame: reads the embedded .NET manifest resource "main.ps1" as UTF-8 to get the original script. Packed exes first unwrap the compressed "main" launcher payload and look inside it (gzip for Windows PowerShell builds, Brotli for Core builds).
+	  Brotli is not available on .NET Framework, so under Windows PowerShell a Core exe is handed off to pwsh (PowerShell 7); if pwsh is missing, an error is reported.
 	- For minimal exe compiled with TinySharp: parses its CIL and PE image, restores the output string and exit code captured by TinySharp,
 	  and generates a minimal ps1 containing only that string (and optional exit statement) to equivalently reproduce the behavior.
 
@@ -83,6 +84,22 @@ function Resolve-ExeInputPath {
 	return [PSCustomObject]@{ Path = $resolved; IsTemp = $false }
 }
 
+# Windows PowerShell（.NET Framework）没有 BrotliStream：Core 产物的 Brotli 负载解压转交 pwsh 完成。
+# 主处理流程仅在脚本/模块模式运行（exe 版只是 #_require ps12exe 后转发），故直接用同目录脚本，无需模块导入。
+function Invoke-ExtractionInPwsh([string]$ExePath) {
+	$pwsh = Get-Command pwsh -ErrorAction Ignore
+	if (-not $pwsh) { throw 'pwsh not installed' }
+	$tempOut = [System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), [System.IO.Path]::GetRandomFileName() + '.ps1')
+	try {
+		& $pwsh.Source -NoProfile -File "$PSScriptRoot\exe21sp.ps1" -inputFile $ExePath -outputFile $tempOut | Out-Null
+		if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $tempOut)) { throw "pwsh extraction failed (exit $LASTEXITCODE)" }
+		return [System.IO.File]::ReadAllText($tempOut, [System.Text.Encoding]::UTF8)
+	}
+	finally {
+		Remove-Item -LiteralPath $tempOut -Force -ErrorAction Ignore
+	}
+}
+
 $Refs = @(
 	'System',
 	'System.Core',
@@ -131,6 +148,18 @@ foreach ($currentInput in $inputItemsToProcess) {
 	}
 	try {
 		$script = [exe21sp.Extractor]::ExtractScriptFromExe($currentExe)
+	} catch [exe21sp.BrotliUnavailableException] {
+		# 当前是 Windows PowerShell，Core 的 Brotli 负载交给 pwsh 解压。
+		try {
+			$script = Invoke-ExtractionInPwsh -ExePath $currentExe
+		} catch {
+			Write-I18n Error CoreExtractNeedsPwsh
+			$global:LastExitCode = 1
+			Write-TaskbarProgressError
+			if ($resolved.IsTemp) { Remove-Item -LiteralPath $currentExe -Force -ErrorAction SilentlyContinue }
+			$currentIndex++
+			continue
+		}
 	} catch {
 		$msg = $_.Exception.Message
 		if ($LocalizeData.exe21spI18nData.ContainsKey($msg)) {

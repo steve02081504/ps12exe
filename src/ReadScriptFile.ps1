@@ -56,37 +56,49 @@ function Preprocessor($Content, $FilePath) {
 	$requireFlag = $False
 	# 常量求值的逃生舱 pragma，由 ConstProgramCheck.ps1 直接关键词匹配处理；这里仅放行，避免报未知 pragma
 	$ConstEvalPragmas = @('noConstEval', 'constEvalTimeout')
-	# 处理#_if <PSEXE/PSScript>、#_else、#_endif
+	# 处理#_if <PSEXE/PSScript>、#_else、#_endif（支持嵌套：只有栈上所有分支都为真时才输出）
+	$conditionStack = [System.Collections.Generic.List[hashtable]]::new()
 	for ($index = 0; $index -lt $Content.Count; $index++) {
 		$Line = $Content[$index]
 		if ($Line -match "^\s*#_if\s+(?<condition>\S+)\s*(?!#.*)") {
-			$condition = $Matches["condition"]
-			$condition = switch ($condition) {
-				'PSEXE' { $TRUE }
-				'PSScript' { $False }
-				default { Write-I18n Error PreprocessUnknownIfCondition $condition -Category InvalidData; $False }
+			$conditionName = $Matches["condition"]
+			# 外层 #_if 已经决定了内层条件，内层必有一支是死代码
+			if ($conditionStack.Count -gt 0) {
+				Write-I18n Warning PreprocessNestedIfDeadCode @($conditionName, $conditionStack[$conditionStack.Count - 1].Name)
 			}
-			while ($index -lt $Content.Count) {
-				$index++
-				$Line = $Content[$index]
-				if ($Line -match "^\s*#_endif\s*(?!#.*)") {
-					break
+			$conditionStack.Add(@{
+				Name   = $conditionName
+				Active = switch ($conditionName) {
+					'PSEXE' { $TRUE }
+					'PSScript' { $False }
+					default { Write-I18n Error PreprocessUnknownIfCondition $conditionName -Category InvalidData; $False }
 				}
-				if ($condition) { $Result += $Line }
-				if ($Line -match "^\s*#_else\s*(?!#.*)") {
-					$condition = -not $condition
-				}
-			}
-			if ($Line -notmatch "^\s*#_endif\s*(?!#.*)") {
-				Write-I18n Error PreprocessMissingEndif -Category SyntaxError
-				return
-			}
+			})
 		}
-		else {
+		elseif ($Line -match "^\s*#_else\s*(?!#.*)") {
+			if ($conditionStack.Count -eq 0) { $Result += $Line; continue }
+			$top = $conditionStack[$conditionStack.Count - 1]
+			$top.Active = -not $top.Active
+		}
+		elseif ($Line -match "^\s*#_endif\s*(?!#.*)") {
+			if ($conditionStack.Count -eq 0) { $Result += $Line; continue }
+			$conditionStack.RemoveAt($conditionStack.Count - 1)
+		}
+		elseif (-not ($conditionStack.Active -contains $false)) {
 			$Result += $Line
 		}
 	}
-	$ScriptRoot = $FilePath.Substring(0, $FilePath.LastIndexOfAny(@('\', '/')))
+	if ($conditionStack.Count -ne 0) {
+		Write-I18n Error PreprocessMissingEndif -Category SyntaxError
+		return
+	}
+	# 被处理文件所在目录，用于解析 #_include 里的 $PSScriptRoot。本地路径取绝对目录，避免相对输入路径被反复前缀。
+	$ScriptRoot = if ($FilePath -match "^(https?|ftp)://") {
+		$FilePath -replace '/[^/]*$', ''
+	}
+	else {
+		[System.IO.Path]::GetDirectoryName($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($FilePath))
+	}
 	function GetIncludeFilePath($rest) {
 		if ($rest -match "((\'[^\']*\')+)\s*(?!#.*)") {
 			$file = $Matches[1]
@@ -98,8 +110,8 @@ function Preprocessor($Content, $FilePath) {
 		}
 		else { $file = $rest }
 		$file = $file.Replace('$PSScriptRoot', $ScriptRoot)
-		# 若是相对路径，则转换为基于$FilePath的绝对路径
-		if ($file -notmatch "^[a-zA-Z]:" -and $file -notmatch "^(https|ftp)://") {
+		# 仍是相对路径（未引用 $PSScriptRoot）时，基于被处理文件所在目录解析。
+		if (-not [System.IO.Path]::IsPathRooted($file) -and $file -notmatch "^(https?|ftp)://") {
 			$file = "$ScriptRoot/$file"
 		}
 		$file

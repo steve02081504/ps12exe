@@ -4,12 +4,13 @@ $ConstResult = $RowResult | ForEach-Object {
 }
 $ConstResult = $ConstResult -join "`n"
 
-# 对于$PSScriptRoot\bin\AsmResolver下的所有dll文件
+# TinySharp 只在 Windows PowerShell 宿主编译，所以引用直接用 GAC 程序集名
 $Refs = @(
 	'System',
 	'System.Core',
 	'netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51'
 )
+# 再补上 $PSScriptRoot\bin\AsmResolver 下的所有 dll
 Get-ChildItem $PSScriptRoot\bin\AsmResolver -Recurse -Filter *.dll | ForEach-Object {
 	$Refs += $_.FullName
 	try {

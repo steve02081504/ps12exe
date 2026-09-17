@@ -91,7 +91,9 @@ application virtualization is activated (forcing x86 runtime)
 enable long paths ( > 260 characters) if enabled on OS (works only with Windows 10 or up)
 
 .PARAMETER targetRuntime
-the target runtime to compile for. Possible values are 'Framework4.0' or 'Framework2.0', default is 'Framework4.0'
+the target runtime to compile for. Possible values are 'Framework4.0', 'Framework2.0' or 'Core', default is 'Framework4.0'.
+'Core' compiles a PowerShell Core (.NET) executable: both the build machine and the target machine must have
+PowerShell Core and a matching .NET runtime installed, and the generated executable is much larger.
 
 .PARAMETER GuestMode
 Compile scripts with additional protection, prevent native files from being accessed
@@ -183,7 +185,7 @@ Param(
 	[Switch]$supportOS,
 	[Switch]$virtualize,
 	[Switch]$longPaths,
-	[ValidateSet('Framework2.0', 'Framework4.0')]
+	[ValidateSet('Framework2.0', 'Framework4.0', 'Core')]
 	[String]$targetRuntime = 'Framework4.0',
 	[Switch]$SkipVersionCheck,
 	[Switch]$GuestMode,
@@ -197,10 +199,6 @@ Param(
 	#_endif
 	[string]$Localize,
 	[Switch]$help,
-	# TODO
-	# in dev, not support yet
-	[Parameter(DontShow)]
-	[switch]$UseWindowsPowerShell = $true,
 	# deprecated. use `-noConfigFile` instead.
 	[Parameter(DontShow)]
 	[Switch]$noConfigFile,
@@ -478,6 +476,7 @@ if ($runtime20) { $targetRuntime = 'Framework2.0' }
 if ($runtime40) { $targetRuntime = 'Framework4.0' }
 $Params.targetRuntime = $targetRuntime
 [void]$Params.Remove("runtime20"); [void]$Params.Remove("runtime40")
+$isCoreTarget = $targetRuntime -eq 'Core'
 if ($STA -and $MTA) {
 	Write-I18n Error CombinedArg_STA_MTA -Category InvalidArgument
 	$global:LastExitCode = 2 # 调用格式错误
@@ -509,6 +508,74 @@ $NoResource = -not $resourceParams.Count
 # 由于其他的resourceParams参数需要转义，iconFile参数不需要转义，所以提取出来单独处理
 $iconFile = $resourceParams['iconFile']
 $resourceParams.Remove('iconFile')
+
+# retrieve absolute paths independent if path is given relative oder absolute
+if (-not $inputFile) {
+	$inputFile = '.\a.ps1'
+}
+if ($inputFile -notmatch "^(https?|ftp)://") {
+	$inputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($inputFile)
+}
+if (-not $outputFile) {
+	if ($inputFile -match "^https?://") {
+		$outputFile = ([System.IO.Path]::Combine($PWD, [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
+	}
+	else {
+		$outputFile = ([System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($inputFile), [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
+	}
+}
+else {
+	$outputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($outputFile)
+	if ((Test-Path $outputFile -PathType Container)) {
+		$outputFile = ([System.IO.Path]::Combine($outputFile, [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
+	}
+}
+#_if PSScript #在PSEXE中主机永远是winpwsh，可省略该部分
+. $PSScriptRoot/src/PSObjectToString.ps1
+function UsingHost($Boundparameters, $HostExe) {
+	# 写临时脚本，把参数串成命令行交给另一个 PowerShell 宿主编译，再等它退出。
+	$Params = ([hashtable]$Boundparameters).Clone()
+	$Params.Remove("minifyer")
+	$Params.Remove("Content")
+	$Params.Remove("inputFile")
+	$Params.Remove("outputFile")
+	$Params.Remove("resourceParams") #使用旧版参数列表传递hashtable参数更为保险
+	$TempFile = if ($TempDir) {
+		New-Item -ItemType Directory -Path $TempDir -ErrorAction SilentlyContinue | Out-Null
+		[System.IO.Path]::Combine($TempDir, 'main.ps1')
+	} else { [System.IO.Path]::GetTempFileName() }
+	$Content | Set-Content $TempFile -Encoding UTF8 -NoNewline
+	$Params.Add("outputFile", $outputFile)
+	$Params.Add("inputFile", $TempFile)
+	if ($TempDir) { $Params.TempDir = $TempDir }
+	$resourceParamKeys | ForEach-Object {
+		if ($resourceParams.ContainsKey($_) -and $resourceParams[$_]) {
+			$Params[$_] = $resourceParams[$_]
+		}
+	}
+	if ($iconFile) { $Params.iconFile = $iconFile }
+	if ($DllExportList.Length) { $Params.DllExportList = ConvertTo-Json -depth 7 -Compress -InputObject $DllExportList }
+	$CallParam = Get-ArgsString $Params
+
+	Write-Debug "Starting $HostExe ps12exe with parameters: $CallParam"
+
+	& $HostExe -NoProfile -Command "&'$PSScriptRoot\ps12exe.ps1' $CallParam -nested; exit `$LastExitCode" | Write-Host
+	$global:LastExitCode = $LASTEXITCODE
+}
+# Windows PowerShell 解析不了 Core 语法，因此 Core 目标必须在解析前交接给 pwsh。
+if (!$nested -and $isCoreTarget -and ($PSVersionTable.PSEdition -ne "Core")) {
+	if (Get-Command pwsh -ErrorAction Ignore) {
+		UsingHost $Params 'pwsh'
+		if ((Test-Path -LiteralPath $outputFile) -and (Test-StdoutRedirected)) {
+			Write-Output $outputFile
+		}
+		return
+	}
+	Write-I18n Error CoreCompileNeedPwsh -Category NotInstalled
+	$global:LastExitCode = 2 # 调用格式错误
+	return
+}
+#_endif
 
 # 语法检查
 if ($targetRuntime -eq 'Framework2.0') {
@@ -560,6 +627,9 @@ if ($SyntaxErrors) {
 		}
 		Write-Host ($_.Messages -join "`n")
 	}
+	if (-not $isCoreTarget) {
+		Write-I18n Host CoreCompileHint -ForegroundColor Yellow
+	}
 	$global:LastExitCode = 1 # 脚本语法错误
 	return
 }
@@ -567,63 +637,18 @@ elseif (!$AST) {
 	$AST = [System.Management.Automation.Language.Parser]::ParseInput($Content, [ref]$null, [ref]$null)
 }
 
-# retrieve absolute paths independent if path is given relative oder absolute
-if (-not $inputFile) {
-	$inputFile = '.\a.ps1'
-}
-if ($inputFile -notmatch "^(https?|ftp)://") {
-	$inputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($inputFile)
-}
-if (-not $outputFile) {
-	if ($inputFile -match "^https?://") {
-		$outputFile = ([System.IO.Path]::Combine($PWD, [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
-	}
-	else {
-		$outputFile = ([System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($inputFile), [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
-	}
-}
-else {
-	$outputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($outputFile)
-	if ((Test-Path $outputFile -PathType Container)) {
-		$outputFile = ([System.IO.Path]::Combine($outputFile, [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
-	}
-}
 #_if PSScript #在PSEXE中主机永远是winpwsh，可省略该部分
-. $PSScriptRoot/src/PSObjectToString.ps1
-function UsingWinPowershell($Boundparameters) {
-	# starting Windows Powershell
-	$Params = ([hashtable]$Boundparameters).Clone()
-	$Params.Remove("minifyer")
-	$Params.Remove("Content")
-	$Params.Remove("inputFile")
-	$Params.Remove("outputFile")
-	$Params.Remove("resourceParams") #使用旧版参数列表传递hashtable参数更为保险
-	$TempFile = if ($TempDir) {
-		New-Item -ItemType Directory -Path $TempDir -ErrorAction SilentlyContinue | Out-Null
-		[System.IO.Path]::Combine($TempDir, 'main.ps1')
-	} else { [System.IO.Path]::GetTempFileName() }
-	$Content | Set-Content $TempFile -Encoding UTF8 -NoNewline
-	$Params.Add("outputFile", $outputFile)
-	$Params.Add("inputFile", $TempFile)
-	if ($TempDir) { $Params.TempDir = $TempDir }
-	$resourceParamKeys | ForEach-Object {
-		if ($resourceParams.ContainsKey($_) -and $resourceParams[$_]) {
-			$Params[$_] = $resourceParams[$_]
+# pwsh 下默认交给 Windows PowerShell + CodeDom；若没有 WinPS，只能报错让用户显式选 Core。
+if (!$nested -and -not $isCoreTarget -and ($PSVersionTable.PSEdition -eq "Core")) {
+	if (Get-Command powershell -ErrorAction Ignore) {
+		UsingHost $Params 'powershell'
+		if ((Test-Path -LiteralPath $outputFile) -and (Test-StdoutRedirected)) {
+			Write-Output $outputFile
 		}
+		return
 	}
-	if ($iconFile) { $Params.iconFile = $iconFile }
-	if ($DllExportList.Length) { $Params.DllExportList = ConvertTo-Json -depth 7 -Compress -InputObject $DllExportList }
-	$CallParam = Get-ArgsString $Params
-
-	Write-Debug "Starting WinPowershell ps12exe with parameters: $CallParam"
-
-	powershell -NoProfile -Command "&'$PSScriptRoot\ps12exe.ps1' $CallParam -nested; exit `$LastExitCode" | Write-Host
-}
-if (!$nested -and ($PSVersionTable.PSEdition -eq "Core") -and $UseWindowsPowerShell -and (Get-Command powershell -ErrorAction Ignore)) {
-	UsingWinPowershell $Params
-	if (Test-StdoutRedirected) {
-		Write-Output $outputFile
-	}
+	Write-I18n Error CoreCompileNeedWindowsPowerShell -Category NotInstalled
+	$global:LastExitCode = 2 # 调用格式错误
 	return
 }
 #_endif
@@ -708,7 +733,8 @@ try {
 	. $PSScriptRoot\src\InitCompileThings.ps1
 	Write-TaskbarProgress -Percent 10
 	#_if PSScript
-	if ($AstAnalyzeResult.IsConst -and -not $requireAdmin) {
+	# 常量脚本优先生成 TinySharp 壳（体积 ~1KB）；产物是 .NET Framework 托管 PE，Core 目标跳过它改走 CoreCompiler。
+	if ($AstAnalyzeResult.IsConst -and -not $requireAdmin -and -not $isCoreTarget) {
 		Write-I18n Verbose TryingTinySharpCompile
 		Write-I18n Host CompilingFile
 		Write-TaskbarProgress -Percent 20
@@ -728,19 +754,10 @@ try {
 		if (!$TinySharpSuccess) {
 			Write-I18n Host CompilingFile
 			Write-TaskbarProgress -Percent 25
-			if ($isPwsh20Sma) { $TargetFramework = ".NETFramework,Version=v2.0" }
-			if ($PSVersionTable.PSEdition -eq "Core") {
-				# unfinished!
-				if (!$TargetFramework) {
-					$Info = [System.Environment]::Version
-					$TargetFramework = ".NETCore,Version=v$($Info.Major).$($Info.Minor)"
-				}
-				. $PSScriptRoot\src\CodeAnalysisCompiler.ps1
+			if ($isCoreTarget) {
+				. $PSScriptRoot\src\CoreCompiler.ps1
 			}
 			else {
-				if (!$TargetFramework) {
-					$TargetFramework = ".NETFramework,Version=v4.7"
-				}
 				. $PSScriptRoot\src\CodeDomCompiler.ps1
 			}
 		}
@@ -761,7 +778,7 @@ try {
 	}
 	else {
 		#_if PSScript
-		if (-not $TinySharpSuccess) {
+		if (-not $TinySharpSuccess -and -not $isCoreTarget) {
 			Write-TaskbarProgress -Percent 75
 			& $PSScriptRoot\src\ExeSinker.ps1 $outputFile -removeResources:$(
 				$NoResource -and $AstAnalyzeResult.IsConst -and -not $requireAdmin
@@ -771,11 +788,11 @@ try {
 		Write-TaskbarProgressClear
 		Write-I18n Host CompiledFileSize $((Get-Item $outputFile).Length)
 		Write-I18n Verbose OutputPath $outputFile
-		if ($configFile) {
+		if ($configFile -and -not $isCoreTarget) {
 			$configFileForEXE3 | Set-Content ($outputFile + ".config") -Encoding UTF8
 			Write-I18n Host ConfigFileCreated
 		}
-		if ($prepareDebug) {
+		if ($prepareDebug -and -not $isCoreTarget) {
 			$cr.TempFiles | Where-Object { $_ -ilike "*.cs" } | Select-Object -First 1 | ForEach-Object {
 				$dstSrc = ([System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($outputFile), [System.IO.Path]::GetFileNameWithoutExtension($outputFile) + ".cs"))
 				Write-I18n Host SourceFileCopied $dstSrc
@@ -839,12 +856,8 @@ catch {
 		$global:LastExitCode = 1 # 读取错误
 		return
 	}
-	if ($PSVersionTable.PSEdition -eq "Core" -and (Get-Command powershell -ErrorAction Ignore)) {
-		Write-I18n Host RoslynFailedFallback -ForegroundColor Yellow
-		UsingWinPowershell $Params
-	}
 	#_if PSScript
-	elseif (!$GuestMode) {
+	if (!$GuestMode) {
 		$global:LastExitCode = 3 # 内部未知错误
 		$githubfeedback = "https://github.com/steve02081504/ps12exe/issues/new?assignees=steve02081504&labels=bug&projects=&template=bug-report.yaml"
 		$urlParams = @{

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Linq;
+using System.Runtime.InteropServices;
 using AsmResolver;
 using AsmResolver.DotNet;
 using AsmResolver.DotNet.Builder.Metadata;
@@ -24,6 +25,28 @@ using AsmResolver.PE.File;
 
 namespace TinySharp {
 	public class Program {
+		// 压缩壳（cabinet 解压 P/Invoke + 解压 CIL）相对未压缩壳的额外开销估计，须与 ConstProgramCheck.ps1 的 $ConstCompressedOverhead 一致。
+		private const int CompressionOverhead = 512;
+
+		private static string ClrVersionString(string targetRuntime) {
+			return targetRuntime == "Framework2.0" ? "v2.0." : "v4.0.";
+		}
+
+		// 追加一个 static P/Invoke 方法行，返回其方法号（1 起）。
+		private static uint AddPInvoke(
+			TablesStream tablesStream, ModuleDefinition module,
+			StringsStreamBuffer stringsStreamBuffer, BlobStreamBuffer blobStreamBuffer,
+			string name, MethodSignature signature
+		) {
+			var methodTable = tablesStream.GetTable<MethodDefinitionRow>();
+			methodTable.Add(new MethodDefinitionRow(
+				SegmentReference.Null, MethodImplAttributes.PreserveSig,
+				MethodAttributes.Static | MethodAttributes.PInvokeImpl,
+				stringsStreamBuffer.GetStringIndex(name),
+				blobStreamBuffer.GetBlobIndex(module, new DummyProvider(), signature, ThrowErrorListener.Instance), 1));
+			return (uint)methodTable.Count;
+		}
+
 		public static Program Compile(
 			string targetRuntime, string architecture = "x64",
 			string outputValue = "Hello World!", int ExitCode = 0, bool hasOutput = true,
@@ -33,10 +56,19 @@ namespace TinySharp {
 				return CompileMessageBox(targetRuntime, architecture, outputValue, ExitCode);
 			string baseFunction = "7";
 			bool allASCIIoutput = outputValue.All(c => c >= 0 && c <= 127);
+
+			// 输出字符串按 ASCII 或 UTF-16 编码，末尾补 NUL 方便 puts 直接输出。
+			byte[] payloadBytes = (allASCIIoutput?Encoding.ASCII:Encoding.Unicode).GetBytes(outputValue+'\0');
+			// 常量输出较大时用 XPRESS 压缩内嵌，运行时解压后再打印；只有压缩确实更小才走该路径。
+			if (hasOutput) {
+				byte[] compressedPayload = TryCompressXpress(payloadBytes);
+				if (compressedPayload != null && compressedPayload.Length + CompressionOverhead < payloadBytes.Length)
+					return CompileCompressed(targetRuntime, architecture, outputValue, allASCIIoutput, compressedPayload, payloadBytes.Length, ExitCode);
+			}
 			var module = new ModuleDefinition("Dummy");
 
 			// Segment containing our string to print.
-			DataSegment segment = new DataSegment((allASCIIoutput?Encoding.ASCII:Encoding.Unicode).GetBytes(outputValue+'\0'));
+			DataSegment segment = new DataSegment(payloadBytes);
 
 			var PEKind = OptionalHeaderMagic.PE64;
 			var ArchType = MachineType.Amd64;
@@ -216,7 +248,7 @@ namespace TinySharp {
 
 			// Add all .NET metadata to the PE image.
 			var metadataDirectory = new MetadataDirectory {
-				VersionString = targetRuntime == "Framework2.0" ? "v2.0." : "v4.0."
+				VersionString = ClrVersionString(targetRuntime)
 			};
 			metadataDirectory.Streams.Add(tablesStream);
 			metadataDirectory.Streams.Add(blobStreamBuffer.CreateStream());
@@ -238,12 +270,264 @@ namespace TinySharp {
 			return result;
 		}
 
+		/// <summary>压缩常量输出路径：内嵌 XPRESS 压缩字节，运行时用 cabinet.dll 解压到 .data 的 BSS 缓冲区，
+		/// 再沿用 puts/WriteConsoleW 打印。负载不可压缩时不会走到这里。</summary>
+		private static Program CompileCompressed(
+			string targetRuntime, string architecture, string outputValue,
+			bool allASCIIoutput, byte[] compressedPayload, int uncompressedSize, int ExitCode
+		) {
+			var module = new ModuleDefinition("Dummy");
+			// 压缩后的负载放只读的 .text
+			DataSegment payload = new DataSegment(compressedPayload);
+
+			var PEKind = OptionalHeaderMagic.PE64;
+			var ArchType = MachineType.Amd64;
+			if (architecture != "x64") {
+				PEKind = OptionalHeaderMagic.PE32;
+				ArchType = MachineType.I386;
+			}
+
+			var image = new PEImage {
+				ImageBase = 0x00000000004e0000,
+				PEKind = PEKind,
+				MachineType = ArchType
+			};
+			image.DllCharacteristics &= ~DllCharacteristics.DynamicBase;
+
+			var tablesStream = new TablesStream();
+			var blobStreamBuffer = new BlobStreamBuffer();
+			var stringsStreamBuffer = new StringsStreamBuffer();
+			tablesStream.GetTable<ModuleDefinitionRow>().Add(new ModuleDefinitionRow());
+			tablesStream.GetTable<TypeDefinitionRow>().Add(new TypeDefinitionRow(0, 0, 0, 0, 1, 1));
+
+			var methodTable = tablesStream.GetTable<MethodDefinitionRow>();
+			var corlib = module.CorLibTypeFactory;
+
+			Func<string, MethodSignature, uint> addPInvoke = (name, signature) =>
+				AddPInvoke(tablesStream, module, stringsStreamBuffer, blobStreamBuffer, name, signature);
+
+			uint putsIndex = 0, getStdHandleIndex = 0, writeConsoleIndex = 0;
+			if (allASCIIoutput)
+				putsIndex = addPInvoke("puts", MethodSignature.CreateStatic(corlib.Void, new[] { corlib.IntPtr }));
+			else {
+				getStdHandleIndex = addPInvoke("GetStdHandle", MethodSignature.CreateStatic(corlib.IntPtr, new[] { corlib.Int32 }));
+				writeConsoleIndex = addPInvoke("WriteConsoleW", MethodSignature.CreateStatic(corlib.Void, new[] {
+					corlib.IntPtr, corlib.IntPtr, corlib.Int32, corlib.IntPtr, corlib.IntPtr
+				}));
+			}
+			// cabinet.dll Compression API（Windows 8+），XPRESS 算法与编译期一致
+			uint createDecompressorIndex = addPInvoke("CreateDecompressor", MethodSignature.CreateStatic(corlib.Int32, new[] {
+				corlib.UInt32, corlib.IntPtr, corlib.IntPtr
+			}));
+			uint decompressIndex = addPInvoke("Decompress", MethodSignature.CreateStatic(corlib.Int32, new[] {
+				corlib.IntPtr, corlib.IntPtr, corlib.IntPtr, corlib.IntPtr, corlib.IntPtr, corlib.IntPtr
+			}));
+			uint closeDecompressorIndex = addPInvoke("CloseDecompressor", MethodSignature.CreateStatic(corlib.Int32, new[] {
+				corlib.IntPtr
+			}));
+
+			// .data BSS 缓冲：解压输出、解压器句柄、解压后长度（均不占文件体积）
+			var outputBuf = new VirtualSegment(null, (uint)uncompressedSize);
+			var handleBuf = new VirtualSegment(null, 8u);
+			var resultSizeBuf = new VirtualSegment(null, 8u);
+
+			using(var codeStream = new MemoryStream()) {
+				var patches = new Dictionary<int, ISegment>();
+				Action<byte> emit = b => codeStream.WriteByte(b);
+				Action<ISegment> ldcAddress = seg => {
+					codeStream.WriteByte(0x20); // ldc.i4 <addr>
+					patches[(int)codeStream.Position] = seg;
+					codeStream.Write(new byte[4], 0, 4);
+				};
+				Action<int> ldcInt = v => {
+					codeStream.WriteByte(0x20); // ldc.i4 <int32>
+					var bytes = BitConverter.GetBytes(v);
+					codeStream.Write(bytes, 0, 4);
+				};
+				Action<uint> callMethod = idx => {
+					codeStream.WriteByte(0x28); // call
+					var bytes = BitConverter.GetBytes(0x06000000u | idx);
+					codeStream.Write(bytes, 0, 4);
+				};
+
+				EmitDecompress(emit, ldcAddress, ldcInt, callMethod,
+					payload, compressedPayload.Length, outputBuf, uncompressedSize, handleBuf, resultSizeBuf,
+					createDecompressorIndex, decompressIndex, closeDecompressorIndex);
+
+				if (allASCIIoutput) {
+					// puts(output)
+					ldcAddress(outputBuf);
+					callMethod(putsIndex);
+				}
+				else {
+					// WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), output, length, NULL, NULL)
+					ldcInt(-11);
+					callMethod(getStdHandleIndex);
+					ldcAddress(outputBuf);
+					ldcInt(outputValue.Length);
+					emit(0x16); // ldc.i4.0
+					emit(0x16); // ldc.i4.0
+					callMethod(writeConsoleIndex);
+				}
+
+				if (ExitCode != 0)
+					ldcInt(ExitCode);
+				emit(0x2A); // ret
+
+				var body = BuildFatMethodBody(codeStream.ToArray(), 8, patches);
+
+				var retype = module.CorLibTypeFactory.Void;
+				if (ExitCode != 0) retype = module.CorLibTypeFactory.Int32;
+				methodTable.Add(new MethodDefinitionRow(
+					body.ToReference(), 0, MethodAttributes.Static, 0,
+					blobStreamBuffer.GetBlobIndex(module, new DummyProvider(), MethodSignature.CreateStatic(retype), ThrowErrorListener.Instance), 1));
+			}
+			uint entryPointIndex = (uint)methodTable.Count; // main 是最后添加的一行
+
+			// 模块引用：1=基础库（ucrtbase/Kernel32），2=cabinet
+			var baseLibrary = allASCIIoutput ? "ucrtbase" : "Kernel32";
+			tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex(baseLibrary)));
+			tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex("cabinet")));
+
+			var implMapTable = tablesStream.GetTable<ImplementationMapRow>();
+			Action<uint, string, uint, ImplementationMapAttributes> addImplMap = (methodIndex, name, moduleIndex, conv) =>
+				implMapTable.Add(new ImplementationMapRow(
+					conv,
+					tablesStream.GetIndexEncoder(CodedIndex.MemberForwarded).EncodeToken(new MetadataToken(TableIndex.Method, methodIndex)),
+					stringsStreamBuffer.GetStringIndex(name),
+					moduleIndex));
+
+			if (allASCIIoutput)
+				addImplMap(putsIndex, "puts", 1, ImplementationMapAttributes.CallConvCdecl);
+			else {
+				addImplMap(getStdHandleIndex, "GetStdHandle", 1, ImplementationMapAttributes.CallConvCdecl);
+				addImplMap(writeConsoleIndex, "WriteConsoleW", 1, ImplementationMapAttributes.CallConvCdecl);
+			}
+			addImplMap(createDecompressorIndex, "CreateDecompressor", 2, ImplementationMapAttributes.CallConvStdcall);
+			addImplMap(decompressIndex, "Decompress", 2, ImplementationMapAttributes.CallConvStdcall);
+			addImplMap(closeDecompressorIndex, "CloseDecompressor", 2, ImplementationMapAttributes.CallConvStdcall);
+
+			tablesStream.GetTable<AssemblyDefinitionRow>().Add(new AssemblyDefinitionRow(
+				0, 1, 0, 0, 0, 0, 0,
+				stringsStreamBuffer.GetStringIndex(allASCIIoutput ? "puts" : "WriteConsoleW"), 0));
+
+			var metadataDirectory = new MetadataDirectory {
+				VersionString = ClrVersionString(targetRuntime)
+			};
+			metadataDirectory.Streams.Add(tablesStream);
+			metadataDirectory.Streams.Add(blobStreamBuffer.CreateStream());
+			metadataDirectory.Streams.Add(stringsStreamBuffer.CreateStream());
+			image.DotNetDirectory = new DotNetDirectory {
+				EntryPoint = new MetadataToken(TableIndex.Method, entryPointIndex),
+				Metadata = metadataDirectory
+			};
+			if (architecture == "anycpu")
+				image.DotNetDirectory.Flags &= ~DotNetDirectoryFlags.Bit32Required;
+
+			var result = new Program();
+			result.Image = image;
+			result.OutSegment = payload;
+			var bssData = new SegmentBuilder();
+			bssData.Add(outputBuf);
+			bssData.Add(handleBuf);
+			bssData.Add(resultSizeBuf);
+			result.WritableSegment = bssData;
+			return result;
+		}
+
+		[DllImport("cabinet.dll", SetLastError = true)]
+		private static extern bool CreateCompressor(uint algorithm, IntPtr allocationRoutines, out IntPtr compressorHandle);
+		[DllImport("cabinet.dll", SetLastError = true)]
+		private static extern bool Compress(IntPtr compressorHandle, byte[] input, IntPtr inputSize, byte[] output, IntPtr outputSize, out IntPtr resultSize);
+		[DllImport("cabinet.dll", SetLastError = true)]
+		private static extern bool CloseCompressor(IntPtr compressorHandle);
+
+		/// <summary>用 cabinet.dll 的 XPRESS 算法压缩；任何失败（含 Windows 8 以下无此 API）都返回 null，调用方退回未压缩内嵌。</summary>
+		private static byte[] TryCompressXpress(byte[] input) {
+			try {
+				IntPtr handle;
+				if (!CreateCompressor(3u, IntPtr.Zero, out handle))
+					return null;
+				try {
+					byte[] buffer = new byte[input.Length + input.Length / 2 + 1024];
+					IntPtr resultSize;
+					if (!Compress(handle, input, (IntPtr)input.Length, buffer, (IntPtr)buffer.Length, out resultSize))
+						return null;
+					int size = (int)resultSize;
+					byte[] result = new byte[size];
+					Buffer.BlockCopy(buffer, 0, result, 0, size);
+					return result;
+				}
+				finally {
+					CloseCompressor(handle);
+				}
+			}
+			catch {
+				return null;
+			}
+		}
+
+		/// <summary>把 XPRESS 解压序列写入 CIL：CreateDecompressor → Decompress → CloseDecompressor，
+		/// 解压结果落在 outputBuf；handleBuf / resultSizeBuf 作为输出参数中转。</summary>
+		private static void EmitDecompress(
+			Action<byte> emit, Action<ISegment> ldcAddress, Action<int> ldcInt, Action<uint> callMethod,
+			ISegment payload, int compressedLength, ISegment outputBuf, int uncompressedSize,
+			ISegment handleBuf, ISegment resultSizeBuf,
+			uint createIndex, uint decompressIndex, uint closeIndex
+		) {
+			// CreateDecompressor(COMPRESS_ALGORITHM_XPRESS, NULL, &handle)
+			emit(0x19); // ldc.i4.3
+			emit(0x16); // ldc.i4.0
+			ldcAddress(handleBuf);
+			callMethod(createIndex);
+			emit(0x26); // pop
+
+			// Decompress(handle, compressed, compressedSize, output, outputSize, &resultSize)
+			ldcAddress(handleBuf);
+			emit(0x4D); // ldind.i
+			ldcAddress(payload);
+			ldcInt(compressedLength);
+			ldcAddress(outputBuf);
+			ldcInt(uncompressedSize);
+			ldcAddress(resultSizeBuf);
+			callMethod(decompressIndex);
+			emit(0x26); // pop
+
+			// CloseDecompressor(handle)
+			ldcAddress(handleBuf);
+			emit(0x4D); // ldind.i
+			callMethod(closeIndex);
+			emit(0x26); // pop
+		}
+
+		/// <summary>用 12 字节 fat method header 包装 CIL 代码流，并应用绝对地址 patch（偏移 +12）。</summary>
+		private static ISegment BuildFatMethodBody(byte[] code, int maxStack, Dictionary<int, ISegment> patches) {
+			byte[] header = {
+				0x03, 0x30, (byte)maxStack, 0,
+				(byte)code.Length, (byte)(code.Length >> 8), (byte)(code.Length >> 16), (byte)(code.Length >> 24),
+				0, 0, 0, 0
+			};
+			byte[] fullMethod = new byte[header.Length + code.Length];
+			Buffer.BlockCopy(header, 0, fullMethod, 0, header.Length);
+			Buffer.BlockCopy(code, 0, fullMethod, header.Length, code.Length);
+			var body = new DataSegment(fullMethod).AsPatchedSegment();
+			foreach (var patch in patches)
+				body = body.Patch((uint)(12 + patch.Key), AddressFixupType.Absolute32BitAddress, new Symbol(patch.Value.ToReference()));
+			return body;
+		}
+
 		/// <summary>Build minimal PE that shows MessageBoxW(text, caption) then exits. Used for -noConsole const output.
 		/// Caption is resolved at runtime: first tries Win32 version resource FileDescription (title), falls back to
 		/// GetModuleFileNameW+PathFindFileNameW (filename), so both survive exe rename and honour -title.</summary>
 		private static Program CompileMessageBox(string targetRuntime, string architecture, string outputValue, int ExitCode) {
 			var module = new ModuleDefinition("Dummy");
-			DataSegment textSegment = new DataSegment(Encoding.Unicode.GetBytes(outputValue + '\0'));
+			// 文本恒为 UTF-16；较大且可压缩时改存 XPRESS 压缩字节，运行时先解压再弹窗。
+			byte[] rawText = Encoding.Unicode.GetBytes(outputValue + '\0');
+			byte[] compressedText = TryCompressXpress(rawText);
+			if (compressedText != null && compressedText.Length + CompressionOverhead >= rawText.Length)
+				compressedText = null;
+			bool useCompressed = compressedText != null;
+			DataSegment textSegment = new DataSegment(useCompressed ? compressedText : rawText);
 			// VerQueryValueW subBlock path — matches AsmResolver StringTable(language:0, codepage:0x4b0)
 			DataSegment subBlockStr = new DataSegment(Encoding.Unicode.GetBytes("\\StringFileInfo\\000004b0\\FileDescription\0"));
 
@@ -252,6 +536,10 @@ namespace TinySharp {
 			var viBufSeg     = new VirtualSegment(null, 4096u);    // GetFileVersionInfoW data buffer
 			var pValueBufSeg = new VirtualSegment(null, 8u);       // VerQueryValueW output pointer (up to 8 bytes for x64)
 			var lenBufSeg    = new VirtualSegment(null, 4u);       // VerQueryValueW output length (UINT)
+			// 压缩时：解压输出缓冲 + 解压器句柄 + 解压后长度
+			var outputBufSeg    = useCompressed ? new VirtualSegment(null, (uint)rawText.Length) : null;
+			var handleBufSeg    = useCompressed ? new VirtualSegment(null, 8u) : null;
+			var resultSizeBufSeg = useCompressed ? new VirtualSegment(null, 8u) : null;
 
 			var PEKind = OptionalHeaderMagic.PE64;
 			var ArchType = MachineType.Amd64;
@@ -322,6 +610,56 @@ namespace TinySharp {
 						module.CorLibTypeFactory.IntPtr, module.CorLibTypeFactory.IntPtr
 					}), ThrowErrorListener.Instance), 1));
 
+			Func<string, MethodSignature, uint> addPInvoke = (name, signature) =>
+				AddPInvoke(tablesStream, module, stringsStreamBuffer, blobStreamBuffer, name, signature);
+
+			// 压缩时追加 cabinet 解压方法（6/7/8）和一个返回文本指针的辅助方法（9），main 顺延为 10
+			uint createDecompressorIndex = 0, decompressIndex = 0, closeDecompressorIndex = 0, textHelperIndex = 0;
+			if (useCompressed) {
+				var c = module.CorLibTypeFactory;
+				createDecompressorIndex = addPInvoke("CreateDecompressor", MethodSignature.CreateStatic(c.Int32, new[] {
+					c.UInt32, c.IntPtr, c.IntPtr
+				}));
+				decompressIndex = addPInvoke("Decompress", MethodSignature.CreateStatic(c.Int32, new[] {
+					c.IntPtr, c.IntPtr, c.IntPtr, c.IntPtr, c.IntPtr, c.IntPtr
+				}));
+				closeDecompressorIndex = addPInvoke("CloseDecompressor", MethodSignature.CreateStatic(c.Int32, new[] {
+					c.IntPtr
+				}));
+
+				// helper: 解压后返回文本指针（IntPtr），main 的两个标题分支都通过 call 它取文本
+				textHelperIndex = (uint)methodTable.Count + 1;
+				using (var helperStream = new MemoryStream()) {
+					var helperPatches = new Dictionary<int, ISegment>();
+					Action<byte> hEmit = b => helperStream.WriteByte(b);
+					Action<ISegment> hLdcAddress = seg => {
+						helperStream.WriteByte(0x20);
+						helperPatches[(int)helperStream.Position] = seg;
+						helperStream.Write(new byte[4], 0, 4);
+					};
+					Action<int> hLdcInt = v => {
+						helperStream.WriteByte(0x20);
+						var bytes = BitConverter.GetBytes(v);
+						helperStream.Write(bytes, 0, 4);
+					};
+					Action<uint> hCall = idx => {
+						helperStream.WriteByte(0x28);
+						var bytes = BitConverter.GetBytes(0x06000000u | idx);
+						helperStream.Write(bytes, 0, 4);
+					};
+					EmitDecompress(hEmit, hLdcAddress, hLdcInt, hCall,
+						textSegment, compressedText.Length, outputBufSeg, rawText.Length, handleBufSeg, resultSizeBufSeg,
+						createDecompressorIndex, decompressIndex, closeDecompressorIndex);
+					hLdcAddress(outputBufSeg); // return 解压后的文本指针
+					hEmit(0x2A); // ret
+					var helperBody = BuildFatMethodBody(helperStream.ToArray(), 6, helperPatches);
+					methodTable.Add(new MethodDefinitionRow(
+						helperBody.ToReference(), 0, MethodAttributes.Static, 0,
+						blobStreamBuffer.GetBlobIndex(module, new DummyProvider(),
+							MethodSignature.CreateStatic(c.IntPtr), ThrowErrorListener.Instance), 1));
+				}
+			}
+
 			// Main (method #6) — fat CIL body (code > 63 bytes, tiny format limit).
 			// IL layout (code stream offsets, before 12-byte fat header):
 			//   [0]  ldc.i4 0            hModule=0 for GetModuleFileNameW
@@ -369,6 +707,11 @@ namespace TinySharp {
 					var b = BitConverter.GetBytes(0x06000000 | m);
 					codeStream.Write(b, 0, 4);
 				};
+				// 文本指针：压缩时 call helper 解压取得，未压缩时 ldc.i4 [text]（两者等长，偏移不变）
+				Action writeText = () => {
+					if (useCompressed) writeCall((int)textHelperIndex);
+					else writeLdc(0);
+				};
 
 			writeLdc(0);       // [0]  hModule=0
 			writeLdc(0);       // [5]  pathBuf  PATCH@6
@@ -394,7 +737,7 @@ namespace TinySharp {
 			codeStream.WriteByte(28);   // [73] → FALLBACK @102 (next=74, 102-74=28)
 
 			writeLdc(0);       // [74] hWnd
-			writeLdc(0);       // [79] text      PATCH@80
+			writeText();       // [79] text      （未压缩时 PATCH@80）
 			writeLdc(0);       // [84] pValueBuf PATCH@85
 			codeStream.WriteByte(0x4D); // [89] ldind.i → dereference pValueBuf
 			writeLdc(0);       // [90] uType=0
@@ -405,7 +748,7 @@ namespace TinySharp {
 
 			// FALLBACK @102
 			writeLdc(0);       // [102] hWnd
-			writeLdc(0);       // [107] text     PATCH@108
+			writeText();       // [107] text     （未压缩时 PATCH@108）
 			writeLdc(0);       // [112] pathBuf  PATCH@113
 			writeCall(3);      // [117] PathFindFileNameW(pathBuf) → filenamePtr
 			writeLdc(0);       // [122] uType=0
@@ -435,9 +778,11 @@ namespace TinySharp {
 				body = body.Patch(12 + 53, AddressFixupType.Absolute32BitAddress, new Symbol(subBlockStr.ToReference()));
 				body = body.Patch(12 + 58, AddressFixupType.Absolute32BitAddress, new Symbol(pValueBufSeg.ToReference()));
 				body = body.Patch(12 + 63, AddressFixupType.Absolute32BitAddress, new Symbol(lenBufSeg.ToReference()));
-				body = body.Patch(12 + 80, AddressFixupType.Absolute32BitAddress, new Symbol(textSegment.ToReference()));
+				if (!useCompressed) {
+					body = body.Patch(12 + 80, AddressFixupType.Absolute32BitAddress, new Symbol(textSegment.ToReference()));
+					body = body.Patch(12 + 108, AddressFixupType.Absolute32BitAddress, new Symbol(textSegment.ToReference()));
+				}
 				body = body.Patch(12 + 85, AddressFixupType.Absolute32BitAddress, new Symbol(pValueBufSeg.ToReference()));
-				body = body.Patch(12 + 108, AddressFixupType.Absolute32BitAddress, new Symbol(textSegment.ToReference()));
 				body = body.Patch(12 + 113, AddressFixupType.Absolute32BitAddress, new Symbol(pathBufSeg.ToReference()));
 
 				var retype = module.CorLibTypeFactory.Void;
@@ -448,11 +793,13 @@ namespace TinySharp {
 						MethodSignature.CreateStatic(retype), ThrowErrorListener.Instance), 1));
 			}
 
-			// Module references: 1=user32, 2=kernel32, 3=shlwapi, 4=version
+			// Module references: 1=user32, 2=kernel32, 3=shlwapi, 4=version, 5=cabinet(压缩时)
 			tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex("user32")));
 			tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex("kernel32")));
 			tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex("shlwapi")));
 			tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex("version")));
+			if (useCompressed)
+				tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex("cabinet")));
 
 			tablesStream.GetTable<ImplementationMapRow>().Add(new ImplementationMapRow(
 				ImplementationMapAttributes.CallConvStdcall,
@@ -474,20 +821,35 @@ namespace TinySharp {
 				ImplementationMapAttributes.CallConvStdcall,
 				tablesStream.GetIndexEncoder(CodedIndex.MemberForwarded).EncodeToken(new MetadataToken(TableIndex.Method, 5)),
 				stringsStreamBuffer.GetStringIndex("VerQueryValueW"), 4));
+			if (useCompressed) {
+				tablesStream.GetTable<ImplementationMapRow>().Add(new ImplementationMapRow(
+					ImplementationMapAttributes.CallConvStdcall,
+					tablesStream.GetIndexEncoder(CodedIndex.MemberForwarded).EncodeToken(new MetadataToken(TableIndex.Method, createDecompressorIndex)),
+					stringsStreamBuffer.GetStringIndex("CreateDecompressor"), 5));
+				tablesStream.GetTable<ImplementationMapRow>().Add(new ImplementationMapRow(
+					ImplementationMapAttributes.CallConvStdcall,
+					tablesStream.GetIndexEncoder(CodedIndex.MemberForwarded).EncodeToken(new MetadataToken(TableIndex.Method, decompressIndex)),
+					stringsStreamBuffer.GetStringIndex("Decompress"), 5));
+				tablesStream.GetTable<ImplementationMapRow>().Add(new ImplementationMapRow(
+					ImplementationMapAttributes.CallConvStdcall,
+					tablesStream.GetIndexEncoder(CodedIndex.MemberForwarded).EncodeToken(new MetadataToken(TableIndex.Method, closeDecompressorIndex)),
+					stringsStreamBuffer.GetStringIndex("CloseDecompressor"), 5));
+			}
 
 			tablesStream.GetTable<AssemblyDefinitionRow>().Add(new AssemblyDefinitionRow(
 				0, 1, 0, 0, 0, 0, 0,
 				stringsStreamBuffer.GetStringIndex("user32"), 0));
 
 			var metadataDirectory = new MetadataDirectory {
-				VersionString = targetRuntime == "Framework2.0" ? "v2.0." : "v4.0."
+				VersionString = ClrVersionString(targetRuntime)
 			};
 			metadataDirectory.Streams.Add(tablesStream);
 			metadataDirectory.Streams.Add(blobStreamBuffer.CreateStream());
 			metadataDirectory.Streams.Add(stringsStreamBuffer.CreateStream());
 			image.DotNetDirectory = new DotNetDirectory {
-				// Main is method #6 (1=MessageBoxW,2=GetModuleFileNameW,3=PathFindFileNameW,4=GetFileVersionInfoW,5=VerQueryValueW,6=Main)
-				EntryPoint = new MetadataToken(TableIndex.Method, 6u),
+				// 方法：1=MessageBoxW,2=GetModuleFileNameW,3=PathFindFileNameW,4=GetFileVersionInfoW,5=VerQueryValueW,
+				// 6/7/8=cabinet 解压(压缩时),9=文本指针 helper(压缩时),末位=Main
+				EntryPoint = new MetadataToken(TableIndex.Method, useCompressed ? 10u : 6u),
 				Metadata = metadataDirectory
 			};
 			if (architecture == "anycpu")
@@ -506,6 +868,11 @@ namespace TinySharp {
 			bssData.Add(viBufSeg);
 			bssData.Add(pValueBufSeg);
 			bssData.Add(lenBufSeg);
+			if (useCompressed) {
+				bssData.Add(outputBufSeg);
+				bssData.Add(handleBufSeg);
+				bssData.Add(resultSizeBufSeg);
+			}
 			result.WritableSegment = bssData;
 			return result;
 		}

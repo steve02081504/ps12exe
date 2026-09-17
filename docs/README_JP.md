@@ -165,7 +165,7 @@ requireAdmin     : UAC が有効になっている場合、コンパイルされ
 supportOS        : 最新の Windows バージョンの機能を使用します（[Environment]::OSVersion を実行して違いを確認）
 virtualize       : アプリケーションの仮想化が有効になっています（x86 ランタイムを強制）
 longPaths        : OS で有効になっている場合、長いパス（260 文字以上）を有効にします（Windows 10 以上にのみ適用）
-targetRuntime    : ターゲット ランタイム バージョン、既定値は 'Framework4.0'、'Framework2.0' がサポートされています
+targetRuntime    : ターゲット ランタイム バージョン、既定値は 'Framework4.0'、'Framework2.0' と 'Core' がサポートされています。'Core' は PowerShell Core (.NET) 実行可能ファイルを生成します（コンパイル機とターゲット機の両方に PowerShell Core と .NET が必要で、成果物は大幅に大きくなります）。
 SkipVersionCheck : ps12exeの新しいバージョンの確認をスキップします
 GuestMode        : ネイティブ ファイルへのアクセスを防ぐために、スクリプトをコンパイルする際に保護を追加します
 PreprocessOnly   : 入力スクリプトをプリプロセス処理し、コンパイルせずに返します

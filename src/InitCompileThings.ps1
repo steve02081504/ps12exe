@@ -16,25 +16,23 @@ $referenceAssembies = if ($targetRuntime -eq 'Framework2.0') {
 	#_endif
 }
 else {
-	# 绝不要直接使用 System.Private.CoreLib.dll，因为它是netlib的内部实现，而不是公共API
-	# [int].Assembly.Location 等基础类型的程序集也是它。
-	GetAssembly "mscorlib"
-	if ($PSVersionTable.PSEdition -eq "Core") { GetAssembly "System.Runtime" }
-	GetAssembly "System.IO.Compression" $(if ($PSVersionTable.PSEdition -ne "Core") { "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" })
-	GetAssembly "System.Management.Automation"
-
-	# If noConsole is true, add System.Windows.Forms.dll and System.Drawing.dll to the reference assemblies
-	if ($noConsole) {
-		GetAssembly "System.Windows.Forms" $(if ($PSVersionTable.PSEdition -ne "Core") { "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" })
-		GetAssembly "System.Drawing" $(if ($PSVersionTable.PSEdition -ne "Core") { "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" })
+	if ($PSVersionTable.PSEdition -eq "Core") {
+		# Core 走 dotnet publish，不需要引用程序集列表；SMA 只用于 $isPwsh20Sma 判断。
+		GetAssembly "System.Management.Automation"
 	}
-	elseif ($PSVersionTable.PSEdition -eq "Core") {
-		GetAssembly "System.Console"
-		GetAssembly "Microsoft.PowerShell.ConsoleHost"
-	}
+	else {
+		# 绝不要直接使用 System.Private.CoreLib.dll，因为它是netlib的内部实现，而不是公共API
+		# [int].Assembly.Location 等基础类型的程序集也是它。
+		GetAssembly "mscorlib"
+		GetAssembly "System.IO.Compression" "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+		GetAssembly "System.Management.Automation"
 
-	# If in winpwsh, add System.Core.dll to the reference assemblies
-	if ($PSVersionTable.PSEdition -ne "Core") {
+		# If noConsole is true, add System.Windows.Forms.dll and System.Drawing.dll to the reference assemblies
+		if ($noConsole) {
+			GetAssembly "System.Windows.Forms" "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+			GetAssembly "System.Drawing" "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+		}
+
 		GetAssembly "System.Core" "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
 		"System.dll" # some furking magic
 	}
@@ -42,6 +40,18 @@ else {
 
 $smaRef = @($referenceAssembies) | Where-Object { $_ -and ([IO.Path]::GetFileName($_) -ieq 'System.Management.Automation.dll') } | Select-Object -First 1
 $isPwsh20Sma = $smaRef -and [Reflection.AssemblyName]::GetAssemblyName($smaRef).Version.Major -lt 3
+
+# 目标框架版本供 constexpr.cs / default.cs 的 $TargetFramework 替换使用。
+if ($isCoreTarget) {
+	$Info = [System.Environment]::Version
+	$TargetFramework = ".NETCore,Version=v$($Info.Major).$($Info.Minor)"
+}
+elseif ($isPwsh20Sma) {
+	$TargetFramework = ".NETFramework,Version=v2.0"
+}
+else {
+	$TargetFramework = ".NETFramework,Version=v4.7"
+}
 
 . $PSScriptRoot\BuildFrame.ps1
 

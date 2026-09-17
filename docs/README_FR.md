@@ -165,7 +165,7 @@ requireAdmin     : Si UAC est activé, l'exécutable compilé ne peut s'exécute
 supportOS        : Utilise les fonctionnalités de la dernière version de Windows (exécutez [Environment]::OSVersion pour voir la différence).
 virtualize       : La virtualisation de l'application est activée (force le runtime x86).
 longPaths        : Active les chemins longs (> 260 caractères) si activé sur l'OS (ne fonctionne qu'avec Windows 10 ou plus récent).
-targetRuntime    : Version du runtime cible, par défaut 'Framework4.0', prend également en charge 'Framework2.0'.
+targetRuntime    : Version du runtime cible, par défaut 'Framework4.0', prend également en charge 'Framework2.0' et 'Core'. 'Core' produit un exécutable PowerShell Core (.NET) (nécessite PowerShell Core et .NET sur les machines de compilation et cible ; le résultat est bien plus volumineux).
 SkipVersionCheck : Ignore la vérification de la nouvelle version de ps12exe.
 GuestMode        : Compile le script avec une protection supplémentaire, évite l'accès aux fichiers natifs.
 PreprocessOnly   : Prétraite le script d'entrée et le retourne sans compilation.

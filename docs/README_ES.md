@@ -165,7 +165,7 @@ requireAdmin     : Si se habilita el UAC, el archivo ejecutable compilado sólo 
 supportOS        : Usar las características de las últimas versiones de Windows (ejecutar [Environment]::OSVersion para ver las diferencias)
 virtualize       : Se ha activado la virtualización de aplicaciones (se fuerza el tiempo de ejecución x86)
 longPaths        : Habilitar las rutas largas (> 260 caracteres) si están habilitadas en el sistema operativo (sólo para Windows 10 o superior)
-targetRuntime    : Versión de tiempo de ejecución de destino, 'Framework4.0' por defecto, se admiten 'Framework2.0'
+targetRuntime    : Versión de tiempo de ejecución de destino, 'Framework4.0' por defecto; se admiten 'Framework2.0' y 'Core'. 'Core' genera un ejecutable de PowerShell Core (.NET) (requiere PowerShell Core y .NET en las máquinas de compilación y de destino; el resultado es mucho mayor).
 SkipVersionCheck : Omitir la comprobación de nuevas versiones de ps12exe
 GuestMode        : Compilación de scripts con protección adicional frente al acceso a archivos nativos
 PreprocessOnly   : Preprocesa el script de entrada y devuélvelo sin compilar

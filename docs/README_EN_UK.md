@@ -165,7 +165,7 @@ requireAdmin     : If UAC is enabled, the compiled executable will run only in a
 supportOS        : Use functions of the newest Windows versions (execute [Environment]::OSVersion to see the difference).
 virtualize       : Application virtualization is activated (forcing x86 runtime).
 longPaths        : Enable long paths ( > 260 characters) if enabled on the OS (works only with Windows 10 or up).
-targetRuntime    : Target runtime version ('Framework4.0' by default, 'Framework2.0' is supported).
+targetRuntime    : Target runtime version ('Framework4.0' by default; 'Framework2.0' and 'Core' are supported). 'Core' builds a PowerShell Core (.NET) executable (needs PowerShell Core and .NET on both build and target machines; the output is much larger).
 SkipVersionCheck : Skip the check for new versions of ps12exe
 GuestMode        : Compile scripts with additional protection, preventing native files from being accessed.
 PreprocessOnly   : Preprocess the input script and return it without compiling.
