@@ -31,6 +31,14 @@ try {
 	Get-ChildItem -Path $repoPath -Recurse | Where-Object { $_.Name -match '^\.' } | ForEach-Object { Remove-Item -Path $_.FullName -Force -Recurse }
 	# 移除docs
 	Remove-Item -Path "$repoPath/docs" -Recurse -Force
+	# 移除仅开发期使用、运行时与文档都用不到的文件
+	$devOnlyPaths = @(
+		"$repoPath/tools"
+		"$repoPath/src/locale/_fbs2txt.ps1"
+		"$repoPath/src/locale/_txt2fbs.ps1"
+		"$repoPath/src/locale/reorder_locale.ps1"
+	)
+	$devOnlyPaths | Where-Object { Test-Path -LiteralPath $_ } | ForEach-Object { Remove-Item -LiteralPath $_ -Recurse -Force }
 	# 打包发布
 	Install-Module -Name 'PowerShellGet' -Force -Scope CurrentUser | Out-Null
 	$errnum = $Error.Count
