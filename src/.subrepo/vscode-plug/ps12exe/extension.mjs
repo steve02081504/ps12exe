@@ -7,7 +7,7 @@ import { resolveDirectivePath } from './lib/definition.mjs'
 import { registerExeSource } from './lib/exeSource.mjs'
 import { applyPreprocessorFormatting } from './lib/format.mjs'
 import { getPackageInfo, tagSearchUrl } from './lib/gallery.mjs'
-import { HOVER_MESSAGES, directiveAt, conditionAt, documentationUrl } from './lib/hover.mjs'
+import { HOVER_MESSAGES, directiveAt, conditionAt, documentationUrl, preserveLineBreaks, escapeHtmlAttribute } from './lib/hover.mjs'
 import { toPs12exeLocale } from './lib/locale.mjs'
 import { requireModulesAt } from './lib/require.mjs'
 import { POWER_SHELL_EXTENSION_ID, isPowerShellExtensionInstalled, getOfficialEdits, applyTextEdits } from './lib/officialFormatter.mjs'
@@ -551,6 +551,7 @@ function markdownLink (label, url) {
 
 /**
  * 为 `#_require` 中的模块名构造悬浮提示：从 PowerShell Gallery 读取图标、简介与 tags，并给出仓库与图库页面链接。
+ * 图标浮动在左侧、详情在右侧并排显示；简介按 markdown 渲染且保留换行。
  * 查询失败（离线、图库不可用）时回退到通用的 `#_require` 说明。
  *
  * @param {number} line - 悬浮提示所在行号
@@ -568,10 +569,13 @@ async function createRequireHover (line, moduleToken, locale) {
 	}
 
 	const contents = new vscode.MarkdownString()
+	// 图标用原始 HTML 而不是 markdown 图片，这样才能靠 `align="left"` 浮动到左侧、让图标与右侧的详情并排；markdown 图片做不到浮动。
+	contents.supportHtml = true
 	if (info) {
-		if (info.iconUrl) contents.appendMarkdown(`![${info.id}](<${info.iconUrl}>)\n\n`)
-		contents.appendMarkdown(`**${info.id}**${info.version ? ` \`${info.version}\`` : ''}\n\n`)
-		if (info.description) contents.appendText(info.description)
+		const icon = info.iconUrl ? `<img src="${escapeHtmlAttribute(info.iconUrl)}" width="64" height="64" align="left"> ` : ''
+		contents.appendMarkdown(`${icon}**${info.id}**${info.version ? ` \`${info.version}\`` : ''}`)
+		// 简介按 markdown 渲染（代码段、列表、链接都能显示），并把换行转成硬换行。
+		if (info.description) contents.appendMarkdown(`\n\n${preserveLineBreaks(info.description)}`)
 		if (info.tags.length) {
 			const tags = info.tags.slice(0, MAX_HOVER_TAGS).map((tag) => markdownLink(tag, tagSearchUrl(tag))).join(' ')
 			contents.appendMarkdown(`\n\n${t(HOVER_MESSAGES.requireTags)}: ${tags}`)

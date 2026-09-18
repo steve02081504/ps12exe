@@ -1,7 +1,7 @@
 /* global suite: readonly, test: readonly */
 import assert from 'node:assert'
 
-import { HOVER_MESSAGES, directiveAt, conditionAt, documentationUrl } from '../lib/hover.mjs'
+import { HOVER_MESSAGES, directiveAt, conditionAt, documentationUrl, preserveLineBreaks, escapeHtmlAttribute } from '../lib/hover.mjs'
 import { pragmaNameAt, lookupPragma, buildPragmaCandidates } from '../lib/pragma.mjs'
 import { requireModulesAt } from '../lib/require.mjs'
 
@@ -176,5 +176,20 @@ suite('ps12exe require modules', () => {
 		assert.strictEqual(requireModulesAt('#_pragma App.Windowed', 10), null)
 		assert.strictEqual(requireModulesAt('Write-Output "#_require Pester"', 20), null)
 		assert.strictEqual(requireModulesAt('', 0), null)
+	})
+})
+
+suite('ps12exe require hover formatting', () => {
+	test('turns hard newlines into markdown line breaks but keeps paragraphs', () => {
+		assert.strictEqual(preserveLineBreaks('a\nb'), 'a  \nb')
+		assert.strictEqual(preserveLineBreaks('a\n\nb'), 'a\n\nb')
+		assert.strictEqual(preserveLineBreaks('a\r\nb'), 'a  \nb')
+	})
+
+	test('escapes text placed in an HTML attribute', () => {
+		assert.strictEqual(
+			escapeHtmlAttribute('https://x.test/a"b<c>&d'),
+			'https://x.test/a&quot;b&lt;c&gt;&amp;d'
+		)
 	})
 })

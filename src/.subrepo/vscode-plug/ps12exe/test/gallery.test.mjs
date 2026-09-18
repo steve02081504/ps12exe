@@ -1,7 +1,7 @@
 /* global suite: readonly, test: readonly */
 import assert from 'node:assert'
 
-import { parseGalleryEntry, packagePageUrl, tagSearchUrl, isGeneratedTag } from '../lib/gallery.mjs'
+import { parseGalleryEntry, packagePageUrl, tagSearchUrl, isGeneratedTag, normalizeDescription } from '../lib/gallery.mjs'
 
 const FEED_HEAD = '<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ' +
 	'xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices" ' +
@@ -31,6 +31,22 @@ suite('ps12exe PowerShell Gallery entries', () => {
 		})
 	})
 
+	test('keeps the line breaks and list structure of a description', () => {
+		const xml = FEED_HEAD +
+			'<entry><m:properties>' +
+			'<d:Id>ps12exe</d:Id>' +
+			'<d:Version>0.5.32</d:Version>' +
+			'<d:Description>better pwsh code 2 exe repo:&#xD;\n- Use `ps12exe a.ps1`;&#xD;\n- Use `ps12exeGUI`;</d:Description>' +
+			'</m:properties></entry></feed>'
+
+		assert.strictEqual(
+			parseGalleryEntry(xml).description,
+			'better pwsh code 2 exe repo:\n- Use `ps12exe a.ps1`;\n- Use `ps12exeGUI`;'
+		)
+		assert.strictEqual(normalizeDescription('a<br>b<li>c'), 'a\nb\n- c')
+		assert.strictEqual(normalizeDescription('a\r\n\r\n\r\nb'), 'a\n\nb')
+	})
+
 	test('falls back to the module page when the optional fields are null', () => {
 		const xml = FEED_HEAD +
 			'<entry><m:properties>' +
@@ -53,6 +69,7 @@ suite('ps12exe PowerShell Gallery entries', () => {
 	test('recognizes the tags the gallery generates', () => {
 		assert.strictEqual(isGeneratedTag('PSFunction_Invoke-Pester'), true)
 		assert.strictEqual(isGeneratedTag('PSCommand_Invoke-Pester'), true)
+		assert.strictEqual(isGeneratedTag('PSCmdlet_Get-PSReadLineOption'), true)
 		assert.strictEqual(isGeneratedTag('PSIncludes_Function'), true)
 		assert.strictEqual(isGeneratedTag('powershell'), false)
 		assert.strictEqual(isGeneratedTag('PSEdition_Core'), false)

@@ -10,7 +10,7 @@ const PAGE_BASE = 'https://www.powershellgallery.com/packages'
 const REQUEST_TIMEOUT_MS = 8000
 
 // 图库为模块自动生成的 tag（`PSFunction_Invoke-Pester`、`PSCommand_…` …）；悬浮提示里只展示人工 tag。
-const GENERATED_TAG_PREFIXES = ['PSFunction_', 'PSCommand_', 'PSIncludes_', 'PSDataFile_', 'PSRoleCapability_', 'PSWorkflow_']
+const GENERATED_TAG_PREFIXES = ['PSFunction_', 'PSCommand_', 'PSCmdlet_', 'PSIncludes_', 'PSDataFile_', 'PSRoleCapability_', 'PSWorkflow_']
 
 /** @type {Map<string, Promise<object | null>>} 模块名（小写）到查询结果的缓存。 */
 const cache = new Map()
@@ -70,13 +70,33 @@ function decodeXml (text) {
 }
 
 /**
- * 去掉文本中的 HTML 标签并压平空白；图库的简介允许内嵌 HTML。
+ * 去掉文本中的 HTML 标签并压平空白；用于 Id 这类单行字段。
  *
  * @param {string} text - 原始文本
  * @returns {string} 纯文本
  */
 function stripHtml (text) {
 	return text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * 把图库简介（允许内嵌 HTML）转换成保留换行与列表结构的纯文本：`<br>`/块级闭合标签变成换行，`<li>` 变成 `- ` 列表项，其余标签去掉，每行内部空白压平。图库的简介常用 `&#xD;` 作为换行，若像 {@link stripHtml} 那样一并压平就会挤成一整行。
+ *
+ * @param {string} text - 已解码实体的原始文本
+ * @returns {string} 保留换行的纯文本
+ */
+export function normalizeDescription (text) {
+	return String(text)
+		.replace(/\r\n?/g, '\n')
+		.replace(/<\s*li\b[^>]*>/gi, '\n- ')
+		.replace(/<\s*(?:br|hr)\s*\/?>/gi, '\n')
+		.replace(/<\s*\/\s*(?:p|div|li|ul|ol|h[1-6]|blockquote|tr|table|section|article|header|footer|pre)\s*>/gi, '\n')
+		.replace(/<[^>]*>/g, ' ')
+		.split('\n')
+		.map((line) => line.replace(/[ \t]+/g, ' ').trim())
+		.join('\n')
+		.replace(/\n{3,}/g, '\n\n')
+		.trim()
 }
 
 /**
@@ -110,7 +130,7 @@ export function parseGalleryEntry (xml) {
 	return {
 		id,
 		version,
-		description: stripHtml(fieldValue(entry[0], 'Description')),
+		description: normalizeDescription(fieldValue(entry[0], 'Description')),
 		iconUrl: fieldValue(entry[0], 'IconUrl'),
 		projectUrl: fieldValue(entry[0], 'ProjectUrl'),
 		galleryUrl: fieldValue(entry[0], 'GalleryDetailsUrl') || packagePageUrl(id, version),

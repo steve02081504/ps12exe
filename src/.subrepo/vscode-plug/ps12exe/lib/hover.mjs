@@ -118,6 +118,30 @@ export function conditionAt (line, character) {
 }
 
 /**
+ * 把纯文本里的换行转换成 markdown 硬换行（行尾两个空格），这样 PowerShell Gallery 简介中的换行不会被软换行折叠成空格。
+ *
+ * @param {string} text - 多行纯文本
+ * @returns {string} 硬换行后的 markdown
+ */
+export function preserveLineBreaks (text) {
+	return String(text).replace(/\r\n?/g, '\n').replace(/(\S)[ \t]*\n(?=\S)/g, '$1  \n')
+}
+
+/**
+ * 转义要放进悬浮提示 HTML 属性值（如 `<img src="…">`）的文本。
+ *
+ * @param {string} text - 原始文本
+ * @returns {string} 转义后的文本
+ */
+export function escapeHtmlAttribute (text) {
+	return String(text)
+		.replace(/&/g, '&amp;')
+		.replace(/"/g, '&quot;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+}
+
+/**
  * 返回某个区域 README 中对应小节的链接；未知区域回退到 en-UK（与官网语言重定向页一致），未知小节回退到「预处理」概览小节。
  *
  * @param {string | undefined} locale ps12exe 区域代码（见 `toPs12exeLocale`）
