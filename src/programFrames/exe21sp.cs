@@ -36,6 +36,85 @@ namespace exe21sp {
 			return TryExtractFromTinySharp(exePath);
 		}
 
+		/// <summary>
+		/// 判断 ps12exe 产物是否为 windowed（无控制台）构建，供反编译时补回 <c>#_pragma App.Windowed</c>。
+		/// 标准产物（CodeDom/Core/pack）直接看最外层 PE 子系统；TinySharp 常量 GUI 产物仍标为控制台子系统，
+		/// 但会 P/Invoke user32!MessageBoxW，额外识别这种情况。无法判断时返回 false。
+		/// </summary>
+		/// <param name="exePath">.exe 文件的完整路径。</param>
+		public static bool IsWindowedExe(string exePath) {
+			if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+				return false;
+
+			try {
+				var peFile = PEFile.FromFile(exePath);
+				if (peFile.OptionalHeader != null && peFile.OptionalHeader.SubSystem == SubSystem.WindowsGui)
+					return true;
+			}
+			catch {
+				return false;
+			}
+
+			// 控制台子系统：带内嵌 .ps1 资源的是标准控制台产物（脚本自身可能 P/Invoke MessageBoxW，不能据此误判）；否则按 TinySharp 常量产物处理。
+			try {
+				if (HasEmbeddedScriptResource(exePath))
+					return false;
+				return TinySharpUsesMessageBox(exePath);
+			}
+			catch {
+				return false;
+			}
+		}
+
+		// 标准程序框架（default.cs / pack.cs）会内嵌脚本：未压缩是 main.ps1，压缩后是 launcher 的 "main" 负载。据此把标准产物与 TinySharp 常量产物区分开。
+		private static bool HasEmbeddedScriptResource(string exePath) {
+			var module = ModuleDefinition.FromFile(exePath);
+			foreach (var resource in module.Resources) {
+				if (!resource.IsEmbedded)
+					continue;
+				string name = object.ReferenceEquals(resource.Name, null) ? null : resource.Name.ToString();
+				if (name != null && (name.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase) || string.Equals(name, "main", StringComparison.OrdinalIgnoreCase)))
+					return true;
+			}
+			return false;
+		}
+
+		/// <summary>
+		/// TinySharp 常量 GUI 产物把 user32!MessageBoxW 声明为元数据方法 #1，控制台常量产物则用 puts/WriteConsoleW。方法表没有 TypeDef，AsmResolver 无法枚举 P/Invoke，故直接在 .text 的 CIL 区扫描 call Method#1 的指令字节。
+		/// </summary>
+		private static bool TinySharpUsesMessageBox(string exePath) {
+			var peFile = PEFile.FromFile(exePath);
+			if (peFile.OptionalHeader == null)
+				return false;
+			var clrDir = peFile.OptionalHeader.GetDataDirectory(DataDirectoryIndex.ClrDirectory);
+			if (clrDir.Size == 0 || !clrDir.IsPresentInPE)
+				return false;
+
+			PESection section = null;
+			foreach (var s in peFile.Sections) {
+				if (!object.ReferenceEquals(s.Name, null) && s.Name.ToString() == ".text") {
+					section = s;
+					break;
+				}
+			}
+			if (section == null)
+				return false;
+
+			var size = (uint)Math.Min(section.GetPhysicalSize(), 2048);
+			if (size < 5)
+				return false;
+			var reader = peFile.CreateReaderAtFileOffset(section.Offset, size);
+			var raw = reader.ReadBytes((int)reader.Length);
+			if (raw == null || raw.Length < 5)
+				return false;
+			// call (0x28) + Method 元数据 token #1（0x06000001，小端 01 00 00 06）。
+			for (int i = 0; i + 4 < raw.Length; i++) {
+				if (raw[i] == 0x28 && raw[i + 1] == 0x01 && raw[i + 2] == 0x00 && raw[i + 3] == 0x00 && raw[i + 4] == 0x06)
+					return true;
+			}
+			return false;
+		}
+
 		private static string TryExtractFromFrame(string exePath) {
 			// 普通托管 exe 的镜像在偏移 0；Core 的单文件 exe 是原生 apphost 后追加托管负载，因此扫描文件内所有内嵌 PE 镜像，逐个尝试提取。
 			foreach (var image in EnumerateEmbeddedImages(File.ReadAllBytes(exePath))) {

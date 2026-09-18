@@ -169,3 +169,47 @@ Add-Test @{
 		}
 	}
 }
+
+Add-Test @{
+	Name   = 'exe21sp.windowed'
+	Group  = 'exe21sp'
+	Deps   = $deps
+	Builds = @(
+		@{ Name = 'win'; InputText = "Get-Date | Out-Null; Write-Output 'windowed-embed'"; Params = @{ App = @{ Windowed = $true } }; Output = 'windowed_std.exe' }
+		@{ Name = 'con'; InputText = "Get-Date | Out-Null; Write-Output 'console-embed'"; Output = 'console_std.exe' }
+		@{ Name = 'srcwin'; InputText = "#_pragma App.Windowed`nGet-Date | Out-Null; Write-Output 'srcwin-embed'"; Output = 'src_windowed.exe' }
+		@{ Name = 'tsgui'; InputText = "'tinysharp-gui-windowed'"; Params = @{ App = @{ Windowed = $true }; Resources = @{ Title = 'CI' } }; Output = 'ts_windowed.exe' }
+	)
+	Run    = {
+		param($ctx)
+		$win = Get-Exe21spContent -ExePath $ctx.Builds['win']
+		Assert-Match $win 'windowed-embed' "windowed 脚本内容：$win"
+		Assert-Equal 1 ([regex]::Matches($win, '(?m)^\s*#_pragma\s+App\.Windowed\b')).Count "windowed exe 应补回一次 App.Windowed：$win"
+
+		$con = Get-Exe21spContent -ExePath $ctx.Builds['con']
+		Assert-Match $con 'console-embed' "console 脚本内容：$con"
+		Assert-True ($con -notmatch '(?m)^\s*#_pragma\s+App\.Windowed\b') "console exe 不应补 App.Windowed：$con"
+
+		$srcwin = Get-Exe21spContent -ExePath $ctx.Builds['srcwin']
+		Assert-Match $srcwin 'srcwin-embed' "源码含 pragma 的脚本内容：$srcwin"
+		Assert-Equal 1 ([regex]::Matches($srcwin, '(?m)^\s*#_pragma\s+App\.Windowed\b')).Count "源码已有 pragma 时不应重复：$srcwin"
+
+		$tsgui = Get-Exe21spContent -ExePath $ctx.Builds['tsgui']
+		Assert-Match $tsgui 'tinysharp-gui-windowed' "TinySharp windowed 脚本内容：$tsgui"
+		Assert-Equal 1 ([regex]::Matches($tsgui, '(?m)^\s*#_pragma\s+App\.Windowed\b')).Count "TinySharp windowed 应补回 App.Windowed：$tsgui"
+	}
+}
+
+Add-Test @{
+	Name  = 'exe21sp.windowed-core'
+	Group = 'exe21sp'
+	Deps  = $deps
+	Build = @{ Name = 'corewin'; InputText = "Get-Date | Out-Null; Write-Output 'core-windowed-embed'"; Params = @{ Build = @{ Target = 'Core' }; App = @{ Windowed = $true } }; Output = 'core_windowed.exe' }
+	Run   = {
+		param($ctx)
+		if (-not (Get-Command dotnet -ErrorAction Ignore)) { throw 'Core 目标需要 .NET SDK（dotnet）' }
+		$text = Get-Exe21spContent -ExePath $ctx.Builds['corewin']
+		Assert-Match $text 'core-windowed-embed' "Core windowed 脚本内容：$text"
+		Assert-Equal 1 ([regex]::Matches($text, '(?m)^\s*#_pragma\s+App\.Windowed\b')).Count "Core windowed 应补回 App.Windowed：$text"
+	}
+}

@@ -242,6 +242,10 @@ param(
 		# 反编译时从产物的 Win32 资源取回资源参数：源码里已有对应 #_pragma 的跳过，缺失的在程序开头补回；图标释放到输出目录并用 #_pragma Resources.Icon 引用。
 		$ExistingPragmaNames = Get-ExistingPragmaNames $script
 		$PrefixLines = [System.Collections.Generic.List[string]]::new()
+		# 产物是 windowed（GUI 子系统）说明编译时用了 App.Windowed；源码里已有对应 pragma 的跳过，缺失的在程序开头补回。
+		if (-not $ExistingPragmaNames.ContainsKey('app.windowed') -and [exe21sp.Extractor]::IsWindowedExe($currentExe)) {
+			$PrefixLines.Add('#_pragma App.Windowed')
+		}
 		foreach ($Line in (Get-PS12ExeResourcePragmaLines -ExePath $currentExe -ExistingPragmaNames $ExistingPragmaNames)) {
 			$PrefixLines.Add($Line)
 		}
