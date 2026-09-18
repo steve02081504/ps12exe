@@ -18,6 +18,8 @@
 	"#_else without a matching #_if.": "#_else sin un #_if correspondiente.",
 	"#_endif without a matching #_if.": "#_endif sin un #_if correspondiente.",
 	"Duplicate #_else in the same #_if block.": "#_else duplicado en el mismo bloque #_if.",
+	"Code in a #_if PSEXE branch is neither #_!! nor a comment, so it also runs when the script is executed directly.": "El código de una rama #_if PSEXE no es #_!! ni un comentario, por lo que también se ejecuta al ejecutar el script directamente.",
+	"#_!! in a #_if PSScript branch is a comment when the script is executed directly; use plain code here.": "#_!! en una rama #_if PSScript es un comentario al ejecutar el script directamente; usa código normal aquí.",
 	"Format ps12exe preprocessor blocks": "Formatear bloques del preprocesador de ps12exe",
 	"The PowerShell extension is required to run the official formatter before applying ps12exe preprocessor indentation.": "Se requiere la extensión de PowerShell para ejecutar el formateador oficial antes de aplicar la indentación del preprocesador de ps12exe.",
 	"Install PowerShell extension": "Instalar la extensión de PowerShell",

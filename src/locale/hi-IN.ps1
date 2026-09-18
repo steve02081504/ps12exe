@@ -192,6 +192,8 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Locale '<
 		PreprocessUnknownIfCondition              = "अज्ञात स्थिति: {0}`nमान लिया गया फाल्स।"
 		PreprocessNestedIfDeadCode                = "#_if {1} के अंदर नेस्टेड #_if {0}: बाहरी शर्त पहले से इस शाखा को तय करती है, इसलिए एक हिस्सा डेड कोड है।"
 		PreprocessMissingEndIf                    = "endif की कमी: {0}"
+		PreprocessPsexeBranchCode                 = "#_if PSEXE शाखा में कोड न #_!! है न टिप्पणी, इसलिए स्क्रिप्ट को सीधे चलाने पर भी यह निष्पादित होता है।"
+		PreprocessPsscriptBranchBang              = "#_if PSScript शाखा में #_!! स्क्रिप्ट को सीधे चलाने पर टिप्पणी बना रहता है; यहाँ सामान्य कोड लिखें।"
 		ConfigFileCreated                         = "EXE के लिए कॉन्फ़िगरेशन फ़ाइल बनाई गई"
 		SourceFileCopied                          = "डिबग के लिए स्रोत फ़ाइल नाम कॉपी किया गया: {0}"
 		CoreCompilePublishing                     = "Publishing single-file executable with the .NET SDK..."

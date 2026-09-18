@@ -18,6 +18,8 @@
 	"#_else without a matching #_if.": "किसी मिलते #_if के बिना #_else।",
 	"#_endif without a matching #_if.": "किसी मिलते #_if के बिना #_endif।",
 	"Duplicate #_else in the same #_if block.": "एक ही #_if ब्लॉक में दोहरा #_else।",
+	"Code in a #_if PSEXE branch is neither #_!! nor a comment, so it also runs when the script is executed directly.": "#_if PSEXE शाखा में कोड न #_!! है न टिप्पणी, इसलिए स्क्रिप्ट को सीधे चलाने पर भी यह निष्पादित होता है।",
+	"#_!! in a #_if PSScript branch is a comment when the script is executed directly; use plain code here.": "#_if PSScript शाखा में #_!! स्क्रिप्ट को सीधे चलाने पर टिप्पणी बना रहता है; यहाँ सामान्य कोड लिखें।",
 	"Format ps12exe preprocessor blocks": "ps12exe प्रीप्रोसेसर ब्लॉक फ़ॉर्मेट करें",
 	"The PowerShell extension is required to run the official formatter before applying ps12exe preprocessor indentation.": "ps12exe प्रीप्रोसेसर इंडेंटेशन लागू करने से पहले आधिकारिक फ़ॉर्मेटर चलाने के लिए PowerShell एक्सटेंशन आवश्यक है।",
 	"Install PowerShell extension": "PowerShell एक्सटेंशन इंस्टॉल करें",

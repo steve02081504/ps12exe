@@ -53,6 +53,49 @@ suite('ps12exe preprocessor', () => {
 		assert.ok(stray.includes(MESSAGES.strayEndIf))
 	})
 
+	test('flags #_!! misuse across the two branch hosts', () => {
+		const text = [
+			'#_if PSEXE',
+			'$x = 1',
+			'#_!! $y = 2',
+			'# comment',
+			'#_if PSScript',
+			'$z = 3',
+			'#_!! $w = 4',
+			'#_endif',
+			'#_else',
+			'$direct = 5',
+			'#_!! $bad = 6',
+			'#_endif'
+		].join('\n')
+		const found = analyze(text).diagnostics
+			.filter((d) => d.message === MESSAGES.psexeBranchCode || d.message === MESSAGES.psscriptBranchBang)
+			.map((d) => [d.line, d.message])
+		assert.deepStrictEqual(found, [
+			[1, MESSAGES.psexeBranchCode],
+			[6, MESSAGES.psscriptBranchBang],
+			[10, MESSAGES.psscriptBranchBang]
+		])
+
+		// `#_if PSScript` 的主体是直接运行宿主，`#_!!` 在其中是误用；其 else 则相反。
+		const psscript = analyze(['#_if PSScript', '#_!! $a = 1', '#_else', '$b = 2', '#_endif'].join('\n'))
+			.diagnostics.filter((d) => d.message === MESSAGES.psexeBranchCode || d.message === MESSAGES.psscriptBranchBang)
+			.map((d) => [d.line, d.message])
+		assert.deepStrictEqual(psscript, [[1, MESSAGES.psscriptBranchBang], [3, MESSAGES.psexeBranchCode]])
+
+		// 嵌套时只有所有外层分支都在编译期选中的行才进入 EXE，因此这个内层 PSEXE 仍处于直接运行宿主。
+		const nested = analyze(['#_if PSScript', '#_if PSEXE', '$inner = 1', '#_!! $innerBang = 2', '#_endif', '#_endif'].join('\n'))
+			.diagnostics.filter((d) => d.message === MESSAGES.psexeBranchCode || d.message === MESSAGES.psscriptBranchBang)
+			.map((d) => [d.line, d.message])
+		assert.deepStrictEqual(nested, [[3, MESSAGES.psscriptBranchBang]])
+	})
+
+	test('does not flag #_!! usage inside here-string bodies', () => {
+		const text = ['#_if PSEXE', '$s = @"', 'body', '"@', '#_endif'].join('\n')
+		const found = analyze(text).diagnostics.filter((d) => d.message === MESSAGES.psexeBranchCode)
+		assert.deepStrictEqual(found.map((d) => d.line), [1])
+	})
+
 	test('folds each block to the line before its #_endif', () => {
 		const simple = ['#_if PSEXE', 'a', 'b', '#_endif'].join('\n')
 		assert.deepStrictEqual(foldingRanges(simple), [{ start: 0, end: 2 }])

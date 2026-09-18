@@ -18,6 +18,8 @@
 	"#_else without a matching #_if.": "#_else 没有匹配的 #_if。",
 	"#_endif without a matching #_if.": "#_endif 没有匹配的 #_if。",
 	"Duplicate #_else in the same #_if block.": "同一个 #_if 块中出现重复的 #_else。",
+	"Code in a #_if PSEXE branch is neither #_!! nor a comment, so it also runs when the script is executed directly.": "#_if PSEXE 分支中的代码既不是 #_!! 也不是注释，直接运行脚本时也会执行。",
+	"#_!! in a #_if PSScript branch is a comment when the script is executed directly; use plain code here.": "#_if PSScript 分支中的 #_!! 在直接运行脚本时是注释；这里应使用普通代码。",
 	"Format ps12exe preprocessor blocks": "格式化 ps12exe 预处理器块",
 	"The PowerShell extension is required to run the official formatter before applying ps12exe preprocessor indentation.": "在应用 ps12exe 预处理器缩进之前，需要 PowerShell 扩展来运行官方格式化器。",
 	"Install PowerShell extension": "安装 PowerShell 扩展",

@@ -192,6 +192,8 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Locale '<言語コー�
 		PreprocessUnknownIfCondition              = "未知の条件：{0}`nfalse と仮定します。"
 		PreprocessNestedIfDeadCode                = "#_if {1} 内のネストされた #_if {0}：外側の条件でこの分岐は確定するため、片側はデッドコードです。"
 		PreprocessMissingEndIf                    = "endif がありません：{0}"
+		PreprocessPsexeBranchCode                 = "#_if PSEXE 分岐内のコードが #_!! でもコメントでもないため、スクリプトを直接実行するときにも実行されます。"
+		PreprocessPsscriptBranchBang              = "#_if PSScript 分岐内の #_!! はスクリプトを直接実行するときはコメントになります。ここには通常のコードを書いてください。"
 		ConfigFileCreated                         = "EXE の設定ファイルが作成されました"
 		SourceFileCopied                          = "デバッグ用のソースファイル名がコピーされました：{0}"
 		CoreCompilePublishing                     = "Publishing single-file executable with the .NET SDK..."

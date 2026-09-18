@@ -172,6 +172,8 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Locale '<语言代码>'] [-UIMode 'Da
 		PreprocessUnknownIfCondition              = "未知条件：{0}`n假定为 false."
 		PreprocessNestedIfDeadCode                = "嵌套的 #_if {0} 位于 #_if {1} 内：外层条件已决定该分支，另一支是死代码。"
 		PreprocessMissingEndIf                    = "缺少endif：{0}"
+		PreprocessPsexeBranchCode                 = "#_if PSEXE 分支中的代码既不是 #_!! 也不是注释，直接运行脚本时也会执行。"
+		PreprocessPsscriptBranchBang              = "#_if PSScript 分支中的 #_!! 在直接运行脚本时是注释；这里应使用普通代码。"
 		# 压缩
 		MinifyingScript                           = "正在压缩脚本..."
 		MinifyedScriptSize                        = "压缩脚本 -> {0}字节"

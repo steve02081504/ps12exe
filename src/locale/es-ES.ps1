@@ -192,6 +192,8 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Locale '<código de idioma>'] [
 		PreprocessUnknownIfCondition              = "Condición desconocida: {0}`nSe asume que es falso."
 		PreprocessNestedIfDeadCode                = "#_if {0} anidado dentro de #_if {1}: la condición externa ya fija esta rama, así que un lado es código muerto."
 		PreprocessMissingEndIf                    = "Falta el final de la declaración if: {0}"
+		PreprocessPsexeBranchCode                 = "El código de una rama #_if PSEXE no es #_!! ni un comentario, por lo que también se ejecuta al ejecutar el script directamente."
+		PreprocessPsscriptBranchBang              = "#_!! en una rama #_if PSScript es un comentario al ejecutar el script directamente; usa código normal aquí."
 		ConfigFileCreated                         = "Se creó el archivo de configuración para EXE"
 		SourceFileCopied                          = "Nombre de archivo fuente copiado para depuración: {0}"
 		CoreCompilePublishing                     = "Publishing single-file executable with the .NET SDK..."

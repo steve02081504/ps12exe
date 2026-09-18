@@ -24,7 +24,9 @@ export const MESSAGES = Object.freeze({
 	unknownCondition: 'Unknown condition: {0}; assuming false.',
 	strayElse: '#_else without a matching #_if.',
 	strayEndIf: '#_endif without a matching #_if.',
-	duplicateElse: 'Duplicate #_else in the same #_if block.'
+	duplicateElse: 'Duplicate #_else in the same #_if block.',
+	psexeBranchCode: 'Code in a #_if PSEXE branch is neither #_!! nor a comment, so it also runs when the script is executed directly.',
+	psscriptBranchBang: '#_!! in a #_if PSScript branch is a comment when the script is executed directly; use plain code here.'
 })
 
 /**
@@ -137,6 +139,28 @@ export function analyze (text) {
 			top.closed = true
 			continue
 		}
+
+		// 普通行：`#_if PSEXE` 分支只会编译进 EXE，直接运行脚本时该分支并未被注释掉，因此其中的普通代码也必须带 `#_!!`；
+		// 反之，`#_if PSScript` 分支只在直接运行时存在，`#_!!` 会让它在直接运行时变成注释，属于误用。
+		// 一行只有在其所有外层分支都于编译期被选中时才会进入 EXE（否则只在直接运行时存在）。
+		if (!stack.length) continue
+		let known = true
+		let selected = true
+		for (const index of stack) {
+			const block = blocks[index]
+			const condition = block.condition.toLowerCase()
+			if (!KNOWN_CONDITIONS.has(condition)) { known = false; break }
+			const initialActive = condition === 'psexe'
+			const elseSide = block.elseLine !== null && line > block.elseLine
+			if (!(elseSide ? !initialActive : initialActive)) { selected = false; break }
+		}
+		if (!known) continue
+		if (selected) {
+			if (content.trim() !== '' && !/^[\t ]*#/.test(content))
+				diagnostics.push({ line, severity: 'warning', message: MESSAGES.psexeBranchCode, args: [] })
+		}
+		else if (/^[\t ]*#_!!/.test(content))
+			diagnostics.push({ line, severity: 'warning', message: MESSAGES.psscriptBranchBang, args: [] })
 	}
 
 	for (const index of stack) {

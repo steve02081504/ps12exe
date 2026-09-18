@@ -192,6 +192,8 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Locale '<language code>'] [-UIMode 'Dark'
 		PreprocessUnknownIfCondition              = "Unknown condition: {0}; assuming false."
 		PreprocessNestedIfDeadCode                = "Nested #_if {0} inside #_if {1}: the enclosing condition already fixes this branch, so one side is dead code."
 		PreprocessMissingEndIf                    = "Missing end of if statement: {0}"
+		PreprocessPsexeBranchCode                 = "Code in a #_if PSEXE branch is neither #_!! nor a comment, so it also runs when the script is executed directly."
+		PreprocessPsscriptBranchBang              = "#_!! in a #_if PSScript branch is a comment when the script is executed directly; use plain code here."
 		ConfigFileCreated                         = "Config file for the EXE created."
 		SourceFileCopied                          = "Source file name for debugging copied: {0}"
 		CoreCompilePublishing                     = "Publishing single-file executable with the .NET SDK..."

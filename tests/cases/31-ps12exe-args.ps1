@@ -130,6 +130,51 @@ Add-Test @{
 }
 
 Add-Test @{
+	Name  = 'ps12exe.branch-bang-warnings'
+	Group = 'ps12exe'
+	Deps  = $deps
+	Run   = {
+		param($ctx)
+		$script:GuestMode = $false
+		$script:Params = @{}
+		$script:i18nWarnings = [System.Collections.Generic.List[string]]::new()
+		function Write-I18n {
+			param($PipeLineType, $Mid, $FormatArgs, $Category)
+			if ($PipeLineType -eq 'Warning') { $script:i18nWarnings.Add($Mid) }
+		}
+		. (Join-Path $ctx.RepoRoot 'src/ReadScriptFile.ps1')
+		function Get-WarningCount([string]$Mid) { @($script:i18nWarnings | Where-Object { $_ -eq $Mid }).Count }
+
+		# PSEXE 分支会编译进 EXE，其中的普通代码必须带 #_!!；而 PSScript 分支中的 #_!! 在直接运行时会变成注释。
+		[void](Preprocessor @(
+			'#_if PSEXE'
+			'$needsBang = 1'
+			'#_!! $escaped = 2'
+			'# comment'
+			'#_else'
+			'$direct = 3'
+			'#_!! $wrongBang = 4'
+			'#_endif'
+		) 'C:\compiled\main.ps1')
+		Assert-Equal 1 (Get-WarningCount 'PreprocessPsexeBranchCode') "PSEXE 分支中的普通代码未告警：$($script:i18nWarnings -join ', ')"
+		Assert-Equal 1 (Get-WarningCount 'PreprocessPsscriptBranchBang') "PSScript 上下文中的 #_!! 未告警：$($script:i18nWarnings -join ', ')"
+
+		# 嵌套时只有所有外层分支都在编译期选中的行才进入 EXE：内层 PSEXE 仍处于直接运行宿主。
+		$script:i18nWarnings.Clear()
+		[void](Preprocessor @(
+			'#_if PSScript'
+			'#_if PSEXE'
+			'$inner = 1'
+			'#_!! $innerBang = 2'
+			'#_endif'
+			'#_endif'
+		) 'C:\compiled\main.ps1')
+		Assert-Equal 0 (Get-WarningCount 'PreprocessPsexeBranchCode') '嵌套在未选中的 PSScript 分支中的 PSEXE 不应要求 #_!!'
+		Assert-Equal 1 (Get-WarningCount 'PreprocessPsscriptBranchBang') '嵌套在未选中的 PSScript 分支中的 #_!! 应告警'
+	}
+}
+
+Add-Test @{
 	Name  = 'ps12exe.const-eval.unit'
 	Group = 'ps12exe'
 	Deps  = $deps

@@ -18,6 +18,8 @@
 	"#_else without a matching #_if.": "対応する #_if がない #_else です。",
 	"#_endif without a matching #_if.": "対応する #_if がない #_endif です。",
 	"Duplicate #_else in the same #_if block.": "同じ #_if ブロック内に #_else が重複しています。",
+	"Code in a #_if PSEXE branch is neither #_!! nor a comment, so it also runs when the script is executed directly.": "#_if PSEXE 分岐内のコードが #_!! でもコメントでもないため、スクリプトを直接実行するときにも実行されます。",
+	"#_!! in a #_if PSScript branch is a comment when the script is executed directly; use plain code here.": "#_if PSScript 分岐内の #_!! はスクリプトを直接実行するときはコメントになります。ここには通常のコードを書いてください。",
 	"Format ps12exe preprocessor blocks": "ps12exe プリプロセッサブロックを整形",
 	"The PowerShell extension is required to run the official formatter before applying ps12exe preprocessor indentation.": "ps12exe のプリプロセッサ整形を適用する前に、公式フォーマッターを実行するには PowerShell 拡張機能が必要です。",
 	"Install PowerShell extension": "PowerShell 拡張機能をインストール",

@@ -54,6 +54,42 @@ function Preprocessor($Content, $FilePath) {
 	$Result = @()
 	$requiredModules = @()
 	$requireFlag = $False
+	# here-string 函数体与完全处于块注释内的行不参与 `#_!!` 使用检查（与 VS Code 插件的 computeSkipMask 一致）。
+	$OpaqueLines = [bool[]]::new($Content.Count)
+	$HereTerminator = $null
+	$InBlockComment = $false
+	for ($skipIndex = 0; $skipIndex -lt $Content.Count; $skipIndex++) {
+		$skipLine = [string]$Content[$skipIndex]
+		$skipTrimmed = $skipLine.Trim()
+		if ($HereTerminator) {
+			$OpaqueLines[$skipIndex] = $true
+			if ($skipTrimmed.StartsWith($HereTerminator)) { $HereTerminator = $null }
+			continue
+		}
+		if ($InBlockComment) {
+			$OpaqueLines[$skipIndex] = $true
+			if ($skipLine.Contains('#>')) { $InBlockComment = $false }
+			continue
+		}
+		if ($skipLine -match '@(["''])\s*$') {
+			$HereTerminator = $Matches[1] + '@'
+			continue
+		}
+		$rest = $skipLine
+		$hasCode = $false
+		while ($true) {
+			$open = $rest.IndexOf('<#')
+			if ($open -lt 0) {
+				if ($rest.Trim() -ne '') { $hasCode = $true }
+				break
+			}
+			if ($rest.Substring(0, $open).Trim() -ne '') { $hasCode = $true }
+			$close = $rest.IndexOf('#>', $open + 2)
+			if ($close -lt 0) { $InBlockComment = $true; break }
+			$rest = $rest.Substring($close + 2)
+		}
+		if (-not $hasCode) { $OpaqueLines[$skipIndex] = $true }
+	}
 	# 处理#_if <PSEXE/PSScript>、#_else、#_endif（支持嵌套：只有栈上所有分支都为真时才输出）
 	$conditionStack = [System.Collections.Generic.List[hashtable]]::new()
 	for ($index = 0; $index -lt $Content.Count; $index++) {
@@ -82,8 +118,31 @@ function Preprocessor($Content, $FilePath) {
 			if ($conditionStack.Count -eq 0) { $Result += $Line; continue }
 			$conditionStack.RemoveAt($conditionStack.Count - 1)
 		}
-		elseif (-not ($conditionStack.Active -contains $false)) {
-			$Result += $Line
+		else {
+			# `#_if PSEXE` 分支只会编译进 EXE：直接运行脚本时该分支并未被注释掉，因此其中的普通代码也必须带 `#_!!`。
+			# 反之 `#_if PSScript` 分支只在直接运行时存在：其中的 `#_!!` 会让它在直接运行时变成注释，属于误用。
+			if ($conditionStack.Count -gt 0 -and -not $OpaqueLines[$index]) {
+				$knownBranch = $true
+				foreach ($conditionEntry in $conditionStack) {
+					if ($conditionEntry.Name -ne 'PSEXE' -and $conditionEntry.Name -ne 'PSScript') { $knownBranch = $false; break }
+				}
+				if ($knownBranch) {
+					# 一行只有在其所有外层分支都于编译期被选中时才会进入 EXE，否则只在直接运行时存在。
+					$selectedInExe = -not ($conditionStack.Active -contains $false)
+					$trimmedLine = ([string]$Line).TrimStart()
+					if ($selectedInExe) {
+						if ($trimmedLine -ne '' -and -not $trimmedLine.StartsWith('#')) {
+							Write-I18n Warning PreprocessPsexeBranchCode
+						}
+					}
+					elseif ($trimmedLine.StartsWith('#_!!')) {
+						Write-I18n Warning PreprocessPsscriptBranchBang
+					}
+				}
+			}
+			if (-not ($conditionStack.Active -contains $false)) {
+				$Result += $Line
+			}
 		}
 	}
 	if ($conditionStack.Count -ne 0) {
