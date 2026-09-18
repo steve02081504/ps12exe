@@ -1,147 +1,51 @@
-# 模块化 CI：按变更路径增量运行测试，多任务并行，无状态（不改变右键菜单等环境）
+# CI：单个 windows 作业内按改动增量选择用例、并行执行；构建产物按内容哈希缓存跨 run 复用。
 name: CI
 
 on:
   push:
     paths:
       - '**/*.ps1'
+      - '**/*.psm1'
+      - '**/*.psd1'
       - '**/*.cs'
       - '.github/workflows/**'
+      - 'tests/**'
   pull_request:
     branches: ['master']
   workflow_dispatch:
-    inputs:
-      run_ps12exe:
-        description: 'Run ps12exe build & basic tests'
-        required: false
-        default: true
-        type: boolean
-      run_exe21sp:
-        description: 'Run exe21sp extraction tests'
-        required: false
-        default: true
-        type: boolean
-      run_tinysharp:
-        description: 'Run TinySharp console & GUI tests'
-        required: false
-        default: true
-        type: boolean
-      run_ps2exe2ps12exe:
-        description: 'Run PS2EXE2ps12exe compatibility layer tests'
-        required: false
-        default: true
-        type: boolean
 
 jobs:
-  detect:
+  test:
     if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     runs-on: windows-latest
-    outputs:
-      run_ps12exe: ${{ steps.set.outputs.run_ps12exe }}
-      run_exe21sp: ${{ steps.set.outputs.run_exe21sp }}
-      run_tinysharp: ${{ steps.set.outputs.run_tinysharp }}
-      run_ps2exe2ps12exe: ${{ steps.set.outputs.run_ps2exe2ps12exe }}
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 7
-      - name: Get changed files
-        id: changed
+          fetch-depth: 0
+      - name: Compute changed paths
         if: github.event_name != 'workflow_dispatch'
+        shell: pwsh
         run: |
+          $paths = @()
           if ("${{ github.event_name }}" -eq "pull_request") {
-            git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}" > changed.txt
+            $paths = @(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}" 2>$null)
           } else {
             $before = "${{ github.event.before }}"
             $sha = "${{ github.sha }}"
-            $ok = $false
-            if ($before -and $before -ne "0000000000000000000000000000000000000000") {
-              git diff --name-only $before $sha 2>$null | Set-Content changed.txt
-              if ($LASTEXITCODE -eq 0) { $ok = $true }
-            }
-            if (-not $ok) {
-              git diff --name-only HEAD~1 2>$null | Set-Content changed.txt
-              if ($LASTEXITCODE -ne 0) { "" > changed.txt }
-            }
+            if ($before -and $before -ne ("0" * 40)) { $paths = @(git diff --name-only $before $sha 2>$null) }
+            if (-not $paths) { $paths = @(git diff --name-only HEAD~1 2>$null) }
           }
-          if (-not (Test-Path changed.txt)) { "" > changed.txt }
-      - name: Set test groups
-        id: set
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          INPUT_RUN_PS12EXE: ${{ github.event.inputs.run_ps12exe }}
-          INPUT_RUN_EXE21SP: ${{ github.event.inputs.run_exe21sp }}
-          INPUT_RUN_TINYSHARP: ${{ github.event.inputs.run_tinysharp }}
-          INPUT_RUN_PS2EXE2PS12EXE: ${{ github.event.inputs.run_ps2exe2ps12exe }}
-        run: |
-          if ("$env:EVENT_NAME" -eq "workflow_dispatch") {
-            $p = if ("$env:INPUT_RUN_PS12EXE" -eq "" -or "$env:INPUT_RUN_PS12EXE" -eq "true") { "true" } else { "false" }
-            $e = if ("$env:INPUT_RUN_EXE21SP"  -eq "" -or "$env:INPUT_RUN_EXE21SP"  -eq "true") { "true" } else { "false" }
-            $t = if ("$env:INPUT_RUN_TINYSHARP" -eq "" -or "$env:INPUT_RUN_TINYSHARP" -eq "true") { "true" } else { "false" }
-            $c = if ("$env:INPUT_RUN_PS2EXE2PS12EXE" -eq "" -or "$env:INPUT_RUN_PS2EXE2PS12EXE" -eq "true") { "true" } else { "false" }
-            echo "run_ps12exe=$p" >> $env:GITHUB_OUTPUT
-            echo "run_exe21sp=$e" >> $env:GITHUB_OUTPUT
-            echo "run_tinysharp=$t" >> $env:GITHUB_OUTPUT
-            echo "run_ps2exe2ps12exe=$c" >> $env:GITHUB_OUTPUT
-            exit 0
-          }
-          $paths = Get-Content changed.txt | Where-Object { $_.Trim() }
-          $json = & pwsh -NoProfile -File .github/workflows/CI/detect-changes.ps1 -ChangedPaths $paths
-          $arr = $json | ConvertFrom-Json
-          if ($arr -isnot [array]) { $arr = @($arr) }
-          $run_ps12exe = ($arr -contains 'ps12exe').ToString().ToLower()
-          $run_exe21sp  = ($arr -contains 'exe21sp').ToString().ToLower()
-          $run_tinysharp= ($arr -contains 'tinysharp').ToString().ToLower()
-          $run_ps2exe2ps12exe = ($arr -contains 'ps2exe2ps12exe').ToString().ToLower()
-          echo "run_ps12exe=$run_ps12exe" >> $env:GITHUB_OUTPUT
-          echo "run_exe21sp=$run_exe21sp" >> $env:GITHUB_OUTPUT
-          echo "run_tinysharp=$run_tinysharp" >> $env:GITHUB_OUTPUT
-          echo "run_ps2exe2ps12exe=$run_ps2exe2ps12exe" >> $env:GITHUB_OUTPUT
-
-  test-ps12exe:
-    needs: detect
-    if: ${{ needs.detect.outputs.run_ps12exe == 'true' }}
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run ps12exe tests
-        env:
-          REPO_ROOT: ${{ github.workspace }}
-        run: powershell -NoProfile -File .github/workflows/CI/run-ps12exe-tests.ps1
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+          $paths | Where-Object { $_ } | Set-Content -LiteralPath changed.txt -Encoding utf8
+      - name: Restore build cache
+        uses: actions/cache@v4
         with:
-          path: ps12exe.exe
-
-  test-exe21sp:
-    needs: detect
-    if: ${{ needs.detect.outputs.run_exe21sp == 'true' }}
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run exe21sp tests
-        env:
-          REPO_ROOT: ${{ github.workspace }}
-        run: pwsh -NoProfile -File .github/workflows/CI/run-exe21sp-tests.ps1
-
-  test-tinysharp:
-    needs: detect
-    if: ${{ needs.detect.outputs.run_tinysharp == 'true' }}
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run TinySharp tests
-        env:
-          REPO_ROOT: ${{ github.workspace }}
-        run: pwsh -NoProfile -File .github/workflows/CI/run-tinysharp-tests.ps1
-
-  test-ps2exe2ps12exe:
-    needs: detect
-    if: ${{ needs.detect.outputs.run_ps2exe2ps12exe == 'true' }}
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run PS2EXE2ps12exe tests
-        env:
-          REPO_ROOT: ${{ github.workspace }}
-        run: pwsh -NoProfile -File .github/workflows/CI/run-ps2exe2ps12exe-tests.ps1
+          path: tests/.cache/builds
+          key: ps12exe-builds-${{ hashFiles('ps12exe.ps1','ps12exe.psm1','ps12exe.psd1','exe21sp.ps1','src/*.ps1','src/*.psd1','src/GUI/**','src/Interact/**','src/WebServer/**','src/RuntimePwsh2.0/**','src/locale/**','src/programFrames/**','src/.subrepo/PS2EXE2ps12exe/**') }}
+          restore-keys: |
+            ps12exe-builds-
+      - name: Run tests
+        shell: pwsh
+        run: |
+          if (Test-Path changed.txt) { pwsh -NoProfile -File tests/run.ps1 -ChangedPathsFile changed.txt }
+          else { pwsh -NoProfile -File tests/run.ps1 -All }
