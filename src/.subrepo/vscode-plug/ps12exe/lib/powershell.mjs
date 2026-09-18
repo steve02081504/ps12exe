@@ -311,7 +311,7 @@ function compileScript ({ host, file, locale, channel, token }) {
 }
 
 /**
- * 在给定宿主中运行 `exe21sp -inputFile <file> -outputFile <outputFile>`。exe21sp 会把还原出的脚本写入 `outputFile`，并在其旁边释放伴随文件（添加的 `#_pragma icon` 引用的图标），因此调用方应选择自己缓存目录内的输出路径。
+ * 在给定宿主中运行 `exe21sp -inputFile <file> -outputFile <outputFile>`。exe21sp 会把还原出的脚本写入 `outputFile`，并在其旁边释放伴随文件（添加的 `#_pragma resourceParams.iconFile` 引用的图标），因此调用方应选择自己缓存目录内的输出路径。
  *
  * @param {object} options
  * @param {{ command: string }} options.host

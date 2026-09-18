@@ -83,7 +83,7 @@ export function looksLikePs12Exe (exePath) {
 /**
  * 可执行文件中内嵌 PowerShell 源码的可编辑内存视图。
  *
- * `readFile` 用 `exe21sp` 还原脚本；`writeFile`（普通的 Ctrl+S）会把编辑后的源码重新编译回同一个可执行文件。两个方向都在发布图标旁的缓存目录中经由 ps12exe 模块运行，因此 `#_pragma icon` 及其他 `$PSScriptRoot` 引用可以继续正常工作。
+ * `readFile` 用 `exe21sp` 还原脚本；`writeFile`（普通的 Ctrl+S）会把编辑后的源码重新编译回同一个可执行文件。两个方向都在发布图标旁的缓存目录中经由 ps12exe 模块运行，因此 `#_pragma resourceParams.iconFile` 及其他 `$PSScriptRoot` 引用可以继续正常工作。
  */
 export class ExeSourceFileSystemProvider {
 	/**

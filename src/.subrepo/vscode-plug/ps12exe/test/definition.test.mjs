@@ -16,15 +16,15 @@ suite('ps12exe directive paths', () => {
 		assert.strictEqual(resolveDirectivePath('#_include $PSScriptRoot/lib/helper.ps1', base).file, join('lib/helper.ps1'))
 	})
 
-	test('resolves #_include_as_* and icon pragma paths', () => {
+	test('resolves #_include_as_* and resourceParams.iconFile pragma paths', () => {
 		assert.strictEqual(resolveDirectivePath("#_include_as_value data 'assets/data.txt'", base).file, join('assets/data.txt'))
 		assert.strictEqual(resolveDirectivePath('#_include_as_base64 blob "assets/data.bin"', base).file, join('assets/data.bin'))
-		assert.strictEqual(resolveDirectivePath('#_pragma iconFile "img/icon.ico"', base).file, join('img/icon.ico'))
+		assert.strictEqual(resolveDirectivePath('#_pragma resourceParams.iconFile "img/icon.ico"', base).file, join('img/icon.ico'))
 	})
 
 	test('ignores urls, dynamic expressions and unrelated lines', () => {
 		assert.strictEqual(resolveDirectivePath("#_include 'https://example.com/a.ps1'", base), null)
-		assert.strictEqual(resolveDirectivePath('#_pragma iconFile "$(Join-Path $PSScriptRoot icon.ico)"', base), null)
+		assert.strictEqual(resolveDirectivePath('#_pragma resourceParams.iconFile "$(Join-Path $PSScriptRoot icon.ico)"', base), null)
 		assert.strictEqual(resolveDirectivePath('Write-Output "hi"', base), null)
 	})
 

@@ -18,7 +18,7 @@
 			}
 		},
 		"pragma": {
-			"begin": "^(\\s*)(#_)(pragma)\\s+([a-zA-Z_][a-zA-Z_0-9]*)",
+			"begin": "^(\\s*)(#_)(pragma)\\s+([a-zA-Z_][a-zA-Z_0-9]*(?:\\.[a-zA-Z_][a-zA-Z_0-9]*)*)",
 			"beginCaptures": {
 				"2": { "name": "punctuation.definition.directive.ps12exe" },
 				"3": { "name": "keyword.control.directive.ps12exe" },

@@ -7,8 +7,8 @@ const EXPRESSION_RE = /\$\(/
 const INCLUDE_AS_RE = /^\s*#_include_as_(?:value|base64|bytes)\s+[A-Za-z_][A-Za-z_0-9]*\s+(.+?)\s*$/
 // #_include <path>
 const INCLUDE_RE = /^\s*#_include\s+(.+?)\s*$/
-// #_pragma iconFile <path>
-const PRAGMA_PATH_RE = /^\s*#_pragma\s+iconFile\s+(.+?)\s*$/i
+// #_pragma resourceParams.iconFile <path>
+const PRAGMA_PATH_RE = /^\s*#_pragma\s+resourceParams\.iconFile\s+(.+?)\s*$/i
 
 function unquote (value) {
 	const trimmed = value.trim()
@@ -18,7 +18,7 @@ function unquote (value) {
 }
 
 /**
- * 解析 include 指令或 `#_pragma iconFile …` 引用的文件，复刻 ps12exe 自身的路径处理（`$PSScriptRoot` 替换以及相对于脚本目录的解析）。
+ * 解析 include 指令或 `#_pragma resourceParams.iconFile …` 引用的文件，复刻 ps12exe 自身的路径处理（`$PSScriptRoot` 替换以及相对于脚本目录的解析）。
  *
  * @param {string} line
  * @param {string} baseDir 正在编辑的脚本所在目录
