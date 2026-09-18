@@ -126,7 +126,7 @@ Either Path or Thumbprint must be specified.
 ps12exe C:\Data\MyScript.ps1
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScript.exe as console executable
 .EXAMPLE
-ps12exe -inputFile C:\Data\MyScript.ps1 -outputFile C:\Data\MyScriptGUI.exe -iconFile C:\Data\Icon.ico -noConsole -title "MyScript" -version 0.0.0.1
+ps12exe -inputFile C:\Data\MyScript.ps1 -outputFile C:\Data\MyScriptGUI.exe -resourceParams @{iconFile='C:\Data\Icon.ico'; title='MyScript'; version='0.0.0.1'} -noConsole
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScriptGUI.exe as graphical executable, icon and meta data
 .EXAMPLE
 ps12exe -inputFile C:\Data\MyScript.ps1 -PreprocessOnly
@@ -199,51 +199,6 @@ Param(
 	#_endif
 	[string]$Localize,
 	[Switch]$help,
-	# 已弃用。请改用 `-noConfigFile`。
-	[Parameter(DontShow)]
-	[Switch]$noConfigFile,
-	# 已弃用。请改用 `-Architecture x86`。
-	[Parameter(DontShow)]
-	[Switch]$x86,
-	# 已弃用。请改用 `-Architecture x64`。
-	[Parameter(DontShow)]
-	[Switch]$x64,
-	# 已弃用。请改用 `-ThreadModel STA`。
-	[Parameter(DontShow)]
-	[Switch]$STA,
-	# 已弃用。请改用 `-ThreadModel MTA`。
-	[Parameter(DontShow)]
-	[Switch]$MTA,
-	# 已弃用。请改用 `-resourceParams {iconFile = $iconFile}`。
-	[Parameter(DontShow)]
-	[String]$iconFile,
-	# 已弃用。请改用 `-resourceParams {title = $title}`。
-	[Parameter(DontShow)]
-	[String]$title,
-	# 已弃用。请改用 `-resourceParams {description = $description}`。
-	[Parameter(DontShow)]
-	[String]$description,
-	# 已弃用。请改用 `-resourceParams {company = $company}`。
-	[Parameter(DontShow)]
-	[String]$company,
-	# 已弃用。请改用 `-resourceParams {product = $product}`。
-	[Parameter(DontShow)]
-	[String]$product,
-	# 已弃用。请改用 `-resourceParams {copyright = $copyright}`。
-	[Parameter(DontShow)]
-	[String]$copyright,
-	# 已弃用。请改用 `-resourceParams {trademark = $trademark}`。
-	[Parameter(DontShow)]
-	[String]$trademark,
-	# 已弃用。请改用 `-resourceParams {version = $version}`。
-	[Parameter(DontShow)]
-	[String]$version,
-	# 已弃用。请改用 `-targetRuntime Framework2.0`。
-	[Parameter(DontShow)]
-	[Switch]$runtime20,
-	# 已弃用。请改用 `-targetRuntime Framework4.0`。
-	[Parameter(DontShow)]
-	[Switch]$runtime40,
 	# 内部使用。除非你清楚自己在做什么，否则不要使用。
 	[Parameter(DontShow)]
 	[Switch]$nested,
@@ -452,57 +407,17 @@ $Params.GetEnumerator() | ForEach-Object {
 	Set-Variable -Name $_.Key -Value $_.Value
 }
 
-# 处理兼容旧版参数列表
-if ($x86 -and $x64) {
-	Write-I18n Error CombinedArg_x86_x64 -Category InvalidArgument
-	$global:LastExitCode = 2 # 调用格式错误
-	return
-}
-if ($x86) { $architecture = 'x86' }
-if ($x64) { $architecture = 'x64' }
+# 把默认值与 pragma 结果一起写回 $Params，供跨宿主编译与后续步骤使用
 $Params.architecture = $architecture
-[void]$Params.Remove("x86"); [void]$Params.Remove("x64")
-if ($runtime20) {
-	foreach ($a in @("runtime40", "longPaths", "winFormsDPIAware")) {
-		if ($Params[$a]) {
-			Write-I18n Error "CombinedArg_Runtime20_$a" -Category InvalidArgument
-			$global:LastExitCode = 2 # 调用格式错误
-			return
-		}
-	}
-}
-if ($runtime20) { $targetRuntime = 'Framework2.0' }
-if ($runtime40) { $targetRuntime = 'Framework4.0' }
-$Params.targetRuntime = $targetRuntime
-[void]$Params.Remove("runtime20"); [void]$Params.Remove("runtime40")
-$isCoreTarget = $targetRuntime -eq 'Core'
-if ($STA -and $MTA) {
-	Write-I18n Error CombinedArg_STA_MTA -Category InvalidArgument
-	$global:LastExitCode = 2 # 调用格式错误
-	return
-}
-if ($STA) { $threadingModel = 'STA' }
-if ($MTA) { $threadingModel = 'MTA' }
 $Params.threadingModel = $threadingModel
-[void]$Params.Remove("STA"); [void]$Params.Remove("MTA")
+$Params.targetRuntime = $targetRuntime
+$isCoreTarget = $targetRuntime -eq 'Core'
 $resourceParamKeys = @('iconFile', 'title', 'description', 'company', 'product', 'copyright', 'trademark', 'version')
-$resourceParamKeys | ForEach-Object {
-	if ($Params.ContainsKey($_)) {
-		$resourceParams[$_] = $Params[$_]
-	}
-	[void]$Params.Remove($_)
-}
 $resourceParams.GetEnumerator() | ForEach-Object {
 	if (-not $resourceParamKeys.Contains($_.Key)) {
 		Write-I18n Warning InvalidResourceParam $_.Key
 	}
 }
-if ($configFile -and $noConfigFile) {
-	Write-I18n Error CombinedArg_ConfigFileYes_No -Category InvalidArgument
-	$global:LastExitCode = 2 # 调用格式错误
-	return
-}
-if ($noConfigFile) { $configFile = $FALSE }
 $NoResource = -not $resourceParams.Count
 # 由于其他的resourceParams参数需要转义，iconFile参数不需要转义，所以提取出来单独处理
 $iconFile = $resourceParams['iconFile']
@@ -538,7 +453,6 @@ else {
 		$Params.Remove("Content")
 		$Params.Remove("inputFile")
 		$Params.Remove("outputFile")
-		$Params.Remove("resourceParams") #使用旧版参数列表传递hashtable参数更为保险
 		$TempFile = if ($TempDir) {
 			New-Item -ItemType Directory -Path $TempDir -ErrorAction SilentlyContinue | Out-Null
 			[System.IO.Path]::Combine($TempDir, 'main.ps1')
@@ -548,12 +462,12 @@ else {
 		$Params.Add("outputFile", $outputFile)
 		$Params.Add("inputFile", $TempFile)
 		if ($TempDir) { $Params.TempDir = $TempDir }
-		$resourceParamKeys | ForEach-Object {
-			if ($resourceParams.ContainsKey($_) -and $resourceParams[$_]) {
-				$Params[$_] = $resourceParams[$_]
-			}
-		}
-		if ($iconFile) { $Params.iconFile = $iconFile }
+		# resourceParams 以哈希表整体序列化给子宿主；iconFile 已单独提取，这里补回去
+		$UsingResourceParams = @{}
+		$resourceParams.GetEnumerator() | ForEach-Object { $UsingResourceParams[$_.Key] = $_.Value }
+		if ($iconFile) { $UsingResourceParams.iconFile = $iconFile }
+		if ($UsingResourceParams.Count) { $Params.resourceParams = $UsingResourceParams }
+		else { $Params.Remove("resourceParams") }
 		if ($DllExportList.Length) { $Params.DllExportList = ConvertTo-Json -depth 7 -Compress -InputObject $DllExportList }
 		$CallParam = Get-ArgsString $Params
 

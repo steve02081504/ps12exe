@@ -156,12 +156,6 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		MinifyerError                             = "压缩器错误：{0}"
 		MinifyerFailedUsingOriginalScript         = "压缩器失败，使用原始脚本。"
 		# 参数与选项冲突
-		CombinedArg_x86_x64                       = "-x86 不能与 -x64 一起使用"
-		CombinedArg_Runtime20_Runtime40           = "-runtime20 不能与 -runtime40 一起使用"
-		CombinedArg_Runtime20_LongPaths           = ".Net 4 或更高版本才支持长路径"
-		CombinedArg_Runtime20_winFormsDPIAware    = ".Net 4 或更高版本才支持 DPI 识别"
-		CombinedArg_STA_MTA                       = "-STA 不能与 -MTA 一起使用"
-		CombinedArg_ConfigFileYes_No              = "-configFile 不能与 -noConfigFile 一起使用"
 		CombinedArg_Virtualize_requireAdmin       = "-virtualize 不能与 -requireAdmin 一起使用"
 		CombinedArg_Virtualize_supportOS          = "-virtualize 不能与 -supportOS 一起使用"
 		CombinedArg_Virtualize_longPaths          = "-virtualize 不能与 -longPaths 一起使用"

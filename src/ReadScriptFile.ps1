@@ -157,11 +157,35 @@ function Preprocessor($Content, $FilePath) {
 			$PSScriptRoot = $PSScriptRootBackup
 		}
 	}
+	# 解析 pragma 的字符串值：支持双/单引号、$() 白名单子表达式展开、$PSScriptRoot 替换。
+	function ConvertFrom-PragmaStringValue([string]$Value, [string]$PragmaName) {
+		if ($Value -match '^\"(?<value>[^\"]*)\"\s*(?!#.*)') {
+			$Value = $Matches["value"]
+			if ($Value -match '\$\(') {
+				$Value = Expand-PragmaExpression $Value $PragmaName
+			}
+			else {
+				$Value = $Value.Replace('$PSScriptRoot', $ScriptRoot)
+			}
+		}
+		elseif ($Value -match "^\'(?<value>[^\']*)\'\s*(?!#.*)") {
+			$Value = $Matches["value"]
+		}
+		else {
+			if ($Value -match '\$\(') {
+				$Value = Expand-PragmaExpression $Value $PragmaName
+			}
+			else {
+				$Value = $Value.Replace('$PSScriptRoot', $ScriptRoot)
+			}
+		}
+		return $Value
+	}
 	$Content = $Result |
 	# 处理#_pragma
 	ForEach-Object {
 		$_ # 对于#_pragma，我们不在预处理时移除它：考虑到它可能被用于$PSEXEscript中
-		if ($_ -match "^\s*#_pragma\s+(?<pragmaname>[a-zA-Z_][a-zA-Z_0-9]+)\s*(?!#.*)$") {
+		if ($_ -match "^\s*#_pragma\s+(?<pragmaname>[a-zA-Z_][a-zA-Z_0-9]*(?:\.[a-zA-Z_][a-zA-Z_0-9]*)*)\s*(?!#.*)$") {
 			$pragmaname = $Matches["pragmaname"]
 			if ($ConstEvalPragmas -contains $pragmaname) { return }
 			$value = $true
@@ -179,10 +203,33 @@ function Preprocessor($Content, $FilePath) {
 			}
 			Write-I18n Warning UnknownPragma $($Matches["pragmaname"])
 		}
-		elseif ($_ -match "^\s*#_pragma\s+(?<pragmaname>[a-zA-Z_][a-zA-Z_0-9]+)\s+(?<rest>.+)\s*$") {
+		elseif ($_ -match "^\s*#_pragma\s+(?<pragmaname>[a-zA-Z_][a-zA-Z_0-9]*(?:\.[a-zA-Z_][a-zA-Z_0-9]*)*)\s+(?<rest>.+)\s*$") {
 			$pragmaname = $Matches["pragmaname"]
 			if ($ConstEvalPragmas -contains $pragmaname) { return }
 			$value = $Matches["rest"]
+			if ($pragmaname.Contains('.')) {
+				# 嵌套设置：a.b 或 a.b.c...，根参数必须是哈希表
+				$segments = $pragmaname -split '\.'
+				$root = $segments[0]
+				$rootType = $ParamList[$root].ParameterType
+				if ($rootType -ne [hashtable] -and $rootType -ne [System.Collections.IDictionary]) {
+					Write-I18n Warning UnknownPragma $pragmaname
+					return
+				}
+				$value = ConvertFrom-PragmaStringValue $value $pragmaname
+				if ($root -eq 'CodeSigning' -and $segments[-1] -eq 'Password') {
+					$value = ConvertTo-SecureString -String $value -AsPlainText -Force
+				}
+				$target = if ($Params.ContainsKey($root) -and $Params[$root] -is [hashtable]) { $Params[$root] } else { @{} }
+				$cursor = $target
+				for ($i = 1; $i -lt $segments.Count - 1; $i++) {
+					if (-not ($cursor[$segments[$i]] -is [hashtable])) { $cursor[$segments[$i]] = @{} }
+					$cursor = $cursor[$segments[$i]]
+				}
+				$cursor[$segments[-1]] = $value
+				$Params[$root] = $target
+				return
+			}
 			if ($ParamList[$pragmaname].ParameterType -eq [Switch] -or $ParamList["no$pragmaname"].ParameterType -eq [Switch]) {
 				if ($value.IndexOf("#") -ge 0) {
 					$value = $value.Substring(0, $value.IndexOf("#"))
@@ -210,26 +257,7 @@ function Preprocessor($Content, $FilePath) {
 				}
 			}
 			elseif ($ParamList[$pragmaname].ParameterType -eq [string] -or $ParamList[$pragmaname + "File"].ParameterType -eq [string]) {
-				if ($value -match '^\"(?<value>[^\"]*)\"\s*(?!#.*)') {
-					$value = $Matches["value"]
-					if ($value -match '\$\(') {
-						$value = Expand-PragmaExpression $value $pragmaname
-					}
-					else {
-						$value = $value.Replace('$PSScriptRoot', $ScriptRoot)
-					}
-				}
-				elseif ($value -match "^\'(?<value>[^\']*)\'\s*(?!#.*)") {
-					$value = $Matches["value"]
-				}
-				else {
-					if ($value -match '\$\(') {
-						$value = Expand-PragmaExpression $value $pragmaname
-					}
-					else {
-						$value = $value.Replace('$PSScriptRoot', $ScriptRoot)
-					}
-				}
+				$value = ConvertFrom-PragmaStringValue $value $pragmaname
 				if ($ParamList[$pragmaname].ParameterType -eq [string]) {
 					$Params[$pragmaname] = $value
 				}

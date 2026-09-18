@@ -104,7 +104,7 @@ param(
 	function Get-ExistingPragmaNames([string]$Script) {
 		$Names = @{}
 		foreach ($Line in ($Script -split '\r?\n')) {
-			if ($Line -match '^\s*#_pragma\s+(?<name>[a-zA-Z_][a-zA-Z_0-9]+)') {
+			if ($Line -match '^\s*#_pragma\s+(?<name>[a-zA-Z_][a-zA-Z_0-9]*(?:\.[a-zA-Z_][a-zA-Z_0-9]*)*)') {
 				$Names[$Matches['name'].ToLowerInvariant()] = $true
 			}
 		}
@@ -126,13 +126,13 @@ param(
 		try { $VersionInfo = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($ExePath) }
 		catch { return $Lines }
 		$Map = [ordered]@{
-			title       = 'FileDescription'
-			description = 'Comments'
-			company     = 'CompanyName'
-			product     = 'ProductName'
-			copyright   = 'LegalCopyright'
-			trademark   = 'LegalTrademarks'
-			version     = 'FileVersion'
+			'resourceParams.title'       = 'FileDescription'
+			'resourceParams.description' = 'Comments'
+			'resourceParams.company'     = 'CompanyName'
+			'resourceParams.product'     = 'ProductName'
+			'resourceParams.copyright'   = 'LegalCopyright'
+			'resourceParams.trademark'   = 'LegalTrademarks'
+			'resourceParams.version'     = 'FileVersion'
 		}
 		# .NET SDK（Core 目标）会把未指定的标题/公司/产品默认成程序集名、版本默认成 1.0.0.0，这些不是用户配置，别当成资源参数补回。
 		$ExeBaseName = [System.IO.Path]::GetFileNameWithoutExtension($ExePath)
@@ -140,11 +140,11 @@ param(
 		Where-Object { $_ } | ForEach-Object { $_.ToLowerInvariant() }
 		$DefaultVersions = @('1.0.0.0', '1.0.0', '0.0.0.0')
 		foreach ($Key in $Map.Keys) {
-			if ($ExistingPragmaNames.ContainsKey($Key)) { continue }
+			if ($ExistingPragmaNames.ContainsKey($Key.ToLowerInvariant())) { continue }
 			$Value = $VersionInfo.($Map[$Key])
 			if ([string]::IsNullOrWhiteSpace($Value)) { continue }
-			if ($Key -in @('title', 'company', 'product') -and $DefaultNames -contains $Value.ToLowerInvariant()) { continue }
-			if ($Key -eq 'version' -and $DefaultVersions -contains $Value) { continue }
+			if ($Key -in @('resourceParams.title', 'resourceParams.company', 'resourceParams.product') -and $DefaultNames -contains $Value.ToLowerInvariant()) { continue }
+			if ($Key -eq 'resourceParams.version' -and $DefaultVersions -contains $Value) { continue }
 			$Lines.Add("#_pragma $Key '$(ConvertTo-PragmaValue $Value)'")
 		}
 		$Lines
@@ -239,14 +239,14 @@ param(
 			continue
 		}
 
-		# 反编译时从产物的 Win32 资源取回资源参数：源码里已有对应 #_pragma 的跳过，缺失的在程序开头补回；图标释放到输出目录并用 #_pragma icon 引用。
+		# 反编译时从产物的 Win32 资源取回资源参数：源码里已有对应 #_pragma 的跳过，缺失的在程序开头补回；图标释放到输出目录并用 #_pragma resourceParams.iconFile 引用。
 		$ExistingPragmaNames = Get-ExistingPragmaNames $script
 		$PrefixLines = [System.Collections.Generic.List[string]]::new()
 		foreach ($Line in (Get-PS12ExeResourcePragmaLines -ExePath $currentExe -ExistingPragmaNames $ExistingPragmaNames)) {
 			$PrefixLines.Add($Line)
 		}
 		$IconBytes = $null
-		if (-not $ExistingPragmaNames.ContainsKey('icon') -and -not $ExistingPragmaNames.ContainsKey('iconfile')) {
+		if (-not $ExistingPragmaNames.ContainsKey('resourceparams.iconfile')) {
 			$IconBytes = [exe21sp.Extractor]::ExtractIconFromExe($currentExe)
 		}
 
@@ -276,7 +276,7 @@ param(
 			$iconPath = [System.IO.Path]::Combine($releaseDir, $iconName)
 			[System.IO.File]::WriteAllBytes($iconPath, $IconBytes)
 			Write-Verbose "Released resource file to $iconPath"
-			$PrefixLines.Add("#_pragma icon `"`$PSScriptRoot/$iconName`"")
+			$PrefixLines.Add("#_pragma resourceParams.iconFile `"`$PSScriptRoot/$iconName`"")
 		}
 
 		if ($PrefixLines.Count -gt 0) {

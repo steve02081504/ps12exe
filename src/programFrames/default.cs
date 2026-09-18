@@ -1269,11 +1269,11 @@ namespace PSRunnerNS {
 				if (!string.IsNullOrEmpty(message)) WriteLine(message);
 			#else
 				if ((!string.IsNullOrEmpty(caption)) || (!string.IsNullOrEmpty(message))) {
-					string sTitel = rawUI.WindowTitle, sMeldung = "";
+					string sTitle = rawUI.WindowTitle, sMeldung = "";
 
-					if (!string.IsNullOrEmpty(caption)) sTitel = caption;
+					if (!string.IsNullOrEmpty(caption)) sTitle = caption;
 					if (!string.IsNullOrEmpty(message)) sMeldung = message;
-					MessageBox.Show(sMeldung, sTitel);
+					MessageBox.Show(sMeldung, sTitle);
 				}
 
 				// 重置 Input_Box 的标签文本
@@ -2018,6 +2018,150 @@ namespace PSRunnerNS {
 	static class PSRunnerEntry {
 		static PSRunner me;
 
+		#if ScriptHasParam
+		// 把命令行参数当 PowerShell 数据(PSD)解析：只接受字面量（字符串/数字/bool/null/数组/哈希表），
+		// 任何表达式或命令都视为普通字符串。解析出的对象直接通过变量传入，不再作为文本进入命令行，
+		// 因此参数内容不会被当作 PowerShell 脚本求值。
+		// 例外：允许到安全类型的安全转换（如 [int]'5'、[hashtable]@{}、[ordered]@{}）。
+		static readonly Dictionary<string, Type> PsdSafeCastTypes = new Dictionary<string, Type>(StringComparer.OrdinalIgnoreCase) {
+			{ "int", typeof(int) }, { "int32", typeof(int) }, { "system.int32", typeof(int) },
+			{ "long", typeof(long) }, { "int64", typeof(long) }, { "system.int64", typeof(long) },
+			{ "short", typeof(short) }, { "int16", typeof(short) },
+			{ "byte", typeof(byte) }, { "sbyte", typeof(sbyte) },
+			{ "uint", typeof(uint) }, { "uint32", typeof(uint) },
+			{ "ulong", typeof(ulong) }, { "uint64", typeof(ulong) }, { "ushort", typeof(ushort) },
+			{ "single", typeof(float) }, { "float", typeof(float) },
+			{ "double", typeof(double) }, { "system.double", typeof(double) },
+			{ "decimal", typeof(decimal) },
+			{ "string", typeof(string) }, { "system.string", typeof(string) }, { "char", typeof(char) },
+			{ "bool", typeof(bool) }, { "boolean", typeof(bool) },
+			{ "hashtable", typeof(System.Collections.Hashtable) }, { "system.collections.hashtable", typeof(System.Collections.Hashtable) },
+			{ "array", typeof(object[]) }, { "object[]", typeof(object[]) }
+		};
+		static bool TryParsePsdValue(ExpressionAst expression, out object value) {
+			value = null;
+			if (expression is StringConstantExpressionAst) {
+				value = ((StringConstantExpressionAst)expression).Value;
+				return true;
+			}
+			if (expression is ConstantExpressionAst) {
+				value = ((ConstantExpressionAst)expression).Value;
+				return true;
+			}
+			ConvertExpressionAst convert = expression as ConvertExpressionAst;
+			if (convert != null) {
+				if (convert.Child == null || convert.Type == null || convert.Type.TypeName == null) return false;
+				string castName = convert.Type.TypeName.Name;
+				if (castName == null) return false;
+				// [ordered]@{}：与 PowerShell 一样保留键顺序
+				if (castName.Equals("ordered", StringComparison.OrdinalIgnoreCase) ||
+					castName.Equals("ordereddictionary", StringComparison.OrdinalIgnoreCase) ||
+					castName.Equals("System.Collections.Specialized.OrderedDictionary", StringComparison.OrdinalIgnoreCase)) {
+					HashtableAst orderedSource = convert.Child as HashtableAst;
+					if (orderedSource == null) return false;
+					System.Collections.Specialized.OrderedDictionary ordered = new System.Collections.Specialized.OrderedDictionary(StringComparer.OrdinalIgnoreCase);
+					foreach (var pair in orderedSource.KeyValuePairs) {
+						object key, item;
+						string keyText;
+						if (!TryParsePsdValue(pair.Item1, out key) || (keyText = key as string) == null) return false;
+						if (!TryParsePsdStatement(pair.Item2, out item)) return false;
+						ordered[keyText] = item;
+					}
+					value = ordered;
+					return true;
+				}
+				Type castType;
+				if (!PsdSafeCastTypes.TryGetValue(castName, out castType)) return false;
+				object converted;
+				if (!TryParsePsdValue(convert.Child, out converted)) return false;
+				try {
+					value = LanguagePrimitives.ConvertTo(converted, castType, CultureInfo.InvariantCulture);
+					return true;
+				}
+				catch {
+					return false;
+				}
+			}
+			VariableExpressionAst variable = expression as VariableExpressionAst;
+			if (variable != null) {
+				switch (variable.VariablePath.UserPath) {
+					case "true": value = true; return true;
+					case "false": value = false; return true;
+					case "null": return true;
+				}
+				return false;
+			}
+			UnaryExpressionAst unary = expression as UnaryExpressionAst;
+			if (unary != null && unary.TokenKind == TokenKind.Minus) {
+				object inner;
+				if (!TryParsePsdValue(unary.Child, out inner)) return false;
+				if (inner is int) { value = -(int)inner; return true; }
+				if (inner is long) { value = -(long)inner; return true; }
+				if (inner is double) { value = -(double)inner; return true; }
+				if (inner is decimal) { value = -(decimal)inner; return true; }
+				return false;
+			}
+			ArrayLiteralAst arrayLiteral = expression as ArrayLiteralAst;
+			if (arrayLiteral != null) {
+				List<object> items = new List<object>();
+				foreach (ExpressionAst element in arrayLiteral.Elements) {
+					object item;
+					if (!TryParsePsdValue(element, out item)) return false;
+					items.Add(item);
+				}
+				value = items.ToArray();
+				return true;
+			}
+			ArrayExpressionAst arrayExpression = expression as ArrayExpressionAst;
+			if (arrayExpression != null) {
+				if (arrayExpression.SubExpression == null || arrayExpression.SubExpression.Statements.Count != 1) return false;
+				return TryParsePsdStatement(arrayExpression.SubExpression.Statements[0], out value);
+			}
+			HashtableAst hashtable = expression as HashtableAst;
+			if (hashtable != null) {
+				System.Collections.Hashtable result = new System.Collections.Hashtable(StringComparer.OrdinalIgnoreCase);
+				foreach (var pair in hashtable.KeyValuePairs) {
+					object key, item;
+					string keyText;
+					if (!TryParsePsdValue(pair.Item1, out key) || (keyText = key as string) == null) return false;
+					if (!TryParsePsdStatement(pair.Item2, out item)) return false;
+					result[keyText] = item;
+				}
+				value = result;
+				return true;
+			}
+			return false;
+		}
+		// 哈希表的值在 AST 里是语句（PipelineAst），取其中的表达式再按 PSD 解析
+		static bool TryParsePsdStatement(StatementAst statement, out object value) {
+			value = null;
+			PipelineAst pipeline = statement as PipelineAst;
+			if (pipeline == null || pipeline.PipelineElements.Count != 1)
+				return false;
+			CommandExpressionAst expression = pipeline.PipelineElements[0] as CommandExpressionAst;
+			if (expression == null)
+				return false;
+			return TryParsePsdValue(expression.Expression, out value);
+		}
+		static bool TryParsePsd(string text, out object value, out bool explicitCast) {
+			value = null;
+			explicitCast = false;
+			Token[] tokens;
+			ParseError[] errors;
+			ScriptBlockAst ast = Parser.ParseInput(text, out tokens, out errors);
+			if (errors.Length > 0 || ast.EndBlock == null || ast.EndBlock.Statements.Count != 1)
+				return false;
+			PipelineAst pipeline = ast.EndBlock.Statements[0] as PipelineAst;
+			if (pipeline == null || pipeline.PipelineElements.Count != 1)
+				return false;
+			CommandExpressionAst commandExpression = pipeline.PipelineElements[0] as CommandExpressionAst;
+			if (commandExpression == null)
+				return false;
+			explicitCast = commandExpression.Expression is ConvertExpressionAst;
+			return TryParsePsdValue(commandExpression.Expression, out value);
+		}
+		#endif
+
 		// EXE 主入口
 		[$threadingModelThread]
 		private static int Main(string[] args) {
@@ -2045,9 +2189,26 @@ namespace PSRunnerNS {
 				};
 				#endif
 
+				#if ScriptHasParam
+				int psdIndex = 0;
+				#endif
 				for(int i = 0; i < args.Length; i++) {
-					if (!Regex.IsMatch(args[i], @"^(-|\$)\w*$"))
-						args[i] = "\'"+args[i].Replace("'", "''")+"\'";
+					if (Regex.IsMatch(args[i], @"^(-|\$)\w*$"))
+						continue;
+					#if ScriptHasParam
+					// 脚本有 param 块时，显式安全转换或表/数组类参数值按 PSD 数据解析成对象，再用变量传入，
+					// 避免作为文本被求值；其余值仍按字符串传递，保持数字/字符串的原有绑定行为。
+					object psdValue;
+					bool explicitCast;
+					if (TryParsePsd(args[i], out psdValue, out explicitCast) &&
+						(explicitCast || psdValue is System.Collections.IDictionary || psdValue is System.Array)) {
+						string psdVar = "PSEXEArg" + (psdIndex++);
+						me.pwsh.Runspace.SessionStateProxy.SetVariable(psdVar, psdValue);
+						args[i] = "$" + psdVar;
+						continue;
+					}
+					#endif
+					args[i] = "\'"+args[i].Replace("'", "''")+"\'";
 				}
 
 				#if ReadInput

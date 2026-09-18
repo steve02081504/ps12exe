@@ -31,7 +31,7 @@ $file = [TinySharp.Program]::Compile($targetRuntime, $architecture, $ConstResult
 if ($iconFile) {
 	$file.SetWin32Icon($iconFile)
 }
-if ($description -or $company -or $title -or $product -or $copyright -or $trademark -or $version) {
-	$file.SetAssemblyInfo($description, $company, $title, $product, $copyright, $trademark, $version)
+if ($resourceParams.description -or $resourceParams.company -or $resourceParams.title -or $resourceParams.product -or $resourceParams.copyright -or $resourceParams.trademark -or $resourceParams.version) {
+	$file.SetAssemblyInfo($resourceParams.description, $resourceParams.company, $resourceParams.title, $resourceParams.product, $resourceParams.copyright, $resourceParams.trademark, $resourceParams.version)
 }
 $file.Build($outputFile)
