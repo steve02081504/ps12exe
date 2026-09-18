@@ -1,4 +1,4 @@
-//code from https://blog.washi.dev/posts/tinysharp/
+//代码来自 https://blog.washi.dev/posts/tinysharp/
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -67,7 +67,7 @@ namespace TinySharp {
 			}
 			var module = new ModuleDefinition("Dummy");
 
-			// Segment containing our string to print.
+			// 包含待输出字符串的段。
 			DataSegment segment = new DataSegment(payloadBytes);
 
 			var PEKind = OptionalHeaderMagic.PE64;
@@ -77,32 +77,32 @@ namespace TinySharp {
 				ArchType = MachineType.I386;
 			}
 
-			// Initialize a new PE image and set up some default values.
+			// 初始化新的 PE 映像并设置一些默认值。
 			var image = new PEImage {
 				ImageBase = 0x00000000004e0000,
 				PEKind = PEKind,
 				MachineType = ArchType
 			};
 
-			// Ensure PE is loaded at the provided image base.
+			// 确保 PE 加载到给定的映像基址。
 			image.DllCharacteristics &= ~DllCharacteristics.DynamicBase;
 
-			// Create new metadata streams.
+			// 创建新的元数据流。
 			var tablesStream = new TablesStream();
 			var blobStreamBuffer = new BlobStreamBuffer();
 			var stringsStreamBuffer = new StringsStreamBuffer();
 
-			// Add empty module row.
+			// 添加空的模块行。
 			tablesStream.GetTable<ModuleDefinitionRow>().Add(new ModuleDefinitionRow());
 
-			// Add container type def for our main function (<Module>).
+			// 为 main 函数添加容器类型定义（<Module>）。
 			tablesStream.GetTable<TypeDefinitionRow>().Add(new TypeDefinitionRow(
 				0, 0, 0, 0, 1, 1
 			));
 
 			var methodTable = tablesStream.GetTable<MethodDefinitionRow>();
 
-			// Add puts method.
+			// 添加 puts 方法。
 			if (hasOutput)
 				if(allASCIIoutput) {
 					baseFunction = "puts";
@@ -160,7 +160,7 @@ namespace TinySharp {
 					));
 				}
 
-			// Add main method calling puts.
+			// 添加调用 puts 的 main 方法。
 			using(var codeStream = new MemoryStream()) {
 				var assembler = new CilAssembler(new BinaryStreamWriter(codeStream), new CilOperandBuilder(new OriginalMetadataTokenProvider(null), ThrowErrorListener.Instance));
 				uint patchIndex = 0;
@@ -175,9 +175,9 @@ namespace TinySharp {
 						assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, -11)); // STD_OUTPUT_HANDLE
 						assembler.WriteInstruction(new CilInstruction(CilOpCodes.Call, new MetadataToken(TableIndex.Method, 1)));
 						assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, 5112224));
-						assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, outputValue.Length)); // size of string
-						assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, 0x00000000)); // reserve size outputted
-						assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, 0x00000000)); // reserved
+						assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, outputValue.Length)); // 字符串长度
+						assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, 0x00000000)); // 输出的保留大小
+						assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, 0x00000000)); // 保留
 						assembler.WriteInstruction(new CilInstruction(CilOpCodes.Call, new MetadataToken(TableIndex.Method, 2)));
 					}
 				}
@@ -208,11 +208,11 @@ namespace TinySharp {
 			}
 
 			if (hasOutput) {
-				// Add urctbase module reference
+				// 添加 ucrtbase 模块引用
 				var baseLibrary = allASCIIoutput ? "ucrtbase" : "Kernel32";
 				tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex(baseLibrary)));
 
-				// Add P/Invoke metadata to the puts method.
+				// 为 puts 方法添加 P/Invoke 元数据。
 				if (allASCIIoutput)
 					tablesStream.GetTable<ImplementationMapRow>().Add(new ImplementationMapRow(
 						ImplementationMapAttributes.CallConvCdecl,
@@ -236,17 +236,17 @@ namespace TinySharp {
 				}
 			}
 
-			// Define assembly manifest.
+			// 定义程序集清单。
 			tablesStream.GetTable<AssemblyDefinitionRow>().Add(new AssemblyDefinitionRow(
 				0,
 				1, 0, 0, 0,
 				0,
 				0,
-				stringsStreamBuffer.GetStringIndex(baseFunction), // The CLR does not allow for assemblies with a null name. Reuse the name "puts" to safe space.
+				stringsStreamBuffer.GetStringIndex(baseFunction), // CLR 不允许程序集名为空，复用 "puts" 以节省空间。
 				0
 			));
 
-			// Add all .NET metadata to the PE image.
+			// 把所有 .NET 元数据加入 PE 映像。
 			var metadataDirectory = new MetadataDirectory {
 				VersionString = ClrVersionString(targetRuntime)
 			};
@@ -264,14 +264,13 @@ namespace TinySharp {
 			var result = new Program();
 			result.Image = image;
 
-			// Put string to print in the padding data.
+			// 把待输出的字符串放入填充数据。
 			if (hasOutput) result.OutSegment = segment;
 
 			return result;
 		}
 
-		/// <summary>压缩常量输出路径：内嵌 XPRESS 压缩字节，运行时用 cabinet.dll 解压到 .data 的 BSS 缓冲区，
-		/// 再沿用 puts/WriteConsoleW 打印。负载不可压缩时不会走到这里。</summary>
+		/// <summary>压缩常量输出路径：内嵌 XPRESS 压缩字节，运行时用 cabinet.dll 解压到 .data 的 BSS 缓冲区，再沿用 puts/WriteConsoleW 打印。负载不可压缩时不会走到这里。</summary>
 		private static Program CompileCompressed(
 			string targetRuntime, string architecture, string outputValue,
 			bool allASCIIoutput, byte[] compressedPayload, int uncompressedSize, int ExitCode
@@ -467,8 +466,7 @@ namespace TinySharp {
 			}
 		}
 
-		/// <summary>把 XPRESS 解压序列写入 CIL：CreateDecompressor → Decompress → CloseDecompressor，
-		/// 解压结果落在 outputBuf；handleBuf / resultSizeBuf 作为输出参数中转。</summary>
+		/// <summary>把 XPRESS 解压序列写入 CIL：CreateDecompressor → Decompress → CloseDecompressor，解压结果落在 outputBuf；handleBuf / resultSizeBuf 作为输出参数中转。</summary>
 		private static void EmitDecompress(
 			Action<byte> emit, Action<ISegment> ldcAddress, Action<int> ldcInt, Action<uint> callMethod,
 			ISegment payload, int compressedLength, ISegment outputBuf, int uncompressedSize,
@@ -516,9 +514,7 @@ namespace TinySharp {
 			return body;
 		}
 
-		/// <summary>Build minimal PE that shows MessageBoxW(text, caption) then exits. Used for -noConsole const output.
-		/// Caption is resolved at runtime: first tries Win32 version resource FileDescription (title), falls back to
-		/// GetModuleFileNameW+PathFindFileNameW (filename), so both survive exe rename and honour -title.</summary>
+		/// <summary>构建最小 PE，显示 MessageBoxW(text, caption) 后退出。用于 -noConsole 常量输出。标题在运行时解析：先尝试 Win32 版本资源的 FileDescription（title），回退到 GetModuleFileNameW+PathFindFileNameW（文件名），因此两者都能在 exe 改名后继续生效并遵循 -title。</summary>
 		private static Program CompileMessageBox(string targetRuntime, string architecture, string outputValue, int ExitCode) {
 			var module = new ModuleDefinition("Dummy");
 			// 文本恒为 UTF-16；较大且可压缩时改存 XPRESS 压缩字节，运行时先解压再弹窗。
@@ -528,14 +524,14 @@ namespace TinySharp {
 				compressedText = null;
 			bool useCompressed = compressedText != null;
 			DataSegment textSegment = new DataSegment(useCompressed ? compressedText : rawText);
-			// VerQueryValueW subBlock path — matches AsmResolver StringTable(language:0, codepage:0x4b0)
+			// VerQueryValueW 子块路径——与 AsmResolver StringTable(language:0, codepage:0x4b0) 匹配
 			DataSegment subBlockStr = new DataSegment(Encoding.Unicode.GetBytes("\\StringFileInfo\\000004b0\\FileDescription\0"));
 
-			// Writable BSS segments (zero-initialised by OS loader, no file bytes)
-			var pathBufSeg   = new VirtualSegment(null, 260 * 2u); // GetModuleFileNameW path buffer
-			var viBufSeg     = new VirtualSegment(null, 4096u);    // GetFileVersionInfoW data buffer
-			var pValueBufSeg = new VirtualSegment(null, 8u);       // VerQueryValueW output pointer (up to 8 bytes for x64)
-			var lenBufSeg    = new VirtualSegment(null, 4u);       // VerQueryValueW output length (UINT)
+			// 可写 BSS 段（由 OS 加载器零初始化，不占文件字节）
+			var pathBufSeg   = new VirtualSegment(null, 260 * 2u); // GetModuleFileNameW 路径缓冲区
+			var viBufSeg     = new VirtualSegment(null, 4096u);    // GetFileVersionInfoW 数据缓冲区
+			var pValueBufSeg = new VirtualSegment(null, 8u);       // VerQueryValueW 输出指针（x64 最多 8 字节）
+			var lenBufSeg    = new VirtualSegment(null, 4u);       // VerQueryValueW 输出长度（UINT）
 			// 压缩时：解压输出缓冲 + 解压器句柄 + 解压后长度
 			var outputBufSeg    = useCompressed ? new VirtualSegment(null, (uint)rawText.Length) : null;
 			var handleBufSeg    = useCompressed ? new VirtualSegment(null, 8u) : null;
@@ -650,7 +646,7 @@ namespace TinySharp {
 					EmitDecompress(hEmit, hLdcAddress, hLdcInt, hCall,
 						textSegment, compressedText.Length, outputBufSeg, rawText.Length, handleBufSeg, resultSizeBufSeg,
 						createDecompressorIndex, decompressIndex, closeDecompressorIndex);
-					hLdcAddress(outputBufSeg); // return 解压后的文本指针
+					hLdcAddress(outputBufSeg); // 返回解压后的文本指针
 					hEmit(0x2A); // ret
 					var helperBody = BuildFatMethodBody(helperStream.ToArray(), 6, helperPatches);
 					methodTable.Add(new MethodDefinitionRow(
@@ -660,9 +656,9 @@ namespace TinySharp {
 				}
 			}
 
-			// Main (method #6) — fat CIL body (code > 63 bytes, tiny format limit).
-			// IL layout (code stream offsets, before 12-byte fat header):
-			//   [0]  ldc.i4 0            hModule=0 for GetModuleFileNameW
+			// Main（方法 #6）——fat CIL 方法体（代码超过 63 字节，超出 tiny 格式限制）。
+			// IL 布局（代码流偏移，位于 12 字节 fat 头之前）：
+			//   [0]  ldc.i4 0            hModule=0，用于 GetModuleFileNameW
 			//   [5]  ldc.i4 [pathBuf]    PATCH @6
 			//   [10] ldc.i4 260
 			//   [15] call  Method#2      GetModuleFileNameW(0, pathBuf, 260)
@@ -670,21 +666,21 @@ namespace TinySharp {
 			//   [25] ldc.i4 0            dwHandle=0
 			//   [30] ldc.i4 4096         dwLen
 			//   [35] ldc.i4 [viBuf]      PATCH @36
-			//   [40] call  Method#4      GetFileVersionInfoW → BOOL on stack
+			//   [40] call  Method#4      GetFileVersionInfoW → BOOL 入栈
 			//   [45] brfalse.s 55        → FALLBACK @102 (next=47, 102-47=55)
 			//   [47] ldc.i4 [viBuf]      PATCH @48
 			//   [52] ldc.i4 [subBlock]   PATCH @53
 			//   [57] ldc.i4 [pValueBuf]  PATCH @58
 			//   [62] ldc.i4 [lenBuf]     PATCH @63
-			//   [67] call  Method#5      VerQueryValueW → BOOL on stack
+			//   [67] call  Method#5      VerQueryValueW → BOOL 入栈
 			//   [72] brfalse.s 28        → FALLBACK @102 (next=74, 102-74=28)
 			//   [74] ldc.i4 0            hWnd
 			//   [79] ldc.i4 [text]       PATCH @80
 			//   [84] ldc.i4 [pValueBuf]  PATCH @85
-			//   [89] ldind.i             *pValueBuf → title pointer
+			//   [89] ldind.i             *pValueBuf → title 指针
 			//   [90] ldc.i4 0            uType
 			//   [95] call  Method#1      MessageBoxW(0, text, titlePtr, 0)
-			//   [100] br.s DONE          → @132 or @137 (offset 30 or 35)
+			//   [100] br.s DONE          → @132 或 @137（偏移 30 或 35）
 			//   FALLBACK @102:
 			//   [102] ldc.i4 0           hWnd
 			//   [107] ldc.i4 [text]      PATCH @108
@@ -692,10 +688,10 @@ namespace TinySharp {
 			//   [117] call  Method#3     PathFindFileNameW(pathBuf) → filenamePtr
 			//   [122] ldc.i4 0           uType
 			//   [127] call  Method#1     MessageBoxW(0, text, filenamePtr, 0)
-			//   DONE @132 [or @137 if ExitCode!=0]:
-			//   [132] ldc.i4 ExitCode    (only if ExitCode != 0)
+			//   DONE @132 [或 @137（当 ExitCode!=0）]:
+			//   [132] ldc.i4 ExitCode    （仅在 ExitCode != 0 时）
 			//   [132|137] ret
-			// Patch offsets in segment = code offset + 12 (fat header size).
+			// 段内 patch 偏移 = 代码偏移 + 12（fat 头大小）。
 			using (var codeStream = new MemoryStream()) {
 				Action<int> writeLdc = v => {
 					codeStream.WriteByte(0x20);
@@ -739,7 +735,7 @@ namespace TinySharp {
 			writeLdc(0);       // [74] hWnd
 			writeText();       // [79] text      （未压缩时 PATCH@80）
 			writeLdc(0);       // [84] pValueBuf PATCH@85
-			codeStream.WriteByte(0x4D); // [89] ldind.i → dereference pValueBuf
+			codeStream.WriteByte(0x4D); // [89] ldind.i → 解引用 pValueBuf
 			writeLdc(0);       // [90] uType=0
 			writeCall(1);      // [95] MessageBoxW(0, text, titlePtr, 0)
 
@@ -755,11 +751,11 @@ namespace TinySharp {
 			writeCall(1);      // [127] MessageBoxW(0, text, filenamePtr, 0)
 
 			// DONE @132
-			if (ExitCode != 0) writeLdc(ExitCode); // [132] only when needed
+			if (ExitCode != 0) writeLdc(ExitCode); // [132] 仅在需要时
 				codeStream.WriteByte(0x2A); // ret
 
 				byte[] code = codeStream.ToArray();
-				// Fat method header: flags=0x3003 (fat, hdrSize=3dwords), MaxStack=4, CodeSize, LocalVarSigTok=0
+				// Fat 方法头：flags=0x3003（fat，hdrSize=3 个双字），MaxStack=4，CodeSize，LocalVarSigTok=0
 				byte[] header = {
 					0x03, 0x30, 4, 0,
 					(byte)code.Length, (byte)(code.Length >> 8), (byte)(code.Length >> 16), (byte)(code.Length >> 24),
@@ -769,7 +765,7 @@ namespace TinySharp {
 				Buffer.BlockCopy(header, 0, fullMethod, 0, header.Length);
 				Buffer.BlockCopy(code, 0, fullMethod, header.Length, code.Length);
 
-				// Patch offsets = code stream offset of int32 operand + 12 (fat header)
+				// Patch 偏移 = int32 操作数的代码流偏移 + 12（fat 头）
 				var body = new DataSegment(fullMethod).AsPatchedSegment();
 				body = body.Patch(12 +  6, AddressFixupType.Absolute32BitAddress, new Symbol(pathBufSeg.ToReference()));
 				body = body.Patch(12 + 21, AddressFixupType.Absolute32BitAddress, new Symbol(pathBufSeg.ToReference()));
@@ -793,7 +789,7 @@ namespace TinySharp {
 						MethodSignature.CreateStatic(retype), ThrowErrorListener.Instance), 1));
 			}
 
-			// Module references: 1=user32, 2=kernel32, 3=shlwapi, 4=version, 5=cabinet(压缩时)
+			// 模块引用：1=user32，2=kernel32，3=shlwapi，4=version，5=cabinet（压缩时）
 			tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex("user32")));
 			tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex("kernel32")));
 			tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex("shlwapi")));
@@ -847,8 +843,7 @@ namespace TinySharp {
 			metadataDirectory.Streams.Add(blobStreamBuffer.CreateStream());
 			metadataDirectory.Streams.Add(stringsStreamBuffer.CreateStream());
 			image.DotNetDirectory = new DotNetDirectory {
-				// 方法：1=MessageBoxW,2=GetModuleFileNameW,3=PathFindFileNameW,4=GetFileVersionInfoW,5=VerQueryValueW,
-				// 6/7/8=cabinet 解压(压缩时),9=文本指针 helper(压缩时),末位=Main
+				// 方法：1=MessageBoxW,2=GetModuleFileNameW,3=PathFindFileNameW,4=GetFileVersionInfoW,5=VerQueryValueW,6/7/8=cabinet 解压(压缩时),9=文本指针 helper(压缩时),末位=Main
 				EntryPoint = new MetadataToken(TableIndex.Method, useCompressed ? 10u : 6u),
 				Metadata = metadataDirectory
 			};
@@ -857,12 +852,12 @@ namespace TinySharp {
 
 			var result = new Program();
 			result.Image = image;
-			// Read-only data: text + VerQueryValueW subBlock path (both in .text)
+			// 只读数据：text + VerQueryValueW 子块路径（都在 .text）
 			var roData = new SegmentBuilder();
 			roData.Add(textSegment);
 			roData.Add(subBlockStr, 2);
 			result.OutSegment = roData;
-			// Writable BSS data (in .data)
+			// 可写 BSS 数据（在 .data）
 			var bssData = new SegmentBuilder();
 			bssData.Add(pathBufSeg);
 			bssData.Add(viBufSeg);
@@ -881,8 +876,7 @@ namespace TinySharp {
 		private ISegment WritableSegment;
 		private PEImage Image;
 		public void Build(string OutFile) {
-			// Do NOT substitute ManagedPEFileBuilder: size would grow (see DESIGN at top of file).
-			// OutSegment (read-only constants) → .text; WritableSegment (e.g. path buffer) → .data
+			// 不要替换成 ManagedPEFileBuilder：体积会变大（见文件顶部的 DESIGN）。OutSegment（只读常量）→ .text；WritableSegment（如路径缓冲区）→ .data
 			var file = new MinimalPEFileBuilder(OutSegment, WritableSegment).CreateFile(this.Image);
 			file.Write(OutFile);
 		}
@@ -891,7 +885,7 @@ namespace TinySharp {
 			if (header.Length < 22) return;
 			ushort count = BitConverter.ToUInt16(header, 4);
 			if (count == 0) return;
-			// First icon directory entry: width, height, colors, reserved, planes, bpp, size, offset
+			// 第一个图标目录项：width、height、colors、reserved、planes、bpp、size、offset
 			byte w = header[6], h = header[7];
 			ushort planes = BitConverter.ToUInt16(header, 10);
 			ushort bpp = BitConverter.ToUInt16(header, 12);
@@ -918,14 +912,14 @@ namespace TinySharp {
 			iconResource.InsertIntoDirectory(this.Image.Resources);
 		}
 		public void SetAssemblyInfo(string description, string company, string title, string product, string copyright, string trademark, string version) {
-			// Create new version resource.
+			// 创建新的版本资源。
 			var versionResource = new VersionInfoResource();
 			if (string.IsNullOrEmpty(version)) version = "0.0.0.0";
 
 			var TypedVersion = new System.Version(version);
 			version = TypedVersion.ToString();
 
-			// Add info.
+			// 添加信息。
 			var fixedVersionInfo = new FixedVersionInfo {
 				FileVersion = TypedVersion,
 				ProductVersion = TypedVersion,
@@ -936,7 +930,7 @@ namespace TinySharp {
 			};
 			versionResource.FixedVersionInfo = fixedVersionInfo;
 
-			// Add strings.
+			// 添加字符串。
 			var stringFileInfo = new StringFileInfo();
 			var stringTable = new StringTable(0, 0x4b0){
 				{ StringTable.ProductNameKey, product },
@@ -950,14 +944,14 @@ namespace TinySharp {
 			stringFileInfo.Tables.Add(stringTable);
 			versionResource.AddEntry(stringFileInfo);
 
-			// Register translation.
+			// 注册翻译。
 			var varFileInfo = new VarFileInfo();
 			var varTable = new VarTable();
 			varTable.Values.Add(0x4b00000);
 			varFileInfo.Tables.Add(varTable);
 			versionResource.AddEntry(varFileInfo);
 
-			// Add to resources.
+			// 添加到资源。
 			if (this.Image.Resources == null) this.Image.Resources = new ResourceDirectory(0u);
 			versionResource.InsertIntoDirectory(this.Image.Resources);
 		}
@@ -970,9 +964,7 @@ namespace TinySharp {
 	}
 
 	/// <summary>
-	/// Minimal PE: FileAlignment 512, SectionAlignment 4096 (loader requires 4K section alignment), .text only,
-	/// minimal data directories. Achieves 1024 bytes. Output string is passed into builder and laid out inside .text
-	/// so CIL patch gets correct RVA. 512 bytes total is not possible (PE headers + one section >= 1024).
+	/// 最小 PE：FileAlignment 512，SectionAlignment 4096（加载器要求 4K 段对齐），仅 .text，最小数据目录。可达到 1024 字节。输出字符串传给 builder 并布局在 .text 内，以便 CIL patch 获得正确的 RVA。总计 512 字节不可能（PE 头 + 一个段 >= 1024）。
 	/// </summary>
 	internal sealed class MinimalPEFileBuilder : ManagedPEFileBuilder {
 		private readonly ISegment _extraSectionData;
@@ -984,7 +976,7 @@ namespace TinySharp {
 		}
 
 		protected override uint GetFileAlignment(PEFileBuilderContext context, PEFile outputFile) { return 512; }
-		// Section alignment 4096 for loader; file alignment 512 for size.
+		// 段对齐 4096 供加载器使用；文件对齐 512 以减小体积。
 		protected override uint GetSectionAlignment(PEFileBuilderContext context, PEFile outputFile) { return 4096; }
 
 		protected override IEnumerable<PESection> CreateSections(PEFileBuilderContext context) {

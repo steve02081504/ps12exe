@@ -1,17 +1,11 @@
-// Mirrors the directive detection used by ps12exe's Preprocessor
-// (src/ReadScriptFile.ps1): a directive is a line starting with optional
-// whitespace followed by `#_…`, and a trailing `#comment` is allowed (ps12exe
-// uses the same `(?!#.*)` lookahead). Here-string bodies and block comments are
-// treated as opaque by `computeSkipMask` so the formatter never rewrites them.
-// The `(?!#)` lookahead mirrors ps12exe's `(?!#.*)`: a trailing comment after
-// the directive is allowed (e.g. `#_if PSEXE #reason`), anything else is not.
+// 复刻 ps12exe Preprocessor（src/ReadScriptFile.ps1）使用的指令检测：指令是一行以可选空白开头、后跟 `#_…` 的行，且允许尾随 `#comment`（ps12exe 使用相同的 `(?!#.*)` 前瞻）。`computeSkipMask` 会把 here-string 函数体和块注释视为不透明内容，因此 formatter 永远不会改写它们。`(?!#)` 前瞻复刻了 ps12exe 的 `(?!#.*)`：指令后允许尾随注释（例如 `#_if PSEXE #reason`），其他内容则不允许。
 const IF_RE = /^\s*#_if\s+(\S+)\s*(?!#)/
 const ELSE_RE = /^\s*#_else\s*(?!#)/
 const ENDIF_RE = /^\s*#_endif\s*(?!#)/
 
 const KNOWN_CONDITIONS = new Set(['psexe', 'psscript'])
 
-// English source strings; they are also the keys of the l10n bundles.
+// 英文源字符串；它们同时也是 l10n bundle 的键。
 const MESSAGES = Object.freeze({
 	missingEndIf: 'Missing end of if statement: {0}',
 	nestedIfDeadCode: 'Nested #_if {0} inside #_if {1}: the enclosing condition already fixes this branch, so one side is dead code.',
@@ -35,7 +29,7 @@ function leadingOf (line) {
 }
 
 /**
- * Parses the structural preprocessor directives of a document.
+ * 解析文档中的结构性 preprocessor 指令。
  *
  * @param {string} text
  * @returns {{
@@ -129,26 +123,18 @@ function analyze (text) {
 }
 
 /**
- * Computes the foldable regions of the preprocessor blocks. Each block folds
- * from its `#_if` line down to the line before its `#_endif`, so the `#_endif`
- * stays visible (the same convention the PowerShell extension uses for `}`).
- * Nested blocks produce nested ranges.
+ * 计算 preprocessor 块的可折叠区域。每个块从其 `#_if` 行折叠到其 `#_endif` 之前的一行，因此 `#_endif` 保持可见（与 PowerShell 扩展对 `}` 使用的约定相同）。嵌套块产生嵌套的范围。
  *
- * These ranges are *additive*: VS Code merges the ranges of every folding
- * provider for a language, so they sit next to the PowerShell extension's own
- * (AST-based) ranges. In a construct like
+ * 这些范围是*附加的*：VS Code 会合并某语言所有折叠 provider 的范围，因此它们与 PowerShell 扩展自己的（基于 AST 的）范围并列存在。在如下结构中
  *
  *     #_if PSScript
  *     if (!$nested) {
  *     #_endif
  *
- * the real `if` opens on the block's only body line, so its AST range overlaps
- * the small `#_if … #_endif` range; the editor then shows both fold markers.
- * Neither provider rewrites the document, so this is purely a display overlap,
- * not a broken fold.
+ * 真正的 `if` 在块唯一的函数体行上打开，因此它的 AST 范围与小的 `#_if … #_endif` 范围重叠；编辑器随后会显示两个折叠标记。两个 provider 都不会改写文档，因此这纯粹是显示上的重叠，而不是折叠损坏。
  *
  * @param {string} text
- * @returns {Array<{ start: number, end: number }>} zero-based, inclusive lines
+ * @returns {Array<{ start: number, end: number }>} 从零开始、包含末尾的行
  */
 function foldingRanges (text) {
 	const { lines, blocks } = analyze(text)
@@ -161,13 +147,11 @@ function foldingRanges (text) {
 }
 
 /**
- * Decides where to auto-insert `#_endif` after a newline was typed on a
- * complete `#_if …` line.
+ * 决定在完整的 `#_if …` 行上键入换行后，自动插入 `#_endif` 的位置。
  *
- * @param {string | undefined} currentLine the line the newline was typed on
- * @param {string} insertedText the text the edit inserted
- * @returns {{ offset: number, indent: string } | undefined} `offset` lines below
- *   the newline, indented like the `#_if` line
+ * @param {string | undefined} currentLine 键入换行所在的行
+ * @param {string} insertedText 编辑插入的文本
+ * @returns {{ offset: number, indent: string } | undefined} 换行下方 `offset` 行处，缩进与 `#_if` 行相同
  */
 function endifAutoClose (currentLine, insertedText) {
 	if (currentLine === undefined || !/\r?\n/.test(insertedText)) return undefined
@@ -176,21 +160,18 @@ function endifAutoClose (currentLine, insertedText) {
 	return { offset: insertedText.split(/\r?\n/).length - 1, indent }
 }
 
-// A `#_!!` escape line, with the marker and an optional single space after it.
+// 一条 `#_!!` 转义行，包含标记及其后一个可选空格。
 const BANG_RE = /^([ \t]*)#_!! ?(.*)$/
-// Any other preprocessor directive (`#_if`, `#_else`, `#_endif`, `#_include`, …).
+// 任何其他 preprocessor 指令（`#_if`、`#_else`、`#_endif`、`#_include` 等）。
 const OTHER_DIRECTIVE_RE = /^[ \t]*#_/
 
 /**
- * Toggles the `#_!!` escape marker on a single line. `#_!!` makes the line a
- * comment when the script runs directly and real code after ps12exe strips the
- * marker, so toggling adds it to plain code and removes it again.
+ * 在单行上切换 `#_!!` 转义标记。脚本直接运行时 `#_!!` 使该行成为注释，而 ps12exe 剥离标记后则是真实代码，因此切换操作会对普通代码添加它、再将其移除。
  *
- * Lines that are blank, or that are another preprocessor directive, are left
- * alone (`undefined`): adding `#_!!` in front of a directive would disable it.
+ * 空行或另一条 preprocessor 指令的行保持不变（`undefined`）：在指令前添加 `#_!!` 会禁用它。
  *
  * @param {string} line
- * @returns {string | undefined} the toggled line, or undefined when untouched
+ * @returns {string | undefined} 切换后的行；未改动时为 undefined
  */
 function toggleBangLine (line) {
 	if (!/\S/.test(line)) return undefined
@@ -202,14 +183,13 @@ function toggleBangLine (line) {
 }
 
 /**
- * Toggles `#_!!` on every line in `[startLine, endLine]`.
+ * 在 `[startLine, endLine]` 范围内的每一行上切换 `#_!!`。
  *
  * @param {string[]} lines
- * @param {number} startLine zero-based, inclusive
- * @param {number} endLine zero-based, inclusive
- * @param {boolean[]} [skipMask] lines to leave untouched (here-strings, block
- *   comments); see `computeSkipMask`
- * @returns {Array<{ line: number, text: string }>} the lines that change
+ * @param {number} startLine 从零开始、包含
+ * @param {number} endLine 从零开始、包含
+ * @param {boolean[]} [skipMask] 保持不变的行（here-string、块注释）；见 `computeSkipMask`
+ * @returns {Array<{ line: number, text: string }>} 发生变更的行
  */
 function toggleBangLines (lines, startLine, endLine, skipMask) {
 	const changes = []
@@ -224,13 +204,11 @@ function toggleBangLines (lines, startLine, endLine, skipMask) {
 }
 
 /**
- * Splits every block into the code fragments ps12exe feeds to the build, one per
- * branch. Nested directives stay in the text because they are just comments to
- * PowerShell; only the block's own directive lines are dropped.
+ * 把每个块拆分为 ps12exe 送入构建的代码片段，每个分支一个。嵌套指令会留在文本中，因为它们对 PowerShell 而言只是注释；只有块自身的指令行会被丢弃。
  *
  * @param {Array<{ startLine: number, endLine: number, elseLine: number | null }>} blocks
  * @param {string[]} lines
- * @returns {Array<{ block: number, text: string }>} `block` is the block index
+ * @returns {Array<{ block: number, text: string }>} `block` 是块索引
  */
 function branchFragments (blocks, lines) {
 	const fragments = []
@@ -245,8 +223,7 @@ function branchFragments (blocks, lines) {
 }
 
 /**
- * A block covering at least 90% of the file is never indented. Only one such
- * block is exempted; when several qualify the largest one wins.
+ * 覆盖文件至少 90% 的块永不缩进。只会豁免一个这样的块；当有多个符合条件时，最大的那个胜出。
  *
  * @param {Array<{ startLine: number, endLine: number }>} blocks
  * @param {number} totalLines
@@ -268,8 +245,7 @@ function pickExemptBlock (blocks, totalLines) {
 }
 
 /**
- * Lines that must be left untouched: here-string bodies and block comments.
- * Their content is significant (or is a comment the formatter keeps verbatim).
+ * 必须保持不变的行：here-string 函数体和块注释。它们的内容有意义（或是 formatter 原样保留的注释）。
  *
  * @param {string[]} lines
  * @returns {boolean[]}
@@ -285,9 +261,7 @@ function computeSkipMask (lines) {
 
 		if (hereTerminator) {
 			skip[i] = true
-			// The terminator only has to start the line; PowerShell allows a
-			// pipeline or redirection to follow it on the same line
-			// (`"@ *> $null`).
+			// 终止符只需位于行首；PowerShell 允许在同一行紧跟管道或重定向（`"@ *> $null`）。
 			if (trimmed.startsWith(hereTerminator)) hereTerminator = null
 			continue
 		}
@@ -312,20 +286,14 @@ function computeSkipMask (lines) {
 }
 
 /**
- * Re-indents the preprocessor blocks of `text` by one unit per nesting level.
+ * 按每个嵌套层级一个单位重新缩进 `text` 的 preprocessor 块。
  *
- * - Code lines are pushed one level deeper per enclosing (non-exempt) block on
- *   top of the indentation produced by the official formatter.
- * - Directive and comment lines are *set* to the syntax indentation of the
- *   nearest code plus the preprocessor depth. Setting (instead of prepending)
- *   keeps the result stable when the document is formatted repeatedly.
- * - Here-string bodies and block comments are left verbatim.
+ * - 代码行在官方 formatter 产生的缩进之上，为每个外层（非豁免）块加深一层。
+ * - 指令行和注释行会被*设置*为最近代码的语法缩进加上 preprocessor 深度。设置（而非前置）能让文档被反复格式化时结果保持稳定。
+ * - here-string 函数体和块注释保持原样。
  *
  * @param {string} text
- * @param {{ indentUnit?: string, incompleteBlocks?: Iterable<number> }} [options]
- *   `incompleteBlocks` lists the blocks whose body does not form a complete
- *   PowerShell unit (e.g. an `if` opened inside the block and closed outside);
- *   those are never pushed deeper, see `branchFragments`.
+ * @param {{ indentUnit?: string, incompleteBlocks?: Iterable<number> }} [options] `incompleteBlocks` 列出函数体不构成完整 PowerShell 单元的块（例如在块内打开、在块外关闭的 `if`）；这些块永不加深，见 `branchFragments`。
  * @returns {string}
  */
 function indentText (text, options = {}) {
@@ -353,7 +321,7 @@ function indentText (text, options = {}) {
 		startToBlock.set(block.endLine, block)
 	}
 
-	// Preprocessor depth of every line.
+	// 每一行的 preprocessor 深度。
 	const depth = new Array(lines.length).fill(0)
 	const stack = []
 	for (let i = 0; i < lines.length; i++) {
@@ -373,10 +341,7 @@ function indentText (text, options = {}) {
 		}
 	}
 
-	// Syntax indentation of each block: the indentation of its first code line.
-	// `null` marks "nothing found yet" so that a legitimately empty indentation
-	// (a top-level block) is not mistaken for a miss and overwritten by the
-	// surrounding code.
+	// 每个块的语法缩进：其第一条代码行的缩进。`null` 标记「尚未找到」，这样合法的空缩进（顶层块）不会被误认为未找到并被周围代码覆盖。
 	for (const block of blocks) {
 		block.bodyIndent = null
 		const bodyEnd = block.elseLine !== null ? block.elseLine : block.endLine
@@ -389,17 +354,12 @@ function indentText (text, options = {}) {
 			}
 		}
 		if (block.bodyIndent === null) {
-			// No code in either branch (e.g. the body is only `#_!!` escapes or
-			// comments). The official formatter has already placed the directive
-			// at the surrounding syntax indentation, so use its own leading
-			// rather than the nearest unrelated code line (which may sit at the
-			// enclosing construct's indentation, as in `if (` + continuation).
+			// 两个分支中都没有代码（例如函数体只有 `#_!!` 转义或注释）。官方 formatter 已经把该指令放在周围的语法缩进处，因此使用它自身的行首缩进，而不是最近的不相关代码行（后者可能位于外层构造的缩进处，如在 `if (` + 续行中那样）。
 			block.bodyIndent = leading[block.startLine]
 		}
 	}
 
-	// Nearest preceding / following code indentation, used as the syntax
-	// indentation for comments that are not attached to a block.
+	// 最近的前/后代码缩进，用作未附着到块的注释的语法缩进。
 	const prevCodeIndent = new Array(lines.length).fill(null)
 	let last = null
 	for (let i = 0; i < lines.length; i++) {
@@ -426,16 +386,9 @@ function indentText (text, options = {}) {
 
 		const extra = indentUnit.repeat(depth[i])
 		if (isComment[i]) {
-			// A comment outside every preprocessor block needs no adjustment:
-			// the official formatter already placed it inside its real
-			// PowerShell block. `commentContext` only sees the nearest code
-			// line, so when a comment is the entire body of a block it would be
-			// pulled back to the enclosing statement instead.
+			// 位于所有 preprocessor 块之外的注释无需调整：官方 formatter 已经把它放在其真正的 PowerShell 块内。`commentContext` 只能看到最近的代码行，因此当注释是某个块的全部函数体时，它会被拉回外层语句。
 			if (depth[i] === 0 && !startToBlock.has(i)) return line
-			// Directive lines (the block's own `#_if`/`#_else`/`#_endif`) belong
-			// to the block, so they align with its body. Regular comments fall
-			// back to the surrounding code. `bodyIndent` may legitimately be ''
-			// for a top-level block, so it must not be treated as "missing".
+			// 指令行（块自身的 `#_if`/`#_else`/`#_endif`）属于该块，因此与其函数体对齐。普通注释回退到周围代码。对于顶层块，`bodyIndent` 合法地可以是 ''，因此不能被视为「缺失」。
 			const block = startToBlock.get(i)
 			const base = block ? block.bodyIndent : commentContext(i)
 			return base + extra + line.replace(/^[ \t]*/, '')
@@ -447,8 +400,7 @@ function indentText (text, options = {}) {
 }
 
 /**
- * Net number of `(` minus `)` on `line`, ignoring single- and double-quoted
- * strings (with backtick escapes) and `#` comments.
+ * `line` 上 `(` 减去 `)` 的净值，忽略单引号和双引号字符串（含反引号转义）以及 `#` 注释。
  *
  * @param {string} line
  * @returns {number}
@@ -480,31 +432,14 @@ function parenDelta (line) {
 }
 
 /**
- * Undoes PSScriptAnalyzer's over-indentation of a line that opens a scriptblock
- * or hashtable after one or more still-open parentheses, e.g.
- * `$x = (1..3 | ForEach-Object {`, `$list.Add([PSCustomObject]@{` or
- * `[ArgumentCompleter({`, as well as a backtick continuation line that starts
- * while a parenthesis is still open (`Write-Host ("{0}" -f ` + backtick).
+ * 撤销 PSScriptAnalyzer 对在还有一个或多个未闭合括号时打开 scriptblock 或 hashtable 的行的过度缩进，例如 `$x = (1..3 | ForEach-Object {`、`$list.Add([PSCustomObject]@{` 或 `[ArgumentCompleter({`，以及在前一个括号仍未闭合时开始的反引号续行（`Write-Host ("{0}" -f ` + 反引号）。
  *
- * The indentation rule counts an open parenthesis on top of the opener, so the
- * body gets one extra level per open parenthesis and the closing line is pushed
- * down too. When the official formatter's output carries exactly that signature
- * the whole enclosed region is pulled back, matching the way the scripts in
- * this repository are written. Constructs that do not have the signature are
- * left untouched.
+ * 缩进规则会在开括号之上再计一个未闭合括号，因此函数体每个未闭合括号就多一层，闭合行也会被下推。当官方 formatter 的输出恰好带有该特征时，整个被包区域会被拉回，与此仓库中脚本的写法一致。不具备该特征的构造保持不动。
  *
- * Upstream bug (reproduces on PSScriptAnalyzer 1.25.0 with pwsh 7.6.6, and on
- * Windows PowerShell 5.1; both tabs and spaces): the `LParen` and the scriptblock
- * `{`/`@{` each add an indentation level. The attribute form is tracked in
- * https://github.com/PowerShell/PSScriptAnalyzer/issues/2216 (open), the
- * `.where`/`.foreach` method form in
- * https://github.com/PowerShell/PSScriptAnalyzer/issues/1168 (open) and the
- * parenthesized pipeline in
- * https://github.com/PowerShell/PSScriptAnalyzer/issues/1378 (open). Delete
- * this function (and its test) once a release fixes them.
+ * 上游 bug（在 PSScriptAnalyzer 1.25.0 + pwsh 7.6.6 以及 Windows PowerShell 5.1 上、制表符和空格下均可复现）：`LParen` 和 scriptblock 的 `{`/`@{` 各自增加一层缩进。attribute 形式记录在 https://github.com/PowerShell/PSScriptAnalyzer/issues/2216（未关闭），`.where`/`.foreach` 方法形式记录在 https://github.com/PowerShell/PSScriptAnalyzer/issues/1168（未关闭），括号化管道记录在 https://github.com/PowerShell/PSScriptAnalyzer/issues/1378（未关闭）。某个版本修复它们后，删除此函数（及其测试）。
  *
  * @param {string} text
- * @param {string} indentUnit the formatter's indentation unit (tabs or spaces)
+ * @param {string} indentUnit formatter 的缩进单位（制表符或空格）
  * @returns {string}
  */
 function restoreParenIndentation (text, indentUnit) {
@@ -544,9 +479,7 @@ function restoreParenIndentation (text, indentUnit) {
 		}
 		if (close < 0) continue
 
-		// For a scriptblock/hashtable opener the closing line starts with `}`
-		// and is not body content; for a backtick continuation the closing line
-		// is the last body line and must be checked as well.
+		// 对于 scriptblock/hashtable 开括号，闭合行以 `}` 开头，不是函数体内容；对于反引号续行，闭合行是最后一行函数体，也必须一并检查。
 		const bodyLimit = opensBlock ? close : close + 1
 		const firstBody = lines.findIndex((line, index) => index > i && index < bodyLimit && line.trim() !== '')
 		if (firstBody < 0 || leadingOf(lines[firstBody]) !== bodyIndent) continue
@@ -560,11 +493,7 @@ function restoreParenIndentation (text, indentUnit) {
 }
 
 /**
- * Repairs the `else`/`elseif`/`catch`/`finally` line that `PSPlaceCloseBrace`
- * moves onto its own line (with `NewLineAfter`, i.e. the default of
- * `powershell.codeFormatting.newLineAfterCloseBrace`): the moved keyword keeps
- * only the single space that separated it from the `}` instead of the
- * indentation of the block, e.g. at one level of nesting
+ * 修复 `PSPlaceCloseBrace` 移到独立行的 `else`/`elseif`/`catch`/`finally` 行（在 `NewLineAfter`，即 `powershell.codeFormatting.newLineAfterCloseBrace` 的默认值下）：被移动的关键字只保留了它与 `}` 之间的单个空格，而不是块的缩进，例如在嵌套一层时
  *
  *     function f {
  *         if ($a) {
@@ -572,15 +501,9 @@ function restoreParenIndentation (text, indentUnit) {
  *         }
  *      else {
  *
- * The clause is realigned with the closing brace directly above it. The rule
- * hardcodes spaces for the indentation it rewrites, so this only shows up when
- * the formatter is configured for tabs. When the indentation is already correct
- * (top level, or depth >= 2) nothing changes.
+ * 该子句与正上方的闭括号重新对齐。该规则为它改写的缩进硬编码了空格，因此只有 formatter 配置为制表符时才会显现。当缩进已经正确（顶层，或深度 >= 2）时不会有任何改动。
  *
- * Upstream limitation: PSScriptAnalyzer's brace rules do not know about tab
- * indentation, see https://github.com/PowerShell/PSScriptAnalyzer/issues/1055
- * and the duplicate https://github.com/PowerShell/PSScriptAnalyzer/issues/1441.
- * Delete this function (and its test) once the rules honour `Kind = 'tab'`.
+ * 上游限制：PSScriptAnalyzer 的括号规则不了解制表符缩进，见 https://github.com/PowerShell/PSScriptAnalyzer/issues/1055 以及重复的 https://github.com/PowerShell/PSScriptAnalyzer/issues/1441。当这些规则支持 `Kind = 'tab'` 后，删除此函数（及其测试）。
  *
  * @param {string} text
  * @returns {string}

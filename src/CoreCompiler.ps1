@@ -1,8 +1,4 @@
-﻿# PowerShell Core / .NET 编译路径。
-# 非常量：把程序框架编成托管负载程序集（payload.dll，内含 main.ps1 资源），Brotli 压缩成 "main" 资源塞进
-# launcher（pack.cs + CoreHost.cs 引导），dotnet publish 成单文件 exe；SMA 不打包，运行时由 CoreHost 从 $PSHOME 解析。
-# 常量：constexpr.cs 自包含、不引用 SMA，直接 publish 成单文件 exe，不走 payload/launcher。
-# 产物是框架依赖：目标机器需要有 PowerShell Core（提供引擎与模块）以及匹配的 .NET 运行时。
+﻿# PowerShell Core / .NET 编译路径。非常量：把程序框架编成托管负载程序集（payload.dll，内含 main.ps1 资源），Brotli 压缩成 "main" 资源塞进 launcher（pack.cs + CoreHost.cs 引导），dotnet publish 成单文件 exe；SMA 不打包，运行时由 CoreHost 从 $PSHOME 解析。常量：constexpr.cs 自包含、不引用 SMA，直接 publish 成单文件 exe，不走 payload/launcher。产物是框架依赖：目标机器需要有 PowerShell Core（提供引擎与模块）以及匹配的 .NET 运行时。
 
 # 只有 pwsh 宿主才能正确推导 Core 的目标框架、$PSHOME 与 RID；Windows PowerShell 下应先交接给 pwsh。
 if ($PSVersionTable.PSEdition -ne 'Core') {
@@ -193,8 +189,7 @@ else {
 		$brotli.Dispose(); $outStream.Dispose(); $inStream.Dispose()
 	}
 
-	# CoreHost.cs 是 launcher 侧引导：探测 $PSHOME、接 PSModulePath、挂 AssemblyResolve。
-	# 和 pack.cs 一样，编译进 ps12exe.exe 时内嵌，脚本模式从磁盘读取。
+	# CoreHost.cs 是 launcher 侧引导：探测 $PSHOME、接 PSModulePath、挂 AssemblyResolve。和 pack.cs 一样，编译进 ps12exe.exe 时内嵌，脚本模式从磁盘读取。
 	#_if PSEXE
 		#_include_as_value bootstrapSource "$PSScriptRoot/programFrames/CoreHost.cs"
 	#_else

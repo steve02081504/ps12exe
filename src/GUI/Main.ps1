@@ -2,19 +2,19 @@
 
 <#
 .SYNOPSIS
-ps12exeGUI is a GUI tool for ps12exe.
+ps12exeGUI 是 ps12exe 的 GUI 工具。
 .DESCRIPTION
-ps12exeGUI is a GUI tool for ps12exe.
+ps12exeGUI 是 ps12exe 的 GUI 工具。
 .PARAMETER ConfigFile
-The path of the configuration file.
+配置文件的路径。
 .PARAMETER PS1File
-The path of the script file.
+脚本文件的路径。
 .PARAMETER Localize
-The language code to use.
+要使用的语言代码。
 .PARAMETER UIMode
-The UI mode to use.
+要使用的 UI 模式。
 .PARAMETER help
-Show this help message.
+显示此帮助信息。
 .EXAMPLE
 ps12exeGUI -Localize 'en-UK' -UIMode 'Light'
 .EXAMPLE
@@ -65,17 +65,17 @@ param(
 	}
 
 	try {
-		# Set Console Window Title
+		# 设置控制台窗口标题
 		$BackUpTitle = $Host.UI.RawUI.WindowTitle
 		$Host.UI.RawUI.WindowTitle = "ps12exe GUI Console Host"
 
-		# Initialize STA Runspace
+		# 初始化 STA Runspace
 		$Runspace = [RunspaceFactory]::CreateRunspace()
 		$Runspace.ApartmentState = 'STA'
 		$Runspace.ThreadOptions = 'ReuseThread'
 		$Runspace.Open()
 
-		# Execute
+		# 执行
 		$pwsh = [PowerShell]::Create().AddScript({
 			param ($ScriptRoot, $ConfigFile, $Localize, $UIMode, $PS1File, $help)
 			. "$ScriptRoot\GUIMainScript.ps1"
@@ -89,12 +89,12 @@ param(
 		$pwsh.Invoke()
 	}
 	finally {
-		# Dispose
+		# 释放
 		$Runspace.Close()
 		$Runspace.Dispose()
 		$pwsh.Dispose()
 
-		# Restore Console Window Title
+		# 恢复控制台窗口标题
 		$Host.UI.RawUI.WindowTitle = $BackUpTitle
 	}
 #_else

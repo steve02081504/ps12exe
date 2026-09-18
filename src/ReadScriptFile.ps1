@@ -116,8 +116,7 @@ function Preprocessor($Content, $FilePath) {
 		}
 		$file
 	}
-	# 校验 pragma 子表达式是否只使用白名单内的 path 相关命令/变量。
-	# 返回：$true 表示安全；否则返回一个含具体原因的字符串数组。
+	# 校验 pragma 子表达式是否只使用白名单内的 path 相关命令/变量。返回：$true 表示安全；否则返回一个含具体原因的字符串数组。
 	function Test-PragmaExpressionSafe([string]$Expr) {
 		$PragmaSafeCommands = @('gcm', 'get-command', 'join-path', 'split-path', 'resolve-path', 'convert-path', 'get-item', 'test-path', 'get-childitem')
 		if (-not $GuestMode) { $PragmaSafeCommands += 'get-content' }
@@ -142,8 +141,7 @@ function Preprocessor($Content, $FilePath) {
 		}
 		return $Errors.ToArray()
 	}
-	# 校验通过后对 pragma 值进行 PowerShell 字符串展开（求值 $(...) 子表达式）。
-	# 展开时临时把 $PSScriptRoot 指向被编译脚本所在目录，使子表达式内能直接引用它。
+	# 校验通过后对 pragma 值进行 PowerShell 字符串展开（求值 $(...) 子表达式）。展开时临时把 $PSScriptRoot 指向被编译脚本所在目录，使子表达式内能直接引用它。
 	function Expand-PragmaExpression([string]$Value, [string]$PragmaName) {
 		$Unsafe = Test-PragmaExpressionSafe ('"' + $Value + '"')
 		if ($Unsafe) {

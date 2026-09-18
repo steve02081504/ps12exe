@@ -4,8 +4,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { analyze, indentText, endifAutoClose, foldingRanges, toggleBangLine, toggleBangLines, branchFragments, pickExemptBlock, computeSkipMask, restoreParenIndentation, restoreClauseIndentation, MESSAGES } from '../lib/preprocessor.mjs'
 
-// The extension lives at <repo>/src/.subrepo/vscode-plug/ps12exe, so this test
-// file sits five levels below the ps12exe repository root.
+// 该扩展位于 <repo>/src/.subrepo/vscode-plug/ps12exe，因此本测试文件位于 ps12exe 仓库根目录下五层。
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..')
 const IGNORED_DIRS = new Set(['node_modules', '.subrepo', '.vscode-test', '.git', 'out', 'dist'])
 
@@ -50,22 +49,21 @@ suite('ps12exe preprocessor', () => {
 		const simple = ['#_if PSEXE', 'a', 'b', '#_endif'].join('\n')
 		assert.deepStrictEqual(foldingRanges(simple), [{ start: 0, end: 2 }])
 
-		// The whole if/else folds as one region; `#_endif` stays visible.
+		// 整个 if/else 折叠为一个区域；`#_endif` 保持可见。
 		const withElse = ['#_if PSEXE', 'a', '#_else', 'b', '#_endif'].join('\n')
 		assert.deepStrictEqual(foldingRanges(withElse), [{ start: 0, end: 3 }])
 
-		// Nested blocks produce nested ranges.
+		// 嵌套块产生嵌套区间。
 		const nested = ['#_if PSEXE', 'a', '#_if PSScript', 'b', '#_endif', 'c', '#_endif'].join('\n')
 		assert.deepStrictEqual(foldingRanges(nested), [
 			{ start: 0, end: 5 },
 			{ start: 2, end: 3 }
 		])
 
-		// An empty block has nothing to fold.
+		// 空块没有可折叠的内容。
 		assert.deepStrictEqual(foldingRanges(['#_if PSEXE', '#_endif'].join('\n')), [])
 
-		// A body that opens a real PowerShell block (the `#_if PSScript` +
-		// `if (!$nested) {` idiom) still folds its single body line.
+		// 开启真实 PowerShell 块的主体（即 `#_if PSScript` + `if (!$nested) {` 惯用法）仍会折叠其单行主体。
 		const openIf = ['#_if PSScript', 'if (!$nested) {', '#_endif', 'x', '}'].join('\n')
 		assert.deepStrictEqual(foldingRanges(openIf), [{ start: 0, end: 1 }])
 	})
@@ -78,7 +76,7 @@ suite('ps12exe preprocessor', () => {
 		assert.strictEqual(toggleBangLine('\t#_!! echo hi'), '\techo hi')
 		assert.strictEqual(toggleBangLine('#_!!if'), 'if')
 
-		// Directives other than `#_!!` and blank lines are left alone.
+		// 除 `#_!!` 之外的指令和空行保持不变。
 		assert.strictEqual(toggleBangLine('#_if PSEXE'), undefined)
 		assert.strictEqual(toggleBangLine('\t#_endif'), undefined)
 		assert.strictEqual(toggleBangLine('#_include x.ps1'), undefined)
@@ -95,7 +93,7 @@ suite('ps12exe preprocessor', () => {
 			{ line: 6, text: '#_!!d' }
 		])
 
-		// Only the requested range is touched, and the skip mask wins.
+		// 只改动所请求的范围，且跳过掩码优先。
 		assert.deepStrictEqual(toggleBangLines(lines, 2, 3), [
 			{ line: 2, text: '#_!!b' },
 			{ line: 3, text: 'c' }
@@ -113,7 +111,7 @@ suite('ps12exe preprocessor', () => {
 		]
 		assert.strictEqual(pickExemptBlock(blocks, 20), blocks[0])
 
-		// 18/20 = 90% => qualifies; the larger one wins.
+		// 18/20 = 90% => 符合条件；较大者胜出。
 		const tie = [
 			{ startLine: 0, endLine: 17 },
 			{ startLine: 0, endLine: 17 }
@@ -156,11 +154,7 @@ suite('ps12exe preprocessor', () => {
 	})
 
 	test('aligns a block whose body has no code with the surrounding expression', () => {
-		// A body that is only a `#_!!` escape has no code line for the block
-		// base to follow. `if (` + continuation is the motivating case
-		// (src/CodeDomCompiler.ps1): the nearest code line is the opener at
-		// column 0, but the directives belong at the continuation indentation
-		// the official formatter already gave them.
+		// 只包含 `#_!!` 转义的主体没有可供块基准跟随的代码行。`if (` + 续行是典型案例（src/CodeDomCompiler.ps1）：最近的代码行是第 0 列的开启符，但指令应处于官方 formatter 已经赋予它们的续行缩进处。
 		const base = [
 			'if (',
 			'\t#_if PSEXE',
@@ -181,9 +175,7 @@ suite('ps12exe preprocessor', () => {
 	})
 
 	test('leaves comments outside preprocessor blocks to the official formatter', () => {
-		// A comment that is the entire body of a block has no code line at the
-		// body indentation for `commentContext` to find; the comment must keep
-		// the indentation PSScriptAnalyzer gave it.
+		// 作为块完整主体的注释在主体缩进处没有可供 `commentContext` 找到的代码行；该注释必须保留 PSScriptAnalyzer 赋予它的缩进。
 		const base = ['if ($x) {', '\t# only a comment', '}'].join('\n')
 		assert.strictEqual(indentText(base, { indentUnit: '\t' }), base)
 
@@ -217,8 +209,7 @@ suite('ps12exe preprocessor', () => {
 		])
 		assert.deepStrictEqual(mask, [false, true, true, true, true, false])
 
-		// The terminator ends the here-string even when a pipeline or
-		// redirection follows it on the same line.
+		// 即使同一行上终止符后跟随管道或重定向，终止符仍会结束 here-string。
 		const withRedirect = computeSkipMask([
 			'$s = @"',
 			'content',
@@ -265,11 +256,11 @@ suite('ps12exe preprocessor', () => {
 	})
 
 	test('repairs the official formatter over-indentation after an open parenthesis', () => {
-		// Workarounds for the `LParen` + scriptblock opener double count:
-		// https://github.com/PowerShell/PSScriptAnalyzer/issues/2216 (attribute)
-		// https://github.com/PowerShell/PSScriptAnalyzer/issues/1168 (methods)
-		// https://github.com/PowerShell/PSScriptAnalyzer/issues/1378 (pipeline)
-		// Remove together with `restoreParenIndentation` once upstream fixes them.
+		// 针对 `LParen` + scriptblock 开启符重复计数的变通方案：
+		// https://github.com/PowerShell/PSScriptAnalyzer/issues/2216（属性）
+		// https://github.com/PowerShell/PSScriptAnalyzer/issues/1168（方法）
+		// https://github.com/PowerShell/PSScriptAnalyzer/issues/1378（管道）
+		// 上游修复后，连同 `restoreParenIndentation` 一起删除。
 		const attribute = [
 			'\t[ArgumentCompleter({',
 			'\t\t\tParam($x)',
@@ -293,8 +284,7 @@ suite('ps12exe preprocessor', () => {
 			['    [ValidateScript({', '        $_', '    })]'].join('\n')
 		)
 
-		// A scriptblock argument in a parenthesized chain, a method call and a
-		// backtick continuation all get the same extra level.
+		// 括号链中的 scriptblock 参数、方法调用和反引号续行都会得到相同的额外层级。
 		const chain = [
 			'$x = (1..3 | ForEach-Object {',
 			'\t\t$_',
@@ -320,19 +310,16 @@ suite('ps12exe preprocessor', () => {
 		const continuation = ['$x = (Get-Foo -Bar `', '\t\t-Baz qux)'].join('\n')
 		assert.strictEqual(restoreParenIndentation(continuation, '\t'), ['$x = (Get-Foo -Bar `', '\t-Baz qux)'].join('\n'))
 
-		// Leading whitespace inside a string must not be mistaken for an open
-		// parenthesis: nothing has the over-indented signature, so nothing moves.
+		// 字符串内的前导空白不能被误认为开括号：没有任何内容具有过度缩进的特征，因此什么都不会移动。
 		const stringParen = ['$x = "(" | ForEach-Object {', '\t$_', '}'].join('\n')
 		assert.strictEqual(restoreParenIndentation(stringParen, '\t'), stringParen)
 	})
 
 	test('realigns an else/catch moved onto its own line', () => {
-		// Workaround for the tab limitation in
+		// 针对以下 issue 中 tab 限制的变通方案：
 		// https://github.com/PowerShell/PSScriptAnalyzer/issues/1055
-		// (duplicate https://github.com/PowerShell/PSScriptAnalyzer/issues/1441):
-		// PSPlaceCloseBrace hardcodes a space when it moves the keyword down.
-		// Remove together with `restoreClauseIndentation` once the rule
-		// honours `Kind = 'tab'`.
+		// （重复 https://github.com/PowerShell/PSScriptAnalyzer/issues/1441）：
+		// PSPlaceCloseBrace 在将关键字下移时会硬编码一个空格。当该规则支持 `Kind = 'tab'` 后，连同 `restoreClauseIndentation` 一起删除。
 		const broken = ['function f {', '\tif ($a) {', '\t\t$b', '\t}', ' else {', '\t\t$c', '\t}', '}'].join('\n')
 		assert.strictEqual(restoreClauseIndentation(broken), [
 			'function f {',
@@ -345,7 +332,7 @@ suite('ps12exe preprocessor', () => {
 			'}'
 		].join('\n'))
 
-		// Already correct (top level, or depth >= 2) is left alone.
+		// 已经正确的情况（顶层，或深度 >= 2）保持不变。
 		const fine = ['\tif ($a) {', '\t\t1', '\t}', '\telse {', '\t\t2', '\t}'].join('\n')
 		assert.strictEqual(restoreClauseIndentation(fine), fine)
 		const topLevel = ['if ($a) {', '\t1', '}', 'else {', '\t2', '}'].join('\n')
@@ -353,7 +340,7 @@ suite('ps12exe preprocessor', () => {
 	})
 
 	test("ps12exe's own scripts analyse without diagnostics", function () {
-		// Guards the editor rules against drifting from the scripts ps12exe ships.
+		// 防止编辑器规则与 ps12exe 随附的脚本发生偏移。
 		if (!fs.existsSync(path.join(REPO_ROOT, 'ps12exe.ps1'))) this.skip()
 
 		const files = collectPs1(REPO_ROOT)

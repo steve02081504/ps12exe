@@ -85,8 +85,7 @@ param(
 		return [PSCustomObject]@{ Path = $resolved; IsTemp = $false }
 	}
 
-	# Windows PowerShell（.NET Framework）没有 BrotliStream：Core 产物的 Brotli 负载解压转交 pwsh 完成。
-	# 主处理流程仅在脚本/模块模式运行（exe 版只是 #_require ps12exe 后转发），故直接用同目录脚本，无需模块导入。
+	# Windows PowerShell（.NET Framework）没有 BrotliStream：Core 产物的 Brotli 负载解压转交 pwsh 完成。主处理流程仅在脚本/模块模式运行（exe 版只是 #_require ps12exe 后转发），故直接用同目录脚本，无需模块导入。
 	function Invoke-ExtractionInPwsh([string]$ExePath) {
 		$pwsh = Get-Command pwsh -ErrorAction Ignore
 		if (-not $pwsh) { throw 'pwsh not installed' }
@@ -135,8 +134,7 @@ param(
 			trademark   = 'LegalTrademarks'
 			version     = 'FileVersion'
 		}
-		# .NET SDK（Core 目标）会把未指定的标题/公司/产品默认成程序集名、版本默认成 1.0.0.0，
-		# 这些不是用户配置，别当成资源参数补回。
+		# .NET SDK（Core 目标）会把未指定的标题/公司/产品默认成程序集名、版本默认成 1.0.0.0，这些不是用户配置，别当成资源参数补回。
 		$ExeBaseName = [System.IO.Path]::GetFileNameWithoutExtension($ExePath)
 		$DefaultNames = @($ExeBaseName, ($ExeBaseName -replace '[^\w\.\-]', '_')) |
 		Where-Object { $_ } | ForEach-Object { $_.ToLowerInvariant() }
@@ -241,8 +239,7 @@ param(
 			continue
 		}
 
-		# 反编译时从产物的 Win32 资源取回资源参数：源码里已有对应 #_pragma 的跳过，
-		# 缺失的在程序开头补回；图标释放到输出目录并用 #_pragma icon 引用。
+		# 反编译时从产物的 Win32 资源取回资源参数：源码里已有对应 #_pragma 的跳过，缺失的在程序开头补回；图标释放到输出目录并用 #_pragma icon 引用。
 		$ExistingPragmaNames = Get-ExistingPragmaNames $script
 		$PrefixLines = [System.Collections.Generic.List[string]]::new()
 		foreach ($Line in (Get-PS12ExeResourcePragmaLines -ExePath $currentExe -ExistingPragmaNames $ExistingPragmaNames)) {

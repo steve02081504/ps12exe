@@ -1,12 +1,12 @@
 ﻿<#
 .SYNOPSIS
-enable/disable/reset ps12exe's context menu
+启用/禁用/重置 ps12exe 的右键菜单
 .DESCRIPTION
-enable/disable/reset ps12exe's context menu
+启用/禁用/重置 ps12exe 的右键菜单
 .PARAMETER action
-enable or disable or reset
+enable、disable 或 reset
 .PARAMETER Localize
-The language code to be used for server-side logging
+用于服务器端日志记录的语言代码
 .EXAMPLE
 Set-ps12exeContextMenu
 .EXAMPLE
@@ -141,7 +141,7 @@ function RemoveFileHandlerProgram($className) {
 	Remove-Item -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\$className" -Recurse
 }
 
-# VS Code based editors to probe for with Get-Command, and the extension to install into them.
+# 用 Get-Command 探测的基于 VS Code 的编辑器，以及要安装到其中的扩展。
 $VSCodeBasedEditorNames = @(
 	'code',				# Visual Studio Code
 	'code-insiders',	# Visual Studio Code Insiders
@@ -155,7 +155,7 @@ $VSCodeBasedEditorNames = @(
 )
 $VSCodeExtensionId = 'steve02081504.ps12exe'
 
-# Probe the editors above with Get-Command, deduplicating names that point at the same CLI.
+# 用 Get-Command 探测上述编辑器，并对指向同一 CLI 的名称去重。
 function Get-VSCodeBasedEditors {
 	$seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 	foreach ($name in $VSCodeBasedEditorNames) {
@@ -169,8 +169,7 @@ function Get-VSCodeBasedEditors {
 	}
 }
 
-# Install the ps12exe VS Code extension into every detected editor through its CLI.
-# The extension is not published to the marketplace yet, so failures are reported and ignored.
+# 通过 CLI 将 ps12exe VS Code 扩展安装到每个检测到的编辑器中。该扩展尚未发布到应用市场，因此失败会被报告并忽略。
 function Install-ps12exeVSCodeExtension {
 	$InstallingMessage = if ($LocalizeData.VSCodeExtensionInstalling) { $LocalizeData.VSCodeExtensionInstalling }
 	else { 'Installing the ps12exe extension for {0} ...' }

@@ -18,7 +18,7 @@ function Get-Exe21spContent {
 	$pathEsc = $exePath -replace "'", "''"
 	pwsh -NoProfile -Command "Import-Module '$repoEsc' -Force; exe21sp -inputFile '$pathEsc'" | Out-String
 }
-# Pipeline input: exe path from pipeline, script to stdout (same behavior as -inputFile when redirected)
+# 管道输入：exe 路径来自管道，脚本输出到 stdout（重定向时的行为与 -inputFile 相同）
 function Get-Exe21spContentFromPipeline {
 	param([string]$RelPath)
 	$exePath = Join-Path $repoRoot $RelPath
@@ -32,7 +32,7 @@ try {
 	$normalScript | ps12exe -outputFile $repoRoot/build/normal.exe -Verbose | Write-Host
 	$extracted = Get-Exe21spContent 'build/normal.exe'
 	if ($extracted -notmatch 'normal-embed') { throw "exe21sp normal: expected 'normal-embed' in: $extracted" }
-	# exe21sp pipeline input: same exe path via pipeline yields same script on stdout
+	# exe21sp 管道输入：同一 exe 路径经管道传入会在 stdout 产出相同脚本
 	$fromPipe = Get-Exe21spContentFromPipeline 'build/normal.exe'
 	if ($fromPipe -notmatch 'normal-embed') { throw "exe21sp pipeline: expected 'normal-embed' in: $fromPipe" }
 
@@ -85,7 +85,7 @@ try {
 	$e7WinPs = powershell -NoProfile -Command "Import-Module '$repoEsc' -Force; exe21sp -inputFile '$coreExeEsc'" | Out-String
 	if ($e7WinPs -notmatch 'core-packed-embed') { throw "exe21sp Core under Windows PowerShell: expected 'core-packed-embed' in: $e7WinPs" }
 
-	# exe21sp without -outputFile and without redirect: saves to <exe>.ps1 in same directory (call without pipe; when stdout is not redirected, exe21sp writes to file)
+	# exe21sp 不带 -outputFile 且未重定向：保存为同目录下的 <exe>.ps1（不加管道调用；stdout 未重定向时 exe21sp 写入文件）
 	$normalExeFull = [System.IO.Path]::GetFullPath((Join-Path $repoRoot 'build/normal.exe'))
 	$expectedPs1Path = [System.IO.Path]::GetDirectoryName($normalExeFull) + [System.IO.Path]::DirectorySeparatorChar + [System.IO.Path]::GetFileNameWithoutExtension($normalExeFull) + '.ps1'
 	if (Test-Path -LiteralPath $expectedPs1Path) { Remove-Item -LiteralPath $expectedPs1Path -Force }
@@ -96,10 +96,9 @@ try {
 		$savedContent = Get-Content -LiteralPath $expectedPs1Path -Raw -Encoding UTF8
 		if ($savedContent -notmatch 'normal-embed') { throw "exe21sp no-OutFile no-redirect: expected 'normal-embed' in saved file, got: $savedContent" }
 	}
-	# Redirect case (script to stdout) is covered by Get-Exe21spContent / Get-Exe21spContentFromPipeline above.
+	# 重定向的情况（脚本输出到 stdout）已由上面的 Get-Exe21spContent / Get-Exe21spContentFromPipeline 覆盖。
 
-	# 8) 资源参数还原：exe21sp 把源码里没有的资源配置补成 #_pragma，并把图标释放到输出目录。
-	# 构造一个最小的 1x1 32bpp ICO。
+	# 8) 资源参数还原：exe21sp 把源码里没有的资源配置补成 #_pragma，并把图标释放到输出目录。构造一个最小的 1x1 32bpp ICO。
 	$iconPath = Join-Path $buildDir 'resource.ico'
 	$ico = [System.Collections.Generic.List[byte]]::new()
 	$ico.AddRange([byte[]](0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 32, 0))

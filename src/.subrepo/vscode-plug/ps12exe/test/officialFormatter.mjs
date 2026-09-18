@@ -1,19 +1,13 @@
-// Emulates the formatter the official `ms-vscode.powershell` extension runs.
+// 模拟官方 `ms-vscode.powershell` 扩展运行的 formatter。
 //
-// PowerShell Editor Services forwards the editor's `powershell.codeFormatting.*`
-// settings (plus `editor.insertSpaces`/`editor.tabSize`) to PSScriptAnalyzer's
-// `Invoke-Formatter` through `CodeFormattingSettings.GetPSSASettingsHashtable`.
-// This module mirrors that mapping so tests can check what VS Code would do to
-// a file without launching an editor. Keep it in sync with
-// https://github.com/PowerShell/PowerShellEditorServices (LanguageServerSettings.cs)
-// when the PowerShell extension changes.
+// PowerShell Editor Services 通过 `CodeFormattingSettings.GetPSSASettingsHashtable` 将编辑器的 `powershell.codeFormatting.*` 设置（以及 `editor.insertSpaces`/`editor.tabSize`）转发给 PSScriptAnalyzer 的 `Invoke-Formatter`。本模块镜像该映射，使测试无需启动编辑器即可检查 VS Code 会对文件做什么。当 PowerShell 扩展变更时，请保持与 https://github.com/PowerShell/PowerShellEditorServices（LanguageServerSettings.cs）同步。
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { runScript, psQuote } from '../lib/powershell.mjs'
 
-// Defaults of `powershell.codeFormatting.*` in ms-vscode.powershell.
+// ms-vscode.powershell 中 `powershell.codeFormatting.*` 的默认值。
 const DEFAULTS = Object.freeze({
 	preset: 'Custom',
 	autoCorrectAliases: false,
@@ -40,10 +34,10 @@ const DEFAULTS = Object.freeze({
 const CODE_FORMATTING_PREFIX = 'powershell.codeFormatting.'
 
 /**
- * Builds the PSScriptAnalyzer settings hashtable from the VS Code settings.
+ * 从 VS Code 设置构建 PSScriptAnalyzer 设置哈希表。
  *
  * @param {object} [options]
- * @param {Record<string, unknown>} [options.overrides] `powershell.codeFormatting.*` values (without the prefix)
+ * @param {Record<string, unknown>} [options.overrides] `powershell.codeFormatting.*` 的值（不含前缀）
  * @param {boolean} [options.insertSpaces]
  * @param {number} [options.tabSize]
  * @returns {object}
@@ -128,9 +122,7 @@ function buildSettings (options = {}) {
 }
 
 /**
- * Reads the defaults this extension contributes for the official formatter
- * (`contributes.configurationDefaults` in `package.json`). VS Code resolves a
- * setting that is not overridden by the user or the workspace to these values.
+ * 读取本扩展为官方 formatter 提供的默认值（`package.json` 中的 `contributes.configurationDefaults`）。VS Code 会将未被用户或工作区覆盖的设置解析为这些值。
  *
  * @returns {{ codeFormatting: Record<string, unknown>, insertSpaces: boolean | undefined }}
  */
@@ -142,7 +134,7 @@ function readExtensionConfigurationDefaults () {
 		defaults = (manifest.contributes && manifest.contributes.configurationDefaults) || {}
 	}
 	catch {
-		// A missing manifest should not fail the test run.
+		// 缺少清单文件不应导致测试运行失败。
 	}
 	const codeFormatting = {}
 	for (const [key, value] of Object.entries(defaults)) {
@@ -153,9 +145,7 @@ function readExtensionConfigurationDefaults () {
 }
 
 /**
- * Resolves the `powershell.codeFormatting.*` and `[powershell]` editor settings
- * the official formatter would see: this extension's contributed defaults first,
- * then the workspace's `.vscode/settings.json` overrides on top.
+ * 解析官方 formatter 会看到的 `powershell.codeFormatting.*` 和 `[powershell]` 编辑器设置：先是本扩展提供的默认值，然后叠加工作区的 `.vscode/settings.json` 覆盖值。
  *
  * @param {string} repoRoot
  * @returns {{ overrides: Record<string, unknown>, insertSpaces: boolean, tabSize: number }}
@@ -170,7 +160,7 @@ function readWorkspaceFormatting (repoRoot) {
 			fileSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'))
 		}
 		catch {
-			// A malformed workspace file should not fail the test run.
+			// 格式错误的工作区文件不应导致测试运行失败。
 		}
 	}
 	for (const [key, value] of Object.entries(fileSettings)) {
@@ -178,7 +168,7 @@ function readWorkspaceFormatting (repoRoot) {
 	}
 	const editor = fileSettings['[powershell]'] || {}
 	const workspaceInsertSpaces = editor['editor.insertSpaces']
-	// VS Code's own default is spaces; this extension contributes tabs.
+	// VS Code 自身的默认值是空格；本扩展提供的是制表符。
 	const insertSpaces = workspaceInsertSpaces !== undefined
 		? workspaceInsertSpaces
 		: extension.insertSpaces !== undefined ? extension.insertSpaces : true
@@ -219,12 +209,12 @@ const FORMAT_SCRIPT = [
 ]
 
 /**
- * Runs the emulated official formatter on `text`.
+ * 对 `text` 运行模拟的官方 formatter。
  *
  * @param {object} options
  * @param {{ command: string }} options.host
  * @param {string} options.text
- * @param {object} options.settings the PSScriptAnalyzer settings hashtable (see {@link buildSettings})
+ * @param {object} options.settings PSScriptAnalyzer 设置哈希表（参见 {@link buildSettings}）
  * @returns {Promise<{ available: boolean, text: string }>}
  */
 async function formatWithOfficialFormatter ({ host, text, settings }) {
@@ -253,7 +243,7 @@ async function formatWithOfficialFormatter ({ host, text, settings }) {
 			fs.rmSync(dir, { recursive: true, force: true })
 		}
 		catch {
-			// Best effort cleanup.
+			// 尽力清理。
 		}
 	}
 }

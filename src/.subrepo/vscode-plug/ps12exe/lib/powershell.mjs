@@ -12,9 +12,7 @@ const HOST_NAMES = ['pwsh', 'powershell']
 let cachedHost
 
 /**
- * PowerShell's `-EncodedCommand` expects a Base64 encoded UTF-16LE string.
- * Using it avoids every shell/Windows command line quoting pitfall, which is
- * important because script paths may contain quotes, spaces and unicode.
+ * PowerShell 的 `-EncodedCommand` 期望一个 Base64 编码的 UTF-16LE 字符串。使用它可以避开所有 shell/Windows 命令行引号陷阱，这一点很重要，因为脚本路径可能包含引号、空格和 unicode。
  *
  * @param {string} script
  * @returns {string}
@@ -24,7 +22,7 @@ function encodeCommand (script) {
 }
 
 /**
- * Quotes a value as a PowerShell single quoted string literal.
+ * 把值引用为 PowerShell 单引号字符串字面量。
  *
  * @param {string} value
  * @returns {string}
@@ -34,8 +32,7 @@ function psQuote (value) {
 }
 
 /**
- * Resolves the candidate PowerShell executables to absolute paths (PATH aware,
- * PATHEXT aware on Windows), preferred first.
+ * 把候选 PowerShell 可执行文件解析为绝对路径（识别 PATH，在 Windows 上识别 PATHEXT），优先级高的在前。
  *
  * @returns {Promise<string[]>}
  */
@@ -47,7 +44,7 @@ async function hostCandidates () {
 			if (resolved) candidates.push(resolved)
 		}
 		catch {
-			// Not found on this machine.
+			// 本机未找到。
 		}
 	}
 	return candidates
@@ -58,8 +55,7 @@ async function hostCandidates () {
  * @returns {string[]}
  */
 function encodedArgs (script) {
-	// `-OutputFormat Text` keeps PowerShell's information stream out of stderr;
-	// without it redirected hosts receive a CLIXML copy of every Write-Host call.
+	// `-OutputFormat Text` 让 PowerShell 的信息流不进入 stderr；否则被重定向的宿主会收到每次 Write-Host 调用的 CLIXML 副本。
 	return ['-NoProfile', '-NonInteractive', '-OutputFormat', 'Text', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', encodeCommand(script)]
 }
 
@@ -92,17 +88,15 @@ async function probeHost (command) {
 		return { command, moduleVersion: stdout || null }
 	}
 	catch (error) {
-		// ENOENT means the executable itself is not installed.
+		// ENOENT 表示可执行文件本身未安装。
 		if (error.code === 'ENOENT') return null
-		// The host exists but the probe failed for another reason; treat the
-		// module as unavailable so the caller can offer to install it.
+		// 宿主存在，但探测因其他原因失败；将模块视为不可用，以便调用方可以提议安装它。
 		return { command, moduleVersion: null }
 	}
 }
 
 /**
- * Finds a PowerShell host that can load the ps12exe module. The result is
- * cached because probing spawns processes.
+ * 查找能加载 ps12exe 模块的 PowerShell 宿主。由于探测会启动进程，结果会被缓存。
  *
  * @param {boolean} [refresh]
  * @returns {Promise<{ command: string, moduleVersion: string | null } | null>}
@@ -115,8 +109,7 @@ async function resolvePowerShell (refresh = false) {
 		if (!result) continue
 		if (!fallback) fallback = result
 		if (result.moduleVersion) {
-			// Only cache positive results so that installing the module later is
-			// picked up on the next run.
+			// 只缓存成功的结果，这样之后安装模块能在下次运行时被识别到。
 			cachedHost = result
 			return cachedHost
 		}
@@ -128,9 +121,7 @@ async function resolvePowerShell (refresh = false) {
 let cachedPlainHost
 
 /**
- * Resolves any usable PowerShell host and caches it. Unlike
- * {@link resolvePowerShell} this does not care about the ps12exe module, so it
- * is cheap to call repeatedly (parsing, formatting).
+ * 解析任意可用的 PowerShell 宿主并缓存。与 {@link resolvePowerShell} 不同，它不关心 ps12exe 模块，因此可以廉价地反复调用（解析、格式化）。
  *
  * @returns {Promise<{ command: string } | null>}
  */
@@ -152,17 +143,15 @@ function killTree (child) {
 		child.kill('SIGTERM')
 	}
 	catch {
-		// Process already gone.
+		// 进程已不存在。
 	}
 }
 
-// ps12exe uses ANSI cursor moves to redraw its progress; they would show up as
-// garbage in the output channel.
+// ps12exe 使用 ANSI 光标移动来重绘进度；它们会在输出通道中显示为乱码。
 const clean = (text) => String(text).replace(/\u001b\[[0-9;]*[A-Za-z]/g, '')
 
 /**
- * Runs an arbitrary PowerShell script in the given host, streaming the output
- * to `channel`.
+ * 在给定宿主中运行任意 PowerShell 脚本，把输出流式写入 `channel`。
  *
  * @param {{ command: string }} host
  * @param {string} script
@@ -225,10 +214,10 @@ function runScript (host, script, options = {}) {
 const PARSE_MARKER = 'PS12EXE_PARSE:'
 
 /**
- * Extracts the `PS12EXE_PARSE:` results from a parse run's stdout.
+ * 从解析运行的 stdout 中提取 `PS12EXE_PARSE:` 结果。
  *
  * @param {string} stdout
- * @returns {boolean[]} one flag per fragment, `true` when it does not parse
+ * @returns {boolean[]} 每个片段一个标志，无法解析时为 `true`
  */
 function parseIncompleteOutput (stdout) {
 	const results = []
@@ -240,8 +229,7 @@ function parseIncompleteOutput (stdout) {
 }
 
 /**
- * Parses code fragments with the real PowerShell parser and reports which ones
- * are not a complete unit — i.e. whose AST cannot be built on its own.
+ * 用真正的 PowerShell 解析器解析代码片段，并报告哪些不是完整单元——即其 AST 无法独立构建。
  *
  * @param {object} options
  * @param {{ command: string }} options.host
@@ -263,10 +251,7 @@ async function findIncompleteFragments ({ host, texts, token }) {
 		'  $errors = $null',
 		'  [void][System.Management.Automation.Language.Parser]::ParseInput([string]$text, [ref]$tokens, [ref]$errors)',
 		`  $state = if ($errors.Count -gt 0) { 'incomplete' } else { 'complete' }`,
-		// A branch body may be a bare attribute such as `[ArgumentCompleter({…})]`
-		// that only parses once a following statement exists (the attribute sticks
-		// to it). Retry those with a dummy statement so they are not mistaken for
-		// incomplete blocks; anything genuinely incomplete still fails.
+		// 分支体可能是像 `[ArgumentCompleter({…})]` 这样的裸 attribute，只有在后面存在语句时才能解析（attribute 会附着到该语句上）。用一条哑语句重试这类情况，以免被误判为不完整的块；真正不完整的内容仍会失败。
 		'  if ($errors.Count -gt 0 -and ([string]$text).TrimStart().StartsWith("[")) {',
 		'    $tokens = $null',
 		'    $errors = $null',
@@ -292,13 +277,13 @@ async function findIncompleteFragments ({ host, texts, token }) {
 			fs.unlinkSync(payload)
 		}
 		catch {
-			// Best effort; the temp file may already be gone.
+			// 尽力而为；临时文件可能已经不在了。
 		}
 	}
 }
 
 /**
- * Runs `ps12exe -inputFile <file>` in the given PowerShell host.
+ * 在给定 PowerShell 宿主中运行 `ps12exe -inputFile <file>`。
  *
  * @param {object} options
  * @param {{ command: string }} options.host
@@ -326,10 +311,7 @@ function compileScript ({ host, file, locale, channel, token }) {
 }
 
 /**
- * Runs `exe21sp -inputFile <file> -outputFile <outputFile>` in the given host.
- * exe21sp writes the recovered script to `outputFile` and releases companion
- * files (the icon referenced by an added `#_pragma icon`) next to it, so the
- * caller should pick an output path inside its own cache directory.
+ * 在给定宿主中运行 `exe21sp -inputFile <file> -outputFile <outputFile>`。exe21sp 会把还原出的脚本写入 `outputFile`，并在其旁边释放伴随文件（添加的 `#_pragma icon` 引用的图标），因此调用方应选择自己缓存目录内的输出路径。
  *
  * @param {object} options
  * @param {{ command: string }} options.host
@@ -341,7 +323,7 @@ function compileScript ({ host, file, locale, channel, token }) {
  * @returns {Promise<{ code?: number | null, error?: Error, stdout: string, stderr: string, cancelled?: boolean }>}
  */
 function extractScriptToFile ({ host, file, outputFile, locale, channel, token }) {
-	// ps12exe / exe21sp are functions and set $global:LastExitCode, not $LASTEXITCODE.
+	// ps12exe / exe21sp 是函数，设置的是 $global:LastExitCode，而不是 $LASTEXITCODE。
 	const script = [
 		'$ErrorActionPreference = "Stop"',
 		'$global:LastExitCode = 0',
@@ -359,7 +341,7 @@ function extractScriptToFile ({ host, file, outputFile, locale, channel, token }
 }
 
 /**
- * Compiles a script file to an explicit output path.
+ * 把脚本文件编译到显式指定的输出路径。
  *
  * @param {object} options
  * @param {{ command: string }} options.host
@@ -389,8 +371,7 @@ function compileToExe ({ host, input, output, locale, channel, token }) {
 
 const SYNC_MARKER = 'PS12EXE_SYNC:'
 
-// Installs the latest ps12exe when missing and updates it when a newer version
-// is available on PSGallery.
+// 缺少 ps12exe 时安装最新版，并在 PSGallery 上有更新版本时更新它。
 const SYNC_SCRIPT = [
 	'$ErrorActionPreference = "Stop"',
 	'[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)',
@@ -413,7 +394,7 @@ const SYNC_SCRIPT = [
 ].join('\n')
 
 /**
- * Parses the last `PS12EXE_SYNC:` line emitted by {@link SYNC_SCRIPT}.
+ * 解析 {@link SYNC_SCRIPT} 输出的最后一行 `PS12EXE_SYNC:`。
  *
  * @param {string} stdout
  * @returns {{ status: string, version?: string } | undefined}
@@ -430,7 +411,7 @@ function parseSyncOutput (stdout) {
 }
 
 /**
- * Ensures the ps12exe module is present and up to date.
+ * 确保 ps12exe 模块存在且为最新版。
  *
  * @param {object} options
  * @param {{ command: string }} options.host
@@ -451,8 +432,7 @@ async function syncModule ({ host, channel, token }) {
 }
 
 /**
- * Launches `ps12exeGUI -PS1File <file>` detached so VS Code is not blocked
- * while the GUI stays open.
+ * 以分离方式启动 `ps12exeGUI -PS1File <file>`，这样 GUI 保持打开时 VS Code 不会被阻塞。
  *
  * @param {object} options
  * @param {{ command: string }} options.host

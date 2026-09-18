@@ -1,9 +1,6 @@
-﻿# 常量输出上限：以 TinySharp 实际内嵌字节数为预算（ASCII 1x / UTF-16 2x）；原文超预算时，若 TinySharp
-# 会对负载做 XPRESS 压缩且压缩后能落回预算内，则放行——大而可压缩的常量输出因此也能用 ~1KB 的壳。
-# 仅 TinySharp 可用时适用（Core / requireAdmin 直接回退到普通编译）。
+﻿# 常量输出上限：以 TinySharp 实际内嵌字节数为预算（ASCII 1x / UTF-16 2x）；原文超预算时，若 TinySharp 会对负载做 XPRESS 压缩且压缩后能落回预算内，则放行——大而可压缩的常量输出因此也能用 ~1KB 的壳。仅 TinySharp 可用时适用（Core / requireAdmin 直接回退到普通编译）。
 #
-# 预算 = 「非 const hello world」与「const hello world」的体积差，按目标架构 / 是否 noConsole 查表
-# （Framework4.0 实测；Framework2.0 同值）。含义：常量壳一旦大过这个差值，就不比普通编译更小了。
+# 预算 = 「非 const hello world」与「const hello world」的体积差，按目标架构 / 是否 noConsole 查表（Framework4.0 实测；Framework2.0 同值）。含义：常量壳一旦大过这个差值，就不比普通编译更小了。
 #   console   anycpu/x86 14848-1024=13824   x64 13824-1024=12800
 #   noConsole anycpu/x86 18432-1536=16896   x64 17920-1536=16384
 $ConstBudgetTable = @{
@@ -17,8 +14,7 @@ $ConstBudgetTable = @{
 # 压缩壳比未压缩壳多一个 512B 文件块（cabinet 解压 P/Invoke + 解压 CIL），须与 TinySharp.cs 的 CompressionOverhead 一致
 $ConstCompressedOverhead = 512
 
-# 注意：预算值为 TinySharp 实测量；requireAdmin/Core 实际走 constexpr.cs（内嵌转义的 $ConstResult），
-# 无法用 TinySharp 壳，这里仅用同一预算做保守门槛，超出即回退普通编译。
+# 注意：预算值为 TinySharp 实测量；requireAdmin/Core 实际走 constexpr.cs（内嵌转义的 $ConstResult），无法用 TinySharp 壳，这里仅用同一预算做保守门槛，超出即回退普通编译。
 function Test-ConstResultTooLong([string]$Output) {
 	$mode = if ($noConsole) { 'noConsole' } else { 'console' }
 	$archKey = if ($architecture -in 'x86', 'x64') { $architecture } else { 'anycpu' }

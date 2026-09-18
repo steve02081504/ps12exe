@@ -1,8 +1,7 @@
 /**
- * Maps the language reported by `vscode.env.language` to a locale code that
- * ps12exe/ps12exeGUI understands (`-Localize`).
+ * 把 `vscode.env.language` 报告的语言映射为 ps12exe/ps12exeGUI 能识别的区域代码（`-Localize`）。
  *
- * ps12exe ships the following locales:
+ * ps12exe 附带以下区域：
  *   en-UK, en-US, es-ES, fr-FR, hi-IN, ja-JP, zh-CN
  */
 const PS12EXE_LOCALES = Object.freeze({
@@ -23,14 +22,13 @@ const PS12EXE_LOCALES = Object.freeze({
 })
 
 /**
- * @param {string | undefined} language value of `vscode.env.language`
- * @returns {string | undefined} locale code accepted by ps12exe
+ * @param {string | undefined} language `vscode.env.language` 的值
+ * @returns {string | undefined} ps12exe 接受的区域代码
  */
 function toPs12exeLocale (language) {
 	if (!language) return undefined
 	const key = String(language).toLowerCase()
-	// Unknown locales are passed through: ps12exe falls back to a matching
-	// locale prefix (e.g. `pt` -> nothing, then en-UK) instead of failing.
+	// 未知区域会原样传递：ps12exe 会回退到匹配的区域前缀（例如 `pt` -> 无匹配，然后是 en-UK），而不是失败。
 	return PS12EXE_LOCALES[key] || String(language)
 }
 

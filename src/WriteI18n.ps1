@@ -1,8 +1,8 @@
-﻿# Unified i18n for ps12exe and exe21sp.
-# - Set-I18nData: sets the lookup table for Write-I18n (call after loading locale).
-# - Write-I18n: pipeline output by key; Write-I18n Host|Error|Warning|... Mid [FormatArgs] [...]
-# - Write-SymboledI18n: symbol + message by key; Write-SymboledI18n Symbol MessageKey [SequenceKey] [-MessageFormatArgs] [-SymbolColor] [...]
-# Semantic wrappers: generated from $script:SymboledI18nWrapperDefs (table-driven, see below).
+﻿# 用于 ps12exe 和 exe21sp 的统一 i18n。
+# - Set-I18nData：为 Write-I18n 设置查找表（在加载 locale 后调用）。
+# - Write-I18n：按键输出到管道；Write-I18n Host|Error|Warning|... Mid [FormatArgs] [...]
+# - Write-SymboledI18n：按键输出符号 + 消息；Write-SymboledI18n Symbol MessageKey [SequenceKey] [-MessageFormatArgs] [-SymbolColor] [...]
+# 语义包装器：由 $script:SymboledI18nWrapperDefs 生成（表驱动，见下文）。
 
 $script:I18nData = $null
 
@@ -83,7 +83,7 @@ function Write-SymboledI18n {
 	Write-Host -ForegroundColor $SequenceColor " $sequence"
 }
 
-# Table: Name, Symbol, SymbolColor, MessageColor, SequenceColor. Wrappers are generated from this (single body, no duplication).
+# 表：Name、Symbol、SymbolColor、MessageColor、SequenceColor。包装器由此生成（单一实现，无重复）。
 $script:SymboledI18nWrapperDefs = @(
 	@{ Name = 'Write-SymboledErrorI18n'; Symbol = '[!]'; SymbolColor = 'Red'; MessageColor = 'White'; SequenceColor = 'White' },
 	@{ Name = 'Write-SymboledQuestionI18n'; Symbol = '[?]'; SymbolColor = 'Blue'; MessageColor = 'White'; SequenceColor = 'DarkGray' },

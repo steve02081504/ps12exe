@@ -6,14 +6,10 @@ import { resolvePlainPowerShell } from '../lib/powershell.mjs'
 import { formatPreprocessedText, applyPreprocessorFormatting } from '../lib/format.mjs'
 import { buildSettings, readWorkspaceFormatting, formatWithOfficialFormatter } from './officialFormatter.mjs'
 
-// The extension lives at <repo>/src/.subrepo/vscode-plug/ps12exe, so this test
-// file sits five levels below the ps12exe repository root.
+// 该扩展位于 <repo>/src/.subrepo/vscode-plug/ps12exe，因此本测试文件位于 ps12exe 仓库根目录下五层。
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..')
 
-// The repository's own scripts are formatted by this extension, so formatting
-// them with the workspace style must be a byte-for-byte no-op. `ps12exe.ps1` is
-// the packaged script; `src/CodeDomCompiler.ps1` is the one whose `if (` +
-// preprocessor-continuation block caught the directive mis-alignment.
+// 仓库自身的脚本由该扩展格式化，因此用工作区风格格式化它们必须是逐字节无操作。`ps12exe.ps1` 是打包脚本；`src/CodeDomCompiler.ps1` 则是其 `if (` + preprocessor 续行块触发指令错位的那一个。
 const WORKSPACE_TARGETS = [
 	'ps12exe.ps1',
 	'src/CodeDomCompiler.ps1'
@@ -66,9 +62,7 @@ suite('ps12exe formatter', () => {
 	}
 
 	test('skips the preprocessor indentation when the official formatter did not run', async () => {
-		// Without the official formatter the base is the document itself, which
-		// already carries the preprocessor indentation; applying the rules again
-		// would compound one level per format.
+		// 没有官方 formatter 时，基准就是文档本身，它已经带有 preprocessor 缩进；再次应用规则会导致每次格式化叠加一层。
 		const current = ['if (', '\t#_if PSEXE', '\t#_!! x -or', '\t#_endif', '\ty', ') {'].join('\n')
 		const staleBase = current.replace(/\t/g, '\t\t')
 		assert.strictEqual(

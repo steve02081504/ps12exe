@@ -14,7 +14,7 @@
 
 if ($ConfigFile) {
 	[string]$Script:ConfigFile = Resolve-Path -LiteralPath $ConfigFile
-	# if file not exists or empty
+	# 如果文件不存在或为空
 	if (!(Test-Path $ConfigFile) -or (Get-Item $ConfigFile).Length -eq 0) {
 		SetCfgFile $ConfigFile
 	}
@@ -43,29 +43,29 @@ catch {
 
 #endregion Other Actions Before ShowDialog
 
-# Set Console Window Title
+# 设置控制台窗口标题
 try {
-	# Hide Console Window
+	# 隐藏控制台窗口
 	$consolePtr = [ps12exeGUI.Win32]::GetConsoleWindow()
 	[ps12exeGUI.Win32]::ShowWindow($consolePtr, 0) | Out-Null
 
 	$Icon = [System.Drawing.Icon]::ExtractAssociatedIcon("$PSScriptRoot\..\..\img\icon.ico")
 	$Script:refs.MainForm.Icon = $Icon
 
-	# load bgm
+	# 加载背景音乐
 	$FS = New-Object -ComObject Scripting.FileSystemObject
 	$bgmFile = $FS.GetFile("$PSScriptRoot\..\bin\Unravel.mid")
 	[ps12exeGUI.Win32]::mciSendString("open `"$($bgmFile.ShortPath)`" alias ps12exeGUIBGM type MPEGVideo", $null, 0, 0) | Out-Null
-	# play music as loop
+	# 循环播放音乐
 	$IsAlreadyPlayingSomething = [ps12exeGUI.Win32]::IsPlayingSound()
 	[ps12exeGUI.Win32]::mciSendString("play ps12exeGUIBGM repeat", $null, 0, 0) | Out-Null
 	if ($IsAlreadyPlayingSomething) { PauseMusic }
 
-	# Show the form
+	# 显示窗体
 	try { [void]$Script:refs.MainForm.ShowDialog() } catch { Update-ErrorLog -ErrorRecord $_ -Message "Exception encountered unexpectedly at ShowDialog." }
 }
 finally {
-	# Dispose all controls
+	# 释放所有控件
 	foreach ($Ctrl in $Script:refs.Values) {
 		@('Icon', 'BackGroundImage') | ForEach-Object {
 			if ($Ctrl.$_ -is [IDisposable]) { $Ctrl.$_.Dispose() }
@@ -81,6 +81,6 @@ finally {
 
 	[ps12exeGUI.Win32]::mciSendString("close ps12exeGUIBGM", $null, 0, 0) | Out-Null
 
-	# Remove all variables in the script scope
+	# 移除脚本作用域中的所有变量
 	Get-Variable -Scope Script | Remove-Variable -Scope Script -Force -ErrorAction Ignore
 }

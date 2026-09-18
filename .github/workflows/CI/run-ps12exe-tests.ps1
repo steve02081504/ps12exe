@@ -107,13 +107,7 @@ if ($LASTEXITCODE) { exit $LASTEXITCODE }
 		throw "Write-Error should appear before success output (pwsh order), got: $($errOrder.Output)"
 	}
 
-	# exe 宿主内嵌套跑 ps12exe（issue 60）：控制组编译到新路径必须成功；复现组目标是宿主自身（被占用）时，失败原因必须对用户可见，不能只打出"编译失败！"就没了
-	# 根因不在 ps12exe.ps1 的输出方式，而在 default.cs 编译出的宿主如何渲染 Streams.Error：
-	# PSRunnerEntry.Main 里 Streams.Error.DataAdded 是纯异步单次回调，回调本身一旦抛异常（比如 Console.ForegroundColor
-	# 在个别宿主控制台状态下会抛 IOException）会被 PS 引擎的事件分发悄悄吞掉——没有崩溃、没有第二次机会，这条错误就彻底消失，
-	# 且不影响后续脚本继续跑（所以"编译失败！"这种后续提示还能正常出现，非常具有迷惑性）。
-	# 修复方式：DataAdded 回调自身加 try/catch 兜底 + 记录已渲染下标；EndInvoke 后对 Streams.Error 做一次收尾扫描，
-	# 把回调没成功渲染的错误补上。这是这两个宿主测试用例真正要守住的不变式，不是"能不能编译成功"这么简单。
+	# exe 宿主内嵌套跑 ps12exe（issue 60）：控制组编译到新路径必须成功；复现组目标是宿主自身（被占用）时，失败原因必须对用户可见，不能只打出"编译失败！"就没了根因不在 ps12exe.ps1 的输出方式，而在 default.cs 编译出的宿主如何渲染 Streams.Error：PSRunnerEntry.Main 里 Streams.Error.DataAdded 是纯异步单次回调，回调本身一旦抛异常（比如 Console.ForegroundColor在个别宿主控制台状态下会抛 IOException）会被 PS 引擎的事件分发悄悄吞掉——没有崩溃、没有第二次机会，这条错误就彻底消失，且不影响后续脚本继续跑（所以"编译失败！"这种后续提示还能正常出现，非常具有迷惑性）。修复方式：DataAdded 回调自身加 try/catch 兜底 + 记录已渲染下标；EndInvoke 后对 Streams.Error 做一次收尾扫描，把回调没成功渲染的错误补上。这是这两个宿主测试用例真正要守住的不变式，不是"能不能编译成功"这么简单。
 	$nestedDir = Join-Path $buildDir 'nested'
 	New-Item -ItemType Directory -Path $nestedDir -Force | Out-Null
 	$nestedInnerPs1 = Join-Path $nestedDir 'inner.ps1'
@@ -181,7 +175,7 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 		throw "Core exe output mismatch, got: $($core.Output)"
 	}
 
-	# Pipeline/redirection: when stdout is redirected, ps12exe outputs only the exe path
+	# 管道/重定向：stdout 被重定向时，ps12exe 只输出 exe 路径
 	$redirectPs1 = Join-Path $buildDir 'redirect_test.ps1'
 	$redirectExe = Join-Path $buildDir 'redirect_test.exe'
 	Set-Content -LiteralPath $redirectPs1 -Value "Write-Output 'redirect-test'" -Encoding UTF8
@@ -266,10 +260,7 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 		throw "nested #_if did not warn about dead code, warnings: $($script:i18nWarnings -join ', ')"
 	}
 
-	# Const-eval 回退（issue 63）：所有回退路径（超时/超长/异常/显式声明）都必须把 IsConst 置回 $false。
-	# 否则下游会拿从未赋值的 $RowResult 去走 TinySharp，编出一个只输出空行的哑 exe（默认宿主编译被跳过）。
-	# #_pragma constEvalTimeout / #_pragma noConstEval 是脚本可用的显式逃生舱，也让本测试无需真的等 7 秒超时。
-	# 先单测 ConstProgramCheck.ps1 的回退分支，避免为造超时再跑一次完整宿主编译。
+	# Const-eval 回退（issue 63）：所有回退路径（超时/超长/异常/显式声明）都必须把 IsConst 置回 $false。否则下游会拿从未赋值的 $RowResult 去走 TinySharp，编出一个只输出空行的哑 exe（默认宿主编译被跳过）。#_pragma constEvalTimeout / #_pragma noConstEval 是脚本可用的显式逃生舱，也让本测试无需真的等 7 秒超时。先单测 ConstProgramCheck.ps1 的回退分支，避免为造超时再跑一次完整宿主编译。
 	$constTimeoutPs1 = Join-Path $buildDir 'const-timeout.ps1'
 	Set-Content -LiteralPath $constTimeoutPs1 -Encoding UTF8 -Value @'
 #_pragma constEvalTimeout
@@ -294,8 +285,7 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 		throw 'noConstEval pragma left IsConst=$true (issue 63): should skip const eval'
 	}
 
-	# 端到端：带逃生舱 pragma 的脚本必须回退成可用的普通宿主 exe（而不是哑 exe），
-	# 且预处理器不得把它当未知 pragma 报错。
+	# 端到端：带逃生舱 pragma 的脚本必须回退成可用的普通宿主 exe（而不是哑 exe），且预处理器不得把它当未知 pragma 报错。
 	$constE2ePs1 = Join-Path $buildDir 'const-fallback-e2e.ps1'
 	$constE2eExe = Join-Path $buildDir 'const-fallback-e2e.exe'
 	Set-Content -LiteralPath $constE2ePs1 -Encoding UTF8 -Value @'
@@ -308,8 +298,7 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 		throw "const-eval fallback produced a broken exe (issue 63), got: $($constE2e.Output)"
 	}
 
-	# 标准输入按需消费（issue 62）：脚本顶层不用 $input 时，重定向 stdin 不被读取，
-	# 父进程一直保持管道打开也不会阻塞启动；用到 $input 的脚本仍能收到管道输入。
+	# 标准输入按需消费（issue 62）：脚本顶层不用 $input 时，重定向 stdin 不被读取，父进程一直保持管道打开也不会阻塞启动；用到 $input 的脚本仍能收到管道输入。
 	$stdinDir = Join-Path $buildDir 'stdin'
 	New-Item -ItemType Directory -Path $stdinDir -Force | Out-Null
 

@@ -3,27 +3,27 @@
 #_if PSScript
 <#
 .SYNOPSIS
-run a web server to allow users to compile powershell scripts
+运行一个 Web 服务器，允许用户编译 PowerShell 脚本
 .DESCRIPTION
-run a web server to allow users to compile powershell scripts
+运行一个 Web 服务器，允许用户编译 PowerShell 脚本
 .PARAMETER HostUrl
-The url of the web server
+Web 服务器的 URL
 .PARAMETER MaxCompileThreads
-The maximum number of compile threads
+最大编译线程数
 .PARAMETER MaxCompileTime
-The maximum compile time of a compile in seconds
+单次编译的最大时长（秒）
 .PARAMETER ReqLimitPerMin
-The maximum number of requests per minute per IP
+每个 IP 每分钟的最大请求数
 .PARAMETER MaxCachedFileSize
-The maximum size of the cached file
+缓存文件的最大大小
 .PARAMETER MaxScriptFileSize
-The maximum size of the script file
+脚本文件的最大大小
 .PARAMETER CacheDir
-The directory to store the cached files
+存放缓存文件的目录
 .PARAMETER Localize
-The language code to be used for server-side logging
+用于服务器端日志记录的语言代码
 .PARAMETER help
-Display help message
+显示帮助信息
 .EXAMPLE
 Start-ps12exeWebServer
 .EXAMPLE
@@ -75,18 +75,18 @@ param (
 		return
 	}
 
-	# Set Console Window Title
+	# 设置控制台窗口标题
 	$BackUpTitle = $Host.UI.RawUI.WindowTitle
 	$Host.UI.RawUI.WindowTitle = "ps12exe Web Server"
 
 	Write-Host $LocalizeData.ExitServerTip -ForegroundColor Yellow
 	$LocalizeData = $LocalizeData.WebServerI18nData
 
-	# Define a hashtable to track request counts per IP
+	# 定义一个哈希表来跟踪每个 IP 的请求数
 	$ipRequestCount = @{}
 	# 一个队列用于装载$AsyncResult和$Runspace以及其他信息，直到$AsyncResult结束我们才能对$Runspace进行Dispose。。。
 	$AsyncResultArray = New-Object System.Collections.ArrayList
-	# Create a runspace pool
+	# 创建 Runspace 池
 	$runspacePool = [runspacefactory]::CreateRunspacePool(1, $MaxCompileThreads)
 	$runspacePool.Open()
 
@@ -106,7 +106,7 @@ param (
 		}
 		$ipRequestCount[$clientIP]++
 
-		# Check if the IP has exceeded the limit (e.g., 5 requests per minute)
+		# 检查该 IP 是否已超过限制（例如每分钟 5 个请求）
 		if ($ipRequestCount[$clientIP] -gt $ReqLimitPerMin -and $clientIP -ne '127.0.0.1') {
 			Write-Verbose ($LocalizeData.ReqLimitExceeded429 -f @($clientIP, $ReqLimitPerMin))
 			$context.Response.StatusCode = 429
@@ -114,7 +114,7 @@ param (
 			$buffer = [System.Text.Encoding]::UTF8.GetBytes('Too many requests')
 			return
 		}
-		# hash of user input
+		# 用户输入的哈希
 		$userInputHash = [System.Security.Cryptography.SHA256]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes($userInput))
 		$userInputHashStr = ''
 		foreach ($byte in $userInputHash) {
@@ -209,7 +209,7 @@ param (
 				return
 			}
 			'/bgm.mid' {
-				# midi file
+				# midi 文件
 				$context.Response.ContentType = "audio/midi"
 				$buffer = [System.IO.File]::ReadAllBytes("$PSScriptRoot/../bin/Unravel.mid")
 			}
@@ -256,8 +256,7 @@ param (
 	}
 
 	try {
-		# 无限循环，用于监听请求 直到用户按下 Ctrl+C
-		# 变量用于一分钟计时
+		# 无限循环，用于监听请求直到用户按下 Ctrl+C；$Timer 变量用于一分钟计时
 		$Timer = 0
 		while ($http.IsListening) {
 			$Async = $http.BeginGetContext($null, $null)
@@ -284,7 +283,7 @@ param (
 		$runspacePool.Close()
 		$runspacePool.Dispose()
 		Write-Host $LocalizeData.ServerStopped -ForegroundColor Yellow
-		# Restore Console Window Title
+		# 恢复控制台窗口标题
 		$Host.UI.RawUI.WindowTitle = $BackUpTitle
 		# 清空缓存
 		Remove-Item $CacheDir/* -Recurse -Force -ErrorAction Ignore

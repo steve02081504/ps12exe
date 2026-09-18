@@ -1,31 +1,25 @@
 #Requires -Version 7.0
 <#
 .SYNOPSIS
-	Downloads the latest AsmResolver and writes a size-trimmed copy into ps12exe's bin.
+	下载最新的 AsmResolver，并把经过体积裁剪的副本写入 ps12exe 的 bin。
 .DESCRIPTION
-	ps12exe uses only a small part of AsmResolver. This script:
-	  1. resolves the newest stable AsmResolver version on nuget.org,
-	  2. downloads the netstandard2.0 assemblies (loadable from both Windows PowerShell 5.1
-	     / .NET Framework and PowerShell 7 / .NET),
-	  3. builds tools/AsmResolver (TinySharp + exe21sp + src/ExeSinker.ps1 usage) into a root
-	     assembly,
-	  4. runs the .NET IL Linker (illink) with that root so every AsmResolver member ps12exe
-	     never reaches is dropped; all fields are preserved for the types that have literal
-	     (const/enum) fields, because Add-Type inlines those values and would otherwise fail
-	     to recompile the C# sources,
-	  5. copies the result into src/bin/AsmResolver.
-	The trimmed assemblies keep netstandard2.0 references, so they stay usable on both runtimes.
-	Run the CI test scripts afterwards to verify the result.
+	ps12exe 只用到 AsmResolver 的一小部分。本脚本：
+	  1. 在 nuget.org 上解析最新的稳定版 AsmResolver，
+	  2. 下载 netstandard2.0 程序集（可从 Windows PowerShell 5.1 / .NET Framework 和 PowerShell 7 / .NET 两种运行时加载），
+	  3. 把 tools/AsmResolver（TinySharp + exe21sp + src/ExeSinker.ps1 用法）构建成一个根程序集，
+	  4. 用该根对 .NET IL Linker（illink）运行，使 ps12exe 永不触达的每个 AsmResolver 成员都被丢弃；对具有字面量（const/enum）字段的类型会保留所有字段，因为 Add-Type 会内联这些值，否则将无法重新编译 C# 源码，
+	  5. 把结果复制到 src/bin/AsmResolver。
+	裁剪后的程序集保留 netstandard2.0 引用，因此在两种运行时上都可用。之后请运行 CI 测试脚本验证结果。
 .PARAMETER Version
-	AsmResolver version to fetch. Defaults to the latest stable version.
+	要获取的 AsmResolver 版本。默认为最新稳定版。
 .PARAMETER TargetFramework
-	TFM used to build the root assembly. Defaults to the newest installed .NET reference pack.
+	用于构建根程序集的 TFM。默认为最新安装的 .NET 引用包。
 .PARAMETER OutputDirectory
-	Where the trimmed assemblies are written. Defaults to src/bin/AsmResolver.
+	裁剪后程序集的写入位置。默认为 src/bin/AsmResolver。
 .PARAMETER WorkDirectory
-	Download/intermediate cache. Defaults to %TEMP%\ps12exe-asmresolver.
+	下载/中间缓存。默认为 %TEMP%\ps12exe-asmresolver。
 .PARAMETER Force
-	Re-download and re-trim even when a cached copy exists.
+	即使存在缓存副本也重新下载并重新裁剪。
 .EXAMPLE
 	./Update-AsmResolver.ps1
 .EXAMPLE
@@ -157,7 +151,7 @@ function Get-IllinkPath {
 		$property = ($output.Substring($output.IndexOf('{')) | ConvertFrom-Json).Properties.ILLinkTasksAssembly
 	}
 	else {
-		# Older/single-property msbuild prints the raw value; skip any restore noise lines.
+		# 旧版/单属性 msbuild 会打印原始值；跳过任何 restore 噪音行。
 		$property = @($output -split "`r?`n" | Where-Object { $_.Trim() -like '*.dll' })[-1]
 	}
 	if (-not $property) { throw "Microsoft.NET.ILLink.Tasks was not restored:`n$output" }
@@ -216,12 +210,9 @@ Write-Host "Root target framework: $TargetFramework"
 $libDir = Get-AsmResolverLibDirectory -Version $Version -WorkDirectory $WorkDirectory -Force:$Force
 $refDir = Get-NetStandardRefDirectory -WorkDirectory $WorkDirectory -Force:$Force
 
-# Build the root assembly against the full AsmResolver. The build also restores
-# Microsoft.NET.ILLink.Tasks (PublishTrimmed=true), which is then invoked directly below;
-# publishing self-contained just to satisfy the trimmer is deliberately avoided.
+# 针对完整的 AsmResolver 构建根程序集。构建过程还会还原 Microsoft.NET.ILLink.Tasks（PublishTrimmed=true），随后在下方直接调用它；刻意避免仅为满足裁剪器而进行自包含发布。
 Write-Host 'Building root assembly'
-# Restore explicitly: the implicit restore of `dotnet build` does not always carry the
-# TargetFramework override, which leaves a project.assets.json for the wrong framework.
+# 显式还原：`dotnet build` 的隐式还原并不总能带上 TargetFramework 覆盖，这会遗留一个面向错误框架的 project.assets.json。
 & dotnet restore $ProjectFile -nologo -p:TargetFramework=$TargetFramework
 if ($LASTEXITCODE) { throw "dotnet restore failed with exit code $LASTEXITCODE" }
 & dotnet build $ProjectFile -c Release -nologo --no-restore -p:AsmResolverLibDir=$libDir -p:TargetFramework=$TargetFramework

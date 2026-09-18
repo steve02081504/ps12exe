@@ -21,20 +21,19 @@ else {
 		GetAssembly "System.Management.Automation"
 	}
 	else {
-		# 绝不要直接使用 System.Private.CoreLib.dll，因为它是netlib的内部实现，而不是公共API
-		# [int].Assembly.Location 等基础类型的程序集也是它。
+		# 绝不要直接使用 System.Private.CoreLib.dll，因为它是netlib的内部实现，而不是公共API；[int].Assembly.Location 等基础类型的程序集也是它。
 		GetAssembly "mscorlib"
 		GetAssembly "System.IO.Compression" "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
 		GetAssembly "System.Management.Automation"
 
-		# If noConsole is true, add System.Windows.Forms.dll and System.Drawing.dll to the reference assemblies
+		# 如果 noConsole 为 true，则将 System.Windows.Forms.dll 和 System.Drawing.dll 加入引用程序集列表
 		if ($noConsole) {
 			GetAssembly "System.Windows.Forms" "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
 			GetAssembly "System.Drawing" "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
 		}
 
 		GetAssembly "System.Core" "Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
-		"System.dll" # some furking magic
+		"System.dll" # 某种魔法
 	}
 }
 
@@ -55,9 +54,7 @@ else {
 
 . $PSScriptRoot\BuildFrame.ps1
 
-# 是否在脚本顶层使用了 $input：只有用到时才把重定向的标准输入逐行读成管道输入（issue 62）。
-# 只扫描脚本顶层（也就是会被包进 PSEXEMainFunction 的那个 $input）；函数、脚本块、类内部的 $input
-# 是它们各自的管道输入，与宿主无关，不计入。解析失败/无 AST 时保守起见仍读取输入。
+# 是否在脚本顶层使用了 $input：只有用到时才把重定向的标准输入逐行读成管道输入（issue 62）。只扫描脚本顶层（也就是会被包进 PSEXEMainFunction 的那个 $input）；函数、脚本块、类内部的 $input 是它们各自的管道输入，与宿主无关，不计入。解析失败/无 AST 时保守起见仍读取输入。
 $ScriptUsesInput = $true
 if ($AST) {
 	$ScriptUsesInput = $false
@@ -158,7 +155,7 @@ if ($iconFile -match "^(https?|ftp)://") {
 	}
 }
 elseif ($iconFile) {
-	# retrieve absolute path independent if path is given relative or absolute
+	# 获取绝对路径，无论给出的是相对路径还是绝对路径
 	$iconFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($iconFile)
 
 	if (!(Test-Path $iconFile -PathType Leaf)) {
@@ -186,9 +183,9 @@ if ($iconFile) {
 			$iconStream = New-Object System.IO.MemoryStream
 			$writer = New-Object System.IO.BinaryWriter($iconStream)
 
-			$writer.Write([UInt16]0)  # Reserved
-			$writer.Write([UInt16]1)  # Type (ICO)
-			$writer.Write([UInt16]$sizes.Count)  # Number of images
+			$writer.Write([UInt16]0)  # 保留
+			$writer.Write([UInt16]1)  # 类型（ICO）
+			$writer.Write([UInt16]$sizes.Count)  # 图像数量
 
 			$directoryOffset = $iconStream.Position
 			$imageDataOffset = $directoryOffset + (16 * $sizes.Count)

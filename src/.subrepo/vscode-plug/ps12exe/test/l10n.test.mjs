@@ -7,8 +7,7 @@ import { MESSAGES } from '../lib/preprocessor.mjs'
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 /**
- * Every runtime string the extension passes to `vscode.l10n.t`, i.e. the
- * `t('…')` literals in the sources plus the analyzer's message constants.
+ * 扩展传给 `vscode.l10n.t` 的所有运行时字符串，即源码中的 `t('…')` 字面量加上分析器的消息常量。
  *
  * @returns {Set<string>}
  */
@@ -26,7 +25,7 @@ function usedRuntimeKeys () {
 	return keys
 }
 
-/** All `%key%` placeholders referenced anywhere in `package.json`. */
+/** `package.json` 中任何位置引用的所有 `%key%` 占位符。 */
 function referencedPackageKeys (pkg) {
 	const keys = new Set()
 	const scan = (value) => {

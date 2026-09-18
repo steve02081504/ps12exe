@@ -63,7 +63,7 @@ public partial class ps12exeOnlineMain : Page
 				if (!acquired) throw new Exception(locale.ServerBusy);
 
 				try {
-					// use powershell api to compile by ps12exe
+					// 调用 PowerShell API 通过 ps12exe 编译
 					var pwsh = System.Management.Automation.PowerShell.Create();
 
 					// 准备编译参数

@@ -1,7 +1,7 @@
 ﻿param ($Localize)
 
 #_if PSScript
-# Load localization data
+# 加载本地化数据
 . "$PSScriptRoot\..\predicate.ps1"
 . "$PSScriptRoot\..\TaskbarProgress.ps1"
 . "$PSScriptRoot\..\WriteI18n.ps1"
@@ -9,7 +9,7 @@ $LocalizeData = . "$PSScriptRoot\..\LocaleLoader.ps1" -Localize $Localize
 Set-I18nData -I18nData $LocalizeData.InteractI18nData
 $I18n = $LocalizeData.InteractI18nData
 
-# Set window title for interactive mode
+# 为交互模式设置窗口标题
 $OldTitle = $Host.UI.RawUI.WindowTitle
 $Host.UI.RawUI.WindowTitle = "ps12exe - $($I18n.ModeName)"
 
@@ -20,7 +20,7 @@ try {
 		$cmdParams = [System.Collections.ArrayList]::new()
 		Write-TaskbarProgress -Percent 0
 
-		# Input file prompt
+		# 输入文件提示
 		$inputFile = ''
 		do {
 			Write-SymboledInfoI18n EnterInputFile
@@ -30,21 +30,20 @@ try {
 				Write-SymboledErrorI18n InvalidInputFile
 			}
 			elseif ($inputFile -match "^(https?|ftp)://") {
-				# URL: Use HEAD request to verify file exists
+				# URL：使用 HEAD 请求验证文件是否存在
 				try {
 					$null = Invoke-WebRequest -Uri $inputFile -Method Head -ErrorAction Stop
-					# For URLs, extension check is optional (URL may not have extension)
-					# But if it has extension before query string or fragment, it should be valid
+					# 对于 URL，扩展名检查是可选的（URL 可能没有扩展名）；但如果查询字符串或片段之前有扩展名，则它应当是有效的
 					$urlWithoutQuery = $inputFile -replace '[?#].*$', ''
 					if ($urlWithoutQuery -match "\.(ps1|psd1|tmp)$") {
-						# Valid URL with valid extension
+						# 有效的 URL 且扩展名有效
 					}
 					elseif ($urlWithoutQuery -match "\.[^./]+$") {
-						# URL has extension but not valid
+						# URL 有扩展名但无效
 						Write-SymboledErrorI18n InvalidExtension
 						$inputFile = ''
 					}
-					# If no extension, accept it (URL might work without extension)
+					# 如果没有扩展名，则接受它（URL 没有扩展名也可能可用）
 				}
 				catch {
 					Write-SymboledErrorI18n FileDoesNotExist
@@ -52,7 +51,7 @@ try {
 				}
 			}
 			else {
-				# Local file path
+				# 本地文件路径
 				if (-not (Test-Path -LiteralPath $inputFile -PathType Leaf)) {
 					Write-SymboledErrorI18n FileDoesNotExist
 					$inputFile = ''
@@ -66,7 +65,7 @@ try {
 		$cmdParams.Add("-inputFile `"$inputFile`"") | Out-Null
 		Write-TaskbarProgress -Percent 15
 
-		# Output file prompt
+		# 输出文件提示
 		$outputFile = ''
 		Write-SymboledInfoI18n EnterOutputFile
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
@@ -80,14 +79,14 @@ try {
 		}
 		Write-TaskbarProgress -Percent 30
 
-		# Additional information prompt
+		# 附加信息提示
 		Write-SymboledQuestionI18n AddAdditionalInfo AdditionalInfoPrompt
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 		if (IsEnable(Read-Host)) {
 			Write-SymboledProgressI18n CollectingInfo
 			$resourceParams = @{}
 
-			# Icon
+			# 图标
 			$icon = ''
 			do {
 				Write-SymboledInfoI18n IconPath
@@ -96,7 +95,7 @@ try {
 				if ($iconInput) {
 					$isValid = $false
 					if ($iconInput -match "^(https?|ftp)://") {
-						# URL: Use HEAD request to verify file exists
+						# URL：使用 HEAD 请求验证文件是否存在
 						try {
 							$null = Invoke-WebRequest -Uri $iconInput -Method Head -ErrorAction Stop
 							$isValid = $true
@@ -106,7 +105,7 @@ try {
 						}
 					}
 					else {
-						# Local file path
+						# 本地文件路径
 						if (Test-Path -LiteralPath $iconInput -PathType Leaf) {
 							$isValid = $true
 						}
@@ -122,12 +121,12 @@ try {
 					}
 				}
 				else {
-					# User chose to skip icon by leaving blank
+					# 用户留空以跳过图标
 					break
 				}
 			} while ($true)
 
-			# Other resources
+			# 其他资源
 			$resourcePrompts = @{
 				title       = $I18n.EnterTitle
 				description = $I18n.EnterDescription
@@ -143,7 +142,7 @@ try {
 				if ($value) { $resourceParams[$key] = $value }
 			}
 
-			# Version
+			# 版本
 			Write-SymboledInfoI18n Version
 			Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 			$version = Read-Host
@@ -166,7 +165,7 @@ try {
 		}
 		Write-TaskbarProgress -Percent 50
 
-		# Other options
+		# 其他选项
 		Write-SymboledQuestionI18n CompileAsGui AdditionalInfoPrompt
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 		if (IsEnable(Read-Host)) {
@@ -181,13 +180,13 @@ try {
 		}
 		Write-TaskbarProgress -Percent 70
 
-		# Code signing
+		# 代码签名
 		Write-SymboledQuestionI18n EnableCodeSigning AdditionalInfoPrompt
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 		if (IsEnable(Read-Host)) {
 			$codeSigningParams = @{}
 
-			# Certificate Path
+			# 证书路径
 			$certPath = ''
 			do {
 				Write-SymboledInfoI18n EnterCertificatePath
@@ -199,7 +198,7 @@ try {
 						Write-SymboledErrorI18n InvalidCertificateExtension
 					}
 					elseif ($certPathInput -match "^(https?|ftp)://") {
-						# URL: Use HEAD request to verify file exists
+						# URL：使用 HEAD 请求验证文件是否存在
 						try {
 							$null = Invoke-WebRequest -Uri $certPathInput -Method Head -ErrorAction Stop
 							$isValid = $true
@@ -209,7 +208,7 @@ try {
 						}
 					}
 					else {
-						# Local file path
+						# 本地文件路径
 						if (Test-Path -LiteralPath $certPathInput -PathType Leaf) {
 							$isValid = $true
 						}
@@ -222,7 +221,7 @@ try {
 						$certPath = $certPathInput
 						$codeSigningParams.Path = $certPath
 
-						# Certificate Password
+						# 证书密码
 						Write-SymboledInfoI18n EnterCertificatePassword
 						Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 						$certPassword = Read-Host -AsSecureString
@@ -235,12 +234,12 @@ try {
 					}
 				}
 				else {
-					# User chose to skip certificate path by leaving blank
+					# 用户留空以跳过证书路径
 					break
 				}
 			} while ($true)
 
-			# Certificate Thumbprint
+			# 证书指纹
 			Write-SymboledInfoI18n EnterCertificateThumbprint
 			Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 			$thumbprint = Read-Host
@@ -248,7 +247,7 @@ try {
 				$codeSigningParams.Thumbprint = $thumbprint
 			}
 
-			# Timestamp Server
+			# 时间戳服务器
 			Write-SymboledInfoI18n EnterTimestampServer
 			Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 			$timestampServer = Read-Host
@@ -256,7 +255,7 @@ try {
 				$codeSigningParams.TimestampServer = $timestampServer
 			}
 			else {
-				# Use default timestamp server
+				# 使用默认时间戳服务器
 				$codeSigningParams.TimestampServer = "http://timestamp.digicert.com"
 			}
 
@@ -277,7 +276,7 @@ try {
 		}
 		Write-TaskbarProgress -Percent 85
 
-		# Build and execute command
+		# 构建并执行命令
 		Write-SymboledProgressI18n BuildingCommand
 		if (Get-Command ps12exe -ErrorAction SilentlyContinue) {
 			$command = "ps12exe " + ($cmdParams -join ' ')

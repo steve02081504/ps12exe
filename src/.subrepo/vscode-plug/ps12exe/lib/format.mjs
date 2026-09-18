@@ -1,7 +1,4 @@
-// The pure (VS Code independent) half of the ps12exe formatter: everything that
-// happens after the official PowerShell formatter has produced a base text.
-// Keeping it here lets the tests exercise the exact pipeline without a running
-// editor instance.
+// ps12exe formatter 中与 VS Code 无关的纯逻辑部分：官方 PowerShell formatter 生成基础文本之后发生的所有事情。放在这里能让测试在没有运行中编辑器实例的情况下走完整条流水线。
 import { createHash } from 'node:crypto'
 import { analyze, indentText, branchFragments, restoreParenIndentation, restoreClauseIndentation } from './preprocessor.mjs'
 import { resolvePlainPowerShell, findIncompleteFragments } from './powershell.mjs'
@@ -11,13 +8,9 @@ const INCOMPLETE_CACHE_LIMIT = 32
 const incompleteCache = new Map()
 
 /**
- * Finds the blocks whose body cannot be parsed as a standalone PowerShell unit
- * (for example an `if` opened inside the block and closed outside of it). Such
- * blocks must not be pushed one level deeper, otherwise their body drifts away
- * from the code that continues past `#_endif`.
+ * 找出函数体无法作为独立 PowerShell 单元解析的块（例如在块内打开、在块外关闭的 `if`）。这类块绝不能整体缩进一层，否则其函数体会偏离 `#_endif` 之后继续的代码。
  *
- * The check uses the real PowerShell parser; when no host is available nothing
- * is flagged. Results are cached per document text.
+ * 该检查使用真正的 PowerShell 解析器；没有可用宿主时不会标记任何内容。结果按文档文本缓存。
  *
  * @param {string} text
  * @param {(message: string) => void} [onError]
@@ -54,14 +47,11 @@ async function findIncompleteBlocks (text, onError) {
 }
 
 /**
- * Applies the ps12exe formatting rules to `baseText` (the text produced by the
- * official formatter, or the original document when it is unavailable):
- * repairs the official formatter's attribute/scriptblock quirk and then indents
- * the preprocessor blocks.
+ * 对 `baseText`（官方 formatter 产生的文本，若其不可用则为原始文档）应用 ps12exe 格式化规则：修复官方 formatter 的 attribute/scriptblock 怪癖，然后缩进 preprocessor 块。
  *
  * @param {string} baseText
  * @param {object} [options]
- * @param {string} [options.indentUnit] defaults to a tab
+ * @param {string} [options.indentUnit] 默认为制表符
  * @param {(message: string) => void} [options.onError]
  * @returns {Promise<string>}
  */
@@ -74,20 +64,14 @@ async function formatPreprocessedText (baseText, options = {}) {
 }
 
 /**
- * Formats `currentText` from `baseText`, which must be the official formatter's
- * output. The preprocessor indentation is layered on top of the syntax
- * indentation the official formatter produces, so it can only be applied to
- * that base.
+ * 基于 `baseText`（必须是官方 formatter 的输出）格式化 `currentText`。preprocessor 缩进叠加在官方 formatter 产生的语法缩进之上，因此只能应用于该基础文本。
  *
- * When the official formatter is unavailable, `baseText` would be the document
- * itself, which already carries the preprocessor indentation of a previous run.
- * Applying the rules again would then compound one level per format, so the
- * document is returned unchanged instead.
+ * 当官方 formatter 不可用时，`baseText` 会是文档本身，而它已带有上一次运行的 preprocessor 缩进。再次应用规则会导致每次格式化都多缩进一层，因此改为原样返回文档。
  *
- * @param {string} currentText the document as it is now
- * @param {string} baseText the text `formatPreprocessedText` runs on
- * @param {boolean} officialApplied whether `baseText` came from the official formatter
- * @param {object} [options] forwarded to {@link formatPreprocessedText}
+ * @param {string} currentText 当前状态的文档
+ * @param {string} baseText `formatPreprocessedText` 运行所基于的文本
+ * @param {boolean} officialApplied `baseText` 是否来自官方 formatter
+ * @param {object} [options] 转发给 {@link formatPreprocessedText}
  * @returns {Promise<string>}
  */
 async function applyPreprocessorFormatting (currentText, baseText, officialApplied, options = {}) {

@@ -199,58 +199,58 @@ Param(
 	#_endif
 	[string]$Localize,
 	[Switch]$help,
-	# deprecated. use `-noConfigFile` instead.
+	# 已弃用。请改用 `-noConfigFile`。
 	[Parameter(DontShow)]
 	[Switch]$noConfigFile,
-	# deprecated. use `-Architecture x86` instead.
+	# 已弃用。请改用 `-Architecture x86`。
 	[Parameter(DontShow)]
 	[Switch]$x86,
-	# deprecated. use `-Architecture x64` instead.
+	# 已弃用。请改用 `-Architecture x64`。
 	[Parameter(DontShow)]
 	[Switch]$x64,
-	# deprecated. use `-ThreadModel STA` instead.
+	# 已弃用。请改用 `-ThreadModel STA`。
 	[Parameter(DontShow)]
 	[Switch]$STA,
-	# deprecated. use `-ThreadModel MTA` instead.
+	# 已弃用。请改用 `-ThreadModel MTA`。
 	[Parameter(DontShow)]
 	[Switch]$MTA,
-	# deprecated. use `-resourceParams {iconFile = $iconFile}` instead.
+	# 已弃用。请改用 `-resourceParams {iconFile = $iconFile}`。
 	[Parameter(DontShow)]
 	[String]$iconFile,
-	# deprecated. use `-resourceParams {title = $title}` instead.
+	# 已弃用。请改用 `-resourceParams {title = $title}`。
 	[Parameter(DontShow)]
 	[String]$title,
-	# deprecated. use `-resourceParams {description = $description}` instead.
+	# 已弃用。请改用 `-resourceParams {description = $description}`。
 	[Parameter(DontShow)]
 	[String]$description,
-	# deprecated. use `-resourceParams {company = $company}` instead.
+	# 已弃用。请改用 `-resourceParams {company = $company}`。
 	[Parameter(DontShow)]
 	[String]$company,
-	# deprecated. use `-resourceParams {product = $product}` instead.
+	# 已弃用。请改用 `-resourceParams {product = $product}`。
 	[Parameter(DontShow)]
 	[String]$product,
-	# deprecated. use `-resourceParams {copyright = $copyright}` instead.
+	# 已弃用。请改用 `-resourceParams {copyright = $copyright}`。
 	[Parameter(DontShow)]
 	[String]$copyright,
-	# deprecated. use `-resourceParams {trademark = $trademark}` instead.
+	# 已弃用。请改用 `-resourceParams {trademark = $trademark}`。
 	[Parameter(DontShow)]
 	[String]$trademark,
-	# deprecated. use `-resourceParams {version = $version}` instead.
+	# 已弃用。请改用 `-resourceParams {version = $version}`。
 	[Parameter(DontShow)]
 	[String]$version,
-	# deprecated. use `-targetRuntime Framework2.0` instead.
+	# 已弃用。请改用 `-targetRuntime Framework2.0`。
 	[Parameter(DontShow)]
 	[Switch]$runtime20,
-	# deprecated. use `-targetRuntime Framework4.0` instead.
+	# 已弃用。请改用 `-targetRuntime Framework4.0`。
 	[Parameter(DontShow)]
 	[Switch]$runtime40,
-	# internal. do not use it unless you know what you are doing.
+	# 内部使用。除非你清楚自己在做什么，否则不要使用。
 	[Parameter(DontShow)]
 	[Switch]$nested,
-	# internal. do not use it unless you know what you are doing.
+	# 内部使用。除非你清楚自己在做什么，否则不要使用。
 	[Parameter(DontShow)]
 	[string]$DllExportList,
-	# dev. do not use it unless you know what you are doing.
+	# 开发用。除非你清楚自己在做什么，否则不要使用。
 	[Parameter(DontShow)]
 	[Switch]$StartupTiming
 )
@@ -275,7 +275,7 @@ function RollUp {
 		}
 	}
 }
-if ($Debug) { $DebugPreference = 'Continue' } # fix -debug sets it to 'Inquire'
+if ($Debug) { $DebugPreference = 'Continue' } # 修复 -debug 会把它设为 'Inquire' 的问题
 #_if PSScript
 	$LocaleLoaderArg = @{ Localize = $Localize }
 	if ($nested) { $LocaleLoaderArg.FailedLoadLocaleData = {} }
@@ -293,7 +293,7 @@ function Show-Help {
 }
 #_if PSScript
 	$versionNow = (Get-Module -ListAvailable ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1).Version
-	if ($versionNow -ne '0.0.0') { # not dev version
+	if ($versionNow -ne '0.0.0') { # 非开发版本
 		if (Test-Path $env:TEMP/ps12exe_version.txt) {
 			$versionOnline = Get-Content $env:TEMP/ps12exe_version.txt -Encoding utf8 | Select-Object -First 1
 			if ((-not $nested) -and (-not $SkipVersionCheck) -and ($versionNow -ne $versionOnline)) {
@@ -326,7 +326,7 @@ if (-not ($inputFile -or $Content)) {
 		$global:LastExitCode = 2 # 调用格式错误
 	}
 	else {
-		& "$PSScriptRoot\src\Interact\main.ps1" -Localize $Localize # start interactive mode if no input
+		& "$PSScriptRoot\src\Interact\main.ps1" -Localize $Localize # 没有输入时启动交互模式
 	}
 	return
 }
@@ -335,14 +335,13 @@ $Params = $PSBoundParameters
 $ParamList = $MyInvocation.MyCommand.Parameters
 $Params.Remove('Content') | Out-Null #防止回滚覆盖
 $Params.Remove('DllExportList') | Out-Null
-$Params.Remove('PreprocessOnly') | Out-Null # Remove PreprocessOnly from params for compilation step
+$Params.Remove('PreprocessOnly') | Out-Null # 从参数中移除 PreprocessOnly，供编译步骤使用
 
 function bytesOfString([string]$str) {
 	if ($str) { [system.Text.Encoding]::UTF8.GetBytes($str).Count } else { 0 }
 }
 function Test-StdoutRedirected {
-	# Console redirect (pipe / 1>file). In interactive ConsoleHost, `$exe = ps12exe` captures stdout
-	# without setting IsOutputRedirected — still stdout capture, not stderr (2>$null alone).
+	# 控制台重定向（管道 / 1>文件）。在交互式 ConsoleHost 中，`$exe = ps12exe` 会在不设置 IsOutputRedirected 的情况下捕获 stdout——仍属 stdout 捕获，而非 stderr（仅 2>$null）。
 	if ([System.Console]::IsOutputRedirected) { return $true }
 	$line = (Get-PSCallStack)[1].InvocationInfo.Line
 	return $line -match '\$\w+\s*='
@@ -405,7 +404,7 @@ if (!$nested) {
 	if ($minifyer) {
 		Write-I18n Host MinifyingScript
 		try {
-			# get caller's stackframe
+			# 获取调用方的堆栈帧
 			$Stack = Get-PSCallStack
 			$Frame = $Stack[1]
 			$Variables = $Frame.GetFrameVariables()
@@ -509,7 +508,7 @@ $NoResource = -not $resourceParams.Count
 $iconFile = $resourceParams['iconFile']
 $resourceParams.Remove('iconFile')
 
-# retrieve absolute paths independent if path is given relative or absolute
+# 无论给定的是相对路径还是绝对路径，都获取绝对路径
 if (-not $inputFile) {
 	$inputFile = '.\a.ps1'
 }
@@ -683,7 +682,7 @@ if (!$configFile) {
 	}
 }
 
-# escape escape sequences in version info
+# 转义版本信息中的转义序列
 $resourceParamKeys | ForEach-Object {
 	if ($resourceParams.ContainsKey($_)) {
 		$resourceParams[$_] = $resourceParams[$_] -replace "\\", "\\"
@@ -881,7 +880,7 @@ $($_ | Format-List | Out-String)
 				$githubfeedback += "&$key=$([system.uri]::EscapeDataString($urlParams[$key]))"
 			}
 			Write-I18n Host OopsSomethingWentWrong -ForegroundColor Yellow
-			if ($versionNow -eq '0.0.0') {} # dev version, do noting
+			if ($versionNow -eq '0.0.0') {} # 开发版本，什么也不做
 			elseif ($versionNow -ne $versionOnline) {
 				Write-I18n Host TryUpgrade $versionOnline -ForegroundColor Yellow
 			}

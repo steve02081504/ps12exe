@@ -20,5 +20,5 @@ function LoadFileAsFunction($File, $FunctionName) {
 . $(LoadFileAsFunction $PSScriptRoot/src/Interact/main.ps1 Enter-ps12exeInteract)
 . $(LoadFileAsFunction $PSScriptRoot/exe21sp.ps1 exe21sp)
 
-# Export functions
+# 导出函数
 Export-ModuleMember -Function $Script:Functions

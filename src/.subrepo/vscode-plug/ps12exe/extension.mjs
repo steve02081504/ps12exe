@@ -20,7 +20,7 @@ let diagnosticCollection
 let missingPowerShellNotified = false
 const diagnosticsTimers = new Map()
 
-/** Localized string helper. */
+/** 本地化字符串辅助函数。 */
 function t (message, ...args) {
 	return vscode.l10n.t(message, ...args)
 }
@@ -31,9 +31,7 @@ function getOutputChannel () {
 }
 
 /**
- * Resolves the file the command should act on. Commands triggered from an
- * explorer/editor menu receive the resource as an argument, commands triggered
- * from the palette fall back to the active editor.
+ * 解析命令应作用的文件。从资源管理器/编辑器菜单触发的命令通过参数接收资源，从命令面板触发的命令回退到当前活动编辑器。
  *
  * @param {unknown} resource
  * @returns {vscode.Uri | undefined}
@@ -50,7 +48,7 @@ function isPs1 (uri) {
 	return !!uri && uri.scheme === 'file' && path.extname(uri.fsPath).toLowerCase() === '.ps1'
 }
 
-/** Maps the VS Code color theme to ps12exeGUI's `-UIMode` values. */
+/** 把 VS Code 颜色主题映射为 ps12exeGUI 的 `-UIMode` 值。 */
 function currentUiMode () {
 	switch (vscode.window.activeColorTheme.kind) {
 		case vscode.ColorThemeKind.Dark:
@@ -64,7 +62,7 @@ function currentUiMode () {
 	}
 }
 
-/** Opens a terminal that installs the ps12exe module for the current user. */
+/** 打开一个终端，为当前用户安装 ps12exe 模块。 */
 function installModule (host) {
 	const terminal = vscode.window.createTerminal(OUTPUT_CHANNEL_NAME)
 	terminal.sendText(`${host.command} -NoProfile -ExecutionPolicy Bypass -Command "Install-Module ps12exe -Scope CurrentUser -Force"`)
@@ -73,9 +71,7 @@ function installModule (host) {
 }
 
 /**
- * Resolves a usable PowerShell host. If the ps12exe module is missing it is
- * installed automatically (latest version), and only on failure offers the
- * manual terminal install.
+ * 解析可用的 PowerShell 宿主。若缺少 ps12exe 模块，会自动安装（最新版），仅在失败时才提供手动终端安装。
  *
  * @returns {Promise<{ command: string } | undefined>}
  */
@@ -112,8 +108,7 @@ async function requireHost () {
 }
 
 /**
- * Keeps the ps12exe module at the latest version in the background. Runs on
- * activation, unless disabled or running under the extension test harness.
+ * 在后台保持 ps12exe 模块为最新版。在激活时运行，除非被禁用或处于扩展测试框架下。
  *
  * @param {vscode.ExtensionContext} context
  */
@@ -136,8 +131,7 @@ async function autoUpdateModule (context) {
 }
 
 /**
- * Compiles the given `.ps1` file by invoking ps12exe with the file just like
- * the command line would.
+ * 编译给定的 `.ps1` 文件：像命令行那样用该文件调用 ps12exe。
  *
  * @param {vscode.Uri | undefined} resource
  */
@@ -192,7 +186,7 @@ async function compileCommand (resource) {
 }
 
 /**
- * Opens ps12exeGUI for the given `.ps1` file.
+ * 为给定的 `.ps1` 文件打开 ps12exeGUI。
  *
  * @param {vscode.Uri | undefined} resource
  */
@@ -221,10 +215,7 @@ async function guiCommand (resource) {
 }
 
 /**
- * Toggles the `#_!!` escape marker on every plain line of the selection, or of
- * the whole document when there is nothing selected. Other preprocessor
- * directives (`#_if`, `#_include`, …) and here-string/block-comment bodies are
- * left untouched, so the command never turns a directive into a comment.
+ * 在选区的每一普通行上切换 `#_!!` 转义标记；没有选区时则为整个文档。其他 preprocessor 指令（`#_if`、`#_include` 等）以及 here-string/块注释函数体保持不动，因此该命令永远不会把指令变成注释。
  *
  * @returns {Promise<void>}
  */
@@ -240,7 +231,7 @@ async function toggleBangCommand () {
 	const wholeDocument = selection.isEmpty
 	const first = wholeDocument ? 0 : selection.start.line
 	let last = wholeDocument ? document.lineCount - 1 : selection.end.line
-	// A selection ending at column 0 does not include that line.
+	// 结束于第 0 列的选区不包含该行。
 	if (!wholeDocument && selection.end.character === 0 && last > first) last -= 1
 
 	const lines = Array.from({ length: document.lineCount }, (_, index) => document.lineAt(index).text)
@@ -260,8 +251,7 @@ function fullDocumentRange (document) {
 function editorFormattingOptions (document) {
 	const config = vscode.workspace.getConfiguration('editor', document)
 	return {
-		// `[powershell]` defaults to tabs (see `configurationDefaults` in
-		// package.json); an explicit `editor.insertSpaces` still wins.
+		// `[powershell]` 默认为制表符（见 package.json 中的 `configurationDefaults`）；显式的 `editor.insertSpaces` 仍然优先。
 		insertSpaces: config.get('insertSpaces', false),
 		tabSize: config.get('tabSize', 4)
 	}
@@ -308,8 +298,7 @@ function notifyMissingPowerShell () {
 }
 
 /**
- * Runs the official formatter (when available) and then applies the ps12exe
- * preprocessor indentation.
+ * 运行官方 formatter（可用时），然后应用 ps12exe preprocessor 缩进。
  *
  * @param {vscode.TextDocument} document
  * @param {vscode.FormattingOptions} options
@@ -364,12 +353,11 @@ async function formatDocumentCommand (uri) {
 }
 
 /**
- * Appends the matching `#_endif` below a freshly opened block. The cursor stays
- * on the blank line, so the block body can be typed straight away.
+ * 在刚打开的块下方追加匹配的 `#_endif`。光标停留在空行上，因此可以直接键入块函数体。
  *
  * @param {vscode.TextEditor} editor
- * @param {number} line line the cursor moved to after the newline
- * @param {string} indent indentation of the `#_if` line
+ * @param {number} line 换行后光标移动到的行
+ * @param {string} indent `#_if` 行的缩进
  */
 async function insertEndif (editor, line, indent) {
 	const document = editor.document
@@ -384,8 +372,7 @@ async function insertEndif (editor, line, indent) {
 }
 
 /**
- * Closes a `#_if …` line with `#_endif` as soon as the user starts the block
- * body. Disable with `ps12exe.autoCloseIf`.
+ * 用户一开始输入块函数体，就用 `#_endif` 闭合 `#_if …` 行。可通过 `ps12exe.autoCloseIf` 禁用。
  *
  * @param {vscode.ExtensionContext} context
  */
@@ -424,8 +411,7 @@ const formattingProvider = {
 
 const definitionProvider = {
 	/**
-	 * Jumps from `#_include*` and `#_pragma iconFile` arguments to the file they
-	 * reference.
+	 * 从 `#_include*` 和 `#_pragma iconFile` 参数跳转到它们引用的文件。
 	 *
 	 * @param {vscode.TextDocument} document
 	 * @param {vscode.Position} position
@@ -444,8 +430,7 @@ const definitionProvider = {
 
 const foldingProvider = {
 	/**
-	 * Folds every preprocessor block from its `#_if` line to the line before its
-	 * `#_endif`. Additive to the PowerShell extension's own AST-based folding.
+	 * 把每个 preprocessor 块从其 `#_if` 行折叠到其 `#_endif` 之前的一行。对 PowerShell 扩展自身基于 AST 的折叠是附加的。
 	 *
 	 * @param {vscode.TextDocument} document
 	 * @returns {vscode.FoldingRange[]}
@@ -506,7 +491,7 @@ function activate (context) {
 }
 
 function deactivate () {
-	// Everything is disposed through `context.subscriptions`.
+	// 一切都通过 `context.subscriptions` 释放。
 }
 
 export { activate, deactivate }

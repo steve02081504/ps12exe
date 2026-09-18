@@ -5,14 +5,11 @@ import path from 'node:path'
 import * as vscode from 'vscode'
 import { extractScriptToFile, compileToExe } from './powershell.mjs'
 
-// Custom editor id and virtual file system scheme used to expose the PowerShell
-// source embedded in a ps12exe-built executable as an editable document.
+// 用于把 ps12exe 构建的可执行文件中内嵌的 PowerShell 源码暴露为可编辑文档的自定义编辑器 id 与虚拟文件系统 scheme。
 export const EXE_SOURCE_VIEW_TYPE = 'ps12exe.exeSource'
 export const EXE_SOURCE_SCHEME = 'ps12exe-exe'
 
-// ps12exe program frames leave one of these type names in the .NET metadata.
-// A cheap byte scan of the file head is enough to skip unrelated executables
-// without spawning PowerShell for them.
+// ps12exe 程序帧会在 .NET 元数据中留下这些类型名之一。只需对文件头部做一次廉价的字节扫描，就能跳过无关的可执行文件，而无需为它们启动 PowerShell。
 const PS12EXE_MARKERS = ['PSRunnerNS', 'PS12ExeLauncher', 'PS12ExeCoreHost', 'TinySharp']
 const MARKER_READ_BYTES = 4 * 1024 * 1024
 
@@ -25,14 +22,11 @@ function isExePath (filePath) {
 }
 
 /**
- * Replaces `target` with `source`, working around the common Windows failure
- * where a running executable cannot be overwritten. A running executable can
- * still be renamed, so the previous file is moved aside to `<target>.old`
- * first; that backup is deliberately kept so the user can recover it.
+ * 用 `source` 替换 `target`，规避 Windows 上运行中的可执行文件无法被覆盖的常见故障。运行中的可执行文件仍可重命名，因此先把原文件移到 `<target>.old`；该备份会被特意保留，以便用户恢复。
  *
  * @param {string} source
  * @param {string} target
- * @returns {Promise<string | undefined>} the backup path when one was created
+ * @returns {Promise<string | undefined>} 创建了备份时返回备份路径
  */
 export async function replaceFile (source, target) {
 	const backup = `${target}.old`
@@ -51,7 +45,7 @@ export async function replaceFile (source, target) {
 		await fsp.copyFile(source, target)
 	}
 	catch (error) {
-		// Put the original back so a failed overwrite never loses the executable.
+		// 把原文件放回去，这样即使覆盖失败也不会丢失可执行文件。
 		if (hadTarget) await fsp.rename(backup, target).catch(() => {})
 		throw error
 	}
@@ -60,7 +54,7 @@ export async function replaceFile (source, target) {
 }
 
 /**
- * Cheaply checks whether an executable looks like a ps12exe build.
+ * 廉价地检查某个可执行文件是否像 ps12exe 构建产物。
  *
  * @param {string} exePath
  * @returns {boolean}
@@ -81,18 +75,15 @@ export function looksLikePs12Exe (exePath) {
 	finally {
 		if (handle !== undefined) {
 			try { fs.closeSync(handle) }
-			catch { /* already closed */ }
+			catch { /* 已关闭 */ }
 		}
 	}
 }
 
 /**
- * Editable, in-memory view of the PowerShell source embedded in an executable.
+ * 可执行文件中内嵌 PowerShell 源码的可编辑内存视图。
  *
- * `readFile` recovers the script with `exe21sp`; `writeFile` (a normal Ctrl+S)
- * recompiles the edited source back into the same executable. Both directions
- * run through the ps12exe module in a cache directory next to the released
- * icon, so `#_pragma icon` and other `$PSScriptRoot` references keep working.
+ * `readFile` 用 `exe21sp` 还原脚本；`writeFile`（普通的 Ctrl+S）会把编辑后的源码重新编译回同一个可执行文件。两个方向都在发布图标旁的缓存目录中经由 ps12exe 模块运行，因此 `#_pragma icon` 及其他 `$PSScriptRoot` 引用可以继续正常工作。
  */
 export class ExeSourceFileSystemProvider {
 	/**
@@ -120,7 +111,7 @@ export class ExeSourceFileSystemProvider {
 	}
 
 	/**
-	 * Recovers (and caches) the source embedded in `exePath`.
+	 * 还原（并缓存）`exePath` 中内嵌的源码。
 	 *
 	 * @param {string} exePath
 	 * @param {boolean} [force]
@@ -170,9 +161,7 @@ export class ExeSourceFileSystemProvider {
 	}
 
 	/**
-	 * Recompiles edited source back into the executable. The build goes to a
-	 * temporary path first so a failed compilation can never delete or corrupt
-	 * the original executable.
+	 * 把编辑后的源码重新编译回可执行文件。构建先输出到临时路径，这样编译失败也绝不会删除或损坏原可执行文件。
 	 *
 	 * @param {vscode.Uri} uri
 	 * @param {Uint8Array} content
@@ -202,7 +191,7 @@ export class ExeSourceFileSystemProvider {
 
 		const backup = await replaceFile(tempOutput, uri.fsPath)
 		try { await fsp.unlink(tempOutput) }
-		catch { /* best effort */ }
+		catch { /* 尽力而为 */ }
 		if (backup) this.channel.appendLine(t('Previous executable kept as {0}.', backup))
 
 		const exeStat = await fsp.stat(uri.fsPath)
@@ -246,12 +235,12 @@ export class ExeSourceFileSystemProvider {
 	}
 
 	watch () {
-		return new vscode.Disposable(() => { /* never fires; the file system is static */ })
+		return new vscode.Disposable(() => { /* 永不触发；该文件系统是静态的 */ })
 	}
 }
 
 /**
- * Opens the embedded source of `exeUri` in a normal, editable text editor.
+ * 在普通、可编辑的文本编辑器中打开 `exeUri` 中内嵌的源码。
  *
  * @param {vscode.Uri} exeUri
  * @param {ExeSourceFileSystemProvider} provider
@@ -264,7 +253,7 @@ async function openExeSource (exeUri, provider) {
 	await vscode.window.showTextDocument(document, { preview: false })
 }
 
-/** Closes the custom editor tab for `exeUri` once it has been replaced. */
+/** 在 `exeUri` 被替换后关闭其自定义编辑器标签页。 */
 async function closeCustomEditorTab (exeUri) {
 	for (const group of vscode.window.tabGroups.all) {
 		for (const tab of group.tabs) {
@@ -279,13 +268,9 @@ async function closeCustomEditorTab (exeUri) {
 }
 
 /**
- * Custom editor that turns a ps12exe `.exe` into an editable source view.
- * It does not render a webview itself: it opens the regular text editor on the
- * virtual source document and closes its own tab. Unrelated executables fall
- * back to the built-in editor.
+ * 把 ps12exe `.exe` 变成可编辑源码视图的自定义编辑器。它自身不渲染 webview：而是在虚拟源码文档上打开普通文本编辑器，然后关闭自己的标签页。无关的可执行文件回退到内置编辑器。
  *
- * Contributed as the default editor for `*.exe`; disable with
- * `ps12exe.openExeSource`.
+ * 作为 `*.exe` 的默认编辑器贡献；可通过 `ps12exe.openExeSource` 禁用。
  */
 export class ExeSourceCustomEditorProvider {
 	/** @param {ExeSourceFileSystemProvider} provider */
@@ -315,15 +300,14 @@ export class ExeSourceCustomEditorProvider {
 
 		if (!opened) {
 			try { await vscode.commands.executeCommand('vscode.openWith', exeUri, 'default') }
-			catch { /* built-in editor unavailable; leave the empty custom tab */ }
+			catch { /* 内置编辑器不可用；保留空的自定义标签页 */ }
 		}
 		await closeCustomEditorTab(exeUri)
 	}
 }
 
 /**
- * Registers the virtual file system, custom editor and commands backing the
- * "edit embedded source" feature.
+ * 注册支撑「编辑内嵌源码」功能的虚拟文件系统、自定义编辑器和命令。
  *
  * @param {vscode.ExtensionContext} context
  * @param {object} options

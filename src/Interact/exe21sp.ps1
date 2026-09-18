@@ -1,4 +1,4 @@
-﻿# Interactive loop for exe21sp (invoked when exe21sp is run with no arguments and console is not redirected).
+﻿# exe21sp 的交互式循环（当 exe21sp 无参数运行且控制台未重定向时调用）。
 param($Localize)
 
 #_if PSScript

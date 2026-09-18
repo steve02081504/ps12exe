@@ -1,5 +1,4 @@
-﻿// Uses AsmResolver to read embedded script resources from a ps12exe-built exe
-// and return the original PowerShell script text. Exposed via the exe21sp PowerShell helper.
+﻿// 使用 AsmResolver 读取 ps12exe 生成的 exe 中内嵌的脚本资源，并返回原始 PowerShell 脚本文本。通过 exe21sp PowerShell 辅助程序对外暴露。
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,30 +18,26 @@ namespace exe21sp {
 
 	public static class Extractor {
 		/// <summary>
-		/// Extracts the embedded PowerShell script from a ps12exe-built executable.
+		/// 从 ps12exe 生成的 exe 中提取内嵌的 PowerShell 脚本。
 		/// </summary>
-		/// <param name="exePath">Full path to the .exe file.</param>
+		/// <param name="exePath">.exe 文件的完整路径。</param>
 		/// <returns>
-		/// For normal ps12exe exes: the original PowerShell script from an embedded resource.
-		/// For TinySharp-compiled exes: a synthesized script that prints the captured output string and,
-		/// if applicable, appends an exit statement with the recorded exit code.
-		/// Returns null if the exe is not a ps12exe output or payload cannot be recovered.
+		/// 普通 ps12exe exe：来自内嵌资源的原始 PowerShell 脚本。TinySharp 编译的 exe：合成脚本，它打印捕获的输出字符串，并在适用时追加带有所记录退出代码的 exit 语句。若该 exe 不是 ps12exe 输出或负载无法恢复，则返回 null。
 		/// </returns>
 		public static string ExtractScriptFromExe(string exePath) {
 			if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
 				return null;
-			// First, try the standard program frame: embedded main.ps1 resource.
+			// 首先尝试标准程序框架：内嵌的 main.ps1 资源。
 			var script = TryExtractFromFrame(exePath);
 			if (script != null)
 				return script;
 
-			// Fallback: TinySharp-compiled minimal exe (no script resource).
+			// 回退：TinySharp 编译的最小 exe（无脚本资源）。
 			return TryExtractFromTinySharp(exePath);
 		}
 
 		private static string TryExtractFromFrame(string exePath) {
-			// 普通托管 exe 的镜像在偏移 0；Core 的单文件 exe 是原生 apphost 后追加托管负载，
-			// 因此扫描文件内所有内嵌 PE 镜像，逐个尝试提取。
+			// 普通托管 exe 的镜像在偏移 0；Core 的单文件 exe 是原生 apphost 后追加托管负载，因此扫描文件内所有内嵌 PE 镜像，逐个尝试提取。
 			foreach (var image in EnumerateEmbeddedImages(File.ReadAllBytes(exePath))) {
 				try {
 					var module = ModuleDefinition.FromBytes(image);
@@ -50,8 +45,7 @@ namespace exe21sp {
 					if (script != null)
 						return script;
 
-					// Non-const exes wrap the real assembly in the launcher's "main" resource.
-					// Unwrap it and look for the main.ps1 script resource inside that payload.
+					// 非 const exe 把真正的程序集包在 launcher 的 "main" 资源里。拆开它，并在该负载中寻找 main.ps1 脚本资源。
 					var payload = TryGetLauncherPayload(module);
 					if (payload != null)
 						return TryExtractFromModule(ModuleDefinition.FromBytes(payload));
@@ -68,8 +62,7 @@ namespace exe21sp {
 		}
 
 		/// <summary>
-		/// 逐个产出文件内疑似 PE 镜像的字节切片（从每个 "MZ" 且带有效 PE 头的偏移到文件末尾）。
-		/// 单文件发布的 exe 把托管程序集追加在原生 apphost 之后，需要这样找出来。
+		/// 逐个产出文件内疑似 PE 镜像的字节切片（从每个 "MZ" 且带有效 PE 头的偏移到文件末尾）。单文件发布的 exe 把托管程序集追加在原生 apphost 之后，需要这样找出来。
 		/// </summary>
 		private static IEnumerable<byte[]> EnumerateEmbeddedImages(byte[] fileBytes) {
 			for (int offset = 0; offset + 0x40 <= fileBytes.Length; offset++) {
@@ -102,7 +95,7 @@ namespace exe21sp {
 						continue;
 
 					using (var ms = new MemoryStream(raw))
-					// Detect encoding from BOM when present; default to UTF-8 without BOM.
+					// 存在 BOM 时据其检测编码；默认使用不带 BOM 的 UTF-8。
 					using (var reader = new StreamReader(ms, Encoding.UTF8, detectEncodingFromByteOrderMarks: true)) {
 						return reader.ReadToEnd();
 					}
@@ -129,9 +122,7 @@ namespace exe21sp {
 		}
 
 		/// <summary>
-		/// 解压 launcher 的 "main" 负载：Windows PowerShell 构建是 gzip，Core 构建是 Brotli。
-		/// BrotliStream 不在 .NET Framework 中，故用反射取；不可用时抛 <see cref="BrotliUnavailableException"/>，
-		/// 由 exe21sp 转交 pwsh 处理。
+		/// 解压 launcher 的 "main" 负载：Windows PowerShell 构建是 gzip，Core 构建是 Brotli。BrotliStream 不在 .NET Framework 中，故用反射取；不可用时抛 <see cref="BrotliUnavailableException"/>，由 exe21sp 转交 pwsh 处理。
 		/// </summary>
 		private static byte[] DecompressLauncherPayload(byte[] raw) {
 			using (var ms = new MemoryStream(raw)) {
@@ -155,12 +146,10 @@ namespace exe21sp {
 		}
 
 		/// <summary>
-		/// Rebuilds the Win32 icon embedded in a ps12exe-built executable into a standalone .ico file.
-		/// ps12exe 编译时通过 /win32icon（CodeDom）或 ApplicationIcon（Core）把图标写入最外层 PE，
-		/// 反编译时把它还原出来，供 exe21sp 释放在输出目录并由 #_pragma icon 重新引用。
+		/// 把 ps12exe 生成的 exe 中内嵌的 Win32 图标重建为独立的 .ico 文件。ps12exe 编译时通过 /win32icon（CodeDom）或 ApplicationIcon（Core）把图标写入最外层 PE，反编译时把它还原出来，供 exe21sp 释放在输出目录并由 #_pragma icon 重新引用。
 		/// </summary>
-		/// <param name="exePath">Full path to the .exe file.</param>
-		/// <returns>The .ico file bytes, or null when the exe has no icon resource.</returns>
+		/// <param name="exePath">.exe 文件的完整路径。</param>
+		/// <returns>.ico 文件字节；当 exe 没有图标资源时返回 null。</returns>
 		public static byte[] ExtractIconFromExe(string exePath) {
 			if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
 				return null;
@@ -198,8 +187,7 @@ namespace exe21sp {
 		}
 
 		/// <summary>
-		/// 深度优先读取资源目录下第一份数据。PE 资源树是 类型 → 名称/ID → 语言 → 数据，
-		/// 这里不假设层数，直接找叶子数据。
+		/// 深度优先读取资源目录下第一份数据。PE 资源树是 类型 → 名称/ID → 语言 → 数据，这里不假设层数，直接找叶子数据。
 		/// </summary>
 		private static byte[] ReadFirstEntryBytes(ResourceDirectory directory) {
 			foreach (var entry in directory.Entries) {
@@ -243,8 +231,7 @@ namespace exe21sp {
 		}
 
 		/// <summary>
-		/// 把 GRPICONDIR（RT_GROUP_ICON 数据）和对应的 RT_ICON 图像拼成一个标准 .ico 文件。
-		/// 每个目录项 14 字节：宽/高/色数/保留 + 平面数 + 位深 + 数据大小 + 图标 ID。
+		/// 把 GRPICONDIR（RT_GROUP_ICON 数据）和对应的 RT_ICON 图像拼成一个标准 .ico 文件。每个目录项 14 字节：宽/高/色数/保留 + 平面数 + 位深 + 数据大小 + 图标 ID。
 		/// </summary>
 		private static byte[] BuildIconFile(byte[] group, ResourceDirectory iconDir) {
 			if (group == null || group.Length < 6)
@@ -265,12 +252,12 @@ namespace exe21sp {
 				images[i] = image;
 
 				var entry = new byte[16];
-				entry[0] = group[offset];     // width
-				entry[1] = group[offset + 1]; // height
-				entry[2] = group[offset + 2]; // color count
-				entry[3] = group[offset + 3]; // reserved
-				Buffer.BlockCopy(group, offset + 4, entry, 4, 2); // planes
-				Buffer.BlockCopy(group, offset + 6, entry, 6, 2); // bit count
+				entry[0] = group[offset];     // 宽度
+				entry[1] = group[offset + 1]; // 高度
+				entry[2] = group[offset + 2]; // 颜色数
+				entry[3] = group[offset + 3]; // 保留
+				Buffer.BlockCopy(group, offset + 4, entry, 4, 2); // 平面数
+				Buffer.BlockCopy(group, offset + 6, entry, 6, 2); // 位深
 				Buffer.BlockCopy(BitConverter.GetBytes((uint)image.Length), 0, entry, 8, 4);
 				directory[i] = entry;
 			}
@@ -293,15 +280,14 @@ namespace exe21sp {
 
 		private static string TryExtractFromTinySharp(string exePath) {
 			var peFile = PEFile.FromFile(exePath);
-			// Only treat as TinySharp when the PE is a .NET assembly (has CLR header).
-			// Otherwise native exes (e.g. notepad.exe) would yield garbage from .text.
+			// 仅当该 PE 是 .NET 程序集（含 CLR 头）时才视作 TinySharp。否则原生 exe（如 notepad.exe）会从 .text 中读出垃圾数据。
 			if (peFile.OptionalHeader == null)
 				return null;
 			var clrDir = peFile.OptionalHeader.GetDataDirectory(DataDirectoryIndex.ClrDirectory);
 			if (clrDir.Size == 0 || !clrDir.IsPresentInPE)
 				return null;
 
-			// From here on we consider this a potential TinySharp exe; layout failures must throw.
+			// 从这里开始我们将其视为潜在的 TinySharp exe；布局解析失败必须抛出异常。
 			PESection section = null;
 			foreach (var s in peFile.Sections) {
 				if (!object.ReferenceEquals(s.Name, null) && s.Name.ToString() == ".text") {
@@ -319,17 +305,12 @@ namespace exe21sp {
 			if (raw == null || raw.Length == 0)
 				throw new InvalidOperationException("TinySharpCannotReadText");
 
-			// Locate the message string by counting ldc.i4 VA references in the CIL region.
-			// TinySharp patches the message address into every MessageBoxW call site (2× for the
-			// two-path MessageBox build, 1× for console builds), while infrastructure strings
-			// (e.g. VerQueryValueW subBlock path) are referenced only once.  The most-referenced
-			// VA that maps to actual file content in .text is therefore the message — no content
-			// heuristics needed.
+			// 通过统计 CIL 区域中 ldc.i4 的 VA 引用次数来定位消息字符串。TinySharp 把消息地址打入每个 MessageBoxW 调用点（双路径 MessageBox 构建为 2×，控制台构建为 1×），而基础设施字符串（如 VerQueryValueW 的 subBlock 路径）只被引用一次。因此，映射到 .text 中实际文件内容且引用次数最多的 VA 就是消息——无需内容启发式。
 			string message = FindMessageByVARefCount(raw, peFile.OptionalHeader.ImageBase, section);
 			if (string.IsNullOrEmpty(message))
 				throw new InvalidOperationException("TinySharpPayloadNotRecovered");
 
-			// TinySharp embeds non-zero exit code as CIL: Ldc_I4 (0x20) + 4-byte LE + Ret (0x2A). Find last such sequence.
+			// TinySharp 把非零退出代码内嵌为 CIL：Ldc_I4 (0x20) + 4 字节 LE + Ret (0x2A)。查找最后一处这样的序列。
 			int exitCode = TryDetectTinySharpExitCode(raw);
 
 			var builder = new StringBuilder();
@@ -341,9 +322,7 @@ namespace exe21sp {
 		}
 
 		/// <summary>
-		/// Scans .text for TinySharp main's trailing CIL: Ldc_I4 (0x20) + 4-byte LE exit code + Ret (0x2A).
-		/// Only scans the first 2KB (CIL region); string data at end of .text could otherwise false-match.
-		/// Returns the last matching exit code, or 0 if not found / not plausible.
+		/// 在 .text 中扫描 TinySharp main 末尾的 CIL：Ldc_I4 (0x20) + 4 字节 LE 退出代码 + Ret (0x2A)。只扫描前 2KB（CIL 区域）；否则 .text 末尾的字符串数据可能产生误匹配。返回最后一处匹配的退出代码，若未找到或不可信则返回 0。
 		/// </summary>
 		private static int TryDetectTinySharpExitCode(byte[] raw) {
 			const byte CilLdcI4 = 0x20;
@@ -378,36 +357,31 @@ namespace exe21sp {
 		}
 
 		/// <summary>
-		/// Scans the first 2 KB of .text (the CIL region) for ldc.i4 operands whose value
-		/// is a VA within the physical file content of .text.  Counts how many times each
-		/// such VA appears; the most-referenced one is the message string (TinySharp MessageBox
-		/// patches it at every call site — 2×, whereas infra strings like the VerQueryValueW
-		/// subBlock path appear only 1×).  No content heuristics are used.
+		/// 在 .text 的前 2 KB（CIL 区域）中扫描那些取值位于 .text 物理文件内容内的 VA 的 ldc.i4 操作数。统计每个此类 VA 出现的次数；引用最多者即为消息字符串（TinySharp 在每个 MessageBox 调用点都打入它——2×，而 VerQueryValueW 的 subBlock 路径等基础设施字符串只出现 1×）。不使用内容启发式。
 		/// </summary>
 		private static string FindMessageByVARefCount(byte[] raw, ulong imageBase, PESection section) {
 			ulong textVABase = imageBase + section.Rva;
-			// Parallel arrays instead of Dictionary<> to avoid requiring extra assembly references.
-			// At most a handful of distinct .text VAs appear as ldc.i4 operands in 2 KB of CIL.
+			// 使用并行数组而非 Dictionary<>，以避免引入额外的程序集引用。2 KB 的 CIL 中最多出现少数几个不同的 .text VA 作为 ldc.i4 操作数。
 			const int MaxSlots = 64;
 			uint[] vaKeys   = new uint[MaxSlots];
 			int[]  vaCounts = new int[MaxSlots];
 			int    slotCount = 0;
 			int cilEnd = Math.Min(raw.Length - 6, 2048);
 			for (int i = 0; i <= cilEnd; i++) {
-				if (raw[i] != 0x20) continue; // ldc.i4 opcode
+				if (raw[i] != 0x20) continue; // ldc.i4 操作码
 				uint operand = (uint)BitConverter.ToInt32(raw, i + 1);
-				// TinySharp imageBase < 2^32, so the ldc.i4 operand IS the full 32-bit VA.
+				// TinySharp 的 imageBase < 2^32，因此 ldc.i4 操作数就是完整的 32 位 VA。
 				ulong va = (imageBase & 0xFFFFFFFF00000000UL) | (ulong)operand;
 				if (va < textVABase) continue;
 				ulong fileOff = va - textVABase;
-				if (fileOff >= (ulong)raw.Length) continue; // BSS/virtual — no file content
-				// Linear search is fine; < 20 distinct candidates expected.
+				if (fileOff >= (ulong)raw.Length) continue; // BSS/虚拟内存——无文件内容
+				// 线性查找即可；预计不同候选少于 20 个。
 				int idx = -1;
 				for (int j = 0; j < slotCount; j++) if (vaKeys[j] == operand) { idx = j; break; }
 				if (idx < 0 && slotCount < MaxSlots) { vaKeys[slotCount] = operand; vaCounts[slotCount] = 1; slotCount++; }
 				else if (idx >= 0) vaCounts[idx]++;
 			}
-			// Most-referenced VA = message; tiebreak by lowest file offset (message placed first).
+			// 引用最多的 VA 即消息；相同则取文件偏移最小者（消息被放在最前）。
 			int bestCount = 0;
 			ulong bestFileOff = ulong.MaxValue;
 			uint bestOperand = 0;
@@ -420,9 +394,7 @@ namespace exe21sp {
 			}
 			if (bestOperand == 0) return null;
 			int off = (int)bestFileOff;
-			// Distinguish encoding by checking whether the second byte is a null (UTF-16LE pattern).
-			// MessageBox / WriteConsoleW builds use Unicode (raw[off+1] == 0x00 for ASCII-range text).
-			// puts builds use plain ASCII (raw[off+1] is a printable byte, not zero).
+			// 通过检查第二个字节是否为 null（UTF-16LE 特征）来区分编码。MessageBox / WriteConsoleW 构建使用 Unicode（对 ASCII 范围内文本有 raw[off+1] == 0x00）。puts 构建使用纯 ASCII（raw[off+1] 是可打印字节，而非零）。
 			bool looksUtf16 = (off + 1 < raw.Length && raw[off + 1] == 0);
 			if (looksUtf16) {
 				var msgU = TryReadNullTermUnicode(raw, off);

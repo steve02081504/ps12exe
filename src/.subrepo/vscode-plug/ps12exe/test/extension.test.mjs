@@ -55,13 +55,13 @@ suite('ps12exe extension', () => {
 			assert.strictEqual(fs.readFileSync(target, 'utf8'), 'new')
 			assert.strictEqual(fs.readFileSync(`${target}.old`, 'utf8'), 'old')
 
-			// A stale backup is overwritten rather than blocking the rename.
+			// 过期备份会被覆盖，而不是阻止重命名。
 			fs.writeFileSync(source, 'newer')
 			await replaceFile(source, target)
 			assert.strictEqual(fs.readFileSync(target, 'utf8'), 'newer')
 			assert.strictEqual(fs.readFileSync(`${target}.old`, 'utf8'), 'new')
 
-			// Replacing a missing target just copies, with no backup.
+			// 替换不存在的目标时只是复制，不会创建备份。
 			const created = path.join(dir, 'created.exe')
 			assert.strictEqual(await replaceFile(source, created), undefined)
 			assert.strictEqual(fs.readFileSync(created, 'utf8'), 'newer')
@@ -78,7 +78,7 @@ suite('ps12exe extension', () => {
 		try {
 			const document = await vscode.workspace.openTextDocument(file)
 			const editor = await vscode.window.showTextDocument(document)
-			// Ends at column 0, so line 4 is not part of the selection.
+			// 结束于第 0 列，因此第 4 行不属于选区。
 			editor.selection = new vscode.Selection(0, 0, 4, 0)
 
 			await vscode.commands.executeCommand('ps12exe.toggleBang')

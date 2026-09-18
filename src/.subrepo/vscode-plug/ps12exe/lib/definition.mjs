@@ -18,12 +18,10 @@ function unquote (value) {
 }
 
 /**
- * Resolves the file referenced by an include directive or by
- * `#_pragma iconFile …`, mirroring ps12exe's own path handling (`$PSScriptRoot`
- * substitution and resolution relative to the script directory).
+ * 解析 include 指令或 `#_pragma iconFile …` 引用的文件，复刻 ps12exe 自身的路径处理（`$PSScriptRoot` 替换以及相对于脚本目录的解析）。
  *
  * @param {string} line
- * @param {string} baseDir directory of the script being edited
+ * @param {string} baseDir 正在编辑的脚本所在目录
  * @returns {{ file: string, start: number, end: number } | null}
  */
 function resolveDirectivePath (line, baseDir) {

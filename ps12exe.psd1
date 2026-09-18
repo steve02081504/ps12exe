@@ -1,26 +1,26 @@
 ﻿@{
-	# Script module or binary module file associated with this manifest.
+	# 与此清单关联的脚本模块或二进制模块文件。
 	RootModule             = 'ps12exe.psm1'
 
-	# Version number of this module.
+	# 此模块的版本号。
 	ModuleVersion          = '0.0.0'
 
-	# Supported PSEditions
+	# 支持的 PSEditions
 	# CompatiblePSEditions = @()
 
-	# ID used to uniquely identify this module
+	# 用于唯一标识此模块的 ID
 	GUID                   = '0bdadd0c-4365-422a-b7d4-62c2ea6d2d14'
 
-	# Author of this module
+	# 此模块的作者
 	Author                 = 'steve02081504'
 
-	# Company or vendor of this module
+	# 此模块的公司或供应商
 	CompanyName            = 'Unknown'
 
-	# Copyright statement for this module
+	# 此模块的版权声明
 	Copyright              = '(c) steve02081504.'
 
-	# Description of the functionality provided by this module
+	# 此模块所提供功能的说明
 	Description            = @'
 better pwsh code 2 exe repo:
 - Use `ps12exe a.ps1` to convert `a.ps1` into `a.exe`;
@@ -32,92 +32,92 @@ better pwsh code 2 exe repo:
 All commands in this module support the `-help` option for detailed assistance in your language.
 '@
 
-	# Minimum version of the PowerShell engine required by this module
+	# 此模块所需的 PowerShell 引擎最低版本
 	PowerShellVersion      = '5.0'
 
-	# Name of the PowerShell host required by this module
+	# 此模块所需的 PowerShell 主机名称
 	# PowerShellHostName = ''
 
-	# Minimum version of the PowerShell host required by this module
+	# 此模块所需的 PowerShell 主机最低版本
 	# PowerShellHostVersion = ''
 
-	# Minimum version of Microsoft .NET Framework required by this module. This prerequisite is valid for the PowerShell Desktop edition only.
+	# 此模块所需的 Microsoft .NET Framework 最低版本。此外先决条件仅对 PowerShell Desktop 版有效。
 	DotNetFrameworkVersion = '4.0'
 
-	# Minimum version of the common language runtime (CLR) required by this module. This prerequisite is valid for the PowerShell Desktop edition only.
+	# 此模块所需的公共语言运行时 (CLR) 最低版本。此外先决条件仅对 PowerShell Desktop 版有效。
 	# ClrVersion = ''
 
-	# Processor architecture (None, X86, Amd64) required by this module
+	# 此模块所需的处理器架构（None、X86、Amd64）
 	# ProcessorArchitecture = ''
 
-	# Modules that must be imported into the global environment prior to importing this module
+	# 导入此模块前必须先导入到全局环境的模块
 	# RequiredModules = @()
 
-	# Assemblies that must be loaded prior to importing this module
+	# 导入此模块前必须加载的程序集
 	# RequiredAssemblies = @()
 
-	# Script files (.ps1) that are run in the caller's environment prior to importing this module.
+	# 导入此模块前在调用方环境中运行的脚本文件 (.ps1)。
 	# ScriptsToProcess = @()
 
-	# Type files (.ps1xml) to be loaded when importing this module
+	# 导入此模块时要加载的类型文件 (.ps1xml)
 	# TypesToProcess = @()
 
-	# Format files (.ps1xml) to be loaded when importing this module
+	# 导入此模块时要加载的格式文件 (.ps1xml)
 	# FormatsToProcess = @()
 
-	# Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
+	# 作为 RootModule/ModuleToProcess 所指定模块的嵌套模块导入的模块
 	# NestedModules = @()
 
-	# Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
+	# 从此模块导出的函数；为获得最佳性能，请勿使用通配符，也不要删除该项；如果没有要导出的函数，请使用空数组。
 	FunctionsToExport      = @('ps12exe', 'ps12exeGUI', 'Set-ps12exeContextMenu', 'Start-ps12exeWebServer', 'Enter-ps12exeInteract', 'exe21sp')
 
-	# Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
+	# 从此模块导出的 Cmdlet；为获得最佳性能，请勿使用通配符，也不要删除该项；如果没有要导出的 Cmdlet，请使用空数组。
 	# CmdletsToExport = @()
 
-	# Variables to export from this module
+	# 从此模块导出的变量
 	# VariablesToExport = @()
 
-	# Aliases to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no aliases to export.
+	# 从此模块导出的别名；为获得最佳性能，请勿使用通配符，也不要删除该项；如果没有要导出的别名，请使用空数组。
 	# AliasesToExport = @()
 
-	# DSC resources to export from this module
+	# 从此模块导出的 DSC 资源
 	# DscResourcesToExport = @()
 
-	# List of all modules packaged with this module
+	# 与此模块一起打包的所有模块的列表
 	# ModuleList = @()
 
-	# Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
+	# 传递给 RootModule/ModuleToProcess 所指定模块的私有数据。其中还可包含一个 PSData 哈希表，带有供 PowerShell 使用的其他模块元数据。
 	PrivateData            = @{
 		PSData = @{
-			# Tags applied to this module. These help with module discovery in online galleries.
+			# 应用于此模块的标记。这些标记有助于在在线库中发现模块。
 			Tags       = @('Executable', 'Compiler', 'ps2exe', 'exe', 'ps12exe', 'Windows')
 
-			# A URL to the license for this module.
+			# 此模块许可证的 URL。
 			LicenseUri = 'https://github.com/steve02081504/ps12exe/blob/master/LICENSE'
 
-			# A URL to the main website for this project.
+			# 此项目主网站的 URL。
 			ProjectUri = 'https://github.com/steve02081504/ps12exe'
 
-			# A URL to an icon representing this module.
+			# 表示此模块的图标的 URL。
 			IconUri    = 'https://raw.githubusercontent.com/steve02081504/ps12exe/master/img/icon.ico'
 
-			# ReleaseNotes of this module
+			# 此模块的发行说明
 			# ReleaseNotes = ''
 
-			# Prerelease string of this module
+			# 此模块的预发布字符串
 			# Prerelease = ''
 
-			# Flag to indicate whether the module requires explicit user acceptance for install/update/save
+			# 指示此模块在安装/更新/保存时是否需要用户明确接受的标志
 			# RequireLicenseAcceptance = $false
 
-			# External dependent modules of this module
+			# 此模块的外部依赖模块
 			# ExternalModuleDependencies = @()
 		}
 	}
 
-	# HelpInfo URI of this module
+	# 此模块的 HelpInfo URI
 	# HelpInfoURI = ''
 
-	# Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
+	# 从此模块导出的命令的默认前缀。可使用 Import-Module -Prefix 覆盖默认前缀。
 	# DefaultCommandPrefix = ''
 }

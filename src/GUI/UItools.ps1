@@ -99,7 +99,7 @@ function ConvertFrom-WinFormsXML {
 					$($_.Value -replace "\|\*BreakPT\*\|", "`n").Split("`n") | ForEach-Object { [void]$newControl.Items.Add($_) }
 				}
 				else {
-					# Other than Items only BoldedDate properties on MonthCalendar control
+					# 除 Items 外，仅 MonthCalendar 控件上的 BoldedDate 属性
 					$methodName = "Add$($attribName)" -replace "s$"
 
 					$($_.Value -replace "\|\*BreakPT\*\|", "`n").Split("`n") | ForEach-Object { $newControl.$attribName.$methodName($_) }

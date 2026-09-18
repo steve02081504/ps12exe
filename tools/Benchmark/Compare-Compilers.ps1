@@ -1,22 +1,16 @@
 ﻿<#
 .SYNOPSIS
-	Benchmarks ps12exe against MScholtes/PS2EXE for the README "Comparative Advantages" section.
+	针对 README 的“Comparative Advantages”章节，对 ps12exe 与 MScholtes/PS2EXE 进行基准测试。
 .DESCRIPTION
-	Compiles constant / non-constant (and optionally Core) hello-world scripts with the ps12exe module
-	in this repository and with the latest locally installed PS2EXE, then prints markdown that mirrors
-	the README "Size & Speed Benchmark" table (same rows, labels, group separator and size formatting).
-	-ProbeRuntime also prints the "Compiled-EXE Runtime Behaviour" table.
-	PS2EXE is never downloaded: the latest installed ps2exe module is used. When none is found its rows
-	are skipped and an install hint is printed at the end.
-	Requirements: Windows, Windows PowerShell 5.1, pwsh 7+, and the .NET SDK when using -IncludeCore.
+	用本仓库中的 ps12exe 模块和本地安装的最新 PS2EXE 编译常量 / 非常量（可选 Core）hello-world 脚本，然后打印与 README“Size & Speed Benchmark”表相呼应的 markdown（相同的行、标签、组分隔符和大小格式）。-ProbeRuntime 还会打印“Compiled-EXE Runtime Behaviour”表。PS2EXE 永不下载：使用本地安装的最新 ps2exe 模块。找不到时会跳过其行，并在末尾打印安装提示。要求：Windows、Windows PowerShell 5.1、pwsh 7+，以及使用 -IncludeCore 时的 .NET SDK。
 .PARAMETER Runs
-	Number of warm runs per target. Defaults to 20.
+	每个目标的热运行次数。默认为 20。
 .PARAMETER IncludeCore
-	Also build the Core (PowerShell 7+) targets. Requires the .NET SDK and is slower.
+	同时构建 Core（PowerShell 7+）目标。需要 .NET SDK，且更慢。
 .PARAMETER ProbeRuntime
-	Also probe runtime behaviour (console TTY, raw stdin, special path variables).
+	同时探测运行时行为（console TTY、原始 stdin、特殊路径变量）。
 .PARAMETER KeepTemp
-	Keep the temporary working directory after the run.
+	运行结束后保留临时工作目录。
 .EXAMPLE
 	./Compare-Compilers.ps1
 .EXAMPLE
@@ -50,8 +44,7 @@ function Format-Size([long]$bytes) {
 
 $measurements = @{}
 
-# 非交互运行时（CI、输出被捕获的终端）stdin 是永不关闭的管道；PS2EXE 生成的 exe 会把重定向的 stdin
-# 一直读到 EOF，一旦继承这种管道就会看起来卡死。此时给被测进程一个立即 EOF 的空 stdin，其余行为不变。
+# 非交互运行时（CI、输出被捕获的终端）stdin 是永不关闭的管道；PS2EXE 生成的 exe 会把重定向的 stdin 一直读到 EOF，一旦继承这种管道就会看起来卡死。此时给被测进程一个立即 EOF 的空 stdin，其余行为不变。
 $stdinIsRedirected = [System.Console]::IsInputRedirected
 function Invoke-MeasuredTarget([string]$exe, [string[]]$argv) {
 	if ($stdinIsRedirected) { $null | & $exe @argv *> $null }
@@ -81,7 +74,7 @@ $constScript = New-Script 'hello_const.ps1' "Write-Output 'Hello World'`n"
 $nonConstScript = New-Script 'hello_nonconst.ps1' "#_pragma noConstEval`nWrite-Output `"Hello World `$env:COMPUTERNAME`"`n"
 $helloScript = New-Script 'hello.ps1' "Write-Output 'Hello World'`n"
 
-# --- ps12exe (this repository) ---
+# --- ps12exe（本仓库）---
 Import-Module (Join-Path $repoRoot 'ps12exe.psd1') -Force
 $exe = Join-Path $tempDir 'const.exe'
 ps12exe $constScript $exe -SkipVersionCheck
@@ -101,7 +94,7 @@ if ($IncludeCore) {
 	Measure-Exe 'ps12-nonconst-core' 'ps12exe · non-constant · Core' $exe
 }
 
-# --- MScholtes/PS2EXE (latest installed module only; this script never downloads) ---
+# --- MScholtes/PS2EXE（仅使用本地安装的最新模块；本脚本永不下载）---
 $ps2exeModule = Get-Module -ListAvailable -Name ps2exe | Sort-Object Version -Descending | Select-Object -First 1
 
 $ps2exeAvailable = [bool]$ps2exeModule
@@ -121,7 +114,7 @@ else {
 	Write-Host 'No local PS2EXE found; its rows will be skipped (this script never downloads).'
 }
 
-# --- baselines ---
+# --- 基线 ---
 Measure-Script 'base-fw' 'Windows PowerShell 5.1 running the script directly' @('powershell.exe', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $helloScript)
 Measure-Script 'base-core' 'pwsh 7 running the script directly' @('pwsh.exe', '-NoProfile', '-File', $helloScript)
 
@@ -180,7 +173,7 @@ Write-Output ("PSScriptRoot=[" + $PSScriptRoot + "]")
 		$probe[$key].Path = [bool]($path -replace 'PSCommandPath=\[|\]$', '')
 	}
 
-	# TTY probe: a real console window is needed, so it is skipped when node is missing.
+	# TTY 探测：需要真实的控制台窗口，因此 node 缺失时跳过。
 	if (Get-Command node -ErrorAction Ignore) {
 		$js = New-Script 'tty.js' "const fs=require('fs');fs.writeFileSync(process.env.OUT,JSON.stringify({nodeOutTTY:!!process.stdout.isTTY}))"
 		$ttyScript = New-Script 'tty.ps1' ("& node `"$js`"`n")

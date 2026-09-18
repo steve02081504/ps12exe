@@ -1,12 +1,11 @@
 #!/usr/bin/env node
-// Packages the extension and installs the resulting VSIX into the local VS Code.
+// 打包扩展并把生成的 VSIX 安装到本地 VS Code。
 //
 //   npm run build              package + install
 //   npm run build -- --no-install
 //   npm run build -- --test    run the test suite first
 //
-// The VS Code CLI is discovered with `@steve02081504/exec`'s `where_command`;
-// set PS12EXE_VSCODE_EXECUTABLE_PATH to override it.
+// VS Code CLI 通过 `@steve02081504/exec` 的 `where_command` 发现；设置 PS12EXE_VSCODE_EXECUTABLE_PATH 可覆盖它。
 import { execFile, where_command } from '@steve02081504/exec'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -21,13 +20,13 @@ function readJson (file) {
 	return JSON.parse(fs.readFileSync(file, 'utf8'))
 }
 
-/** Runs a command, streaming its output, and rejects on a non-zero exit. */
+/** 运行命令，流式输出其结果，并在非零退出时拒绝。 */
 async function run (file, args) {
 	const { code } = await execFile(file, args, { stdio: 'inherit' })
 	if (code !== 0) throw new Error(`${path.basename(file)} ${args.join(' ')} exited with code ${code}`)
 }
 
-/** Path to the locally installed `vsce` entry point, if any. */
+/** 本地安装的 `vsce` 入口点的路径（如果存在）。 */
 function localVsce () {
 	const pkgPath = path.join(root, 'node_modules', '@vscode', 'vsce', 'package.json')
 	if (!fs.existsSync(pkgPath)) return undefined
@@ -36,7 +35,7 @@ function localVsce () {
 	return entry ? path.join(path.dirname(pkgPath), entry) : undefined
 }
 
-/** Runs `vsce package` and returns the produced VSIX path. */
+/** 运行 `vsce package` 并返回生成的 VSIX 路径。 */
 async function packageExtension () {
 	const entry = localVsce()
 	if (entry) await run(process.execPath, [entry, 'package'])
@@ -52,10 +51,7 @@ async function packageExtension () {
 }
 
 /**
- * Resolves the local VS Code CLI. `where_command('code')` returns the `code.cmd`
- * shim on Windows, which — unlike the GUI-subsystem `Code.exe` — attaches to the
- * console, so its output and exit code are usable. Override the lookup with
- * PS12EXE_VSCODE_CLI_PATH.
+ * 解析本地 VS Code CLI。`where_command('code')` 在 Windows 上返回 `code.cmd` 垫片，与 GUI 子系统的 `Code.exe` 不同，它会附加到控制台，因此其输出和退出码可用。可通过 PS12EXE_VSCODE_CLI_PATH 覆盖查找。
  *
  * @returns {Promise<string | undefined>}
  */
@@ -66,9 +62,9 @@ async function resolveCodeCli () {
 }
 
 /**
- * Installs the VSIX with `code --install-extension … --force`.
+ * 用 `code --install-extension … --force` 安装 VSIX。
  *
- * @returns {Promise<boolean>} whether the installation ran
+ * @returns {Promise<boolean>} 安装是否执行
  */
 async function installExtension (vsix) {
 	const code = await resolveCodeCli()

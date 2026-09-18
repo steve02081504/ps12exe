@@ -6,14 +6,13 @@ import { where_command } from '@steve02081504/exec'
 
 const projectDir = path.dirname(fileURLToPath(import.meta.url))
 
-/** Resolves the `code` command on PATH to a VS Code executable path. */
+/** 把 PATH 上的 `code` 命令解析为 VS Code 可执行文件路径。 */
 async function executableFromPath () {
 	try {
 		const code = await where_command('code')
 		if (!code) return undefined
 		if (path.extname(code).toLowerCase() === '.exe') return code
-		// On Windows `code` is the `bin\code.cmd` shim; the executable is one
-		// directory up. On macOS/Linux this does not apply and we just fall back.
+		// 在 Windows 上 `code` 是 `bin\code.cmd` 垫片；可执行文件在上一级目录。在 macOS/Linux 上不适用，直接回退。
 		const exe = path.join(path.dirname(path.dirname(code)), 'Code.exe')
 		return existsSync(exe) ? exe : code
 	}
@@ -23,9 +22,7 @@ async function executableFromPath () {
 }
 
 /**
- * `@vscode/test-electron` silently skips the tests when the VS Code install
- * lives on a different Windows drive than the project. Bridging through a
- * junction on the project drive avoids that.
+ * 当 VS Code 安装位置与项目不在同一个 Windows 驱动器时，`@vscode/test-electron` 会静默跳过测试。通过项目驱动器上的 junction 搭桥可以避免这种情况。
  */
 function bridgeToProjectDrive (executable) {
 	if (!executable || process.platform !== 'win32') return executable
@@ -51,8 +48,6 @@ const executable = bridgeToProjectDrive(configured || await executableFromPath()
 
 export default defineConfig({
 	files: 'test/**/*.test.mjs',
-	// Reuse the VS Code installed on this machine when available instead of
-	// downloading a 300+ MB copy; falls back to downloading otherwise. Override
-	// with PS12EXE_VSCODE_EXECUTABLE_PATH.
+	// 在可用时复用本机安装的 VS Code，而不是下载 300+ MB 的副本；否则回退到下载。可通过 PS12EXE_VSCODE_EXECUTABLE_PATH 覆盖。
 	...(executable && { useInstallation: { fromPath: executable } })
 })

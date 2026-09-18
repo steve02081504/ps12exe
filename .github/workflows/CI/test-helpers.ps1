@@ -42,9 +42,7 @@ function Restore-ps12exeContextMenuState {
 	}
 }
 
-# 启动 exe，向该进程的主窗口持续发送 VK_RETURN（用于关闭 MessageBox），直到进程退出或超时。
-# 返回进程的 ExitCode（等待进程退出后读取）。
-# $TimeoutSeconds: 从启动到强制结束的总超时。
+# 启动 exe，向该进程的主窗口持续发送 VK_RETURN（用于关闭 MessageBox），直到进程退出或超时。返回进程的 ExitCode（等待进程退出后读取）。$TimeoutSeconds: 从启动到强制结束的总超时。
 function Invoke-ExeAndSendEnterToWindow {
 	param(
 		[string]$ExePath,
@@ -110,8 +108,7 @@ public class CIWindowHelper {
 	$p = [System.Diagnostics.Process]::Start($psi)
 	$sawWindow = $false
 	try {
-		# 窗口可能在消息框完成初始化（设置默认按钮）之前就被枚举到，此时发出的回车会被丢弃。
-		# 因此找到窗口后不能只发一次就停，必须持续发到进程退出为止。
+		# 窗口可能在消息框完成初始化（设置默认按钮）之前就被枚举到，此时发出的回车会被丢弃；因此找到窗口后不能只发一次就停，必须持续发到进程退出为止。
 		$deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
 		while ([DateTime]::UtcNow -lt $deadline -and -not $p.HasExited) {
 			if ([CIWindowHelper]::SendEnterToProcessMainWindow($p.Id)) { $sawWindow = $true }
@@ -176,8 +173,7 @@ function Invoke-ExeCaptureMergedOutput {
 	}
 }
 
-# 给控制台 EXE 单独开一个 hidden console，避免当前进程 stdout 已重定向时子进程继承管道。
-# 用于 TTY / isatty 类测试：结果应写文件，不要靠捕获本函数的 stdout。
+# 给控制台 EXE 单独开一个 hidden console，避免当前进程 stdout 已重定向时子进程继承管道。用于 TTY / isatty 类测试：结果应写文件，不要靠捕获本函数的 stdout。
 function Invoke-ExeWithPrivateConsole {
 	param(
 		[string]$ExePath,

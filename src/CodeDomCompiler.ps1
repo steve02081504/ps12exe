@@ -99,10 +99,7 @@ function New-PS12ExeCompilerParameters([string]$outFile, [string[]]$opts, [bool]
 	return $p
 }
 
-# 默认路径：先编出普通托管程序集作为负载，gzip 后塞进一个极小的 launcher 里。
-# launcher 启动时在内存中解压并用 Assembly.Load 载入负载，因此负载不会落到磁盘。
-# 仅当无法打包时才退化为普通编译（-prepareDebug 需要负载源码/PDB、DllExportList、真实 PS2 SMA）。
-# 常量脚本的 constexpr.cs 入口是无参 Main()，与 pack launcher 的 Main(string[]) 调用约定不符，故不走 pack。
+# 默认路径：先编出普通托管程序集作为负载，gzip 后塞进一个极小的 launcher 里。launcher 启动时在内存中解压并用 Assembly.Load 载入负载，因此负载不会落到磁盘。仅当无法打包时才退化为普通编译（-prepareDebug 需要负载源码/PDB、DllExportList、真实 PS2 SMA）。常量脚本的 constexpr.cs 入口是无参 Main()，与 pack launcher 的 Main(string[]) 调用约定不符，故不走 pack。
 $packEnabled = (
 	-not $prepareDebug -and
 	-not $isPwsh20Sma -and

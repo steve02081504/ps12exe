@@ -19,11 +19,11 @@ $repoPath = "$PSScriptRoot/../.."
 $error.clear()
 
 try {
-	# read psd1
+	# 读取 psd1
 	$packData = Import-PowerShellDataFile "$repoPath/ps12exe.psd1"
-	# update version
+	# 更新版本
 	$packData.ModuleVersion = $version
-	# update psd1
+	# 更新 psd1
 	Set-Content -Path "$repoPath/ps12exe.psd1" -Value $(PSObjectToString($packData)) -NoNewline -Encoding UTF8 -Force
 	# 对于每个fbs文件，以xml格式读取，再用linux换行符+tab缩进写回源文件
 	. $PSScriptRoot/../../.esh/commands/lint.ps1
