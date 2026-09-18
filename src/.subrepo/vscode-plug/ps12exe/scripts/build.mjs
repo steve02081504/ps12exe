@@ -31,10 +31,68 @@ function readJson (file) {
  * 运行命令，流式输出其结果，并在非零退出时拒绝。
  * @param {string} file - 待运行的可执行文件
  * @param {string[]} args - 命令行参数
+ * @param {object} [options] - 透传给 `execFile` 的选项（如 `cwd`）
  */
-async function run (file, args) {
-	const { code } = await execFile(file, args, { stdio: 'inherit' })
+async function run (file, args, options = {}) {
+	const { code } = await execFile(file, args, { stdio: 'inherit', ...options })
 	if (code !== 0) throw new Error(`${path.basename(file)} ${args.join(' ')} exited with code ${code}`)
+}
+
+/**
+ * 解析 npm 可执行文件路径。
+ *
+ * @returns {Promise<string>} npm 路径，找不到时退回当前平台上的裸命令名
+ */
+export async function resolveNpm () {
+	return await where_command('npm') || (process.platform === 'win32' ? 'npm.cmd' : 'npm')
+}
+
+/**
+ * 探测 node_modules 是否是一棵 npm 能理解的生产依赖树。
+ *
+ * `vsce package` 内部会执行同样的 `npm list --production` 来决定打包哪些依赖；当 node_modules 由其它包管理器（如 Deno）安装成 `.deno` + 符号链接布局时，这条命令会以 ELSPROBLEMS 失败并让整个打包失败，所以这里先探测。
+ *
+ * @param {string} cwd - 扩展目录
+ * @returns {Promise<boolean>} 依赖树是否能被 npm 理解
+ */
+export async function isDependencyTreeValid (cwd) {
+	const npm = await resolveNpm()
+	try {
+		const { code } = await execFile(npm, ['list', '--production', '--parseable', '--depth=99999', '--loglevel=error'], { cwd })
+		return code === 0
+	}
+	catch {
+		return false
+	}
+}
+
+/**
+ * 用 npm 重新安装依赖，把被其它包管理器改写的 node_modules 修回 npm 布局。
+ *
+ * @param {string} cwd - 扩展目录
+ * @returns {Promise<void>} 安装完成，无返回值
+ */
+export async function repairDependencyTree (cwd) {
+	await run(await resolveNpm(), ['install'], { cwd })
+}
+
+/**
+ * 确保 node_modules 是 npm 能识别的依赖树：先探测，不合法就跑一次 `npm install` 再复查。
+ *
+ * @param {string} cwd - 扩展目录
+ * @param {object} [options] - 覆盖检查/修复/日志，便于测试
+ * @param {(cwd: string) => Promise<boolean>} [options.check] - 依赖树探测函数
+ * @param {(cwd: string) => Promise<void>} [options.repair] - 依赖树修复函数
+ * @param {{ warn: (message: string) => void }} [options.log] - 日志器
+ * @returns {Promise<boolean>} 是否执行了修复
+ */
+export async function ensureDependencyTree (cwd, options = {}) {
+	const { check = isDependencyTreeValid, repair = repairDependencyTree, log = console } = options
+	if (await check(cwd)) return false
+	log.warn('node_modules 不是 npm 依赖树（可能由 Deno 等其它包管理器安装），正在运行 `npm install` 修复……')
+	await repair(cwd)
+	if (!(await check(cwd))) throw new Error('`npm install` 后依赖树仍不合法，请手动运行 `npm install` 后重试')
+	return true
 }
 
 /**
@@ -56,11 +114,13 @@ function localVsce () {
  * @returns {Promise<string>} 生成的 VSIX 路径
  */
 async function packageExtension () {
+	await ensureDependencyTree(root)
+
 	const entry = localVsce()
-	if (entry) await run(process.execPath, [entry, 'package'])
+	if (entry) await run(process.execPath, [entry, 'package'], { cwd: root })
 	else {
 		const npx = await where_command('npx') || 'npx'
-		await run(npx, ['--yes', '@vscode/vsce', 'package'])
+		await run(npx, ['--yes', '@vscode/vsce', 'package'], { cwd: root })
 	}
 
 	const { name, version } = readJson(path.join(root, 'package.json'))
@@ -108,7 +168,7 @@ async function main () {
 	if (shouldTest) {
 		console.log('Running the test suite...\n')
 		const cli = path.join(root, 'node_modules', '@vscode', 'test-cli', 'out', 'bin.mjs')
-		await run(process.execPath, [cli])
+		await run(process.execPath, [cli], { cwd: root })
 	}
 
 	const vsix = await packageExtension()
@@ -119,4 +179,9 @@ async function main () {
 	
 }
 
-await main()
+// 仅在直接运行本脚本时执行；被测试 import 时不触发打包/安装。`import.meta.main` 从 Node 24.2 起可用（见 package.json 的 engines.node），测试宿主里是 undefined。这里不能用顶层 await——测试的 CJS mocha 会 require 它。
+if (import.meta.main)
+	main().catch((error) => {
+		console.error(error)
+		process.exitCode = 1
+	})
