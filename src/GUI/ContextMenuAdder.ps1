@@ -98,7 +98,10 @@ function AddCommandToContextMenu {
 }
 
 function RemoveCommandsFromContextMenu($className) {
-	Remove-Item -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\*\shell\$className" -Recurse
+	$key = "Registry::HKEY_CURRENT_USER\Software\Classes\*\shell\$className"
+	if (Test-Path -LiteralPath $key) {
+		Remove-Item -LiteralPath $key -Recurse
+	}
 }
 
 function AddFileType($fileType, $DefaultProgram) {
@@ -111,7 +114,10 @@ function AddFileType($fileType, $DefaultProgram) {
 }
 
 function RemoveFileType($fileType) {
-	Remove-Item -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\$fileType" -Recurse
+	$key = "Registry::HKEY_CURRENT_USER\Software\Classes\$fileType"
+	if (Test-Path -LiteralPath $key) {
+		Remove-Item -LiteralPath $key -Recurse
+	}
 }
 
 function AddFileHandlerProgram {
@@ -138,7 +144,10 @@ function AddFileHandlerProgram {
 }
 
 function RemoveFileHandlerProgram($className) {
-	Remove-Item -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\$className" -Recurse
+	$key = "Registry::HKEY_CURRENT_USER\Software\Classes\$className"
+	if (Test-Path -LiteralPath $key) {
+		Remove-Item -LiteralPath $key -Recurse
+	}
 }
 
 # 用 Get-Command 探测的基于 VS Code 的编辑器，以及要安装到其中的扩展。

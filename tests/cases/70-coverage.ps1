@@ -164,6 +164,9 @@ Add-Test @{
 		$key = 'Registry::HKEY_CURRENT_USER\Software\Classes\*\shell\ps12exeCompile'
 		$wasEnabled = [bool](Test-Path -LiteralPath $key)
 		try {
+			Set-ps12exeContextMenu -action disable -SkipEditorExtension
+			Set-ps12exeContextMenu -action disable -SkipEditorExtension
+			Assert-False (Test-Path -LiteralPath $key) '未启用时禁用右键菜单应不报错且保持不存在'
 			Set-ps12exeContextMenu -action enable -SkipEditorExtension
 			Assert-True (Test-Path -LiteralPath $key) '启用后右键菜单应存在'
 			Set-ps12exeContextMenu -action disable -SkipEditorExtension
