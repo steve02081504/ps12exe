@@ -32,7 +32,7 @@ try {
 	Set-ps12exeContextMenu -action enable | Out-Null
 
 	# 控制台 + noConsole + 二次编译
-	& $repoRoot/build/ps12exe.exe $repoRoot/ps12exe.ps1 -Verbose -noConsole -title 'lol' | Write-Host
+	& $repoRoot/build/ps12exe.exe $repoRoot/ps12exe.ps1 -Verbose -noConsole | Write-Host
 	& $repoRoot/build/ps12exe.exe $repoRoot/ps12exe.ps1 $repoRoot/build/ps12exe2.exe -Verbose | Write-Host
 	"'Hello 世界！👾'" | ps12exe -outputFile $repoRoot/build/hello.exe -Verbose | Write-Host
 	& $repoRoot/build/ps12exe2.exe -Content '$PSCommandPath;$PSScriptRoot' -outputFile $repoRoot/build/pathtest.exe | Write-Host
@@ -46,6 +46,23 @@ try {
 		if ($path1 -ne $path2) { Write-Error "$path1 -ne $path2" }
 	}
 	& $repoRoot/build/hello.exe | Write-Host
+
+	# 命令行参数按 PSD 数据解析：脚本有 param 块时，表/数组/安全转换按对象传入；表达式/命令不参与求值
+	$psdDir = Join-Path $buildDir 'psd'
+	New-Item -ItemType Directory -Path $psdDir -Force | Out-Null
+	$psdPs1 = Join-Path $psdDir 'psd.ps1'
+	$psdExe = Join-Path $psdDir 'psd.exe'
+	Set-Content -LiteralPath $psdPs1 -Encoding UTF8 -Value @'
+param([hashtable]$Config, [int]$N = 0)
+"Type=$($Config.GetType().Name) a=$($Config.a) x=$($Config.x) N=$N"
+'@
+	ps12exe -inputFile $psdPs1 -outputFile $psdExe | Write-Host
+	$psdOut = & $psdExe -Config "@{a='b'}" -N "[int]'42'" 2>&1 | Out-String
+	if ($psdOut -notmatch 'Type=Hashtable' -or $psdOut -notmatch 'a=b' -or $psdOut -notmatch 'N=42') {
+		throw "PSD argument parsing failed: $psdOut"
+	}
+	$psdBad = & $psdExe -Config "@{x=1+1}" 2>&1 | Out-String
+	if ($psdBad -match 'x=2') { throw "PSD argument was evaluated as PowerShell: $psdBad" }
 
 	# 非常量 exe 默认走“压缩负载 + 内存 launcher”，pathtest.exe 已覆盖 $PSCommandPath/$PSScriptRoot。
 	$packedSize = (Get-Item -LiteralPath $repoRoot/build/pathtest.exe).Length
@@ -193,8 +210,8 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 	$script:GuestMode = $false
 	$script:Params = @{}
 	$ParamList = @{
-		iconFile = @{ ParameterType = [string] }
-		title    = @{ ParameterType = [string] }
+		resourceParams = @{ ParameterType = [hashtable] }
+		CodeSigning    = @{ ParameterType = [hashtable] }
 	}
 	$script:i18nWarnings = [System.Collections.Generic.List[string]]::new()
 	function Write-I18n {
@@ -203,12 +220,17 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 		if ($PipeLineType -eq 'Warning') { $script:i18nWarnings.Add($Mid) }
 	}
 	. (Join-Path $repoRoot 'src/ReadScriptFile.ps1')
-	function Invoke-PragmaTest([string]$pragma, [bool]$guest, [string]$expect, [string]$assertParam = 'iconFile') {
+	function Get-ParamByPath($Params, [string]$Path) {
+		$cur = $Params
+		foreach ($seg in ($Path -split '\.')) { $cur = $cur[$seg] }
+		$cur
+	}
+	function Invoke-PragmaTest([string]$pragma, [bool]$guest, [string]$expect, [string]$assertParam = 'resourceParams.iconFile') {
 		$script:GuestMode = $guest
 		$script:Params = @{}
 		$rejected = $false
 		try { [void](Preprocessor @($pragma) "C:\compiled\main.ps1") } catch { $rejected = $true; $Error.Clear() }
-		$actual = if ($rejected) { 'REJECTED' } else { $script:Params[$assertParam] }
+		$actual = if ($rejected) { 'REJECTED' } else { Get-ParamByPath $script:Params $assertParam }
 		if ($expect -eq 'REJECTED') {
 			if (-not $rejected) { throw "pragma should be rejected: [$pragma] guest=$guest got value: $actual" }
 		}
@@ -222,16 +244,24 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 	$secretFile = Join-Path $buildDir 'pragma-secret.txt'
 	Set-Content -LiteralPath $secretFile -Encoding UTF8 -Value 'secret-value'
 	$env:PRAGMA_SECRET = $secretFile
-	Invoke-PragmaTest '#_pragma iconFile $(Join-Path $env:USERPROFILE "foo.ico")' $false $userProfileFoo
-	Invoke-PragmaTest '#_pragma iconFile $(Join-Path $env:USERPROFILE "foo.ico")' $true $userProfileFoo
-	Invoke-PragmaTest '#_pragma iconFile $((Get-Command pwsh).Source)' $false $pwshSource
-	Invoke-PragmaTest '#_pragma iconFile $((Join-Path $env:USERPROFILE "Foo.ico").ToLower())' $false (Join-Path $env:USERPROFILE 'foo.ico')
-	Invoke-PragmaTest '#_pragma iconFile $((Get-Item C:\Windows).Delete())' $false 'REJECTED'
-	Invoke-PragmaTest '#_pragma iconFile $(Remove-Item C:\x -Recurse)' $false 'REJECTED'
-	Invoke-PragmaTest '#_pragma iconFile $(Get-Content $env:PRAGMA_SECRET)' $false 'secret-value'
-	Invoke-PragmaTest '#_pragma iconFile $(Get-Content $env:PRAGMA_SECRET)' $true 'REJECTED'
-	Invoke-PragmaTest '#_pragma iconFile $PSScriptRoot/foo.ico' $false 'C:\compiled/foo.ico'
-	Invoke-PragmaTest '#_pragma title "prefix$(Split-Path $PSScriptRoot -Leaf)suffix"' $false 'prefixcompiledsuffix' 'title'
+	Invoke-PragmaTest '#_pragma resourceParams.iconFile $(Join-Path $env:USERPROFILE "foo.ico")' $false $userProfileFoo
+	Invoke-PragmaTest '#_pragma resourceParams.iconFile $(Join-Path $env:USERPROFILE "foo.ico")' $true $userProfileFoo
+	Invoke-PragmaTest '#_pragma resourceParams.iconFile $((Get-Command pwsh).Source)' $false $pwshSource
+	Invoke-PragmaTest '#_pragma resourceParams.iconFile $((Join-Path $env:USERPROFILE "Foo.ico").ToLower())' $false (Join-Path $env:USERPROFILE 'foo.ico')
+	Invoke-PragmaTest '#_pragma resourceParams.iconFile $((Get-Item C:\Windows).Delete())' $false 'REJECTED'
+	Invoke-PragmaTest '#_pragma resourceParams.iconFile $(Remove-Item C:\x -Recurse)' $false 'REJECTED'
+	Invoke-PragmaTest '#_pragma resourceParams.iconFile $(Get-Content $env:PRAGMA_SECRET)' $false 'secret-value'
+	Invoke-PragmaTest '#_pragma resourceParams.iconFile $(Get-Content $env:PRAGMA_SECRET)' $true 'REJECTED'
+	Invoke-PragmaTest '#_pragma resourceParams.iconFile $PSScriptRoot/foo.ico' $false 'C:\compiled/foo.ico'
+	Invoke-PragmaTest '#_pragma resourceParams.title "prefix$(Split-Path $PSScriptRoot -Leaf)suffix"' $false 'prefixcompiledsuffix' 'resourceParams.title'
+	Invoke-PragmaTest '#_pragma CodeSigning.Path C:\cert.pfx' $false 'C:\cert.pfx' 'CodeSigning.Path'
+	Invoke-PragmaTest '#_pragma resourceParams.meta.deep C:\deep\v' $false 'C:\deep\v' 'resourceParams.meta.deep'
+	# 嵌套 pragma 的根参数必须是哈希表，否则告警 UnknownPragma
+	$script:i18nWarnings.Clear()
+	$script:GuestMode = $false
+	$script:Params = @{}
+	[void](Preprocessor @('#_pragma notTable.key value') "C:\compiled\main.ps1")
+	if ($script:i18nWarnings -notcontains 'UnknownPragma') { throw "nested pragma with non-hashtable root did not warn: $($script:i18nWarnings -join ',')" }
 	Remove-Item Env:\PRAGMA_SECRET -ErrorAction SilentlyContinue
 
 	# 嵌套 #_if：#_endif 必须与最近的 #_if 配对，外层分支不能被内层 #_endif 提前截断；嵌套即有一支死代码，需告警。
