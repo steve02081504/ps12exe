@@ -42,7 +42,8 @@ Set-ps12exeContextMenu #设置右键菜单
 （也可以克隆本仓库后直接运行 `.\ps12exe.ps1`。）
 
 **从 PS2EXE 迁到 ps12exe 很麻烦？不用担心。**  
-PS2EXE2ps12exe 会把对 PS2EXE 的调用转到 ps12exe。卸载 PS2EXE、安装本模块后，仍可按以往方式使用 PS2EXE。
+PS2EXE2ps12exe 会把对 PS2EXE 的调用转到 ps12exe。卸载 PS2EXE、安装本模块后，仍可按以往方式使用 PS2EXE。  
+它最大程度兼容各版本 PS2EXE 的参数（含 `conHost`、`embedFiles` 和旧版的 `runtime20`/`runtime40`），ps12exe 缺少的能力会在编译期转写为等价实现。
 
 ```powershell
 Uninstall-Module PS2EXE
@@ -354,18 +355,19 @@ Compiled file written -> 2560 bytes
 ```
 
 可以看到，`#_pragma Console no` 使得生成的exe文件以窗口模式运行，即使我们在编译时没有指定`-noConsole`。
-pragma命令可以设置任何编译参数：
+pragma命令可以设置任何编译参数；参数名用 `.` 可以设置嵌套值：
 
 ```powershell
 #_pragma noConsole #窗口模式
 #_pragma Console #控制台模式
 #_pragma Console no #窗口模式
 #_pragma Console true #控制台模式
-#_pragma icon $PSScriptRoot/icon.ico #设置图标
-#_pragma title "title" #设置exe标题
+#_pragma resourceParams.iconFile $PSScriptRoot/icon.ico #设置图标
+#_pragma resourceParams.title "title" #设置exe标题
+#_pragma CodeSigning.Path "C:\Cert\mycert.pfx" #设置代码签名证书
 ```
 
-字符串类型的 pragma 值也可以包含 `$(...)` 子表达式，并在预处理时求值，例如 `#_pragma icon $(Join-Path $env:USERPROFILE 'foo.ico')`。仅允许白名单内的 path 相关命令（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`，以及非访客模式下的 `Get-Content`）、变量（`$env:*`、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）和常见无害实例方法（如 `ToUpper`、`Trim`、`Split`、`ToString`）；其他内容将中止编译。单引号值保持完全字面。
+字符串类型的 pragma 值也可以包含 `$(...)` 子表达式，并在预处理时求值，例如 `#_pragma resourceParams.iconFile $(Join-Path $env:USERPROFILE 'foo.ico')`。仅允许白名单内的 path 相关命令（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`，以及非访客模式下的 `Get-Content`）、变量（`$env:*`、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）和常见无害实例方法（如 `ToUpper`、`Trim`、`Split`、`ToString`）；其他内容将中止编译。单引号值保持完全字面。
 
 #### `#_balus`
 
@@ -403,7 +405,19 @@ ps12exe 可以创建配置文件，文件名为`生成的可执行文件 + ".con
 
 ### 参数处理
 
-编译后的脚本会像原始脚本一样处理参数。其中一个限制来自 Windows 环境：对于所有可执行文件，所有参数的类型都是 String，如果参数类型没有隐式转换，则必须在脚本中进行显式转换。你甚至可以通过管道将内容传送到可执行文件，但有同样的限制（所有管道传送的值都是 String 类型）。
+编译后的脚本会像原始脚本一样处理参数。其中一个限制来自 Windows 环境：对于所有可执行文件，命令行参数最终都是字符串。
+
+当脚本顶层有 `param()` 时，ps12exe 会把参数值按 PowerShell 数据（PSD）解析：哈希表 `@{}`、有序哈希表 `[ordered]@{}`、数组 `@()`，以及到安全类型的转换（如 `[int]'5'`、`[hashtable]@{}`），都会以对应的对象直接传给参数，无需在脚本里手动转换：
+
+```powershell
+# 脚本：param([hashtable]$Config)
+app.exe -Config "@{name='Bob'; tags=@('a','b')}"
+app.exe -Config "[ordered]@{first='1'; second='2'}"
+```
+
+值必须加引号：shell 会把未加引号的 `@{...}` 字符串化（实际只会收到 `System.Collections.Hashtable` 这段文本）。任何不是数据的值（表达式或命令）都按普通字符串传递、绝不会被求值，因此 `-Config "@{x=(Get-Date)}"` 不会执行代码，只是无法绑定。
+
+通过管道传入的值仍然都是字符串。
 
 ### 密码安全
 
@@ -519,6 +533,7 @@ ps12exe 的模块更大，因为它是无外部依赖的纯脚本编译器，随
 | 原生子进程能看到控制台 TTY（`isTTY`）     | ✔️                            | ❌                                                                             |
 | 可读取原始 stdin（`[Console]::In`）       | ✔️（脚本未使用 `$input` 时）  | ❌                                                                             |
 | `$PSCommandPath` / `$PSScriptRoot` 可解析 | ✔️（exe 路径 / exe 所在目录） | ❌                                                                             |
+| 命令行参数按 PSD 数据解析（表/对象） | ✔️（`-Config "@{...}"`） | ❌（仅字符串） |
 
 PS2EXE 1.0.18 总是把脚本输出经 `Out-String` 收集，并在运行脚本前就把重定向的 stdin 全部读走，因此原生子进程失去控制台句柄、stdin 直接 EOF；ps12exe 通过宿主输出（`Out-Default`），且仅在脚本确实用到 `$input` 时才读取 stdin。此外 PS2EXE 在编译产物里让 `$PSCommandPath`/`$PSScriptRoot` 保持为空（另提供自定义的 `$ScriptRoot`），而 ps12exe 会把两者映射到生成的 exe。
 

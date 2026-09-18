@@ -42,7 +42,8 @@ Set-ps12exeContextMenu # Set the right-click menu
 (You can also clone this repository and run `./ps12exe.ps1` directly.)
 
 **Upgrading from PS2EXE to ps12exe? No problem!**  
-PS2EXE2ps12exe redirects PS2EXE calls to ps12exe. Uninstall PS2EXE, install this module, then use PS2EXE as usual.
+PS2EXE2ps12exe redirects PS2EXE calls to ps12exe. Uninstall PS2EXE, install this module, then use PS2EXE as usual.  
+It aims for maximum compatibility with every PS2EXE version (including `conHost`, `embedFiles` and legacy `runtime20`/`runtime40`); capabilities ps12exe lacks are rewritten at compile time.
 
 ```powershell
 Uninstall-Module PS2EXE
@@ -354,18 +355,19 @@ Compiled file written -> 2560 bytes
 ```
 
 As you can see, `#_pragma Console no` makes the generated exe file run in windowed mode, even if we didn't specify `-noConsole` during compilation.
-The pragma command can set any compilation parameter:
+The pragma command can set any compilation parameter; use `.` in the name to set nested values:
 
 ```powershell
 #_pragma noConsole # windowed
 #_pragma Console # console
 #_pragma Console no # windowed
 #_pragma Console true # console
-#_pragma icon $PSScriptRoot/icon.ico # set icon
-#_pragma title "title" # set title
+#_pragma resourceParams.iconFile $PSScriptRoot/icon.ico # set icon
+#_pragma resourceParams.title "title" # set title
+#_pragma CodeSigning.Path "C:\Cert\mycert.pfx" # set the code signing certificate
 ```
 
-String pragma values can also contain `$(...)` subexpressions, which are evaluated at preprocess time, e.g. `#_pragma icon $(Join-Path $env:USERPROFILE 'foo.ico')`. Only whitelisted path-related commands (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, plus `Get-Content` outside GuestMode), variables (`$env:*`, `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) and common harmless instance methods (e.g. `ToUpper`, `Trim`, `Split`, `ToString`) are allowed; anything else aborts the compile. Single-quoted values stay fully literal.
+String pragma values can also contain `$(...)` subexpressions, which are evaluated at preprocess time, e.g. `#_pragma resourceParams.iconFile $(Join-Path $env:USERPROFILE 'foo.ico')`. Only whitelisted path-related commands (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, plus `Get-Content` outside GuestMode), variables (`$env:*`, `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) and common harmless instance methods (e.g. `ToUpper`, `Trim`, `Split`, `ToString`) are allowed; anything else aborts the compile. Single-quoted values stay fully literal.
 
 #### `#_balus`
 
@@ -403,7 +405,19 @@ ps12exe can create config files named after the generated executable + ".config"
 
 ### Parameter Processing
 
-Compiled scripts handle parameters like the original script. One limitation is Windows itself: for any executable, arguments are strings. If your parameter needs another type, convert it explicitly. Piped input works the same way (values are strings).
+Compiled scripts handle parameters like the original script. One limitation is Windows itself: for any executable, command-line arguments are ultimately strings.
+
+When the script has a top-level `param()` block, ps12exe parses argument values as PowerShell data (PSD): hashtables `@{}`, ordered hashtables `[ordered]@{}`, arrays `@()`, and casts to safe types such as `[int]'5'` or `[hashtable]@{}` are passed to the parameter as the corresponding object, so no manual conversion is needed:
+
+```powershell
+# script: param([hashtable]$Config)
+app.exe -Config "@{name='Bob'; tags=@('a','b')}"
+app.exe -Config "[ordered]@{first='1'; second='2'}"
+```
+
+The value must be quoted: shells stringify an unquoted `@{...}` (the program only receives the text `System.Collections.Hashtable`). Anything that is not data (an expression or a command) is passed as a plain string and is never evaluated, so `-Config "@{x=(Get-Date)}"` does not run code — it simply fails to bind.
+
+Piped input values are still strings.
 
 ### Password Security
 
@@ -520,6 +534,7 @@ Whether native child processes started by the EXE see a real console TTY ([#59](
 | Native child process sees a console TTY (`isTTY`) | ✔️                                   | ❌                                                                             |
 | Raw stdin (`[Console]::In`) readable              | ✔️ (unless the script uses `$input`) | ❌                                                                             |
 | `$PSCommandPath` / `$PSScriptRoot` resolve        | ✔️ (exe path / exe directory)        | ❌                                                                             |
+| Command-line arguments parsed as PSD data (tables/objects) | ✔️ (`-Config "@{...}"`) | ❌ (strings only) |
 
 PS2EXE 1.0.18 always pipes script output through `Out-String` and eagerly drains redirected stdin before the script runs, so native children lose the console handle and stdin reaches EOF; ps12exe runs the script through the host (`Out-Default`) and only drains stdin when the script actually uses `$input`. PS2EXE also leaves `$PSCommandPath`/`$PSScriptRoot` empty inside the compiled program (it offers its own `$ScriptRoot` instead), while ps12exe maps both to the generated exe.
 

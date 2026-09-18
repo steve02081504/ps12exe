@@ -42,7 +42,8 @@ Set-ps12exeContextMenu # 右クリックメニューを設定する
 (リポジトリをクローンして `.\ps12exe.ps1` を実行することもできます)
 
 **PS2EXE から ps12exe への移行は難しいですか？ ご安心ください！**  
-PS2EXE2ps12exe は PS2EXE の呼び出しを ps12exe にフックできます。PS2EXE をアンインストールして PS2EXE2ps12exe をインストールし、その後は通常通り PS2EXE を使用するだけです。
+PS2EXE2ps12exe は PS2EXE の呼び出しを ps12exe にフックできます。PS2EXE をアンインストールして PS2EXE2ps12exe をインストールし、その後は通常通り PS2EXE を使用するだけです。  
+あらゆるバージョンの PS2EXE パラメータ（`conHost`、`embedFiles`、旧 `runtime20`/`runtime40` を含む）との最大限の互換性を目指し、ps12exe にない機能はコンパイル時に書き換えて実現します。
 
 ```powershell
 Uninstall-Module PS2EXE
@@ -352,18 +353,19 @@ Compiled file written -> 2560 bytes
 ```
 
 ご覧のように、コンパイル時に `#_pragma Console no` を指定しなかったとしても、生成された exe ファイルはウィンドウモードで実行されます。  
-pragma コマンドは任意のコンパイルパラメータを設定できます。
+pragma コマンドは任意のコンパイルパラメータを設定できます。名前に `.` を使うとネストした値を設定できます。
 
 ```powershell
 #_pragma noConsole # ウィンドウモード
 #_pragma Console # コンソールモード
 #_pragma Console no # ウィンドウモード
 #_pragma Console true # コンソールモード
-#_pragma icon $PSScriptRoot/icon.ico # アイコンの設定
-#_pragma title "title" # exe のタイトルを設定する
+#_pragma resourceParams.iconFile $PSScriptRoot/icon.ico # アイコンの設定
+#_pragma resourceParams.title "title" # exe のタイトルを設定する
+#_pragma CodeSigning.Path "C:\Cert\mycert.pfx" # コード署名証明書を設定する
 ```
 
-文字列型の pragma 値には `$(...)` 部分式を記述でき、プリプロセス時に評価されます（例：`#_pragma icon $(Join-Path $env:USERPROFILE 'foo.ico')`）。許可されるのはホワイトリストに含まれる path 関連コマンド（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`、および GuestMode 以外での `Get-Content`）、変数（`$env:*`、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）、および一般的な無害なインスタンスメソッド（例：`ToUpper`、`Trim`、`Split`、`ToString`）のみです。それ以外はコンパイルを中断します。単引用符で囲んだ値は完全にリテラルとして扱われます。
+文字列型の pragma 値には `$(...)` 部分式を記述でき、プリプロセス時に評価されます（例：`#_pragma resourceParams.iconFile $(Join-Path $env:USERPROFILE 'foo.ico')`）。許可されるのはホワイトリストに含まれる path 関連コマンド（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`、および GuestMode 以外での `Get-Content`）、変数（`$env:*`、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）、および一般的な無害なインスタンスメソッド（例：`ToUpper`、`Trim`、`Split`、`ToString`）のみです。それ以外はコンパイルを中断します。単引用符で囲んだ値は完全にリテラルとして扱われます。
 
 #### `#_balus`
 
@@ -401,7 +403,19 @@ ps12exe は `生成された実行ファイル + ".config"` という名前の�
 
 ### パラメータ処理
 
-コンパイルされたスクリプトは、元のスクリプトと同様にパラメータを処理します。すべての実行可能ファイルでは、すべてのパラメータは String 型であり、パラメータ型が暗黙的に変換されない場合は、スクリプト内で明示的に変換する必要があります。実行可能ファイルにコンテンツをパイプすることもできますが、同じ制限（パイプされた値はすべて String 型）があります。
+コンパイルされたスクリプトは、元のスクリプトと同様にパラメータを処理します。1 つの制限は Windows 環境に由来します。どの実行可能ファイルでも、コマンドライン引数は最終的に文字列になります。
+
+スクリプトの先頭に `param()` ブロックがある場合、ps12exe は引数の値を PowerShell データ (PSD) として解析します。ハッシュテーブル `@{}`、順序付きハッシュテーブル `[ordered]@{}`、配列 `@()`、および `[int]'5'` や `[hashtable]@{}` のような安全な型へのキャストは、対応するオブジェクトとしてパラメータに渡されるため、手動での変換は不要です。
+
+```powershell
+# script: param([hashtable]$Config)
+app.exe -Config "@{name='Bob'; tags=@('a','b')}"
+app.exe -Config "[ordered]@{first='1'; second='2'}"
+```
+
+値は引用符で囲む必要があります。引用符のない `@{...}` はシェルによって文字列化され（プログラムは `System.Collections.Hashtable` というテキストしか受け取りません）、データでない値（式やコマンド）は通常の文字列として渡され、決して評価されません。したがって `-Config "@{x=(Get-Date)}"` はコードを実行せず、単にバインドに失敗します。
+
+パイプで渡される値はこれまでどおり文字列です。
 
 ### パスワード管理のセキュリティ
 
@@ -517,6 +531,7 @@ EXE が起動したネイティブ子プロセスが実際のコンソール TTY
 | ネイティブ子プロセスがコンソール TTY（`isTTY`）を認識 | ✔️                                         | ❌                                                                             |
 | 生の stdin（`[Console]::In`）を読み取れる             | ✔️（スクリプトが `$input` を使わない場合） | ❌                                                                             |
 | `$PSCommandPath` / `$PSScriptRoot` が解決される       | ✔️（exe パス / exe のディレクトリ）        | ❌                                                                             |
+| コマンドライン引数を PSD データとして解析（表/オブジェクト） | ✔️（`-Config "@{...}"`） | ❌（文字列のみ） |
 
 PS2EXE 1.0.18 は常にスクリプト出力を `Out-String` 経由で収集し、スクリプト実行前にリダイレクトされた stdin を最後まで読み切るため、ネイティブ子プロセスはコンソールハンドルを失い、stdin は EOF になります。ps12exe はホスト経由で出力し（`Out-Default`）、スクリプトが実際に `$input` を使うときだけ stdin を読みます。また PS2EXE はコンパイル済みプログラム内で `$PSCommandPath`/`$PSScriptRoot` を空のままにし（独自の `$ScriptRoot` を提供）、ps12exe は両方を生成された exe にマップします。
 

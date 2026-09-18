@@ -42,7 +42,8 @@ Set-ps12exeContextMenu # Configura el menú contextual
 (También puede clonar el repositorio y ejecutar `.\ps12exe.ps1`)
 
 **¿Le cuesta pasar de PS2EXE a ps12exe? No hay problema.**  
-PS2EXE2ps12exe redirige las llamadas de PS2EXE a ps12exe. Desinstale PS2EXE, instale este módulo y siga usando PS2EXE como siempre.
+PS2EXE2ps12exe redirige las llamadas de PS2EXE a ps12exe. Desinstale PS2EXE, instale este módulo y siga usando PS2EXE como siempre.  
+Busca la máxima compatibilidad con todas las versiones de PS2EXE (incluidos `conHost`, `embedFiles` y los antiguos `runtime20`/`runtime40`); las capacidades que ps12exe no tiene se reescriben en tiempo de compilación.
 
 ```powershell
 Uninstall-Module PS2EXE
@@ -354,18 +355,19 @@ Compiled file written -> 2560 bytes
 ```
 
 Como puede ver, `#_pragma Console no` hace que el archivo exe generado se ejecute en modo ventana, incluso si no especificamos `-noConsole` en tiempo de compilación.
-El comando pragma puede establecer cualquier parámetro de compilación:
+El comando pragma puede establecer cualquier parámetro de compilación; usa `.` en el nombre para establecer valores anidados:
 
 ```powershell
 #_pragma noConsole #Modo ventana
 #_pragma Console #Modo consola
 #_pragma Console no #Modo ventana
 #_pragma Console true #Modo consola
-#_pragma icon $PSScriptRoot/icon.ico #Configurar icono
-#_pragma title "title" #Establecer título del exe
+#_pragma resourceParams.iconFile $PSScriptRoot/icon.ico #Configurar icono
+#_pragma resourceParams.title "title" #Establecer título del exe
+#_pragma CodeSigning.Path "C:\Cert\mycert.pfx" #Establecer el certificado de firma de código
 ```
 
-Los valores de pragma de tipo cadena también pueden contener subexpresiones `$(...)`, que se evalúan en tiempo de preprocesamiento, p. ej. `#_pragma icon $(Join-Path $env:USERPROFILE 'foo.ico')`. Solo se permiten comandos relacionados con rutas en la lista blanca (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, más `Get-Content` fuera del modo invitado), variables (`$env:*`, `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) y métodos de instancia inofensivos comunes (p. ej. `ToUpper`, `Trim`, `Split`, `ToString`); cualquier otra cosa aborta la compilación. Los valores entre comillas simples permanecen completamente literales.
+Los valores de pragma de tipo cadena también pueden contener subexpresiones `$(...)`, que se evalúan en tiempo de preprocesamiento, p. ej. `#_pragma resourceParams.iconFile $(Join-Path $env:USERPROFILE 'foo.ico')`. Solo se permiten comandos relacionados con rutas en la lista blanca (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, más `Get-Content` fuera del modo invitado), variables (`$env:*`, `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) y métodos de instancia inofensivos comunes (p. ej. `ToUpper`, `Trim`, `Split`, `ToString`); cualquier otra cosa aborta la compilación. Los valores entre comillas simples permanecen completamente literales.
 
 #### `#_balus`
 
@@ -403,7 +405,19 @@ ps12exe puede crear ficheros de configuración con el nombre `ejecutable generad
 
 ### Manejo de parámetros
 
-El script compilado manejará los parámetros igual que el script original. Una limitación proviene del entorno Windows: para todos los ejecutables, todos los parámetros son de tipo String, y si el tipo de parámetro no se convierte implícitamente, debe convertirse explícitamente en el script. Incluso puede canalizar contenido al ejecutable, pero con la misma limitación (todos los valores canalizados son de tipo String).
+El script compilado manejará los parámetros igual que el script original. Una limitación proviene del entorno Windows: para todos los ejecutables, los argumentos de línea de comandos son en última instancia cadenas.
+
+Cuando el script tiene un bloque `param()` de nivel superior, ps12exe analiza los valores de los argumentos como datos de PowerShell (PSD): las tablas hash `@{}`, las tablas hash ordenadas `[ordered]@{}`, los arreglos `@()` y las conversiones a tipos seguros como `[int]'5'` o `[hashtable]@{}` se pasan al parámetro como el objeto correspondiente, sin necesidad de conversión manual:
+
+```powershell
+# script: param([hashtable]$Config)
+app.exe -Config "@{name='Bob'; tags=@('a','b')}"
+app.exe -Config "[ordered]@{first='1'; second='2'}"
+```
+
+El valor debe ir entre comillas: los shells convierten a cadena un `@{...}` sin comillas (el programa solo recibe el texto `System.Collections.Hashtable`). Todo lo que no sean datos (una expresión o un comando) se pasa como cadena normal y nunca se evalúa, así que `-Config "@{x=(Get-Date)}"` no ejecuta código: simplemente falla al enlazar.
+
+Los valores canalizados por tubería siguen siendo cadenas.
 
 ### Seguridad de contraseñas
 
@@ -519,6 +533,7 @@ Verificado en una ventana de consola real de Windows 11: si los procesos hijos n
 | El proceso hijo nativo ve una TTY (`isTTY`)     | ✔️                                   | ❌                                                                             |
 | stdin sin procesar (`[Console]::In`) legible    | ✔️ (salvo si el script usa `$input`) | ❌                                                                             |
 | `$PSCommandPath` / `$PSScriptRoot` se resuelven | ✔️ (ruta / carpeta del exe)          | ❌                                                                             |
+| Argumentos de línea de comandos analizados como datos PSD (tablas/objetos) | ✔️ (`-Config "@{...}"`) | ❌ (solo cadenas) |
 
 PS2EXE 1.0.18 siempre hace pasar la salida del script por `Out-String` y drena por completo el stdin redirigido antes de ejecutar el script, así que los procesos hijos nativos pierden el handle de consola y el stdin llega a EOF; ps12exe escribe a través del host (`Out-Default`) y solo drena stdin cuando el script usa realmente `$input`. Además, PS2EXE deja `$PSCommandPath`/`$PSScriptRoot` vacías dentro del programa compilado (ofrece su propio `$ScriptRoot`), mientras que ps12exe asigna ambas a la ruta del exe generado.
 

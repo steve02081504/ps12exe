@@ -42,7 +42,8 @@ Set-ps12exeContextMenu # Définir le menu contextuel du clic droit
 (Vous pouvez également cloner ce référentiel et exécuter directement `.\ps12exe.ps1`)
 
 **La migration de PS2EXE vers ps12exe est-elle difficile ? Pas de problème !**  
-PS2EXE2ps12exe peut relier les appels de PS2EXE à ps12exe. Il vous suffit de désinstaller PS2EXE et d’installer ceci, puis de l’utiliser comme vous le feriez avec PS2EXE.
+PS2EXE2ps12exe peut relier les appels de PS2EXE à ps12exe. Il vous suffit de désinstaller PS2EXE et d’installer ceci, puis de l’utiliser comme vous le feriez avec PS2EXE.  
+Il vise une compatibilité maximale avec toutes les versions de PS2EXE (y compris `conHost`, `embedFiles` et les anciens `runtime20`/`runtime40`) ; les capacités absentes de ps12exe sont réécrites au moment de la compilation.
 
 ```powershell
 Uninstall-Module PS2EXE
@@ -354,18 +355,19 @@ Fichier compilé écrit -> 2 560 octets
 ```
 
 Comme vous pouvez le voir, `#_pragma Console no` fait fonctionner le fichier exe généré en mode fenêtre, même si nous n'avons pas spécifié `-noConsole` lors de la compilation.  
-La commande pragma peut définir tous les paramètres de compilation :
+La commande pragma peut définir tous les paramètres de compilation ; utilisez `.` dans le nom pour définir des valeurs imbriquées :
 
 ```powershell
 #_pragma noConsole # Mode fenêtre
 #_pragma Console # Mode console
 #_pragma Console no # Mode fenêtre
 #_pragma Console true # Mode console
-#_pragma icon $PSScriptRoot/icon.ico # Définit l'icône
-#_pragma title "title" # Définit le titre de l'exe
+#_pragma resourceParams.iconFile $PSScriptRoot/icon.ico # Définit l'icône
+#_pragma resourceParams.title "title" # Définit le titre de l'exe
+#_pragma CodeSigning.Path "C:\Cert\mycert.pfx" # Définit le certificat de signature de code
 ```
 
-Les valeurs de pragma de type chaîne peuvent également contenir des sous-expressions `$(...)`, évaluées au moment du prétraitement, par ex. `#_pragma icon $(Join-Path $env:USERPROFILE 'foo.ico')`. Seules les commandes liées aux chemins figurant sur la liste blanche (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, plus `Get-Content` hors mode invité), les variables (`$env:*`, `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) et les méthodes d’instance inoffensives courantes (par ex. `ToUpper`, `Trim`, `Split`, `ToString`) sont autorisées ; toute autre chose interrompt la compilation. Les valeurs entre guillemets simples restent entièrement littérales.
+Les valeurs de pragma de type chaîne peuvent également contenir des sous-expressions `$(...)`, évaluées au moment du prétraitement, par ex. `#_pragma resourceParams.iconFile $(Join-Path $env:USERPROFILE 'foo.ico')`. Seules les commandes liées aux chemins figurant sur la liste blanche (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, plus `Get-Content` hors mode invité), les variables (`$env:*`, `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) et les méthodes d’instance inoffensives courantes (par ex. `ToUpper`, `Trim`, `Split`, `ToString`) sont autorisées ; toute autre chose interrompt la compilation. Les valeurs entre guillemets simples restent entièrement littérales.
 
 #### `#_balus`
 
@@ -403,7 +405,19 @@ ps12exe peut créer des fichiers de configuration, avec le nom de fichier `fichi
 
 ### Gestion des paramètres
 
-Les scripts compilés gèrent les paramètres comme le script d'origine. Une des limitations provient de l'environnement Windows : pour tous les exécutables, tous les types de paramètres sont des chaînes de caractères, et si le type de paramètre n'est pas implicitement converti, il doit être explicitement converti dans le script. Vous pouvez même transmettre le contenu par canalisation à un fichier exécutable, mais avec les mêmes limitations (toutes les valeurs transmises par canalisation sont de type chaîne de caractères).
+Les scripts compilés gèrent les paramètres comme le script d'origine. Une des limitations provient de l'environnement Windows : pour tous les exécutables, les arguments de ligne de commande sont en fin de compte des chaînes de caractères.
+
+Lorsque le script possède un bloc `param()` de niveau supérieur, ps12exe analyse les valeurs des arguments comme des données PowerShell (PSD) : les tables de hachage `@{}`, les tables de hachage ordonnées `[ordered]@{}`, les tableaux `@()` et les conversions vers des types sûrs comme `[int]'5'` ou `[hashtable]@{}` sont transmises au paramètre sous forme d'objet, sans conversion manuelle :
+
+```powershell
+# script : param([hashtable]$Config)
+app.exe -Config "@{name='Bob'; tags=@('a','b')}"
+app.exe -Config "[ordered]@{first='1'; second='2'}"
+```
+
+La valeur doit être entre guillemets : les shells transforment en chaîne un `@{...}` non cité (le programme ne reçoit que le texte `System.Collections.Hashtable`). Tout ce qui n'est pas une donnée (une expression ou une commande) est transmis comme une simple chaîne et n'est jamais évalué ; ainsi `-Config "@{x=(Get-Date)}"` n'exécute aucun code, il échoue simplement à la liaison.
+
+Les valeurs transmises par canalisation restent des chaînes.
 
 ### Sécurité des mots de passe
 
@@ -519,6 +533,7 @@ Vérifié dans une véritable fenêtre de console sous Windows 11 : les processu
 | Le processus enfant natif voit une TTY (`isTTY`) | ✔️                                      | ❌                                                                             |
 | stdin brut (`[Console]::In`) lisible             | ✔️ (sauf si le script utilise `$input`) | ❌                                                                             |
 | `$PSCommandPath` / `$PSScriptRoot` se résolvent  | ✔️ (chemin / dossier de l'exe)          | ❌                                                                             |
+| Arguments en ligne de commande analysés comme données PSD (tables/objets) | ✔️ (`-Config "@{...}"`) | ❌ (chaînes uniquement) |
 
 PS2EXE 1.0.18 fait toujours passer la sortie du script par `Out-String` et draine entièrement le stdin redirigé avant d'exécuter le script : les processus enfants natifs perdent le handle de console et le stdin atteint EOF. ps12exe écrit via l'hôte (`Out-Default`) et ne draine le stdin que si le script utilise réellement `$input`. De plus, PS2EXE laisse `$PSCommandPath`/`$PSScriptRoot` vides dans le programme compilé (il fournit son propre `$ScriptRoot`), tandis que ps12exe mappe les deux vers l'exe généré.
 
