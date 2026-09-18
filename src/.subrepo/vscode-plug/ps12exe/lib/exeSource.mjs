@@ -336,6 +336,21 @@ async function closeCustomEditorTab (exeUri) {
 }
 
 /**
+ * 可执行文件对应的自定义文档。这里必须使用「自定义编辑器」而非「自定义文本编辑器」：后者会要求 VS Code 先把资源读成文本模型，而二进制 `.exe` 会在创建模型时以 “File seems to be binary and cannot be opened as text” 失败（此时扩展的解析回调根本不会被调用）。
+ */
+class ExeSourceDocument {
+	/**
+	 * @param {vscode.Uri} uri - 可执行文件地址
+	 */
+	constructor (uri) {
+		this.uri = uri
+	}
+
+	/** 释放文档资源（无需清理）。 */
+	dispose () { /* 无需清理 */ }
+}
+
+/**
  * 把 ps12exe `.exe` 变成可编辑源码视图的自定义编辑器。它自身不渲染 webview：而是在虚拟源码文档上打开普通文本编辑器，然后关闭自己的标签页。无关的可执行文件回退到内置编辑器。
  *
  * 作为 `*.exe` 的默认编辑器贡献；可通过 `ps12exe.openExeSource` 禁用。
@@ -351,12 +366,22 @@ export class ExeSourceCustomEditorProvider {
 	}
 
 	/**
-	 * 解析自定义文本编辑器。
+	 * 打开自定义文档。使用非文本自定义编辑器，这样二进制可执行文件不会被当作文本读取。
 	 *
-	 * @param {vscode.TextDocument} document - 待打开的文档
+	 * @param {vscode.Uri} uri - 可执行文件地址
+	 * @returns {ExeSourceDocument} 自定义文档
+	 */
+	openCustomDocument (uri) {
+		return new ExeSourceDocument(uri)
+	}
+
+	/**
+	 * 解析自定义编辑器。
+	 *
+	 * @param {ExeSourceDocument} document - 待打开的自定义文档
 	 * @param {vscode.WebviewPanel} panel - 宿主面板
 	 */
-	async resolveCustomTextEditor (document, panel) {
+	async resolveCustomEditor (document, panel) {
 		panel.webview.html = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body></body></html>'
 		const exeUri = document.uri
 		const enabled = vscode.workspace.getConfiguration('ps12exe').get('openExeSource', true)

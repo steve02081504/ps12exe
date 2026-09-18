@@ -4,12 +4,13 @@ import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import * as vscode from 'vscode'
 
-import { looksLikePs12Exe, replaceFile } from '../lib/exeSource.mjs'
+import { ExeSourceCustomEditorProvider, looksLikePs12Exe, replaceFile } from '../lib/exeSource.mjs'
 import { toPs12exeLocale } from '../lib/locale.mjs'
-import { encodeCommand, psQuote, parseSyncOutput, parseIncompleteOutput, resolvePlainPowerShell, findIncompleteFragments } from '../lib/powershell.mjs'
+import { encodeCommand, psQuote, parseSyncOutput, parseIncompleteOutput, resolvePlainPowerShell, resolvePowerShell, findIncompleteFragments } from '../lib/powershell.mjs'
 
 suite('ps12exe extension', () => {
 	suiteSetup(async () => {
@@ -142,5 +143,28 @@ suite('ps12exe extension', () => {
 			[false, true]
 		)
 		assert.deepStrictEqual(parseIncompleteOutput(''), [])
+	})
+
+	test('registers a non-text custom editor so binary executables can be resolved', () => {
+		const provider = new ExeSourceCustomEditorProvider({})
+		assert.strictEqual(typeof provider.openCustomDocument, 'function')
+		assert.strictEqual(typeof provider.resolveCustomEditor, 'function')
+		// 自定义文本编辑器会先把资源读成文本模型，二进制 `.exe` 在此之前就被 VS Code 拒绝（扩展回调不会被调用）。
+		assert.strictEqual(provider.resolveCustomTextEditor, undefined)
+	})
+
+	test('opens a compiled exe as editable source through the custom editor', async function () {
+		this.timeout(120000)
+		const here = path.dirname(fileURLToPath(import.meta.url))
+		const exe = path.resolve(here, '..', '..', '..', '..', '..', 'ps12exe.exe')
+		if (!fs.existsSync(exe) || !looksLikePs12Exe(exe)) this.skip()
+		const host = await resolvePowerShell()
+		if (!host || !host.moduleVersion) this.skip()
+
+		await vscode.commands.executeCommand('vscode.openWith', vscode.Uri.file(exe), 'ps12exe.exeSource')
+		const editor = vscode.window.activeTextEditor
+		assert.ok(editor, 'the embedded source editor should be active')
+		assert.strictEqual(editor.document.uri.scheme, 'ps12exe-exe')
+		assert.strictEqual(editor.document.languageId, 'powershell')
 	})
 })
