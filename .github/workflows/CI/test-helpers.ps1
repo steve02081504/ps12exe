@@ -69,13 +69,20 @@ public class CIWindowHelper {
 	private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 	private const uint WM_KEYDOWN = 0x0100;
 	private const uint WM_KEYUP   = 0x0101;
+	private const uint WM_COMMAND = 0x0111;
+	private const uint WM_CLOSE   = 0x0010;
 	private const int  VK_RETURN  = 0x0D;
+	private const int  IDOK       = 1;
 	public static bool SendEnterToProcessMainWindow(int processId) {
 		IntPtr target = IntPtr.Zero;
 		FindWindowByProcessId((uint)processId, ref target);
 		if (target == IntPtr.Zero) return false;
+		// 键盘消息要经过对话框管理器的 IsDialogMessage 才生效，而它只处理活动窗口；后台/无焦点桌面上回车会被丢弃。
+		// 因此同时投递直接由默认窗口过程处理的 WM_COMMAND(IDOK) 与 WM_CLOSE，保证消息框总能被关闭。
 		PostMessage(target, WM_KEYDOWN, (IntPtr)VK_RETURN, IntPtr.Zero);
 		PostMessage(target, WM_KEYUP,   (IntPtr)VK_RETURN, IntPtr.Zero);
+		PostMessage(target, WM_COMMAND, (IntPtr)IDOK, IntPtr.Zero);
+		PostMessage(target, WM_CLOSE,   IntPtr.Zero, IntPtr.Zero);
 		return true;
 	}
 	private static void FindWindowByProcessId(uint targetPid, ref IntPtr result) {
@@ -140,6 +147,7 @@ function Stop-ProcessTree {
 function Invoke-ExeCaptureMergedOutput {
 	param(
 		[string]$ExePath,
+		[string[]]$Arguments = @(),
 		[int]$TimeoutSeconds = 30
 	)
 	$exePath = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ExePath)
@@ -147,7 +155,9 @@ function Invoke-ExeCaptureMergedOutput {
 		throw "Exe not found: $exePath"
 	}
 	$outFile = Join-Path ([System.IO.Path]::GetDirectoryName($exePath)) ('merged-{0}.txt' -f [guid]::NewGuid().ToString('N'))
-	$cmdLine = '"{0}" 1>"{1}" 2>&1' -f $exePath, $outFile
+	$argLine = if ($Arguments.Count) { ($Arguments -join ' ') + ' ' } else { '' }
+	# 经 cmd 重定向拿输出，避免 Windows PowerShell 的 native stderr 在 $ErrorActionPreference='Stop' 下抛 NativeCommandError。
+	$cmdLine = '"{0}" {1}1>"{2}" 2>&1' -f $exePath, $argLine, $outFile
 	$psi = [System.Diagnostics.ProcessStartInfo]@{
 		FileName         = $env:ComSpec
 		Arguments        = "/s /c `"$cmdLine`""

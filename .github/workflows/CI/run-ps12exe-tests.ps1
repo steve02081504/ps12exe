@@ -57,11 +57,12 @@ param([hashtable]$Config, [int]$N = 0)
 "Type=$($Config.GetType().Name) a=$($Config.a) x=$($Config.x) N=$N"
 '@
 	ps12exe -inputFile $psdPs1 -outputFile $psdExe | Write-Host
-	$psdOut = & $psdExe -Config "@{a='b'}" -N "[int]'42'" 2>&1 | Out-String
+	# 用 cmd 合并捕获输出：Windows PowerShell 5.1 里 native stderr 经 2>&1 会产生 NativeCommandError（EAP Stop 下直接终止）。
+	$psdOut = (Invoke-ExeCaptureMergedOutput -ExePath $psdExe -Arguments @('-Config', "@{a='b'}", '-N', "[int]'42'")).Output
 	if ($psdOut -notmatch 'Type=Hashtable' -or $psdOut -notmatch 'a=b' -or $psdOut -notmatch 'N=42') {
 		throw "PSD argument parsing failed: $psdOut"
 	}
-	$psdBad = & $psdExe -Config "@{x=1+1}" 2>&1 | Out-String
+	$psdBad = (Invoke-ExeCaptureMergedOutput -ExePath $psdExe -Arguments @('-Config', "@{x=1+1}")).Output
 	if ($psdBad -match 'x=2') { throw "PSD argument was evaluated as PowerShell: $psdBad" }
 
 	# 非常量 exe 默认走“压缩负载 + 内存 launcher”，pathtest.exe 已覆盖 $PSCommandPath/$PSScriptRoot。
