@@ -1,4 +1,4 @@
-﻿// 使用 AsmResolver 读取 ps12exe 生成的 exe 中内嵌的脚本资源，并返回原始 PowerShell 脚本文本。通过 exe21sp PowerShell 辅助程序对外暴露。
+// 使用 AsmResolver 读取 ps12exe 生成的 exe 中内嵌的脚本资源，并返回原始 PowerShell 脚本文本。通过 exe21sp PowerShell 辅助程序对外暴露。
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -317,13 +317,13 @@ namespace exe21sp {
 				return null;
 			int type = BitConverter.ToUInt16(group, 2);
 			int count = BitConverter.ToUInt16(group, 4);
-			if (type != 1 || count <= 0 || group.Length < 6 + count * 14)
+			if (type != 1 || count <= 0 || group.Length < 6 + (count * 14))
 				return null;
 
 			var directory = new byte[count][];
 			var images = new byte[count][];
 			for (int i = 0; i < count; i++) {
-				int offset = 6 + i * 14;
+				int offset = 6 + (i * 14);
 				ushort iconId = BitConverter.ToUInt16(group, offset + 12);
 				var image = FindIconImageBytes(iconDir, iconId);
 				if (image == null)
@@ -345,7 +345,7 @@ namespace exe21sp {
 				output.Write(BitConverter.GetBytes((ushort)0), 0, 2);
 				output.Write(BitConverter.GetBytes((ushort)1), 0, 2);
 				output.Write(BitConverter.GetBytes((ushort)count), 0, 2);
-				uint dataOffset = (uint)(6 + count * 16);
+				uint dataOffset = (uint)(6 + (count * 16));
 				for (int i = 0; i < count; i++) {
 					Buffer.BlockCopy(BitConverter.GetBytes(dataOffset), 0, directory[i], 12, 4);
 					output.Write(directory[i], 0, directory[i].Length);
@@ -394,7 +394,7 @@ namespace exe21sp {
 
 			var builder = new StringBuilder();
 			var escaped = message.Replace("'", "''");
-			builder.Append("'").Append(escaped).Append("'");
+			builder.Append('\'').Append(escaped).Append('\'');
 			if (exitCode != 0)
 				builder.Append("\nexit ").Append(exitCode);
 			return builder.ToString();
