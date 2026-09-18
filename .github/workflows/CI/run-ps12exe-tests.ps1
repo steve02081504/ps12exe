@@ -200,7 +200,7 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 	$script:Params = @{}
 	$ParamList = @{
 		iconFile = @{ ParameterType = [string] }
-		title	= @{ ParameterType = [string] }
+		title    = @{ ParameterType = [string] }
 	}
 	$script:i18nWarnings = [System.Collections.Generic.List[string]]::new()
 	function Write-I18n {
@@ -352,7 +352,8 @@ $null = [System.IO.File]::Exists('')
 
 	# 供 workflow 上传产物：将 exe 拷到仓库根
 	Copy-Item -LiteralPath (Join-Path $buildDir 'ps12exe.exe') -Destination (Join-Path $repoRoot 'ps12exe.exe') -Force
-} catch {}
+}
+catch {}
 finally {
 	Restore-ps12exeContextMenuState -WasEnabled $contextMenuWasEnabled
 	Remove-Item -LiteralPath $buildDir -Recurse -Force -ErrorAction SilentlyContinue

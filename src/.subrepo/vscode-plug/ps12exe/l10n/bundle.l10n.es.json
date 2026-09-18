@@ -21,7 +21,7 @@
 	"Format ps12exe preprocessor blocks": "Formatear bloques del preprocesador de ps12exe",
 	"The PowerShell extension is required to run the official formatter before applying ps12exe preprocessor indentation.": "Se requiere la extensión de PowerShell para ejecutar el formateador oficial antes de aplicar la indentación del preprocesador de ps12exe.",
 	"Install PowerShell extension": "Instalar la extensión de PowerShell",
-	"Failed to run the official PowerShell formatter; only ps12exe preprocessor indentation was applied.": "No se pudo ejecutar el formateador oficial de PowerShell; solo se aplicó la indentación del preprocesador de ps12exe.",
+	"Failed to run the official PowerShell formatter; the document was left unchanged.": "No se pudo ejecutar el formateador oficial de PowerShell; el documento se dejó sin cambios.",
 	"Installing ps12exe...": "Instalando ps12exe...",
 	"ps12exe {0} has been installed.": "ps12exe {0} se ha instalado.",
 	"ps12exe has been updated to {0}.": "ps12exe se ha actualizado a {0}.",

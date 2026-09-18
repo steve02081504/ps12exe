@@ -186,10 +186,11 @@ else {
 }
 
 if (
-#_if PSEXE
-	#_!! $AstAnalyzeResult.IsConst -or
-#_endif
-$requireAdmin -or $DPIAware -or $supportOS -or $longPaths) {
+	#_if PSEXE
+		#_!! $AstAnalyzeResult.IsConst -or
+	#_endif
+	$requireAdmin -or $DPIAware -or $supportOS -or $longPaths
+) {
 	if (Test-Path $($outputFile + ".win32manifest")) {
 		Remove-Item $($outputFile + ".win32manifest") -Verbose:$FALSE
 	}

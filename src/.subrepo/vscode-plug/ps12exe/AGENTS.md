@@ -15,21 +15,31 @@ npm run build # package the VSIX and install it into the local VS Code
 
 ## Formatter invariants
 
-- **Formatting the repository's `ps12exe.ps1` must be a byte-for-byte no-op**
-  (after normalizing the BOM). This is enforced by
-  `test/formatting.test.mjs`; keep it passing when touching anything below.
+- **Formatting the repository's own scripts must be a byte-for-byte no-op**
+  (after normalizing the BOM): `ps12exe.ps1` and `src/CodeDomCompiler.ps1`. This
+  is enforced by `test/formatting.test.mjs`; keep it passing when touching
+  anything below.
 - The extension runs the official PowerShell formatter (`ms-vscode.powershell`,
   i.e. PowerShell Editor Services → PSScriptAnalyzer `Invoke-Formatter`) first
   and then applies the preprocessor indentation
-  (`lib/format.mjs#formatPreprocessedText`).
+  (`lib/format.mjs#formatPreprocessedText`). The preprocessor indentation builds
+  on the syntax indentation that base produces, so it is only applied when the
+  official formatter ran (`lib/format.mjs#applyPreprocessorFormatting`); when the
+  PowerShell extension is missing the document is left unchanged instead of
+  compounding one level per format.
 - `test/officialFormatter.mjs` emulates that official formatter by mirroring the
   PSES `powershell.codeFormatting.*` → PSScriptAnalyzer mapping
   (`LanguageServerSettings.cs`) and running `Invoke-Formatter` through a
   PowerShell host. When the official extension changes its mapping, update this
   file.
-- The repository `.vscode/settings.json` pins the style the formatter expects:
-  tab indentation for `[powershell]` and
-  `powershell.codeFormatting.newLineAfterOpenBrace: false`.
+- The workspace style comes from this extension's
+  `contributes.configurationDefaults` in `package.json`: `[powershell]` defaults
+  to `editor.insertSpaces: false` (tabs) and to this extension as
+  `editor.defaultFormatter`, and `powershell.codeFormatting.newLineAfterOpenBrace`
+  defaults to `false`. Explicit user or workspace settings still win over these
+  defaults, so the repository does not need a `.vscode/settings.json`.
+  `test/officialFormatter.mjs` reads those defaults from `package.json` before
+  applying workspace overrides.
 
 ## Upstream bugs we work around
 
@@ -38,10 +48,28 @@ them. Record new workarounds the same way (issue URL + what to delete).
 
 | Issue | Symptom | Workaround |
 | --- | --- | --- |
-| [PSScriptAnalyzer#2216](https://github.com/PowerShell/PSScriptAnalyzer/issues/2216) | `PSUseConsistentIndentation` double-indents the body of an attribute that opens a scriptblock (`[ArgumentCompleter({ … })]`): body at opener+2, closing `})]` at opener+1. Reproduces on 1.24.0/1.25.0 in both pwsh and Windows PowerShell; #2173 fixed the sibling `#2159` case but not this one. | `restoreAttributeIndentation` in `lib/preprocessor.mjs` detects the exact signature (body at opener+2, closing at opener+1) and pulls the region back one level. Delete the function, its export and the `repairs the official formatter attribute/scriptblock indentation` test once upstream ships a fix. |
+| [PSScriptAnalyzer#2216](https://github.com/PowerShell/PSScriptAnalyzer/issues/2216), [#1168](https://github.com/PowerShell/PSScriptAnalyzer/issues/1168), [#1378](https://github.com/PowerShell/PSScriptAnalyzer/issues/1378) | `PSUseConsistentIndentation` counts an open parenthesis on top of a scriptblock/hashtable opener, so `$x = (1..3 \| ForEach-Object {`, `$list.Add([PSCustomObject]@{`, `[ArgumentCompleter({` and backtick continuations such as ``Write-Host ("{0}" -f ` `` get one extra level per unclosed `(` (body at opener+N+1, closing line at opener+N). `#2216` also has exact repros outside attributes. Reproduces on 1.25.0 with pwsh 7.6.6 and Windows PowerShell 5.1, with tabs and spaces. | `restoreParenIndentation` in `lib/preprocessor.mjs` detects the exact signature and pulls the region back `N` levels. Delete the function, its export and the `repairs the official formatter over-indentation after an open parenthesis` test once upstream ships a fix. |
+| [PSScriptAnalyzer#1055](https://github.com/PowerShell/PSScriptAnalyzer/issues/1055), [#1441](https://github.com/PowerShell/PSScriptAnalyzer/issues/1441) | The brace rules (`PSPlaceCloseBrace`/`PSPlaceOpenBrace`) hardcode a space for the indentation they rewrite, so with `Kind = 'tab'` a `} else {` / `} elseif {` / `} catch {` / `} finally {` nested exactly one level deep becomes `}` + newline + ` else {` instead of `}` + newline + tab + `else {`. Reproduces on 1.25.0 with pwsh 7.6.6 and Windows PowerShell 5.1. | `restoreClauseIndentation` in `lib/preprocessor.mjs` realigns the moved clause with the `}` directly above it. Delete the function, its export and the `realigns an else/catch moved onto its own line` test once the brace rules honour `Kind = 'tab'`. |
 
 ## Notes
 
+- The extension is written as native ES modules (`"type": "module"`, `.mjs` entry
+  and modules), which requires VS Code 1.100+. `npm test` reuses the VS Code
+  installed on this machine; it is located through `@steve02081504/exec`'s
+  `where_command`, and `PS12EXE_VSCODE_EXECUTABLE_PATH` can point it at a specific
+  executable. When the install lives on another Windows drive, a junction is
+  created under `.vscode-test/` because `@vscode/test-electron` silently skips
+  tests for cross-drive installs. Without a local install a VS Code copy is
+  downloaded once into `.vscode-test/` and cached.
+- Formatter completeness check: each preprocessor block's branch bodies are
+  parsed in one batched call with
+  `[System.Management.Automation.Language.Parser]::ParseInput`; bodies that
+  produce parse errors are never pushed one level deeper. A bare attribute body
+  (`[ArgumentCompleter({…})]`) is retried with a trailing dummy statement so it
+  is not mistaken for an incomplete block. Results are cached per document text.
+- The wrapper script sets `$global:LASTEXITCODE = 0` before calling `ps12exe` and
+  ends with `exit $LASTEXITCODE`, because ps12exe reports failures through
+  `$LASTEXITCODE` rather than a terminating error.
 - **Find files with `rg --files` (or the Glob tool); never `Get-ChildItem -Recurse`.**
   The repository vendors `node_modules/` and `.vscode-test/` (a whole VS Code
   install), so a recursive listing explodes and gets truncated. Filter during the

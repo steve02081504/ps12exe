@@ -48,7 +48,8 @@ try {
 	$rawGui = Invoke-ExeAndSendEnterToWindow -ExePath $repoRoot/build/ts_gui_compressed.exe -TimeoutSeconds 12
 	$exitCodeGui = if ($rawGui -is [array]) { $rawGui[-1] } else { $rawGui }
 	if ($exitCodeGui -ne 0) { throw "TinySharp compressed GUI exit code expected 0, got $exitCodeGui" }
-} catch {}
+}
+catch {}
 finally {
 	Remove-Item -LiteralPath $buildDir -Recurse -Force -ErrorAction SilentlyContinue
 }

@@ -21,7 +21,7 @@
 	"Format ps12exe preprocessor blocks": "ps12exe プリプロセッサブロックを整形",
 	"The PowerShell extension is required to run the official formatter before applying ps12exe preprocessor indentation.": "ps12exe のプリプロセッサ整形を適用する前に、公式フォーマッターを実行するには PowerShell 拡張機能が必要です。",
 	"Install PowerShell extension": "PowerShell 拡張機能をインストール",
-	"Failed to run the official PowerShell formatter; only ps12exe preprocessor indentation was applied.": "公式 PowerShell フォーマッターの実行に失敗しました。ps12exe のプリプロセッサ整形のみを適用しました。",
+	"Failed to run the official PowerShell formatter; the document was left unchanged.": "公式 PowerShell フォーマッターの実行に失敗しました。ドキュメントは変更されませんでした。",
 	"Installing ps12exe...": "ps12exe をインストールしています...",
 	"ps12exe {0} has been installed.": "ps12exe {0} をインストールしました。",
 	"ps12exe has been updated to {0}.": "ps12exe を {0} に更新しました。",

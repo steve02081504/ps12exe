@@ -151,7 +151,8 @@ try {
 			if ($coreText -like "*$unexpected*") { throw "exe21sp Core defaults: unexpected [$unexpected] in: $coreText" }
 		}
 	}
-} catch {}
+}
+catch {}
 finally {
 	Remove-Item -LiteralPath $buildDir -Recurse -Force -ErrorAction SilentlyContinue
 }

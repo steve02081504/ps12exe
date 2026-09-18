@@ -285,7 +285,10 @@ function computeSkipMask (lines) {
 
 		if (hereTerminator) {
 			skip[i] = true
-			if (trimmed === hereTerminator) hereTerminator = null
+			// The terminator only has to start the line; PowerShell allows a
+			// pipeline or redirection to follow it on the same line
+			// (`"@ *> $null`).
+			if (trimmed.startsWith(hereTerminator)) hereTerminator = null
 			continue
 		}
 		if (inBlockComment) {
@@ -386,11 +389,13 @@ function indentText (text, options = {}) {
 			}
 		}
 		if (block.bodyIndent === null) {
-			for (let i = block.startLine - 1; i >= 0; i--) {
-				if (isCode[i]) { block.bodyIndent = leading[i]; break }
-			}
+			// No code in either branch (e.g. the body is only `#_!!` escapes or
+			// comments). The official formatter has already placed the directive
+			// at the surrounding syntax indentation, so use its own leading
+			// rather than the nearest unrelated code line (which may sit at the
+			// enclosing construct's indentation, as in `if (` + continuation).
+			block.bodyIndent = leading[block.startLine]
 		}
-		if (block.bodyIndent === null) block.bodyIndent = ''
 	}
 
 	// Nearest preceding / following code indentation, used as the syntax
@@ -421,6 +426,12 @@ function indentText (text, options = {}) {
 
 		const extra = indentUnit.repeat(depth[i])
 		if (isComment[i]) {
+			// A comment outside every preprocessor block needs no adjustment:
+			// the official formatter already placed it inside its real
+			// PowerShell block. `commentContext` only sees the nearest code
+			// line, so when a comment is the entire body of a block it would be
+			// pulled back to the enclosing statement instead.
+			if (depth[i] === 0 && !startToBlock.has(i)) return line
 			// Directive lines (the block's own `#_if`/`#_else`/`#_endif`) belong
 			// to the block, so they align with its body. Regular comments fall
 			// back to the surrounding code. `bodyIndent` may legitimately be ''
@@ -436,53 +447,160 @@ function indentText (text, options = {}) {
 }
 
 /**
- * Undoes a PSScriptAnalyzer formatter quirk around attributes that open a
- * scriptblock, e.g. `[ArgumentCompleter({` or `[ValidateScript({`.
+ * Net number of `(` minus `)` on `line`, ignoring single- and double-quoted
+ * strings (with backtick escapes) and `#` comments.
  *
- * The indentation rule counts both the `(` and the `{`, so it pushes the body
- * in by two levels and the closing `})]` by one level. When the official
- * formatter's output carries exactly that signature the whole enclosed region
- * is pulled back one level, matching the way the scripts in this repository are
- * written. Constructs that do not have the signature are left untouched.
+ * @param {string} line
+ * @returns {number}
+ */
+function parenDelta (line) {
+	let depth = 0
+	let state = 'code'
+	for (let i = 0; i < line.length; i++) {
+		const char = line[i]
+		if (state === 'single') {
+			if (char === "'") {
+				if (line[i + 1] === "'") i++
+				else state = 'code'
+			}
+			continue
+		}
+		if (state === 'double') {
+			if (char === '`') { i++; continue }
+			if (char === '"') state = 'code'
+			continue
+		}
+		if (char === "'") { state = 'single'; continue }
+		if (char === '"') { state = 'double'; continue }
+		if (char === '#') break
+		if (char === '(') depth++
+		else if (char === ')') depth--
+	}
+	return depth
+}
+
+/**
+ * Undoes PSScriptAnalyzer's over-indentation of a line that opens a scriptblock
+ * or hashtable after one or more still-open parentheses, e.g.
+ * `$x = (1..3 | ForEach-Object {`, `$list.Add([PSCustomObject]@{` or
+ * `[ArgumentCompleter({`, as well as a backtick continuation line that starts
+ * while a parenthesis is still open (`Write-Host ("{0}" -f ` + backtick).
  *
- * Upstream bug (reproduces on 1.24.0 and 1.25.0, both pwsh and Windows
- * PowerShell): https://github.com/PowerShell/PSScriptAnalyzer/issues/2216
- * Delete this function (and its test) once a release fixes it.
+ * The indentation rule counts an open parenthesis on top of the opener, so the
+ * body gets one extra level per open parenthesis and the closing line is pushed
+ * down too. When the official formatter's output carries exactly that signature
+ * the whole enclosed region is pulled back, matching the way the scripts in
+ * this repository are written. Constructs that do not have the signature are
+ * left untouched.
+ *
+ * Upstream bug (reproduces on PSScriptAnalyzer 1.25.0 with pwsh 7.6.6, and on
+ * Windows PowerShell 5.1; both tabs and spaces): the `LParen` and the scriptblock
+ * `{`/`@{` each add an indentation level. The attribute form is tracked in
+ * https://github.com/PowerShell/PSScriptAnalyzer/issues/2216 (open), the
+ * `.where`/`.foreach` method form in
+ * https://github.com/PowerShell/PSScriptAnalyzer/issues/1168 (open) and the
+ * parenthesized pipeline in
+ * https://github.com/PowerShell/PSScriptAnalyzer/issues/1378 (open). Delete
+ * this function (and its test) once a release fixes them.
  *
  * @param {string} text
  * @param {string} indentUnit the formatter's indentation unit (tabs or spaces)
  * @returns {string}
  */
-function restoreAttributeIndentation (text, indentUnit) {
+function restoreParenIndentation (text, indentUnit) {
 	if (!indentUnit) return text
 	const eol = detectEol(text)
 	const lines = splitLines(text)
 
 	for (let i = 0; i < lines.length; i++) {
-		const opening = lines[i].match(/^([ \t]*)\[[^\][\n]*\(\{\s*$/)
-		if (!opening) continue
-		const openIndent = opening[1]
-		const closeIndent = openIndent + indentUnit
+		const content = lines[i].trimEnd()
+		if (!content) continue
+		const openIndent = leadingOf(lines[i])
+		const body = content.slice(openIndent.length)
+		const opensBlock = /[{(]$/.test(body)
+		const continues = body.endsWith('`')
+		if (!opensBlock && !continues) continue
+
+		const extra = Math.max(parenDelta(body), 0)
+		if (extra < 1) continue
+		const closeIndent = openIndent + indentUnit.repeat(extra)
 		const bodyIndent = closeIndent + indentUnit
 
 		let close = -1
-		for (let j = i + 1; j < lines.length; j++) {
-			if (leadingOf(lines[j]) === closeIndent && lines[j].slice(closeIndent.length).startsWith('})]')) {
-				close = j
-				break
+		if (opensBlock) {
+			for (let j = i + 1; j < lines.length; j++) {
+				if (leadingOf(lines[j]) === closeIndent && lines[j].slice(closeIndent.length).startsWith('}')) {
+					close = j
+					break
+				}
+			}
+		}
+		else {
+			let depth = extra
+			for (let j = i + 1; j < lines.length; j++) {
+				depth += parenDelta(lines[j])
+				if (depth <= 0) { close = j; break }
 			}
 		}
 		if (close < 0) continue
 
-		const firstBody = lines.findIndex((line, index) => index > i && index < close && line.trim() !== '')
+		// For a scriptblock/hashtable opener the closing line starts with `}`
+		// and is not body content; for a backtick continuation the closing line
+		// is the last body line and must be checked as well.
+		const bodyLimit = opensBlock ? close : close + 1
+		const firstBody = lines.findIndex((line, index) => index > i && index < bodyLimit && line.trim() !== '')
 		if (firstBody < 0 || leadingOf(lines[firstBody]) !== bodyIndent) continue
 
 		for (let k = i + 1; k <= close; k++) {
-			if (lines[k].startsWith(closeIndent)) lines[k] = lines[k].slice(indentUnit.length)
+			if (lines[k].startsWith(closeIndent)) lines[k] = lines[k].slice(indentUnit.repeat(extra).length)
 		}
 	}
 
 	return lines.join(eol)
 }
 
-export { analyze, indentText, endifAutoClose, foldingRanges, toggleBangLine, toggleBangLines, branchFragments, pickExemptBlock, computeSkipMask, restoreAttributeIndentation, MESSAGES, IF_RE, ELSE_RE, ENDIF_RE }
+/**
+ * Repairs the `else`/`elseif`/`catch`/`finally` line that `PSPlaceCloseBrace`
+ * moves onto its own line (with `NewLineAfter`, i.e. the default of
+ * `powershell.codeFormatting.newLineAfterCloseBrace`): the moved keyword keeps
+ * only the single space that separated it from the `}` instead of the
+ * indentation of the block, e.g. at one level of nesting
+ *
+ *     function f {
+ *         if ($a) {
+ *             $b
+ *         }
+ *      else {
+ *
+ * The clause is realigned with the closing brace directly above it. The rule
+ * hardcodes spaces for the indentation it rewrites, so this only shows up when
+ * the formatter is configured for tabs. When the indentation is already correct
+ * (top level, or depth >= 2) nothing changes.
+ *
+ * Upstream limitation: PSScriptAnalyzer's brace rules do not know about tab
+ * indentation, see https://github.com/PowerShell/PSScriptAnalyzer/issues/1055
+ * and the duplicate https://github.com/PowerShell/PSScriptAnalyzer/issues/1441.
+ * Delete this function (and its test) once the rules honour `Kind = 'tab'`.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function restoreClauseIndentation (text) {
+	const eol = detectEol(text)
+	const lines = splitLines(text)
+
+	for (let i = 1; i < lines.length; i++) {
+		const clause = lines[i].match(/^([ \t]+)((?:else|elseif|catch|finally)\b.*)$/)
+		if (!clause) continue
+		let previous = i - 1
+		while (previous >= 0 && lines[previous].trim() === '') previous--
+		if (previous < 0 || !lines[previous].trimEnd().endsWith('}')) continue
+		const indent = leadingOf(lines[previous])
+		if (clause[1] === indent) continue
+		lines[i] = indent + clause[2]
+	}
+
+	return lines.join(eol)
+}
+
+export { analyze, indentText, endifAutoClose, foldingRanges, toggleBangLine, toggleBangLines, branchFragments, pickExemptBlock, computeSkipMask, restoreParenIndentation, restoreClauseIndentation, MESSAGES, IF_RE, ELSE_RE, ENDIF_RE }

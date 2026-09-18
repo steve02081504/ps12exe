@@ -10,6 +10,7 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { runScript, psQuote } from '../lib/powershell.mjs'
 
 // Defaults of `powershell.codeFormatting.*` in ms-vscode.powershell.
@@ -127,15 +128,41 @@ function buildSettings (options = {}) {
 }
 
 /**
- * Reads the workspace's `powershell.codeFormatting.*` overrides and the
- * `[powershell]` editor indentation settings, if a `.vscode/settings.json`
- * exists at `repoRoot`.
+ * Reads the defaults this extension contributes for the official formatter
+ * (`contributes.configurationDefaults` in `package.json`). VS Code resolves a
+ * setting that is not overridden by the user or the workspace to these values.
+ *
+ * @returns {{ codeFormatting: Record<string, unknown>, insertSpaces: boolean | undefined }}
+ */
+function readExtensionConfigurationDefaults () {
+	const manifestPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json')
+	let defaults = {}
+	try {
+		const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
+		defaults = (manifest.contributes && manifest.contributes.configurationDefaults) || {}
+	}
+	catch {
+		// A missing manifest should not fail the test run.
+	}
+	const codeFormatting = {}
+	for (const [key, value] of Object.entries(defaults)) {
+		if (key.startsWith(CODE_FORMATTING_PREFIX)) codeFormatting[key.slice(CODE_FORMATTING_PREFIX.length)] = value
+	}
+	const editor = defaults['[powershell]'] || {}
+	return { codeFormatting, insertSpaces: editor['editor.insertSpaces'] }
+}
+
+/**
+ * Resolves the `powershell.codeFormatting.*` and `[powershell]` editor settings
+ * the official formatter would see: this extension's contributed defaults first,
+ * then the workspace's `.vscode/settings.json` overrides on top.
  *
  * @param {string} repoRoot
  * @returns {{ overrides: Record<string, unknown>, insertSpaces: boolean, tabSize: number }}
  */
 function readWorkspaceFormatting (repoRoot) {
-	const overrides = {}
+	const extension = readExtensionConfigurationDefaults()
+	const overrides = { ...extension.codeFormatting }
 	let fileSettings = {}
 	const settingsPath = path.join(repoRoot, '.vscode', 'settings.json')
 	if (fs.existsSync(settingsPath)) {
@@ -150,9 +177,14 @@ function readWorkspaceFormatting (repoRoot) {
 		if (key.startsWith(CODE_FORMATTING_PREFIX)) overrides[key.slice(CODE_FORMATTING_PREFIX.length)] = value
 	}
 	const editor = fileSettings['[powershell]'] || {}
+	const workspaceInsertSpaces = editor['editor.insertSpaces']
+	// VS Code's own default is spaces; this extension contributes tabs.
+	const insertSpaces = workspaceInsertSpaces !== undefined
+		? workspaceInsertSpaces
+		: extension.insertSpaces !== undefined ? extension.insertSpaces : true
 	return {
 		overrides,
-		insertSpaces: editor['editor.insertSpaces'] !== false,
+		insertSpaces: insertSpaces === true,
 		tabSize: editor['editor.tabSize'] || 4
 	}
 }

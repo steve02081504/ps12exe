@@ -34,7 +34,8 @@ function Write-I18n {
 	$formatForF = if ($null -eq $FormatArgs) { @() } else { @($FormatArgs) }
 	$template = if ($null -ne $script:I18nData -and $script:I18nData.ContainsKey($Mid)) {
 		$script:I18nData[$Mid]
-	} else {
+	}
+	else {
 		"fatal error: No i18n data for $Mid, Rest format args: $($formatForF -join ', ')"
 	}
 	$value = if ($formatForF.Count -gt 0) { $template -f $formatForF } else { $template }

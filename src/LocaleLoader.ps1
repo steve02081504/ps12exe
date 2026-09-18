@@ -26,7 +26,8 @@ if (!$Localize) {
 	if (!$Localize -and (Get-Command locale -ErrorAction Ignore)) {
 		$Localize = try {
 			&locale -uU
-		} catch { $null }
+		}
+		catch { $null }
 	}
 	if ($Localize) {
 		$Localize = $Localize.Split('.')[0].Replace('_', '-')

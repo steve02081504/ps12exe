@@ -21,7 +21,7 @@
 	"Format ps12exe preprocessor blocks": "格式化 ps12exe 预处理器块",
 	"The PowerShell extension is required to run the official formatter before applying ps12exe preprocessor indentation.": "在应用 ps12exe 预处理器缩进之前，需要 PowerShell 扩展来运行官方格式化器。",
 	"Install PowerShell extension": "安装 PowerShell 扩展",
-	"Failed to run the official PowerShell formatter; only ps12exe preprocessor indentation was applied.": "官方 PowerShell 格式化器运行失败，仅应用了 ps12exe 预处理器缩进。",
+	"Failed to run the official PowerShell formatter; the document was left unchanged.": "官方 PowerShell 格式化器运行失败，文档保持不变。",
 	"Installing ps12exe...": "正在安装 ps12exe...",
 	"ps12exe {0} has been installed.": "ps12exe {0} 已安装。",
 	"ps12exe has been updated to {0}.": "ps12exe 已更新到 {0}。",

@@ -41,12 +41,14 @@
 		"onFileSystem:ps12exe-exe",
 		"onCustomEditor:ps12exe.exeSource"
 	],
-	"configurationDefaults": {
-		"[powershell]": {
-			"editor.defaultFormatter": "steve02081504.ps12exe"
-		}
-	},
 	"contributes": {
+		"configurationDefaults": {
+			"powershell.codeFormatting.newLineAfterOpenBrace": false,
+			"[powershell]": {
+				"editor.defaultFormatter": "steve02081504.ps12exe",
+				"editor.insertSpaces": false
+			}
+		},
 		"commands": [
 			{
 				"command": "ps12exe.compilePs1ToExe",

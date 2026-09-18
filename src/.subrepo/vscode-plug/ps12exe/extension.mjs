@@ -4,7 +4,7 @@ import * as vscode from 'vscode'
 import { resolvePowerShell, compileScript, syncModule, launchGUI } from './lib/powershell.mjs'
 import { toPs12exeLocale } from './lib/locale.mjs'
 import { analyze, endifAutoClose, foldingRanges, toggleBangLines, computeSkipMask } from './lib/preprocessor.mjs'
-import { formatPreprocessedText } from './lib/format.mjs'
+import { applyPreprocessorFormatting } from './lib/format.mjs'
 import { resolveDirectivePath } from './lib/definition.mjs'
 import { POWER_SHELL_EXTENSION_ID, isPowerShellExtensionInstalled, getOfficialEdits, applyTextEdits } from './lib/officialFormatter.mjs'
 import { registerExeSource } from './lib/exeSource.mjs'
@@ -260,7 +260,9 @@ function fullDocumentRange (document) {
 function editorFormattingOptions (document) {
 	const config = vscode.workspace.getConfiguration('editor', document)
 	return {
-		insertSpaces: config.get('insertSpaces', true),
+		// `[powershell]` defaults to tabs (see `configurationDefaults` in
+		// package.json); an explicit `editor.insertSpaces` still wins.
+		insertSpaces: config.get('insertSpaces', false),
 		tabSize: config.get('tabSize', 4)
 	}
 }
@@ -319,14 +321,16 @@ async function formatDocumentText (document, options) {
 	const indentUnit = formattingOptions.insertSpaces ? ' '.repeat(formattingOptions.tabSize || 4) : '\t'
 
 	let base = current
+	let officialApplied = false
 	if (isPowerShellExtensionInstalled()) {
 		try {
 			const edits = await getOfficialEdits(document, formattingOptions)
+			officialApplied = true
 			if (edits.length) base = applyTextEdits(document, current, edits)
 		}
 		catch (error) {
 			const channel = getOutputChannel()
-			channel.appendLine(t('Failed to run the official PowerShell formatter; only ps12exe preprocessor indentation was applied.'))
+			channel.appendLine(t('Failed to run the official PowerShell formatter; the document was left unchanged.'))
 			channel.appendLine(String(error && error.message ? error.message : error))
 		}
 	}
@@ -334,7 +338,7 @@ async function formatDocumentText (document, options) {
 		notifyMissingPowerShell()
 	}
 
-	return formatPreprocessedText(base, {
+	return applyPreprocessorFormatting(current, base, officialApplied, {
 		indentUnit,
 		onError: (message) => getOutputChannel().appendLine(message)
 	})

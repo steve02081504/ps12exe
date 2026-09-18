@@ -48,7 +48,8 @@
 				$codeSigning.TimestampServer = $Script:refs.TimestampServerTextBox.Text
 			}
 			if ($codeSigning.Count -gt 0) { $codeSigning } else { $null }
-		} else { $null }
+		}
+		else { $null }
 	}
 }
 function Set-UIData {

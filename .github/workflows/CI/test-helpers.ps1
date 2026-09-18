@@ -36,7 +36,8 @@ function Restore-ps12exeContextMenuState {
 	Import-Module $repoRoot -Force -ErrorAction Stop
 	if ($WasEnabled) {
 		Set-ps12exeContextMenu -action enable
-	} else {
+	}
+	else {
 		Set-ps12exeContextMenu -action disable
 	}
 }
@@ -101,10 +102,10 @@ public class CIWindowHelper {
 }
 '@ -ReferencedAssemblies System
 	$psi = [System.Diagnostics.ProcessStartInfo]@{
-		FileName               = $exePath
-		UseShellExecute         = $true
-		CreateNoWindow          = $false
-		WorkingDirectory        = [System.IO.Path]::GetDirectoryName($exePath)
+		FileName         = $exePath
+		UseShellExecute  = $true
+		CreateNoWindow   = $false
+		WorkingDirectory = [System.IO.Path]::GetDirectoryName($exePath)
 	}
 	$p = [System.Diagnostics.Process]::Start($psi)
 	$sawWindow = $false
@@ -118,7 +119,8 @@ public class CIWindowHelper {
 		}
 		# 最后一次回车后的退出宽限，避免刚点掉消息框就被 Kill。
 		if (-not $p.HasExited) { $p.WaitForExit(2000) | Out-Null }
-	} finally {
+	}
+	finally {
 		if (-not $p.HasExited) {
 			Write-Warning ("Invoke-ExeAndSendEnterToWindow: killed {0} after {1}s (window seen: {2})" -f $ExePath, $TimeoutSeconds, $sawWindow)
 			$p.Kill()
@@ -133,7 +135,8 @@ function Stop-ProcessTree {
 	if ($ProcessId -le 0) { return }
 	try {
 		& "$env:SystemRoot\System32\taskkill.exe" /PID $ProcessId /T /F 2>&1 | Out-Null
-	} catch {}
+	}
+	catch {}
 }
 
 # 经 cmd 把 stdout/stderr 接到同一文件，保留进程内写入顺序。
@@ -165,7 +168,8 @@ function Invoke-ExeCaptureMergedOutput {
 			ExitCode = $p.ExitCode
 			Output   = $output
 		}
-	} finally {
+	}
+	finally {
 		if (-not $p.HasExited) { Stop-ProcessTree -ProcessId $p.Id }
 		$p.Dispose()
 		Remove-Item -LiteralPath $outFile -Force -ErrorAction SilentlyContinue
@@ -189,7 +193,8 @@ function Invoke-ExeWithPrivateConsole {
 			throw "Private console exe timed out: $exePath"
 		}
 		return $p.ExitCode
-	} finally {
+	}
+	finally {
 		if (-not $p.HasExited) { Stop-ProcessTree -ProcessId $p.Id }
 	}
 }

@@ -47,64 +47,64 @@ param(
 )
 
 #_if PSScript
-if ($help) {
-	$LocalizeData = . $PSScriptRoot\..\LocaleLoader.ps1 -Localize $Localize
-	$MyHelp = $LocalizeData.GUIHelpData
-	. $PSScriptRoot\..\HelpShower.ps1 -HelpData $MyHelp | Write-Host
-	return
-}
-
-if ($ConfigOrPS1File) {
-	if ($ConfigOrPS1File -match '\.ps1$') {
-		$PSBoundParameters.PS1File = $ConfigOrPS1File
-	}
-	else {
-		$PSBoundParameters.ConfigFile = $ConfigOrPS1File
-	}
-	$PSBoundParameters.Remove('ConfigOrPS1File') | Out-Null
-}
-
-try {
-	# Set Console Window Title
-	$BackUpTitle = $Host.UI.RawUI.WindowTitle
-	$Host.UI.RawUI.WindowTitle = "ps12exe GUI Console Host"
-
-	# Initialize STA Runspace
-	$Runspace = [RunspaceFactory]::CreateRunspace()
-	$Runspace.ApartmentState = 'STA'
-	$Runspace.ThreadOptions = 'ReuseThread'
-	$Runspace.Open()
-
-	# Execute
-	$pwsh = [PowerShell]::Create().AddScript({
-		param ($ScriptRoot, $ConfigFile, $Localize, $UIMode, $PS1File, $help)
-		. "$ScriptRoot\GUIMainScript.ps1"
-	}).AddParameter('ScriptRoot', $PSScriptRoot)
-
-	foreach ($param in $PSBoundParameters.Keys) {
-		$pwsh = $pwsh.AddParameter($param, $PSBoundParameters[$param])
+	if ($help) {
+		$LocalizeData = . $PSScriptRoot\..\LocaleLoader.ps1 -Localize $Localize
+		$MyHelp = $LocalizeData.GUIHelpData
+		. $PSScriptRoot\..\HelpShower.ps1 -HelpData $MyHelp | Write-Host
+		return
 	}
 
-	$pwsh.RunSpace = $Runspace
-	$pwsh.Invoke()
-}
-finally {
-	# Dispose
-	$Runspace.Close()
-	$Runspace.Dispose()
-	$pwsh.Dispose()
+	if ($ConfigOrPS1File) {
+		if ($ConfigOrPS1File -match '\.ps1$') {
+			$PSBoundParameters.PS1File = $ConfigOrPS1File
+		}
+		else {
+			$PSBoundParameters.ConfigFile = $ConfigOrPS1File
+		}
+		$PSBoundParameters.Remove('ConfigOrPS1File') | Out-Null
+	}
 
-	# Restore Console Window Title
-	$Host.UI.RawUI.WindowTitle = $BackUpTitle
-}
+	try {
+		# Set Console Window Title
+		$BackUpTitle = $Host.UI.RawUI.WindowTitle
+		$Host.UI.RawUI.WindowTitle = "ps12exe GUI Console Host"
+
+		# Initialize STA Runspace
+		$Runspace = [RunspaceFactory]::CreateRunspace()
+		$Runspace.ApartmentState = 'STA'
+		$Runspace.ThreadOptions = 'ReuseThread'
+		$Runspace.Open()
+
+		# Execute
+		$pwsh = [PowerShell]::Create().AddScript({
+			param ($ScriptRoot, $ConfigFile, $Localize, $UIMode, $PS1File, $help)
+			. "$ScriptRoot\GUIMainScript.ps1"
+		}).AddParameter('ScriptRoot', $PSScriptRoot)
+
+		foreach ($param in $PSBoundParameters.Keys) {
+			$pwsh = $pwsh.AddParameter($param, $PSBoundParameters[$param])
+		}
+
+		$pwsh.RunSpace = $Runspace
+		$pwsh.Invoke()
+	}
+	finally {
+		# Dispose
+		$Runspace.Close()
+		$Runspace.Dispose()
+		$pwsh.Dispose()
+
+		# Restore Console Window Title
+		$Host.UI.RawUI.WindowTitle = $BackUpTitle
+	}
 #_else
-#_require ps12exe
-#_pragma Console 0
-#_pragma iconFile $PSScriptRoot/../../img/icon.ico
-#_pragma title ps12exeGUI
-#_pragma description 'A super cool GUI for compile powershell scripts'
-#_!!if (!(Test-Path -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\ps12exeGUI.psccfg")){
-#_!!	Set-ps12exeContextMenu 1
-#_!!}
-#_!!ps12exeGUI @PSBoundParameters
+	#_require ps12exe
+	#_pragma Console 0
+	#_pragma iconFile $PSScriptRoot/../../img/icon.ico
+	#_pragma title ps12exeGUI
+	#_pragma description 'A super cool GUI for compile powershell scripts'
+	#_!!if (!(Test-Path -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\ps12exeGUI.psccfg")){
+	#_!!	Set-ps12exeContextMenu 1
+	#_!!}
+	#_!!ps12exeGUI @PSBoundParameters
 #_endif

@@ -3,7 +3,7 @@
 // Keeping it here lets the tests exercise the exact pipeline without a running
 // editor instance.
 import { createHash } from 'node:crypto'
-import { analyze, indentText, branchFragments, restoreAttributeIndentation } from './preprocessor.mjs'
+import { analyze, indentText, branchFragments, restoreParenIndentation, restoreClauseIndentation } from './preprocessor.mjs'
 import { resolvePlainPowerShell, findIncompleteFragments } from './powershell.mjs'
 
 const INCOMPLETE_CACHE_LIMIT = 32
@@ -67,9 +67,32 @@ async function findIncompleteBlocks (text, onError) {
  */
 async function formatPreprocessedText (baseText, options = {}) {
 	const indentUnit = options.indentUnit || '\t'
-	const styled = restoreAttributeIndentation(baseText, indentUnit)
+	let styled = restoreParenIndentation(baseText, indentUnit)
+	styled = restoreClauseIndentation(styled)
 	const incomplete = await findIncompleteBlocks(styled, options.onError)
 	return indentText(styled, { indentUnit, incompleteBlocks: incomplete })
 }
 
-export { findIncompleteBlocks, formatPreprocessedText }
+/**
+ * Formats `currentText` from `baseText`, which must be the official formatter's
+ * output. The preprocessor indentation is layered on top of the syntax
+ * indentation the official formatter produces, so it can only be applied to
+ * that base.
+ *
+ * When the official formatter is unavailable, `baseText` would be the document
+ * itself, which already carries the preprocessor indentation of a previous run.
+ * Applying the rules again would then compound one level per format, so the
+ * document is returned unchanged instead.
+ *
+ * @param {string} currentText the document as it is now
+ * @param {string} baseText the text `formatPreprocessedText` runs on
+ * @param {boolean} officialApplied whether `baseText` came from the official formatter
+ * @param {object} [options] forwarded to {@link formatPreprocessedText}
+ * @returns {Promise<string>}
+ */
+async function applyPreprocessorFormatting (currentText, baseText, officialApplied, options = {}) {
+	if (!officialApplied) return currentText
+	return formatPreprocessedText(baseText, options)
+}
+
+export { findIncompleteBlocks, formatPreprocessedText, applyPreprocessorFormatting }

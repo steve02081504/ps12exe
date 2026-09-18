@@ -21,7 +21,7 @@
 	"Format ps12exe preprocessor blocks": "Format ps12exe preprocessor blocks",
 	"The PowerShell extension is required to run the official formatter before applying ps12exe preprocessor indentation.": "The PowerShell extension is required to run the official formatter before applying ps12exe preprocessor indentation.",
 	"Install PowerShell extension": "Install PowerShell extension",
-	"Failed to run the official PowerShell formatter; only ps12exe preprocessor indentation was applied.": "Failed to run the official PowerShell formatter; only ps12exe preprocessor indentation was applied.",
+	"Failed to run the official PowerShell formatter; the document was left unchanged.": "Failed to run the official PowerShell formatter; the document was left unchanged.",
 	"Installing ps12exe...": "Installing ps12exe...",
 	"ps12exe {0} has been installed.": "ps12exe {0} has been installed.",
 	"ps12exe has been updated to {0}.": "ps12exe has been updated to {0}.",

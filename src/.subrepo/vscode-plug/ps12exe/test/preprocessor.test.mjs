@@ -2,7 +2,7 @@ import assert from 'node:assert'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { analyze, indentText, endifAutoClose, foldingRanges, toggleBangLine, toggleBangLines, branchFragments, pickExemptBlock, computeSkipMask, restoreAttributeIndentation, MESSAGES } from '../lib/preprocessor.mjs'
+import { analyze, indentText, endifAutoClose, foldingRanges, toggleBangLine, toggleBangLines, branchFragments, pickExemptBlock, computeSkipMask, restoreParenIndentation, restoreClauseIndentation, MESSAGES } from '../lib/preprocessor.mjs'
 
 // The extension lives at <repo>/src/.subrepo/vscode-plug/ps12exe, so this test
 // file sits five levels below the ps12exe repository root.
@@ -155,6 +155,42 @@ suite('ps12exe preprocessor', () => {
 		assert.strictEqual(indentText(big, { indentUnit: '\t' }), big)
 	})
 
+	test('aligns a block whose body has no code with the surrounding expression', () => {
+		// A body that is only a `#_!!` escape has no code line for the block
+		// base to follow. `if (` + continuation is the motivating case
+		// (src/CodeDomCompiler.ps1): the nearest code line is the opener at
+		// column 0, but the directives belong at the continuation indentation
+		// the official formatter already gave them.
+		const base = [
+			'if (',
+			'\t#_if PSEXE',
+			'\t#_!! $AstAnalyzeResult.IsConst -or',
+			'\t#_endif',
+			'\t$requireAdmin -or $DPIAware',
+			') {'
+		].join('\n')
+		const expected = [
+			'if (',
+			'\t#_if PSEXE',
+			'\t\t#_!! $AstAnalyzeResult.IsConst -or',
+			'\t#_endif',
+			'\t$requireAdmin -or $DPIAware',
+			') {'
+		].join('\n')
+		assert.strictEqual(indentText(base, { indentUnit: '\t' }), expected)
+	})
+
+	test('leaves comments outside preprocessor blocks to the official formatter', () => {
+		// A comment that is the entire body of a block has no code line at the
+		// body indentation for `commentContext` to find; the comment must keep
+		// the indentation PSScriptAnalyzer gave it.
+		const base = ['if ($x) {', '\t# only a comment', '}'].join('\n')
+		assert.strictEqual(indentText(base, { indentUnit: '\t' }), base)
+
+		const spaced = ['if ($x) {', '    # only a comment', '}'].join('\n')
+		assert.strictEqual(indentText(spaced, { indentUnit: '\t' }), spaced)
+	})
+
 	test('never touches here-string bodies', () => {
 		const text = [
 			'$s = @"',
@@ -180,6 +216,16 @@ suite('ps12exe preprocessor', () => {
 			'$x = 1'
 		])
 		assert.deepStrictEqual(mask, [false, true, true, true, true, false])
+
+		// The terminator ends the here-string even when a pipeline or
+		// redirection follows it on the same line.
+		const withRedirect = computeSkipMask([
+			'$s = @"',
+			'content',
+			'"@ *> $null',
+			'$x = 1'
+		])
+		assert.deepStrictEqual(withRedirect, [false, true, true, false])
 	})
 
 	test('splits blocks into one fragment per branch', () => {
@@ -218,32 +264,92 @@ suite('ps12exe preprocessor', () => {
 		assert.strictEqual(endifAutoClose(undefined, '\n'), undefined)
 	})
 
-	test('repairs the official formatter attribute/scriptblock indentation', () => {
-		// Workaround for
-		// https://github.com/PowerShell/PSScriptAnalyzer/issues/2216 — remove
-		// together with `restoreAttributeIndentation` once upstream fixes it.
-		const broken = [
+	test('repairs the official formatter over-indentation after an open parenthesis', () => {
+		// Workarounds for the `LParen` + scriptblock opener double count:
+		// https://github.com/PowerShell/PSScriptAnalyzer/issues/2216 (attribute)
+		// https://github.com/PowerShell/PSScriptAnalyzer/issues/1168 (methods)
+		// https://github.com/PowerShell/PSScriptAnalyzer/issues/1378 (pipeline)
+		// Remove together with `restoreParenIndentation` once upstream fixes them.
+		const attribute = [
 			'\t[ArgumentCompleter({',
 			'\t\t\tParam($x)',
 			'\t\t\t$y = 1',
 			'\t\t})]',
 			'\t$x = 2'
 		].join('\n')
-		const fixed = [
+		const attributeFixed = [
 			'\t[ArgumentCompleter({',
 			'\t\tParam($x)',
 			'\t\t$y = 1',
 			'\t})]',
 			'\t$x = 2'
 		].join('\n')
-		assert.strictEqual(restoreAttributeIndentation(broken, '\t'), fixed)
-		assert.strictEqual(restoreAttributeIndentation(fixed, '\t'), fixed)
+		assert.strictEqual(restoreParenIndentation(attribute, '\t'), attributeFixed)
+		assert.strictEqual(restoreParenIndentation(attributeFixed, '\t'), attributeFixed)
 
 		const spaced = ['    [ValidateScript({', '            $_', '        })]'].join('\n')
 		assert.strictEqual(
-			restoreAttributeIndentation(spaced, '    '),
+			restoreParenIndentation(spaced, '    '),
 			['    [ValidateScript({', '        $_', '    })]'].join('\n')
 		)
+
+		// A scriptblock argument in a parenthesized chain, a method call and a
+		// backtick continuation all get the same extra level.
+		const chain = [
+			'$x = (1..3 | ForEach-Object {',
+			'\t\t$_',
+			'\t})'
+		].join('\n')
+		assert.strictEqual(restoreParenIndentation(chain, '\t'), [
+			'$x = (1..3 | ForEach-Object {',
+			'\t$_',
+			'})'
+		].join('\n'))
+
+		const twoParens = [
+			'$str += (($obj.GetEnumerator() | ForEach-Object {',
+			'\t\t\t$_',
+			'\t\t}) -join'
+		].join('\n')
+		assert.strictEqual(restoreParenIndentation(twoParens, '\t'), [
+			'$str += (($obj.GetEnumerator() | ForEach-Object {',
+			'\t$_',
+			'}) -join'
+		].join('\n'))
+
+		const continuation = ['$x = (Get-Foo -Bar `', '\t\t-Baz qux)'].join('\n')
+		assert.strictEqual(restoreParenIndentation(continuation, '\t'), ['$x = (Get-Foo -Bar `', '\t-Baz qux)'].join('\n'))
+
+		// Leading whitespace inside a string must not be mistaken for an open
+		// parenthesis: nothing has the over-indented signature, so nothing moves.
+		const stringParen = ['$x = "(" | ForEach-Object {', '\t$_', '}'].join('\n')
+		assert.strictEqual(restoreParenIndentation(stringParen, '\t'), stringParen)
+	})
+
+	test('realigns an else/catch moved onto its own line', () => {
+		// Workaround for the tab limitation in
+		// https://github.com/PowerShell/PSScriptAnalyzer/issues/1055
+		// (duplicate https://github.com/PowerShell/PSScriptAnalyzer/issues/1441):
+		// PSPlaceCloseBrace hardcodes a space when it moves the keyword down.
+		// Remove together with `restoreClauseIndentation` once the rule
+		// honours `Kind = 'tab'`.
+		const broken = ['function f {', '\tif ($a) {', '\t\t$b', '\t}', ' else {', '\t\t$c', '\t}', '}'].join('\n')
+		assert.strictEqual(restoreClauseIndentation(broken), [
+			'function f {',
+			'\tif ($a) {',
+			'\t\t$b',
+			'\t}',
+			'\telse {',
+			'\t\t$c',
+			'\t}',
+			'}'
+		].join('\n'))
+
+		// Already correct (top level, or depth >= 2) is left alone.
+		const fine = ['\tif ($a) {', '\t\t1', '\t}', '\telse {', '\t\t2', '\t}'].join('\n')
+		assert.strictEqual(restoreClauseIndentation(fine), fine)
+		const topLevel = ['if ($a) {', '\t1', '}', 'else {', '\t2', '}'].join('\n')
+		assert.strictEqual(restoreClauseIndentation(topLevel), topLevel)
 	})
 
 	test("ps12exe's own scripts analyse without diagnostics", function () {
