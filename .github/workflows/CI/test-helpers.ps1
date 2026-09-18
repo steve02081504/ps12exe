@@ -35,10 +35,10 @@ function Restore-ps12exeContextMenuState {
 	if (-not $repoRoot) { $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path }
 	Import-Module $repoRoot -Force -ErrorAction Stop
 	if ($WasEnabled) {
-		Set-ps12exeContextMenu -action enable
+		Set-ps12exeContextMenu -action enable -SkipEditorExtension
 	}
 	else {
-		Set-ps12exeContextMenu -action disable
+		Set-ps12exeContextMenu -action disable -SkipEditorExtension
 	}
 }
 

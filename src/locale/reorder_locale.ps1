@@ -10,6 +10,7 @@ $RefKeyOrder = @(
 	'LangName', 'LangID',
 	'CompileTitle', 'OpenInGUI', 'GUICfgFileDesc',
 	'VSCodeExtensionInstalling', 'VSCodeExtensionInstallFailed',
+	'VSCodeExtensionUninstalling', 'VSCodeExtensionUninstallFailed',
 	'ErrorHead', 'CompileResult', 'DefaultResult', 'AskSaveCfg', 'AskSaveCfgTitle', 'CfgFileLabelHead',
 	'ServerStarted', 'ServerStopped', 'ServerStartFailed', 'TryRunAsRoot', 'ServerListening', 'ExitServerTip',
 	'ConsoleHelpData', 'GUIHelpData', 'SetContextMenuHelpData', 'WebServerHelpData', 'exe21spHelpData',

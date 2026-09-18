@@ -29,7 +29,7 @@ try {
 	if (-not (Test-Path (Join-Path $buildDir 'ps12exe.exe'))) { throw 'ps12exe.exe not built' }
 
 	# 无状态：仅在测试中临时启用右键菜单（若需测试菜单则启用），测试后恢复
-	Set-ps12exeContextMenu -action enable | Out-Null
+	Set-ps12exeContextMenu -action enable -SkipEditorExtension | Out-Null
 
 	# 控制台 + Windowed + 二次编译
 	& $repoRoot/build/ps12exe.exe $repoRoot/ps12exe.ps1 -Verbose -App @{Windowed=$true} | Write-Host

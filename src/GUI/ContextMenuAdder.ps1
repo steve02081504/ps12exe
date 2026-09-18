@@ -195,12 +195,41 @@ function Install-ps12exeVSCodeExtension {
 	}
 }
 
+# 从每个检测到的编辑器中卸载 ps12exe VS Code 扩展（仅卸载确实已安装的）。
+function Uninstall-ps12exeVSCodeExtension {
+	$UninstallingMessage = if ($LocalizeData.VSCodeExtensionUninstalling) { $LocalizeData.VSCodeExtensionUninstalling }
+	else { 'Uninstalling the ps12exe extension for {0} ...' }
+	$FailedMessage = if ($LocalizeData.VSCodeExtensionUninstallFailed) { $LocalizeData.VSCodeExtensionUninstallFailed }
+	else { 'Failed to uninstall the ps12exe extension for {0}: {1}' }
+
+	$editors = try { @(Get-VSCodeBasedEditors) } catch { @() }
+	foreach ($editor in $editors) {
+		try {
+			$installed = & $editor.Path --list-extensions 2>$null
+			if (-not ($installed | Where-Object { $_ -and ($_.Trim() -ieq $VSCodeExtensionId) })) {
+				continue
+			}
+			Write-Host ($UninstallingMessage -f $editor.Name) -ForegroundColor Gray
+			$output = & $editor.Path --uninstall-extension $VSCodeExtensionId 2>&1
+			if ($LASTEXITCODE) {
+				Write-Warning ($FailedMessage -f @($editor.Name, (($output | Out-String).Trim())))
+			}
+		}
+		catch {
+			Write-Warning ($FailedMessage -f @($editor.Name, $_.Exception.Message))
+		}
+	}
+}
+
 . $PSScriptRoot\..\predicate.ps1
 if ('reset' -eq $action -or (IsDisable $action)) {
 	RemoveCommandsFromContextMenu "ps12exeCompile"
 	RemoveCommandsFromContextMenu "ps12exeGUIOpen"
 	RemoveFileHandlerProgram "ps12exeGUI.psccfg"
 	RemoveFileType ".psccfg"
+	if ((IsDisable $action) -and -not $SkipEditorExtension) {
+		Uninstall-ps12exeVSCodeExtension
+	}
 }
 if ('reset' -eq $action -or (IsEnable $action)) {
 	AddCommandToContextMenu "ps12exeCompile" "ps1" $LocalizeData.CompileTitle (PwshCodeAsCommand "ps12exe '%1';pause")

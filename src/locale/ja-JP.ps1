@@ -7,6 +7,8 @@
 	GUICfgFileDesc               = "ps12exe GUI 設定ファイル"
 	VSCodeExtensionInstalling    = "{0} 用の ps12exe 拡張機能をインストールしています..."
 	VSCodeExtensionInstallFailed = "{0} 用の ps12exe 拡張機能をインストールできませんでした（まだ公開されていない可能性があります）: {1}"
+	VSCodeExtensionUninstalling  = "{0} 用の ps12exe 拡張機能をアンインストールしています..."
+	VSCodeExtensionUninstallFailed = "{0} 用の ps12exe 拡張機能をアンインストールできませんでした: {1}"
 	# Web サーバー
 	ErrorHead                    = "エラー："
 	CompileResult                = "コンパイル結果"
@@ -111,7 +113,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Locale '<言語コー�
 		PrarmsData = [ordered]@{
 			action              = "実行するアクション。"
 			Locale              = "使用する言語コード。"
-			SkipEditorExtension	= "検出されたエディターへの ps12exe VS Code 拡張機能のインストールをスキップします。"
+			SkipEditorExtension	= "検出されたエディターへの ps12exe VS Code 拡張機能のインストールまたはアンインストールをスキップします。"
 			help                = "このヘルプ情報を表示します。"
 		}
 	}

@@ -9,6 +9,8 @@
 	GUICfgFileDesc               = "ps12exe GUI 配置文件"
 	VSCodeExtensionInstalling    = "正在为 {0} 安装 ps12exe 扩展……"
 	VSCodeExtensionInstallFailed = "无法为 {0} 安装 ps12exe 扩展（可能尚未发布）：{1}"
+	VSCodeExtensionUninstalling  = "正在为 {0} 卸载 ps12exe 扩展……"
+	VSCodeExtensionUninstallFailed = "无法为 {0} 卸载 ps12exe 扩展：{1}"
 
 	# GUI 通用
 	ErrorHead                    = "错误："
@@ -120,7 +122,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Locale '<语言代码>'] [-UIMode 'Da
 		PrarmsData = [ordered]@{
 			action              = "要执行的操作。"
 			Locale              = "要使用的语言代码。"
-			SkipEditorExtension	= "跳过向检测到的编辑器安装 ps12exe VS Code 扩展。"
+			SkipEditorExtension	= "跳过向检测到的编辑器安装或卸载 ps12exe VS Code 扩展。"
 			help                = "显示此帮助信息。"
 		}
 	}

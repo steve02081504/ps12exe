@@ -7,6 +7,8 @@
 	GUICfgFileDesc               = "ps12exeGUI config file"
 	VSCodeExtensionInstalling    = "Installing the ps12exe extension for {0} ..."
 	VSCodeExtensionInstallFailed = "Failed to install the ps12exe extension for {0} (it may not be published yet): {1}"
+	VSCodeExtensionUninstalling  = "Uninstalling the ps12exe extension for {0} ..."
+	VSCodeExtensionUninstallFailed = "Failed to uninstall the ps12exe extension for {0}: {1}"
 	# Web Server
 	ErrorHead                    = "An error occurred:"
 	CompileResult                = "Compile result:"
@@ -111,7 +113,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Locale '<language code>'] [-UIMode 'Dark'
 		PrarmsData = [ordered]@{
 			action              = "Action to execute."
 			Locale              = "Language code."
-			SkipEditorExtension	= "Skip installing the ps12exe VS Code extension into detected editors."
+			SkipEditorExtension	= "Skip installing or uninstalling the ps12exe VS Code extension in detected editors."
 			help                = "Show this help message."
 		}
 	}

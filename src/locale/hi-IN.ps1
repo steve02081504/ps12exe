@@ -7,6 +7,8 @@
 	GUICfgFileDesc               = "ps12exe GUI कॉन्फ़िगरेशन फ़ाइल"
 	VSCodeExtensionInstalling    = "{0} के लिए ps12exe एक्सटेंशन इंस्टॉल किया जा रहा है..."
 	VSCodeExtensionInstallFailed = "{0} के लिए ps12exe एक्सटेंशन इंस्टॉल नहीं हो सका (हो सकता है यह अभी प्रकाशित न हुआ हो): {1}"
+	VSCodeExtensionUninstalling  = "{0} के लिए ps12exe एक्सटेंशन अनइंस्टॉल किया जा रहा है..."
+	VSCodeExtensionUninstallFailed = "{0} के लिए ps12exe एक्सटेंशन अनइंस्टॉल नहीं हो सका: {1}"
 	# Web Server
 	ErrorHead                    = "त्रुटि:"
 	CompileResult                = "कॉम्पाइल परिणाम"
@@ -111,7 +113,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Locale '<
 		PrarmsData = [ordered]@{
 			action              = "क्रिया का कार्यान्वयन।"
 			Locale              = "उपयोग किए जाने वाले भाषा कोड।"
-			SkipEditorExtension	= "पहचाने गए संपादकों में ps12exe VS Code एक्सटेंशन इंस्टॉल करना छोड़ें।"
+			SkipEditorExtension	= "पहचाने गए संपादकों में ps12exe VS Code एक्सटेंशन को इंस्टॉल या अनइंस्टॉल करना छोड़ें।"
 			help                = "इस मदद सूचना को दिखाएँ।"
 		}
 	}
