@@ -51,7 +51,7 @@ const HOVER_MESSAGES = Object.freeze({
 	includeAs: '`#_include_as_base64 <valuename> <file|url>` / `#_include_as_bytes <valuename> <file|url>` insert a file as a base64 string or a byte array.',
 	bang: '`#_!!` is an escape marker: it is stripped from the line, so the line is a comment when run directly and real code in the compiled EXE.',
 	require: '`#_require <modulesList>` installs the listed PowerShell modules before the script runs; it installs but does not import them.',
-	pragma: '`#_pragma <name> [value]` sets a compilation parameter such as `Console`, `noConsole`, `resourceParams.iconFile` or `resourceParams.title` without modifying the script.',
+	pragma: '`#_pragma <name> [value]` sets a compilation parameter such as `App.Windowed`, `Resources.Icon` or `Resources.Title` without modifying the script.',
 	balus: '`#_balus <exitcode>` exits the process with the given exit code and deletes the compiled EXE.',
 	dllExport: '`#_DllExport <signature>` exports a PowerShell function from the compiled assembly; this macro is still experimental and undocumented.',
 	more: 'Read more in the ps12exe README'

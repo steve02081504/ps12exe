@@ -80,7 +80,7 @@ suite('ps12exe preprocessor', () => {
 		assert.strictEqual(toggleBangLine('#_if PSEXE'), undefined)
 		assert.strictEqual(toggleBangLine('\t#_endif'), undefined)
 		assert.strictEqual(toggleBangLine('#_include x.ps1'), undefined)
-		assert.strictEqual(toggleBangLine('#_pragma Console 0'), undefined)
+		assert.strictEqual(toggleBangLine('#_pragma App.Windowed'), undefined)
 		assert.strictEqual(toggleBangLine('#_balus'), undefined)
 		assert.strictEqual(toggleBangLine(''), undefined)
 		assert.strictEqual(toggleBangLine('   '), undefined)

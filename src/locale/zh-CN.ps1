@@ -30,48 +30,68 @@
 	ConsoleHelpData              = @{
 		title      = "用法："
 		Usage      = "[input |] ps12exe [[-inputFile] '<文件名|url>' | -Content '<脚本>'] [-outputFile '<文件名>']
-	[-CompilerOptions '<选项>'] [-TempDir '<文件夹>'] [-minifyer '<scriptblock>'] [-noConsole]
-	[-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
-	[-resourceParams @{iconFile='<文件名|url>'; title='<标题>'; description='<简介>'; company='<公司>';
-	product='<产品>'; copyright='<版权>'; trademark='<水印>'; version='<版本>'}]
-	[-CodeSigning @{Path='<PFX文件路径>'; Password='<PFX密码>'; Thumbprint='<证书指纹>'; TimestampServer='<时间戳服务器>'}]
-	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
-	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<运行时版本>']
-	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<语言代码>'] [-help]"
+	[-App @{Windowed=`$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default';
+	VisualStyles=`$true; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true}]
+	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
+	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'; Apartment='STA'|'MTA';
+	Culture='<区域>'; Options='<选项>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<文件夹>'}]
+	[-Resources @{Icon='<文件名|url>'; Title='<标题>'; Description='<简介>'; Company='<公司>';
+	Product='<产品>'; Copyright='<版权>'; Trademark='<水印>'; Version='<版本>'}]
+	[-Signing @{Certificate='<PFX文件路径>'; Password='<PFX密码>'; Thumbprint='<证书指纹>'; Timestamp='<时间戳服务器>'}]
+	[-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<语言代码>'] [-ConfigFile] [-help]"
 		PrarmsData = [ordered]@{
 			input            = "PowerShell 脚本文件内容的字符串，与 ``-Content`` 相同。"
 			inputFile        = "要转换为可执行文件的 PowerShell 脚本路径或 URL（文件须为 UTF-8 或 UTF-16 编码）。"
 			Content          = "要转换为可执行文件的 PowerShell 脚本内容。"
 			outputFile       = "输出可执行文件路径或文件夹；默认与输入文件同路径并添加 ``.exe`` 扩展名。"
-			CompilerOptions  = "额外的编译器选项（参见 ``https://msdn.microsoft.com/en-us/library/78f4aasd.aspx``）"
-			TempDir          = "存储临时文件的目录（默认为``%temp%``中随机生成的临时目录）"
-			minifyer         = "在编译之前缩小脚本的脚本块"
-			lcid             = "已编译可执行文件的区域设置 ID（LCID）。省略则使用当前用户的区域。"
-			prepareDebug     = "创建有助于调试的信息"
-			architecture     = "仅为特定运行时编译。可能的值为``'x64'``，``'x86'``和``'anycpu'``"
-			threadingModel   = "``'单线程单元'``或``'多线程单元'``模式"
-			noConsole        = "生成的可执行文件将是一个没有控制台窗口的Windows Forms应用程序"
-			UNICODEEncoding  = "在控制台模式下将输出编码为UNICODE"
-			credentialGUI    = "在控制台模式下使用GUI提示凭据"
-			resourceParams   = "包含编译的可执行文件的资源参数的哈希表"
-			CodeSigning      = "包含代码签名参数的哈希表"
-			configFile       = "写一个配置文件（``<outputfile>.exe.config``）"
-			noOutput         = "生成的可执行文件将不生成标准输出（包括详细和信息通道）"
-			noError          = "生成的可执行文件将不生成错误输出（包括警告和调试通道）"
-			noVisualStyles   = "禁用生成的Windows GUI应用程序的视觉样式（仅与``-noConsole``一起使用）"
-			exitOnCancel     = "当在``Read-Host``输入框中选择``Cancel``或``'X'``时退出程序（仅与``-noConsole``一起使用）"
-			DPIAware         = "如果启用了显示缩放，GUI控件将尽可能进行缩放"
-			winFormsDPIAware = "如果启用了显示缩放，WinForms将使用DPI缩放（需要Windows 10和.Net 4.7或更高版本）"
-			requireAdmin     = "如果启用了UAC，编译的可执行文件只能在提升的上下文中运行（如果需要，会出现UAC对话框）"
-			supportOS        = "使用最新Windows版本的功能（执行``[Environment]::OSVersion``以查看差异）"
-			virtualize       = "已激活应用程序虚拟化（强制x86运行时）"
-			longPaths        = "如果在OS上启用，启用长路径（> 260个字符）（仅适用于Windows 10或更高版本）"
-			targetRuntime    = "目标运行时版本，默认为 ``'Framework4.0'``，支持 ``'Framework2.0'`` 与 ``'Core'``；``'Core'`` 编译为 PowerShell Core (.NET) 可执行程序（需要编译机与目标机都装有 PowerShell Core 与 .NET，且产物体积大很多）。"
-			SkipVersionCheck = "跳过ps12exe的新版本检查"
-			GuestMode        = "在额外保护下编译脚本，阻止访问本机文件。"
+			App              = [ordered]@{
+				Windowed         = "生成的可执行文件将是一个没有控制台窗口的 Windows Forms 应用程序。"
+				Silence          = "要静默的输出流；可取 ``'Output'``、``'Verbose'``、``'Error'``、``'Warning'``、``'Debug'`` 中的一个或多个，或 ``'*'`` 表示全部。"
+				OutputEncoding   = "控制台输出编码；``'Default'``、``'UTF8'`` 或 ``'UTF16LE'``。"
+				VisualStyles     = "为 GUI 应用程序启用视觉样式（默认 `` `$true ``）。"
+				ExitOnCancel     = "当在 ``Read-Host`` 输入框中选择 Cancel 或 ``'X'`` 时退出程序。"
+				CredentialGUI    = "在控制台模式下使用 GUI 提示凭据。"
+				DpiAware         = "将编译的可执行文件标记为 DPI 感知。"
+				WinFormsDpiAware = "让 WinForms 使用 DPI 缩放（需要 Windows 10 和 .Net 4.7 或更高版本）。"
+			}
+			Os               = [ordered]@{
+				Admin      = "如果启用了 UAC，编译的可执行文件只能在提升的上下文中运行（如果需要，会出现 UAC 对话框）。"
+				ModernOS   = "使用最新 Windows 版本的功能（执行 ``[Environment]::OSVersion`` 以查看差异）。"
+				LongPaths  = "如果在 OS 上启用，启用长路径（``> 260`` 个字符）（仅适用于 Windows 10 或更高版本）。"
+				Virtualize = "已激活应用程序虚拟化（强制 x86 运行时）。"
+			}
+			Build            = [ordered]@{
+				Target     = "目标运行时版本，默认为 ``'Framework4.0'``，支持 ``'Framework2.0'`` 与 ``'Core'``；``'Core'`` 编译为 PowerShell Core (.NET) 可执行程序（需要编译机与目标机都装有 PowerShell Core 与 .NET，且产物体积大很多）。"
+				Platform   = "仅为特定运行时编译。可能的值为 ``'AnyCpu'``、``'x64'`` 和 ``'x86'``。"
+				Apartment  = "``'STA'``（单线程单元）或 ``'MTA'``（多线程单元）模式。"
+				Culture    = "编译的可执行文件的文化。如果未指定，则为当前用户文化。"
+				Options    = "额外的编译器选项（参见 ``https://msdn.microsoft.com/en-us/library/78f4aasd.aspx``）。"
+				KeepSource = "创建有助于调试的信息。"
+				Minify     = "在编译之前缩小脚本的脚本块。"
+				TempDir    = "存储临时文件的目录（默认为 ``%temp%`` 中随机生成的临时目录）。"
+			}
+			Resources        = [ordered]@{
+				Icon        = "可执行文件的图标；可以是图标文件路径或 URL。"
+				Title       = "可执行文件的标题（文件说明）。"
+				Description = "可执行文件的简要描述。"
+				Company     = "可执行文件的公司名称。"
+				Product     = "可执行文件的产品名称。"
+				Copyright   = "可执行文件的版权声明。"
+				Trademark   = "可执行文件的商标信息。"
+				Version     = "可执行文件的版本号（例如 ``'1.0.0.0'``）。"
+			}
+			Signing          = [ordered]@{
+				Certificate = "PFX 证书文件路径；必须指定 ``Certificate`` 或 ``Thumbprint`` 之一。"
+				Password    = "PFX 证书的密码。"
+				Thumbprint  = "证书指纹；必须指定 ``Certificate`` 或 ``Thumbprint`` 之一。"
+				Timestamp   = "代码签名使用的时间戳服务器 URL。"
+			}
 			PreprocessOnly   = "预处理输入脚本并在不编译的情况下返回它"
-			GolfMode         = "启用golf模式，添加缩写和常用函数"
-			Localize         = "界面与消息所使用的语言代码。"
+			Golf             = "启用golf模式，添加缩写和常用函数"
+			Sandbox          = "在额外保护下编译脚本，阻止访问本机文件。"
+			NoUpdateCheck    = "跳过ps12exe的新版本检查"
+			Locale           = "界面与消息所使用的语言代码。"
+			ConfigFile       = "写一个配置文件（``<outputfile>.exe.config``）"
 			Help             = "显示此帮助信息"
 		}
 	}
@@ -80,14 +100,14 @@
 	GUIHelpData                  = @{
 		title      = "用法："
 		Usage      = @"
-ps12exeGUI [[-ConfigFile] '<配置文件>'] [-PS1File '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-ConfigFile] '<配置文件>'] [-PS1File '<脚本文件>'] [-Locale '<语言代码>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 
-ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-PS1File] '<脚本文件>'] [-Locale '<语言代码>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 "@
 		PrarmsData = [ordered]@{
 			ConfigFile = "要加载的配置文件。"
 			PS1File    = "要编译的脚本文件。"
-			Localize   = "要使用的语言代码。"
+			Locale     = "要使用的语言代码。"
 			UIMode     = "界面模式。"
 			help       = "显示此帮助信息。"
 		}
@@ -96,10 +116,10 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 	# 控制台帮助 - 右键菜单
 	SetContextMenuHelpData       = @{
 		title      = "用法："
-		Usage      = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<语言代码>'] [-SkipEditorExtension] [-help]"
+		Usage      = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Locale '<语言代码>'] [-SkipEditorExtension] [-help]"
 		PrarmsData = [ordered]@{
 			action              = "要执行的操作。"
-			Localize            = "要使用的语言代码。"
+			Locale              = "要使用的语言代码。"
 			SkipEditorExtension	= "跳过向检测到的编辑器安装 ps12exe VS Code 扩展。"
 			help                = "显示此帮助信息。"
 		}
@@ -110,7 +130,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		title      = "用法："
 		Usage      = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
 	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<路径>']
-	[-Localize '<语言代码>'] [-help]"
+	[-Locale '<语言代码>'] [-help]"
 		PrarmsData = [ordered]@{
 			HostUrl           = "要注册的 HTTP 服务器地址。"
 			MaxCompileThreads = "最大编译线程数。"
@@ -119,7 +139,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 			MaxCachedFileSize = "最大缓存文件大小。"
 			MaxScriptFileSize = "最大脚本文件大小。"
 			CacheDir          = "缓存目录。"
-			Localize          = "服务器端记录要使用的语言代码。"
+			Locale            = "服务器端记录要使用的语言代码。"
 			help              = "显示此帮助信息。"
 		}
 	}
@@ -156,12 +176,12 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		MinifyerError                             = "压缩器错误：{0}"
 		MinifyerFailedUsingOriginalScript         = "压缩器失败，使用原始脚本。"
 		# 参数与选项冲突
-		CombinedArg_Virtualize_requireAdmin       = "-virtualize 不能与 -requireAdmin 一起使用"
-		CombinedArg_Virtualize_supportOS          = "-virtualize 不能与 -supportOS 一起使用"
-		CombinedArg_Virtualize_longPaths          = "-virtualize 不能与 -longPaths 一起使用"
-		CombinedArg_NoConfigFile_LongPaths        = "强制生成配置文件，因为选项 -longPaths 需要此配置文件"
-		CombinedArg_NoConfigFile_winFormsDPIAware = "强制生成配置文件，因为选项 -winFormsDPIAware 需要此配置文件"
-		InvalidResourceParam                      = "参数 -resourceParams 的无效Key：{0}"
+		CombinedArg_Virtualize_requireAdmin       = "-Os @{Virtualize=`$true} 不能与 -Os @{Admin=`$true} 一起使用"
+		CombinedArg_Virtualize_supportOS          = "-Os @{Virtualize=`$true} 不能与 -Os @{ModernOS=`$true} 一起使用"
+		CombinedArg_Virtualize_longPaths          = "-Os @{Virtualize=`$true} 不能与 -Os @{LongPaths=`$true} 一起使用"
+		CombinedArg_NoConfigFile_LongPaths        = "强制生成配置文件，因为选项 -Os @{LongPaths=`$true} 需要此配置文件"
+		CombinedArg_NoConfigFile_winFormsDPIAware = "强制生成配置文件，因为选项 -App @{WinFormsDpiAware=`$true} 需要此配置文件"
+		InvalidResourceParam                      = "参数 -Resources 的无效Key：{0}"
 		InvalidArchitecture                       = "无效的平台 {0}，使用 AnyCpu"
 		# 语法与文件
 		InputSyntaxError                          = "脚本语法错误！"
@@ -209,16 +229,16 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		EnterToSubmitIssue                        = "如需帮助，按回车提交issue。"
 		OopsSomethingWentWrong                    = "我去，出错了。"
 		CoreCompilePublishing                     = "正在使用 .NET SDK 发布单文件可执行程序..."
-		CoreCompileNeedDotnet                     = "PowerShell Core 编译需要 .NET SDK（dotnet）。请安装它，或传入 -targetRuntime Framework4.0。"
+		CoreCompileNeedDotnet                     = "PowerShell Core 编译需要 .NET SDK（dotnet）。请安装它，或传入 -Build @{Target='Framework4.0'}。"
 		CoreCompileUnsupported                    = "PowerShell Core 编译器暂不支持以下选项：{0}"
-		CoreCompileNeedPwsh                       = "当前是 Windows PowerShell；-targetRuntime Core 需要安装 PowerShell Core (pwsh) 并加入 PATH。"
-		CoreCompileNeedWindowsPowerShell          = "未找到 Windows PowerShell；请传入 -targetRuntime Core 来编译 PowerShell Core 可执行程序。"
+		CoreCompileNeedPwsh                       = "当前是 Windows PowerShell；-Build @{Target='Core'} 需要安装 PowerShell Core (pwsh) 并加入 PATH。"
+		CoreCompileNeedWindowsPowerShell          = "未找到 Windows PowerShell；请传入 -Build @{Target='Core'} 来编译 PowerShell Core 可执行程序。"
 		CoreCompileNeedPwshHost                   = "已编译的 ps12exe.exe 无法编译 PowerShell Core 程序；请在 pwsh 下通过模块/脚本运行 ps12exe。"
-		CoreCompileHint                           = "如果这是 PowerShell Core 专属脚本，请传入 -targetRuntime Core（需要编译机和目标机都安装 PowerShell Core 与 .NET，且产物体积大很多）。"
+		CoreCompileHint                           = "如果这是 PowerShell Core 专属脚本，请传入 -Build @{Target='Core'}（需要编译机和目标机都安装 PowerShell Core 与 .NET，且产物体积大很多）。"
 		# 访客模式与 Pragma
 		GuestModeFileTooLarge                     = "文件{0}太大，无法读取。"
 		GuestModeIconFileTooLarge                 = "图标{0}太大，无法读取。"
-		GuestModeFtpNotSupported                  = "访客模式不支持FTP。"
+		GuestModeFtpNotSupported                  = "沙箱模式不支持FTP。"
 		UnknownPragma                             = "未知的 pragma：{0}"
 		UnknownPragmaBadParameterType             = "未知的pragma：{0}，无法分析类型{1}。"
 		UnknownPragmaBoolValue                    = "未知的pragma值：{0}，无法将其视为bool。"

@@ -16,7 +16,7 @@ $unsupported = @()
 foreach ($a in @('requireAdmin', 'DPIAware', 'supportOS', 'longPaths', 'virtualize', 'winFormsDPIAware')) {
 	if ((Get-Variable -Name $a -ValueOnly -ErrorAction Ignore)) { $unsupported += $a }
 }
-if ($DllExportList) { $unsupported += 'DllExportList' }
+if ($DllExportList) { $unsupported += 'Build.DllExports' }
 if ($unsupported.Count) {
 	Write-I18n Error CoreCompileUnsupported ($unsupported -join ', ') -Category InvalidArgument
 	throw 'ps12exe:core-unsupported'

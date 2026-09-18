@@ -5,12 +5,12 @@
 启用/禁用/重置 ps12exe 的右键菜单
 .PARAMETER action
 enable、disable 或 reset
-.PARAMETER Localize
+.PARAMETER Locale
 用于服务器端日志记录的语言代码
 .EXAMPLE
 Set-ps12exeContextMenu
 .EXAMPLE
-Set-ps12exeContextMenu -action 'enable' -Localize 'en-UK'
+Set-ps12exeContextMenu -action 'enable' -Locale 'en-UK'
 #>
 [CmdletBinding()]
 param (
@@ -33,12 +33,12 @@ param (
 		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 		. "$PSScriptRoot\..\LocaleArgCompleter.ps1" @PSBoundParameters
 	})]
-	[string]$Localize,
+	[string]$Locale,
 	[switch]$SkipEditorExtension,
 	[switch]$help
 )
 
-$LocalizeData = . $PSScriptRoot\..\LocaleLoader.ps1 -Localize $Localize
+$LocalizeData = . $PSScriptRoot\..\LocaleLoader.ps1 -Locale $Locale
 
 if ($help) {
 	$MyHelp = $LocalizeData.SetContextMenuHelpData

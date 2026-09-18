@@ -135,7 +135,7 @@ $Script:refs.CompileButton.add_Click({
 		Set-Location $projDir
 	}
 	$result = try {
-		ps12exe @Params -Localize $Localize -ErrorAction Stop | Out-String
+		ps12exe @Params -Locale $Locale -ErrorAction Stop | Out-String
 	}
 	catch { $LastExitCode = 1 }
 	if ($Script:ConfigFile) { Set-Location $PathNow }

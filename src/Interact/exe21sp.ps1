@@ -1,11 +1,11 @@
 ﻿# exe21sp 的交互式循环（当 exe21sp 无参数运行且控制台未重定向时调用）。
-param($Localize)
+param($Locale)
 
 #_if PSScript
 . "$PSScriptRoot\..\predicate.ps1"
 . "$PSScriptRoot\..\TaskbarProgress.ps1"
 . "$PSScriptRoot\..\WriteI18n.ps1"
-$LocalizeData = . "$PSScriptRoot\..\LocaleLoader.ps1" -Localize $Localize
+$LocalizeData = . "$PSScriptRoot\..\LocaleLoader.ps1" -Locale $Locale
 Set-I18nData -I18nData $LocalizeData.exe21spInteractI18nData
 $I18n = $LocalizeData.exe21spInteractI18nData
 

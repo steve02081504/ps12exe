@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
 PS2EXE2ps12exe is a module to hook all PS2EXE calls into ps12exe.
 #>
@@ -130,27 +130,54 @@ function Invoke-ps2exe {
 	}
 	Import-Module -Name ps12exe
 
-	# 转发到 ps12exe 的新版参数
+	# 转发到 ps12exe 的对象 API
 	$psParams = @{}
-	foreach ($name in @('inputFile', 'outputFile', 'prepareDebug', 'lcid', 'nested', 'noConsole', 'UNICODEEncoding', 'credentialGUI',
-			'configFile', 'noOutput', 'noError', 'noVisualStyles', 'exitOnCancel', 'DPIAware', 'winFormsDPIAware',
-			'requireAdmin', 'supportOS', 'virtualize', 'longPaths')) {
+	foreach ($name in @('inputFile', 'outputFile', 'configFile')) {
 		if ($PSBoundParameters.ContainsKey($name)) { $psParams[$name] = $PSBoundParameters[$name] }
 	}
-	if ($x86) { $psParams.architecture = 'x86' }
-	elseif ($x64) { $psParams.architecture = 'x64' }
-	if ($STA) { $psParams.threadingModel = 'STA' }
-	elseif ($MTA) { $psParams.threadingModel = 'MTA' }
-	if ($runtime20) { $psParams.targetRuntime = 'Framework2.0' }
-	elseif ($runtime40) { $psParams.targetRuntime = 'Framework4.0' }
+	# App
+	$app = @{}
+	if ($PSBoundParameters.ContainsKey('noConsole')) { $app.Windowed = [bool]$noConsole }
+	if ($PSBoundParameters.ContainsKey('UNICODEEncoding')) { $app.OutputEncoding = if ($UNICODEEncoding) { 'UTF16LE' } else { 'Default' } }
+	if ($PSBoundParameters.ContainsKey('credentialGUI')) { $app.CredentialGUI = [bool]$credentialGUI }
+	if ($PSBoundParameters.ContainsKey('noVisualStyles')) { $app.VisualStyles = -not [bool]$noVisualStyles }
+	if ($PSBoundParameters.ContainsKey('exitOnCancel')) { $app.ExitOnCancel = [bool]$exitOnCancel }
+	if ($PSBoundParameters.ContainsKey('DPIAware')) { $app.DpiAware = [bool]$DPIAware }
+	if ($PSBoundParameters.ContainsKey('winFormsDPIAware')) { $app.WinFormsDpiAware = [bool]$winFormsDPIAware }
+	$silence = @()
+	if ($noOutput) { $silence += @('Output', 'Verbose') }
+	if ($noError) { $silence += @('Error', 'Warning', 'Debug') }
+	if ($silence.Count) { $app.Silence = $silence }
+	if ($app.Count) { $psParams.App = $app }
+	# Os
+	$os = @{}
+	if ($PSBoundParameters.ContainsKey('requireAdmin')) { $os.Admin = [bool]$requireAdmin }
+	if ($PSBoundParameters.ContainsKey('supportOS')) { $os.ModernOS = [bool]$supportOS }
+	if ($PSBoundParameters.ContainsKey('virtualize')) { $os.Virtualize = [bool]$virtualize }
+	if ($PSBoundParameters.ContainsKey('longPaths')) { $os.LongPaths = [bool]$longPaths }
+	if ($os.Count) { $psParams.Os = $os }
+	# Build
+	$build = @{}
+	if ($PSBoundParameters.ContainsKey('prepareDebug')) { $build.KeepSource = [bool]$prepareDebug }
+	if ($PSBoundParameters.ContainsKey('lcid')) { $build.Culture = "$lcid" }
+	if ($x86) { $build.Platform = 'x86' }
+	elseif ($x64) { $build.Platform = 'x64' }
+	if ($STA) { $build.Apartment = 'STA' }
+	elseif ($MTA) { $build.Apartment = 'MTA' }
+	if ($runtime20) { $build.Target = 'Framework2.0' }
+	elseif ($runtime40) { $build.Target = 'Framework4.0' }
 	# noConfigFile 是 PS2EXE 的兼容占位参数，直接忽略
 
-	# 资源参数合并为 resourceParams 哈希表
+	# 资源参数合并为 Resources 哈希表
+	$resourceKeyMap = @{
+		iconFile = 'Icon'; title = 'Title'; description = 'Description'; company = 'Company'
+		product = 'Product'; copyright = 'Copyright'; trademark = 'Trademark'; version = 'Version'
+	}
 	$resources = @{}
 	foreach ($name in @('iconFile', 'title', 'description', 'company', 'product', 'copyright', 'trademark', 'version')) {
-		if ($PSBoundParameters.ContainsKey($name) -and $PSBoundParameters[$name]) { $resources[$name] = $PSBoundParameters[$name] }
+		if ($PSBoundParameters.ContainsKey($name) -and $PSBoundParameters[$name]) { $resources[$resourceKeyMap[$name]] = $PSBoundParameters[$name] }
 	}
-	if ($resources.Count) { $psParams.resourceParams = $resources }
+	if ($resources.Count) { $psParams.Resources = $resources }
 
 	# 收集 embedFiles 的二进制内容，供编译期注入
 	$embedEntries = @()
@@ -171,7 +198,7 @@ function Invoke-ps2exe {
 		ConHost = [bool]$conHost
 		Embeds  = $embedEntries
 	}
-	$psParams.minifyer = {
+	$build.Minify = {
 		$text = $_
 		if (-not $text) { return $text }
 		$ast = $null
@@ -216,6 +243,7 @@ function Invoke-ps2exe {
 		$insertAt = if ($ast.ParamBlock) { $ast.ParamBlock.Extent.EndOffset } else { 0 }
 		$text.Substring(0, $insertAt) + "`n" + ($inject -join "`n") + "`n" + $text.Substring($insertAt)
 	}.GetNewClosure()
+	$psParams.Build = $build
 
 	ps12exe @psParams
 }

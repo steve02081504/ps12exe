@@ -54,8 +54,6 @@ function Preprocessor($Content, $FilePath) {
 	$Result = @()
 	$requiredModules = @()
 	$requireFlag = $False
-	# 常量求值的逃生舱 pragma，由 ConstProgramCheck.ps1 直接关键词匹配处理；这里仅放行，避免报未知 pragma
-	$ConstEvalPragmas = @('noConstEval', 'constEvalTimeout')
 	# 处理#_if <PSEXE/PSScript>、#_else、#_endif（支持嵌套：只有栈上所有分支都为真时才输出）
 	$conditionStack = [System.Collections.Generic.List[hashtable]]::new()
 	for ($index = 0; $index -lt $Content.Count; $index++) {
@@ -181,14 +179,43 @@ function Preprocessor($Content, $FilePath) {
 		}
 		return $Value
 	}
+	# 嵌套设置：a.b 或 a.b.c...，根参数必须是哈希表。字符串值会做同样的 pragma 值转换。
+	function Set-NestedPragma([string]$PragmaName, $Value) {
+		$segments = $PragmaName -split '\.'
+		$root = $segments[0]
+		$rootType = $ParamList[$root].ParameterType
+		if ($rootType -ne [hashtable] -and $rootType -ne [System.Collections.IDictionary]) {
+			Write-I18n Warning UnknownPragma $PragmaName
+			return $false
+		}
+		if ($Value -is [string]) {
+			$Value = ConvertFrom-PragmaStringValue $Value $PragmaName
+			if ($root -eq 'Signing' -and $segments[-1] -eq 'Password') {
+				$Value = ConvertTo-SecureString -String $Value -AsPlainText -Force
+			}
+		}
+		$target = if ($Params.ContainsKey($root) -and $Params[$root] -is [hashtable]) { $Params[$root] } else { @{} }
+		$cursor = $target
+		for ($i = 1; $i -lt $segments.Count - 1; $i++) {
+			if (-not ($cursor[$segments[$i]] -is [hashtable])) { $cursor[$segments[$i]] = @{} }
+			$cursor = $cursor[$segments[$i]]
+		}
+		$cursor[$segments[-1]] = $Value
+		$Params[$root] = $target
+		return $true
+	}
 	$Content = $Result |
 	# 处理#_pragma
 	ForEach-Object {
 		$_ # 对于#_pragma，我们不在预处理时移除它：考虑到它可能被用于$PSEXEscript中
 		if ($_ -match "^\s*#_pragma\s+(?<pragmaname>[a-zA-Z_][a-zA-Z_0-9]*(?:\.[a-zA-Z_][a-zA-Z_0-9]*)*)\s*(?!#.*)$") {
 			$pragmaname = $Matches["pragmaname"]
-			if ($ConstEvalPragmas -contains $pragmaname) { return }
 			$value = $true
+			if ($pragmaname.Contains('.')) {
+				# 无值嵌套 pragma（如 #_pragma App.Windowed）等同于打开对应键
+				Set-NestedPragma $pragmaname $true | Out-Null
+				return
+			}
 			if ($pragmaname.StartsWith("no")) {
 				$pragmaname = $pragmaname.Substring(2)
 				$value = $false
@@ -208,26 +235,7 @@ function Preprocessor($Content, $FilePath) {
 			if ($ConstEvalPragmas -contains $pragmaname) { return }
 			$value = $Matches["rest"]
 			if ($pragmaname.Contains('.')) {
-				# 嵌套设置：a.b 或 a.b.c...，根参数必须是哈希表
-				$segments = $pragmaname -split '\.'
-				$root = $segments[0]
-				$rootType = $ParamList[$root].ParameterType
-				if ($rootType -ne [hashtable] -and $rootType -ne [System.Collections.IDictionary]) {
-					Write-I18n Warning UnknownPragma $pragmaname
-					return
-				}
-				$value = ConvertFrom-PragmaStringValue $value $pragmaname
-				if ($root -eq 'CodeSigning' -and $segments[-1] -eq 'Password') {
-					$value = ConvertTo-SecureString -String $value -AsPlainText -Force
-				}
-				$target = if ($Params.ContainsKey($root) -and $Params[$root] -is [hashtable]) { $Params[$root] } else { @{} }
-				$cursor = $target
-				for ($i = 1; $i -lt $segments.Count - 1; $i++) {
-					if (-not ($cursor[$segments[$i]] -is [hashtable])) { $cursor[$segments[$i]] = @{} }
-					$cursor = $cursor[$segments[$i]]
-				}
-				$cursor[$segments[-1]] = $value
-				$Params[$root] = $target
+				Set-NestedPragma $pragmaname $value | Out-Null
 				return
 			}
 			if ($ParamList[$pragmaname].ParameterType -eq [Switch] -or $ParamList["no$pragmaname"].ParameterType -eq [Switch]) {

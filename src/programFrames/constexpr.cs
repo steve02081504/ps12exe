@@ -35,6 +35,9 @@ namespace PSRunnerNS {
 				#if UNICODEEncoding && !noConsole
 				System.Console.OutputEncoding = new System.Text.UnicodeEncoding();
 				#endif
+				#if UTF8Encoding && !noConsole
+				System.Console.OutputEncoding = new System.Text.UTF8Encoding();
+				#endif
 
 				#if !noVisualStyles && noConsole
 				Application.EnableVisualStyles();

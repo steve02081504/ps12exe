@@ -1,4 +1,4 @@
-# PS2EXE2ps12exe 兼容层测试：参数映射、conHost / embedFiles 转写、$ScriptRoot 兼容。失败时输出 GitHub 友好 ::error/::group。
+﻿# PS2EXE2ps12exe 兼容层测试：参数映射、conHost / embedFiles 转写、$ScriptRoot 兼容。失败时输出 GitHub 友好 ::error/::group。
 $ErrorActionPreference = 'Stop'
 $error.Clear()
 $repoRoot = $env:REPO_ROOT
@@ -28,7 +28,7 @@ function Get-PEMachine([string]$Path) {
 }
 
 try {
-	# 1) 基本映射：title/version -> resourceParams
+	# 1) 基本映射：title/version -> -Resources @{Title;Version}
 	$helloPs1 = Join-Path $buildDir 'hello.ps1'
 	Set-Content -LiteralPath $helloPs1 -Encoding UTF8 -Value "'hello-compat'"
 	$helloExe = Join-Path $buildDir 'hello.exe'
@@ -40,9 +40,9 @@ try {
 	if ($versionInfo.FileDescription -ne 'CompatTitle') { throw "shim title not applied: $($versionInfo.FileDescription)" }
 	if ($versionInfo.FileVersion -ne '9.9.9.9') { throw "shim version not applied: $($versionInfo.FileVersion)" }
 
-	# 2) 架构映射：x64/x86 -> architecture（非常量走 CodeDom，PE 机器码可验证）
+	# 2) 架构映射：x64/x86 -> Build.Platform（非常量走 CodeDom，PE 机器码可验证）
 	$archPs1 = Join-Path $buildDir 'arch.ps1'
-	Set-Content -LiteralPath $archPs1 -Encoding UTF8 -Value "#_pragma noConstEval`n'arch-ok'"
+	Set-Content -LiteralPath $archPs1 -Encoding UTF8 -Value "#_pragma Build.ConstEval.Enabled 0`n'arch-ok'"
 	$archX64 = Join-Path $buildDir 'arch_x64.exe'
 	$archX86 = Join-Path $buildDir 'arch_x86.exe'
 	ps2exe -inputFile $archPs1 -outputFile $archX64 -x64 | Write-Host
@@ -103,7 +103,7 @@ param([string]`$Name = 'default')
 		if (-not $rejected) { throw "shim should reject $($conflict.Name)" }
 	}
 
-	# 7) 旧版参数保留：runtime20/40 映射到 targetRuntime（能编过即可）
+	# 7) PS2EXE 的 runtime20/40 映射到 Build.Target（能编过即可）
 	$rtPs1 = Join-Path $buildDir 'rt.ps1'
 	Set-Content -LiteralPath $rtPs1 -Encoding UTF8 -Value "'rt-ok'"
 	ps2exe -inputFile $rtPs1 -outputFile (Join-Path $buildDir 'rt20.exe') -runtime20 | Write-Host

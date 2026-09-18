@@ -71,7 +71,7 @@ public partial class ps12exeOnlineMain : Page
 						param($InputScript, $OutputFile)
 						try {
 							Import-Module ../../../../ps12exe.psm1 -ErrorAction Stop
-							$InputScript | ps12exe -outputFile $OutputFile -GuestMode:$true -ErrorAction Stop
+							$InputScript | ps12exe -outputFile $OutputFile -Sandbox:$true -ErrorAction Stop
 						}
 						catch { $LastExitCode = 1 }
 						if ($LastExitCode) {

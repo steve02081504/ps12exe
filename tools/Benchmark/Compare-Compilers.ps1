@@ -71,26 +71,26 @@ function Measure-Script([string]$Id, [string]$Label, [string[]]$Argv) {
 }
 
 $constScript = New-Script 'hello_const.ps1' "Write-Output 'Hello World'`n"
-$nonConstScript = New-Script 'hello_nonconst.ps1' "#_pragma noConstEval`nWrite-Output `"Hello World `$env:COMPUTERNAME`"`n"
+$nonConstScript = New-Script 'hello_nonconst.ps1' "#_pragma Build.ConstEval.Enabled 0`nWrite-Output `"Hello World `$env:COMPUTERNAME`"`n"
 $helloScript = New-Script 'hello.ps1' "Write-Output 'Hello World'`n"
 
 # --- ps12exe（本仓库）---
 Import-Module (Join-Path $repoRoot 'ps12exe.psd1') -Force
 $exe = Join-Path $tempDir 'const.exe'
-ps12exe $constScript $exe -SkipVersionCheck
+ps12exe $constScript $exe -NoUpdateCheck
 Measure-Exe 'ps12-const-fw' 'ps12exe · constant · Framework4.0' $exe
 
 $exe = Join-Path $tempDir 'nonconst.exe'
-ps12exe $nonConstScript $exe -SkipVersionCheck
+ps12exe $nonConstScript $exe -NoUpdateCheck
 Measure-Exe 'ps12-nonconst-fw' 'ps12exe · non-constant · Framework4.0' $exe
 
 if ($IncludeCore) {
 	if (-not (Get-Command dotnet -ErrorAction Ignore)) { throw '-IncludeCore requires the .NET SDK.' }
 	$exe = Join-Path $tempDir 'const_core.exe'
-	ps12exe $constScript $exe -targetRuntime Core -SkipVersionCheck
+	ps12exe $constScript $exe -Build @{Target='Core'} -NoUpdateCheck
 	Measure-Exe 'ps12-const-core' 'ps12exe · constant · Core' $exe
 	$exe = Join-Path $tempDir 'nonconst_core.exe'
-	ps12exe $nonConstScript $exe -targetRuntime Core -SkipVersionCheck
+	ps12exe $nonConstScript $exe -Build @{Target='Core'} -NoUpdateCheck
 	Measure-Exe 'ps12-nonconst-core' 'ps12exe · non-constant · Core' $exe
 }
 
@@ -152,7 +152,7 @@ if ($ProbeRuntime) {
 	}
 
 	$probeScript = New-Script 'probe.ps1' @'
-#_pragma noConstEval
+#_pragma Build.ConstEval.Enabled 0
 $joined = [Console]::In.ReadToEnd()
 Write-Output ("raw=[" + $joined + "]")
 Write-Output ("PSCommandPath=[" + $PSCommandPath + "]")
@@ -162,7 +162,7 @@ Write-Output ("PSScriptRoot=[" + $PSScriptRoot + "]")
 		'ps12exe' = [pscustomobject]@{ File = (Join-Path $tempDir 'probe_ps12.exe'); Stdin = $null; Path = $null; TTY = $null }
 		'ps2exe'  = [pscustomobject]@{ File = (Join-Path $tempDir 'probe_ps2exe.exe'); Stdin = $null; Path = $null; TTY = $null }
 	}
-	ps12exe $probeScript $probe['ps12exe'].File -SkipVersionCheck
+	ps12exe $probeScript $probe['ps12exe'].File -NoUpdateCheck
 	if ($ps2exeAvailable) { Invoke-ps2exe -inputFile $probeScript -outputFile $probe['ps2exe'].File }
 	foreach ($key in $probe.Keys) {
 		if (-not (Test-Path -LiteralPath $probe[$key].File)) { continue }
@@ -178,7 +178,7 @@ Write-Output ("PSScriptRoot=[" + $PSScriptRoot + "]")
 		$js = New-Script 'tty.js' "const fs=require('fs');fs.writeFileSync(process.env.OUT,JSON.stringify({nodeOutTTY:!!process.stdout.isTTY}))"
 		$ttyScript = New-Script 'tty.ps1' ("& node `"$js`"`n")
 		$probe['ps12exe'].TTY = Join-Path $tempDir 'tty_ps12.exe'
-		ps12exe $ttyScript $probe['ps12exe'].TTY -SkipVersionCheck
+		ps12exe $ttyScript $probe['ps12exe'].TTY -NoUpdateCheck
 		if ($ps2exeAvailable) {
 			$probe['ps2exe'].TTY = Join-Path $tempDir 'tty_ps2exe.exe'
 			Invoke-ps2exe -inputFile $ttyScript -outputFile $probe['ps2exe'].TTY

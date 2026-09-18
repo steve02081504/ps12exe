@@ -111,15 +111,15 @@ Start-ps12exeWebServer
 ### GUI パラメータ
 
 ```powershell
-ps12exeGUI [[-ConfigFile] '<設定ファイル>'] [-PS1File '<スクリプトファイル>'] [-Localize '<言語コード>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-ConfigFile] '<設定ファイル>'] [-PS1File '<スクリプトファイル>'] [-Locale '<言語コード>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 
-ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コード>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Locale '<言語コード>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 ```
 
 ```text
 ConfigFile : 読み込む設定ファイル。
 PS1File    : コンパイルするスクリプトファイル。
-Localize   : 使用する言語コード。
+Locale     : 使用する言語コード。
 UIMode     : 使用するUIモード。
 help       : このヘルプ情報を表示します。
 ```
@@ -128,14 +128,15 @@ help       : このヘルプ情報を表示します。
 
 ```powershell
 [input |] ps12exe [[-inputFile] '<ファイル名|url>' | -Content '<スクリプト>'] [-outputFile '<ファイル名>']
-        [-CompilerOptions '<オプション>'] [-TempDir '<ディレクトリ>'] [-minifyer '<scriptblock>'] [-noConsole]
-        [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
-        [-resourceParams @{iconFile='<ファイル名|url>'; title='<タイトル>'; description='<説明>'; company='<会社>';
-        product='<製品>'; copyright='<著作権>'; trademark='<商標>'; version='<バージョン>'}]
-        [-CodeSigning @{Path='<PFXファイルパス>'; Password='<PFXパスワード>'; Thumbprint='<証明書指紋>'; TimestampServer='<時刻同期サーバー>'}]
-        [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
-        [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<ランタイムバージョン>']
-        [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<言語コード>'] [-help]
+        [-App @{Windowed=$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default'; VisualStyles=$true;
+        ExitOnCancel=$true; CredentialGUI=$true; DpiAware=$true; WinFormsDpiAware=$true}]
+        [-Os @{Admin=$true; ModernOS=$true; LongPaths=$true; Virtualize=$true}]
+        [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'; Apartment='STA'|'MTA';
+        Culture='<カルチャ>'; Options='<オプション>'; KeepSource=$true; Minify={<scriptblock>}; TempDir='<ディレクトリ>'}]
+        [-Resources @{Icon='<ファイル名|url>'; Title='<タイトル>'; Description='<説明>'; Company='<会社>';
+        Product='<製品>'; Copyright='<著作権>'; Trademark='<商標>'; Version='<バージョン>'}]
+        [-Signing @{Certificate='<PFXファイルパス>'; Password='<PFXパスワード>'; Thumbprint='<証明書指紋>'; Timestamp='<時刻同期サーバー>'}]
+        [-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<言語コード>'] [-ConfigFile] [-help]
 ```
 
 ```text
@@ -143,36 +144,38 @@ input            : PowerShell スクリプトファイルの内容の文字列�
 inputFile        : 実行可能ファイルに変換したい PowerShell スクリプトファイルのパスまたは URL（ファイルは UTF8 または UTF16 でエンコードされている必要があります）
 Content          : 実行可能ファイルに変換したい PowerShell スクリプトの内容
 outputFile       : ターゲットの実行可能ファイル名またはディレクトリ。デフォルトは '.exe' 拡張子を持つ inputFile です
-CompilerOptions  : 追加のコンパイラオプション（参照： https://msdn.microsoft.com/en-us/library/78f4aasd.aspx）
-TempDir          : 一時ファイルを保存するディレクトリ（デフォルトは %temp% にランダムに生成される一時ディレクトリ）
-minifyer         : コンパイル前にスクリプトを縮小するスクリプトブロック
-lcid             : コンパイルされた実行可能ファイルのロケール ID。指定されていない場合は、現在のユーザーのカルチャです
-prepareDebug     : デバッグに役立つ情報を作成します
-architecture     : 特定のランタイムのみのコンパイル。可能な値は 'x64'、'x86'、'anycpu' です
-threadingModel   : 'STA'（シングルスレッドアパートメント）または 'MTA'（マルチスレッドアパートメント）モード
-noConsole        : 生成された実行可能ファイルは、コンソールウィンドウのない Windows Forms アプリケーションになります
-UNICODEEncoding  : コンソールモードで出力を UNICODE でエンコードします
-credentialGUI    : コンソールモードで GUI プロンプトを使用して資格情報を求めます
-resourceParams   : コンパイルされた実行可能ファイルのリソースパラメータを含むハッシュテーブル
-CodeSigning      : コード署名パラメータを含むハッシュテーブル
-configFile       : 設定ファイル（<outputfile>.exe.config）を書き込みます
-noOutput         : 生成された実行可能ファイルは、標準出力（詳細情報や情報チャネルを含む）を生成しません
-noError          : 生成された実行可能ファイルは、エラー出力（警告情報やデバッグ情報を含む）を生成しません
-noVisualStyles   : 生成された Windows GUI アプリケーションのビジュアルスタイルを無効にします（-noConsole と共に使用）
-exitOnCancel     : Read-Host 入力ボックスで Cancel または 'X' を選択したときにプログラムを終了します（-noConsole と共に使用）
-DPIAware         : 表示スケーリングが有効になっている場合、GUI コントロールは可能な限りスケーリングされます
-winFormsDPIAware : 表示スケーリングが有効になっている場合、WinForms は DPI スケーリングを使用します（Windows 10 および .Net 4.7 以上が必要）
-requireAdmin     : UAC が有効になっている場合、コンパイルされた実行可能ファイルは昇格されたコンテキストでのみ実行可能です（必要に応じて UAC ダイアログが表示されます）
-supportOS        : 最新の Windows バージョンの機能を使用します（[Environment]::OSVersion を実行して違いを確認）
-virtualize       : アプリケーションの仮想化が有効になっています（x86 ランタイムを強制）
-longPaths        : OS で有効になっている場合、長いパス（260 文字以上）を有効にします（Windows 10 以上にのみ適用）
-targetRuntime    : ターゲット ランタイム バージョン、既定値は 'Framework4.0'、'Framework2.0' と 'Core' がサポートされています。'Core' は PowerShell Core (.NET) 実行可能ファイルを生成します（コンパイル機とターゲット機の両方に PowerShell Core と .NET が必要で、成果物は大幅に大きくなります）。
-SkipVersionCheck : ps12exeの新しいバージョンの確認をスキップします
-GuestMode        : ネイティブ ファイルへのアクセスを防ぐために、スクリプトをコンパイルする際に保護を追加します
-PreprocessOnly   : 入力スクリプトをプリプロセス処理し、コンパイルせずに返します
-GolfMode         : コードを短縮化し、一般的な関数を追加します
-Localize         : 使用する言語コード
-Help             : このヘルプ情報を表示します
+App              : 生成されるアプリケーションの動作を記述するハッシュテーブル。サポートされるキー：
+                   Windowed         : 生成された実行可能ファイルは、コンソールウィンドウのない Windows Forms アプリケーションになります。
+                   Silence          : 抑制する出力ストリームの名前。'Output'、'Verbose'、'Error'、'Warning'、'Debug' のいずれか 1 つ以上、またはすべてを表す '*'。
+                   OutputEncoding   : コンソール出力のエンコーディング。'Default'、'UTF8'、'UTF16LE'。
+                   VisualStyles     : GUI アプリケーションのビジュアルスタイルを有効にします（既定値 $true）。
+                   ExitOnCancel     : Read-Host 入力ボックスで Cancel または 'X' を選択したときにプログラムを終了します。
+                   CredentialGUI    : コンソールモードで GUI プロンプトを使用して資格情報を求めます。
+                   DpiAware         : コンパイルされた実行可能ファイルを DPI 対応としてマークします。
+                   WinFormsDpiAware : WinForms で DPI スケーリングを使用します（Windows 10 および .Net 4.7 以上が必要）。
+Os               : OS 統合オプションのハッシュテーブル。サポートされるキー：
+                   Admin            : UAC が有効になっている場合、コンパイルされた実行可能ファイルは昇格されたコンテキストでのみ実行可能です（必要に応じて UAC ダイアログが表示されます）。
+                   ModernOS         : 最新の Windows バージョンの機能を使用します（[Environment]::OSVersion を実行して違いを確認）。
+                   LongPaths        : OS で有効になっている場合、長いパス（260 文字以上）を有効にします（Windows 10 以上にのみ適用）。
+                   Virtualize       : アプリケーションの仮想化が有効になっています（x86 ランタイムを強制）。
+Build            : ビルド/ツールチェーンオプションのハッシュテーブル。サポートされるキー：
+                   Target           : ターゲット ランタイム バージョン、既定値は 'Framework4.0'、'Framework2.0' と 'Core' がサポートされています。'Core' は PowerShell Core (.NET) 実行可能ファイルを生成します（コンパイル機とターゲット機の両方に PowerShell Core と .NET が必要で、成果物は大幅に大きくなります）。
+                   Platform         : 特定のランタイムのみのコンパイル。可能な値は 'AnyCpu'、'x64'、'x86' です。
+                   Apartment        : 'STA'（シングルスレッドアパートメント）または 'MTA'（マルチスレッドアパートメント）モード。
+                   Culture          : コンパイルされた実行可能ファイルのカルチャ。指定されていない場合は、現在のユーザーのカルチャです。
+                   Options          : 追加のコンパイラオプション（参照： https://msdn.microsoft.com/en-us/library/78f4aasd.aspx）。
+                   KeepSource       : デバッグに役立つ情報を作成します。
+                   Minify           : コンパイル前にスクリプトを縮小するスクリプトブロック。
+                   TempDir          : 一時ファイルを保存するディレクトリ（デフォルトは %temp% にランダムに生成される一時ディレクトリ）。
+Resources        : 実行可能ファイルに埋め込むバージョンリソースのハッシュテーブル（Icon、Title、Description、Company、Product、Copyright、Trademark、Version）。Icon はアイコンファイルのパスまたは URL にできます。
+Signing          : コード署名オプションのハッシュテーブル（Certificate、Password、Thumbprint、Timestamp）。Certificate または Thumbprint のいずれかを指定する必要があります。
+PreprocessOnly   : 入力スクリプトをプリプロセス処理し、コンパイルせずに返します。
+Golf             : コードを短縮化し、一般的な関数を追加します。
+Sandbox          : ネイティブ ファイルへのアクセスを防ぐために、スクリプトをコンパイルする際に保護を追加します。
+NoUpdateCheck    : ps12exeの新しいバージョンの確認をスキップします。
+Locale           : 使用する言語コード。
+ConfigFile       : 設定ファイル（<outputfile>.exe.config）を書き込みます。
+Help             : このヘルプ情報を表示します。
 ```
 
 ## 備考
@@ -307,7 +310,7 @@ elseif
 
 ```powershell
 #_require ps12exe
-#_pragma Console 0
+#_pragma App.Windowed
 $Number = [bigint]::Parse('0')
 $NextNumber = $Number+1
 $NextScript = $PSEXEscript.Replace("Parse('$Number')", "Parse('$NextNumber')")
@@ -346,26 +349,24 @@ PS C:\Users\steve02081504> '12' | ps12exe
 Compiled file written -> 1024 bytes
 PS C:\Users\steve02081504> ./a.exe
 12
-PS C:\Users\steve02081504> '#_pragma Console no
+PS C:\Users\steve02081504> '#_pragma App.Windowed
 >> 12' | ps12exe
 Preprocessed script -> 23 bytes
 Compiled file written -> 2560 bytes
 ```
 
-ご覧のように、コンパイル時に `#_pragma Console no` を指定しなかったとしても、生成された exe ファイルはウィンドウモードで実行されます。  
+ご覧のように、コンパイル時に `-App @{Windowed=$true}` を指定しなかったとしても、生成された exe ファイルはウィンドウモードで実行されます。  
 pragma コマンドは任意のコンパイルパラメータを設定できます。名前に `.` を使うとネストした値を設定できます。
 
 ```powershell
-#_pragma noConsole # ウィンドウモード
-#_pragma Console # コンソールモード
-#_pragma Console no # ウィンドウモード
-#_pragma Console true # コンソールモード
-#_pragma resourceParams.iconFile $PSScriptRoot/icon.ico # アイコンの設定
-#_pragma resourceParams.title "title" # exe のタイトルを設定する
-#_pragma CodeSigning.Path "C:\Cert\mycert.pfx" # コード署名証明書を設定する
+#_pragma App.Windowed # ウィンドウモード
+#_pragma App.Windowed $false # コンソールモード
+#_pragma Resources.Icon $PSScriptRoot/icon.ico # アイコンの設定
+#_pragma Resources.Title "title" # exe のタイトルを設定する
+#_pragma Signing.Certificate "C:\Cert\mycert.pfx" # コード署名証明書を設定する
 ```
 
-文字列型の pragma 値には `$(...)` 部分式を記述でき、プリプロセス時に評価されます（例：`#_pragma resourceParams.iconFile $(Join-Path $env:USERPROFILE 'foo.ico')`）。許可されるのはホワイトリストに含まれる path 関連コマンド（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`、および GuestMode 以外での `Get-Content`）、変数（`$env:*`、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）、および一般的な無害なインスタンスメソッド（例：`ToUpper`、`Trim`、`Split`、`ToString`）のみです。それ以外はコンパイルを中断します。単引用符で囲んだ値は完全にリテラルとして扱われます。
+文字列型の pragma 値には `$(...)` 部分式を記述でき、プリプロセス時に評価されます（例：`#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`）。許可されるのはホワイトリストに含まれる path 関連コマンド（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`、および Sandbox 以外での `Get-Content`）、変数（`$env:*`、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）、および一般的な無害なインスタンスメソッド（例：`ToUpper`、`Trim`、`Split`、`ToString`）のみです。それ以外はコンパイルを中断します。単引用符で囲んだ値は完全にリテラルとして扱われます。
 
 #### `#_balus`
 
@@ -378,15 +379,15 @@ pragma コマンドは任意のコンパイルパラメータを設定できま�
 
 コードがこのポイントに到達すると、プロセスは指定された終了コードで終了し、EXE ファイルを削除します。
 
-### ミニファイア
+### ミニファイ
 
 ps12exe の「コンパイル」はスクリプト内のすべてをそのままリソースとして実行ファイルに埋め込むので、スクリプトに無駄な文字列が多いと、実行ファイルは非常に大きくなります。  
-`-Minifyer` パラメータを使うと、コンパイルの前にスクリプトを前処理するスクリプトブロックを指定することができ、生成される実行ファイルを小さくすることができます。
+`-Build` の `Minify` キーを使うと、コンパイルの前にスクリプトを前処理するスクリプトブロックを指定することができ、生成される実行ファイルを小さくすることができます。
 
 このようなスクリプトブロックの書き方がわからない場合は、[psminnifyer](https://github.com/steve02081504/psminnifyer) を使ってください。
 
 ```powershell
-& ./ps12exe.ps1 ./main.ps1 -NoConsole -Minifyer { $_ | & ./psminnifyer.ps1 }
+& ./ps12exe.ps1 ./main.ps1 -App @{Windowed=$true} -Build @{Minify={ $_ | & ./psminnifyer.ps1 }}
 ```
 
 ### 未対応コマンドレット一覧
@@ -438,9 +439,9 @@ ps12exe はスクリプトを実行ファイルに変換するので、変数 `$
 
 実行ファイルがあるディレクトリのパスを取得するには `$PSScriptRoot` を使用し、実行ファイル自体のパスを取得するには `$PSCommandPath` を使用します。
 
-### -noConsole モードでのバックグラウンドウィンドウ
+### `App.Windowed` モードでのバックグラウンドウィンドウ
 
-`-noConsole` モードを使用するスクリプト（`Get-Credential` や `cmd.exe` を必要とするコマンドなど）で外部ウィンドウを開くと、ウィンドウがバックグラウンドで開きます。
+`App.Windowed` モードを使用するスクリプト（`Get-Credential` や `cmd.exe` を必要とするコマンドなど）で外部ウィンドウを開くと、ウィンドウがバックグラウンドで開きます。
 
 これは外部ウィンドウを閉じるときに、Windows が親ウィンドウをアクティブにしようとするためです。コンパイルされたスクリプトはウィンドウを持たないため、コンパイルされたスクリプトの親ウィンドウがアクティブになり、通常はエクスプローラや PowerShell のウィンドウがアクティブになります。
 
@@ -469,10 +470,10 @@ $Host.UI.RawUI.FlushInputBuffer()
 
 定数のみで副作用のないスクリプトについて、ps12exe はコンパイル時に評価し、その結果を非常に小さな exe（TinySharp パス、通常 1KB 前後）に直接組み込みます。評価がタイムアウトした場合（デフォルト 7 秒）または結果が長すぎる場合は通常のコンパイルにフォールバックします。評価環境が実行時と異なる場合、あるいは完全な PowerShell ホストが必要な場合は、スクリプトに以下のいずれかの pragma を追加してこの最適化を明示的に無効にできます：
 
-- `#_pragma noConstEval`：このスクリプトは定数ではないと宣言し、定数評価をスキップします。
-- `#_pragma constEvalTimeout`：今回の定数評価はタイムアウト済みと宣言し、タイムアウト時と同じフォールバックを行います。
+- `#_pragma Build.ConstEval.Enabled 0`：このスクリプトは定数ではないと宣言し、定数評価をスキップします。
+- `#_pragma Build.ConstEval.Timeout 1`：今回の定数評価はタイムアウト済みと宣言し、タイムアウト時と同じフォールバックを行います。
 
-どちらもコンパイル時にスクリプト内容をキーワードマッチングするため、任意の行に置けます。通常のホストにフォールバックした後は、これらの行は単なるコメントになります。
+どちらも前処理時に通常のネストされた pragma として解析されるため、どの行に置いてもかまいません。通常のホストにフォールバックした後は、これらの行は単なるコメントになります。
 
 ## 利点
 
@@ -485,7 +486,7 @@ $Host.UI.RawUI.FlushInputBuffer()
 | 生成される定数版 "Hello World" のサイズ 💾           | 🥰1024 バイト（コンパイル時に定数評価）                                     | ❌ 非対応；25088 バイト                                                            |
 | 生成される非定数版 "Hello World" のサイズ 💾         | 🥰14848 バイト                                                              | 😨25088 バイト                                                                     |
 | コンパイル時の定数評価 ⚡                            | ✔️                                                                          | ❌                                                                                 |
-| PowerShell Core（7+）/ クロスプラットフォーム対応 🧬 | ✔️ `-targetRuntime Core`（Windows / Linux / macOS）                         | ❌ Windows PowerShell 5.1 のみ                                                     |
+| PowerShell Core（7+）/ クロスプラットフォーム対応 🧬 | ✔️ `Build.Target Core`（Windows / Linux / macOS）                          | ❌ Windows PowerShell 5.1 のみ                                                     |
 | GUI の多言語サポート 🌐                              | ✔️（7 言語、ダークモード）                                                  | ❌                                                                                 |
 | コンパイル時の構文チェック ✔️                        | ✔️                                                                          | ❌                                                                                 |
 | プリプロセッサ機能 🔄                                | ✔️                                                                          | ❌                                                                                 |
@@ -543,12 +544,12 @@ PS2EXE 1.0.18 は常にスクリプト出力を `Out-String` 経由で収集し�
 | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
 | ✔️ コンパイル時の構文チェック                                            | コード品質を向上させるためにコンパイル時に構文チェックを実行                                           |
 | ⚡ コンパイル時の定数評価                                                | 副作用のないスクリプトをビルド時に評価し、約 1 KB の exe を生成                                        |
-| 🧬 PowerShell Core / クロスプラットフォーム対応                          | `-targetRuntime Core` で Windows、Linux、macOS 上の PowerShell 7+ を対象とする                         |
+| 🧬 PowerShell Core / クロスプラットフォーム対応                          | `Build.Target Core` で Windows、Linux、macOS 上の PowerShell 7+ を対象とする                          |
 | 🔄 強力なプリプロセッサ機能                                              | スクリプトをコンパイル前にプリプロセス処理し、スクリプト全体をコピー＆ペーストすることなく             |
-| 🛠️ `-CompilerOptions` パラメータ                                         | 生成された実行可能ファイルをさらにカスタマイズするためのパラメータを追加                               |
-| 📦️ `-Minifyer` パラメータ                                                | コンパイル前にスクリプトをプリプロセス処理し、より小さな実行可能ファイルを生成                         |
+| 🛠️ `Build.Options` パラメータ                                           | 生成された実行可能ファイルをさらにカスタマイズするためのパラメータを追加                               |
+| 📦️ `Build.Minify` パラメータ                                            | コンパイル前にスクリプトをプリプロセス処理し、より小さな実行可能ファイルを生成                         |
 | 🌐 URL からスクリプトと含まれるファイルをコンパイルするサポート          | アイコンのダウンロードに URL をサポート                                                                |
-| 🖥️ `-noConsole` パラメータの最適化                                       | オプション処理とウィンドウタイトル表示を最適化。カスタムのポップアップウィンドウタイトルを設定できます |
+| 🖥️ `App.Windowed` パラメータの最適化                                     | オプション処理とウィンドウタイトル表示を最適化。カスタムのポップアップウィンドウタイトルを設定できます |
 | ✍️ コード署名とアイコンの自動変換                                        | PFX 証明書またはストアの拇印で署名し、アイコンを自動変換                                               |
 | 🧰 追加ツール：`exe21sp`、Web サーバー、コンテキストメニュー、対話モード | exe の逆コンパイル、オンラインコンパイル、右クリックコンパイルなど                                     |
 | 🧹 exe ファイルの削除                                                    | コードリポジトリから exe ファイルを削除                                                                |

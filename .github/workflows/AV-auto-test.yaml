@@ -14,7 +14,7 @@ jobs:
           Install-Module -Name ps12exe -Force -Scope CurrentUser
           @'
           #_require ps12exe
-          #_pragma Console 0
+          #_pragma App.Windowed
           $Number = [bigint]::Parse('${{ github.run_id }}')
           $NextNumber = $Number+1
           $NextScript = $PSEXEscript.Replace("Parse('$Number')", "Parse('$NextNumber')")

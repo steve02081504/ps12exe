@@ -1,11 +1,11 @@
-﻿param ($Localize)
+﻿param ($Locale)
 
 #_if PSScript
 # 加载本地化数据
 . "$PSScriptRoot\..\predicate.ps1"
 . "$PSScriptRoot\..\TaskbarProgress.ps1"
 . "$PSScriptRoot\..\WriteI18n.ps1"
-$LocalizeData = . "$PSScriptRoot\..\LocaleLoader.ps1" -Localize $Localize
+$LocalizeData = . "$PSScriptRoot\..\LocaleLoader.ps1" -Locale $Locale
 Set-I18nData -I18nData $LocalizeData.InteractI18nData
 $I18n = $LocalizeData.InteractI18nData
 
@@ -84,7 +84,7 @@ try {
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 		if (IsEnable(Read-Host)) {
 			Write-SymboledProgressI18n CollectingInfo
-			$resourceParams = @{}
+			$resources = @{}
 
 			# 图标
 			$icon = ''
@@ -116,7 +116,7 @@ try {
 
 					if ($isValid) {
 						$icon = $iconInput
-						$resourceParams.iconFile = $icon
+						$resources.Icon = $icon
 						break
 					}
 				}
@@ -128,18 +128,18 @@ try {
 
 			# 其他资源
 			$resourcePrompts = @{
-				title       = $I18n.EnterTitle
-				description = $I18n.EnterDescription
-				company     = $I18n.EnterCompany
-				product     = $I18n.EnterProduct
-				copyright   = $I18n.EnterCopyright
-				trademark   = $I18n.EnterTrademark
+				Title       = $I18n.EnterTitle
+				Description = $I18n.EnterDescription
+				Company     = $I18n.EnterCompany
+				Product     = $I18n.EnterProduct
+				Copyright   = $I18n.EnterCopyright
+				Trademark   = $I18n.EnterTrademark
 			}
 			foreach ($key in $resourcePrompts.Keys) {
 				Write-SymboledInfoI18n EnterResourcePrompt -MessageFormatArgs $resourcePrompts[$key]
 				Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 				$value = Read-Host
-				if ($value) { $resourceParams[$key] = $value }
+				if ($value) { $resources[$key] = $value }
 			}
 
 			# 版本
@@ -151,13 +151,13 @@ try {
 					Write-SymboledInvalidI18n InvalidVersionFormat
 				}
 				else {
-					$resourceParams.version = $version
+					$resources.Version = $version
 				}
 			}
 
-			if ($resourceParams.Count -gt 0) {
-				$resourceParamsStr = $resourceParams.GetEnumerator() | ForEach-Object { "$($_.Key)='$($_.Value -replace "'", "''")'" } | Join-String -Separator '; '
-				$cmdParams.Add("-resourceParams @{$resourceParamsStr}") | Out-Null
+			if ($resources.Count -gt 0) {
+				$resourcesStr = $resources.GetEnumerator() | ForEach-Object { "$($_.Key)='$($_.Value -replace "'", "''")'" } | Join-String -Separator '; '
+				$cmdParams.Add("-Resources @{$resourcesStr}") | Out-Null
 			}
 		}
 		else {
@@ -169,14 +169,14 @@ try {
 		Write-SymboledQuestionI18n CompileAsGui AdditionalInfoPrompt
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 		if (IsEnable(Read-Host)) {
-			$cmdParams.Add("-noConsole") | Out-Null
+			$cmdParams.Add("-App @{Windowed=`$true}") | Out-Null
 		}
 		Write-TaskbarProgress -Percent 60
 
 		Write-SymboledQuestionI18n RequireAdmin AdditionalInfoPrompt
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 		if (IsEnable(Read-Host)) {
-			$cmdParams.Add("-requireAdmin") | Out-Null
+			$cmdParams.Add("-Os @{Admin=`$true}") | Out-Null
 		}
 		Write-TaskbarProgress -Percent 70
 
@@ -219,7 +219,7 @@ try {
 
 					if ($isValid) {
 						$certPath = $certPathInput
-						$codeSigningParams.Path = $certPath
+						$codeSigningParams.Certificate = $certPath
 
 						# 证书密码
 						Write-SymboledInfoI18n EnterCertificatePassword
@@ -252,11 +252,11 @@ try {
 			Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 			$timestampServer = Read-Host
 			if ($timestampServer) {
-				$codeSigningParams.TimestampServer = $timestampServer
+				$codeSigningParams.Timestamp = $timestampServer
 			}
 			else {
 				# 使用默认时间戳服务器
-				$codeSigningParams.TimestampServer = "http://timestamp.digicert.com"
+				$codeSigningParams.Timestamp = "http://timestamp.digicert.com"
 			}
 
 			if ($codeSigningParams.Count -gt 0) {
@@ -268,7 +268,7 @@ try {
 						"$($_.Key)='$($_.Value -replace "'", "''")'"
 					}
 				} | Join-String -Separator '; '
-				$cmdParams.Add("-CodeSigning @{$codeSigningParamsStr}") | Out-Null
+				$cmdParams.Add("-Signing @{$codeSigningParamsStr}") | Out-Null
 			}
 		}
 		else {
@@ -322,8 +322,8 @@ finally {
 }
 #_else
 #_require ps12exe
-#_pragma resourceParams.iconFile $PSScriptRoot/../../img/icon.ico
-#_pragma resourceParams.title ps12exe - Interact
-#_pragma resourceParams.description 'A super cool tool for compile powershell scripts'
+#_pragma Resources.iconFile $PSScriptRoot/../../img/icon.ico
+#_pragma Resources.title ps12exe - Interact
+#_pragma Resources.description 'A super cool tool for compile powershell scripts'
 #_!!Enter-ps12exeInteract @PSBoundParameters
 #_endif

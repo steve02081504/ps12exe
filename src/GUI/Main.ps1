@@ -9,16 +9,16 @@ ps12exeGUI 是 ps12exe 的 GUI 工具。
 配置文件的路径。
 .PARAMETER PS1File
 脚本文件的路径。
-.PARAMETER Localize
+.PARAMETER Locale
 要使用的语言代码。
 .PARAMETER UIMode
 要使用的 UI 模式。
 .PARAMETER help
 显示此帮助信息。
 .EXAMPLE
-ps12exeGUI -Localize 'en-UK' -UIMode 'Light'
+ps12exeGUI -Locale 'en-UK' -UIMode 'Light'
 .EXAMPLE
-ps12exeGUI -ConfigFile 'proj.psccfg' -Localize 'en-UK' -UIMode 'Dark'
+ps12exeGUI -ConfigFile 'proj.psccfg' -Locale 'en-UK' -UIMode 'Dark'
 .EXAMPLE
 ps12exeGUI -help
 #>
@@ -40,7 +40,7 @@ param(
 			. "$PSScriptRoot\..\LocaleArgCompleter.ps1" @PSBoundParameters
 		})]
 	#_endif
-	[string]$Localize,
+	[string]$Locale,
 	[ValidateSet('Light', 'Dark', 'Auto')]
 	[string]$UIMode = 'Auto',
 	[switch]$help
@@ -48,7 +48,7 @@ param(
 
 #_if PSScript
 	if ($help) {
-		$LocalizeData = . $PSScriptRoot\..\LocaleLoader.ps1 -Localize $Localize
+		$LocalizeData = . $PSScriptRoot\..\LocaleLoader.ps1 -Locale $Locale
 		$MyHelp = $LocalizeData.GUIHelpData
 		. $PSScriptRoot\..\HelpShower.ps1 -HelpData $MyHelp | Write-Host
 		return
@@ -77,7 +77,7 @@ param(
 
 		# 执行
 		$pwsh = [PowerShell]::Create().AddScript({
-			param ($ScriptRoot, $ConfigFile, $Localize, $UIMode, $PS1File, $help)
+			param ($ScriptRoot, $ConfigFile, $Locale, $UIMode, $PS1File, $help)
 			. "$ScriptRoot\GUIMainScript.ps1"
 		}).AddParameter('ScriptRoot', $PSScriptRoot)
 
@@ -99,10 +99,10 @@ param(
 	}
 #_else
 	#_require ps12exe
-	#_pragma Console 0
-	#_pragma resourceParams.iconFile $PSScriptRoot/../../img/icon.ico
-	#_pragma resourceParams.title ps12exeGUI
-	#_pragma resourceParams.description 'A super cool GUI for compile powershell scripts'
+	#_pragma App.Windowed
+	#_pragma Resources.iconFile $PSScriptRoot/../../img/icon.ico
+	#_pragma Resources.title ps12exeGUI
+	#_pragma Resources.description 'A super cool GUI for compile powershell scripts'
 	#_!!if (!(Test-Path -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\ps12exeGUI.psccfg")){
 	#_!!	Set-ps12exeContextMenu 1
 	#_!!}

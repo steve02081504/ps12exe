@@ -1,22 +1,22 @@
 ﻿$Script:dialogInfo = @{}
 
-$Script:LocalizeData = ."$PSScriptRoot/../LocaleLoader.ps1" -Localize $Localize -LoadLocaleData {
+$Script:LocalizeData = ."$PSScriptRoot/../LocaleLoader.ps1" -Locale $Locale -LoadLocaleData {
 	param (
-		[string]$Localize
+		[string]$Locale
 	)
-	$Xml = [xml](Get-Content "$LocalizeDir\$Localize.fbs" -Encoding utf8)
+	$Xml = [xml](Get-Content "$LocalizeDir\$Locale.fbs" -Encoding utf8)
 	$Script:MainForm = $Xml.Data.Form.OuterXml
 	$Xml.Data.ChildNodes | Where-Object { $_.Name -match 'Dialog$' } | ForEach-Object {
 		$Script:dialogInfo.Add($_.Name, $_.OuterXml)
 	}
-	$Script:LocalizeData = &"$LocalizeDir\$Localize.ps1"
+	$Script:LocalizeData = &"$LocalizeDir\$Locale.ps1"
 } -CheckLocaleData {
 	$null -ne $Script:MainForm -and $Script:dialogInfo.Count -gt 0 -and $null -ne $Script:LocalizeData
 } -FailedLoadLocaleData {
 	param (
-		[string]$Localize
+		[string]$Locale
 	)
-	[System.Windows.Forms.MessageBox]::Show("Failed to load locale data $Localize`nSee $LocalizeDir/README.md for how to add custom locale.", "ps12exe GUI locale Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
+	[System.Windows.Forms.MessageBox]::Show("Failed to load locale data $Locale`nSee $LocalizeDir/README.md for how to add custom locale.", "ps12exe GUI locale Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
 }
 
 try {

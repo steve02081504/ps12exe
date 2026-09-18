@@ -21,7 +21,7 @@ The ps12exe preprocessor directives (`#_if` / `#_else` / `#_endif`, `#_include*`
 - **Auto-close** — finishing a `#_if …` line with Enter inserts the matching `#_endif` on the next line. Disable with `ps12exe.autoCloseIf`.
 - **Folding** — every `#_if … #_endif` block folds, nested blocks included, with the `#_endif` kept visible.
 - **`#_!!` toggle** — the **ps12exe: Toggle `#_!!` Escape Markers** context-menu command adds `#_!!` to every plain line of the selection (or of the whole file) and removes it from the lines that already carry it.
-- **Go to definition** — Ctrl+click / F12 on the path of an `#_include*` directive or of `#_pragma resourceParams.iconFile` jumps to the referenced file.
+- **Go to definition** — Ctrl+click / F12 on the path of an `#_include*` directive or of `#_pragma Resources.Icon` jumps to the referenced file.
 - **Hover** — hovering over a directive shows a localized summary and a link to the matching paragraph of the localized README.
 - **Formatting** — format the document through *Format Document*, format-on-save or the **ps12exe: Format Preprocessor Blocks** code action. Preprocessor blocks are indented by nesting level. Requires the PowerShell extension (see [Requirements](#requirements)).
 

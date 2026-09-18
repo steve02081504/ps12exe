@@ -117,7 +117,7 @@ Starts a web server that can be used to compile PowerShell scripts online.
 | Constant hello world executable 💾                | 🥰1024 bytes (constant-evaluated at compile time)                                      | ❌ Not supported; 25088 bytes                                                                      |
 | Non-constant hello world executable 💾            | 🥰14848 bytes                                                                          | 😨25088 bytes                                                                                      |
 | Compile-time constant evaluation ⚡               | ✔️                                                                                     | ❌                                                                                                 |
-| PowerShell Core (7+) / cross-platform target 🧬   | ✔️ `-targetRuntime Core` (Windows / Linux / macOS)                                     | ❌ Windows PowerShell 5.1 only                                                                     |
+| PowerShell Core (7+) / cross-platform target 🧬   | ✔️ `-Build @{Target='Core'}` (Windows / Linux / macOS)                                 | ❌ Windows PowerShell 5.1 only                                                                     |
 | GUI multilingual support 🌐                       | ✔️ (7 languages, dark mode)                                                            | ❌                                                                                                 |
 | Syntax check during compilation ✔️                | ✔️                                                                                     | ❌                                                                                                 |
 | Preprocessing feature 🔄                          | ✔️                                                                                     | ❌                                                                                                 |
@@ -174,12 +174,12 @@ Compared to [`MScholtes/PS2EXE@1.0.18`](https://github.com/MScholtes/PS2EXE/tree
 | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | ✔️ Syntax check during compilation                            | Syntax check during compilation to improve code quality                                            |
 | ⚡ Compile-time constant evaluation                           | Side-effect-free scripts are evaluated at build time and emitted as ~1 KB exes                     |
-| 🧬 PowerShell Core / cross-platform target                    | `-targetRuntime Core` targets PowerShell 7+ on Windows, Linux and macOS                            |
+| 🧬 PowerShell Core / cross-platform target                    | `-Build @{Target='Core'}` targets PowerShell 7+ on Windows, Linux and macOS                        |
 | 🔄 Powerful preprocessing feature                             | Preprocess the script before compilation, no need to copy and paste all content into the script    |
-| 🛠️ `-CompilerOptions` parameter                               | New parameter, allowing you to further customize the generated executable file                     |
-| 📦️ `-Minifyer` parameter                                      | Preprocess the script before compilation to generate a smaller executable file                     |
+| 🛠️ `-Build @{Options=…}` parameter                            | New parameter, allowing you to further customize the generated executable file                     |
+| 📦️ `-Build @{Minify=…}` parameter                             | Preprocess the script before compilation to generate a smaller executable file                     |
 | 🌐 Support for compiling scripts and included files from URL  | Support for downloading icons from URL                                                             |
-| 🖥️ Optimization of `-noConsole` parameter                     | Optimized option handling and window title display, you can now set the title of the custom pop-up |
+| 🖥️ Optimization of `App.Windowed` parameter                   | Optimized option handling and window title display, you can now set the title of the custom pop-up |
 | ✍️ Code signing and icon auto-conversion                      | Sign output with a PFX certificate or a store thumbprint, and convert icons automatically          |
 | 🧰 Extras: `exe21sp`, web server, context menu, interact mode | Decompile exes, compile online, right-click compile and more                                       |
 | 🧹 Removed exe files                                          | Removed exe files from the code repository                                                         |

@@ -34,13 +34,13 @@ param(
 			. "$PSScriptRoot\src\LocaleArgCompleter.ps1" @PSBoundParameters
 		})]
 	#_endif
-	[string]$Localize,
+	[string]$Locale,
 	[switch]$help
 )
 
 #_if PSScript
 	$global:LastExitCode = 0
-	$LocalizeData = . $PSScriptRoot\src\LocaleLoader.ps1 -Localize $Localize
+	$LocalizeData = . $PSScriptRoot\src\LocaleLoader.ps1 -Locale $Locale
 	. $PSScriptRoot\src\WriteI18n.ps1
 	Set-I18nData -I18nData $LocalizeData.exe21spI18nData
 	function Show-exe21spHelp {
@@ -64,7 +64,7 @@ param(
 			$global:LastExitCode = 2
 			return
 		}
-		& $PSScriptRoot\src\Interact\exe21sp.ps1 -Localize $Localize
+		& $PSScriptRoot\src\Interact\exe21sp.ps1 -Locale $Locale
 		return
 	}
 
@@ -126,13 +126,13 @@ param(
 		try { $VersionInfo = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($ExePath) }
 		catch { return $Lines }
 		$Map = [ordered]@{
-			'resourceParams.title'       = 'FileDescription'
-			'resourceParams.description' = 'Comments'
-			'resourceParams.company'     = 'CompanyName'
-			'resourceParams.product'     = 'ProductName'
-			'resourceParams.copyright'   = 'LegalCopyright'
-			'resourceParams.trademark'   = 'LegalTrademarks'
-			'resourceParams.version'     = 'FileVersion'
+			'Resources.Title'       = 'FileDescription'
+			'Resources.Description' = 'Comments'
+			'Resources.Company'     = 'CompanyName'
+			'Resources.Product'     = 'ProductName'
+			'Resources.Copyright'   = 'LegalCopyright'
+			'Resources.Trademark'   = 'LegalTrademarks'
+			'Resources.Version'     = 'FileVersion'
 		}
 		# .NET SDK（Core 目标）会把未指定的标题/公司/产品默认成程序集名、版本默认成 1.0.0.0，这些不是用户配置，别当成资源参数补回。
 		$ExeBaseName = [System.IO.Path]::GetFileNameWithoutExtension($ExePath)
@@ -143,8 +143,8 @@ param(
 			if ($ExistingPragmaNames.ContainsKey($Key.ToLowerInvariant())) { continue }
 			$Value = $VersionInfo.($Map[$Key])
 			if ([string]::IsNullOrWhiteSpace($Value)) { continue }
-			if ($Key -in @('resourceParams.title', 'resourceParams.company', 'resourceParams.product') -and $DefaultNames -contains $Value.ToLowerInvariant()) { continue }
-			if ($Key -eq 'resourceParams.version' -and $DefaultVersions -contains $Value) { continue }
+			if ($Key -in @('Resources.Title', 'Resources.Company', 'Resources.Product') -and $DefaultNames -contains $Value.ToLowerInvariant()) { continue }
+			if ($Key -eq 'Resources.Version' -and $DefaultVersions -contains $Value) { continue }
 			$Lines.Add("#_pragma $Key '$(ConvertTo-PragmaValue $Value)'")
 		}
 		$Lines
@@ -239,14 +239,14 @@ param(
 			continue
 		}
 
-		# 反编译时从产物的 Win32 资源取回资源参数：源码里已有对应 #_pragma 的跳过，缺失的在程序开头补回；图标释放到输出目录并用 #_pragma resourceParams.iconFile 引用。
+		# 反编译时从产物的 Win32 资源取回资源参数：源码里已有对应 #_pragma 的跳过，缺失的在程序开头补回；图标释放到输出目录并用 #_pragma Resources.Icon 引用。
 		$ExistingPragmaNames = Get-ExistingPragmaNames $script
 		$PrefixLines = [System.Collections.Generic.List[string]]::new()
 		foreach ($Line in (Get-PS12ExeResourcePragmaLines -ExePath $currentExe -ExistingPragmaNames $ExistingPragmaNames)) {
 			$PrefixLines.Add($Line)
 		}
 		$IconBytes = $null
-		if (-not $ExistingPragmaNames.ContainsKey('resourceparams.iconfile')) {
+		if (-not $ExistingPragmaNames.ContainsKey('resources.icon')) {
 			$IconBytes = [exe21sp.Extractor]::ExtractIconFromExe($currentExe)
 		}
 
@@ -276,7 +276,7 @@ param(
 			$iconPath = [System.IO.Path]::Combine($releaseDir, $iconName)
 			[System.IO.File]::WriteAllBytes($iconPath, $IconBytes)
 			Write-Verbose "Released resource file to $iconPath"
-			$PrefixLines.Add("#_pragma resourceParams.iconFile `"`$PSScriptRoot/$iconName`"")
+			$PrefixLines.Add("#_pragma Resources.Icon `"`$PSScriptRoot/$iconName`"")
 		}
 
 		if ($PrefixLines.Count -gt 0) {

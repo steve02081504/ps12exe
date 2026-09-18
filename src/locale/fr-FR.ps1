@@ -25,72 +25,92 @@
 	ConsoleHelpData              = @{
 		title      = "Utilisation :"
 		Usage      = "[input |] ps12exe [[-inputFile] '<nom_de_fichier|url>' | -Content '<script>'] [-outputFile '<nom_de_fichier>']
-	[-CompilerOptions '<options>'] [-TempDir '<dossier>'] [-minifyer '<scriptblock>'] [-noConsole]
-	[-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
-	[-resourceParams @{iconFile='<nom_de_fichier|url>'; title='<titre>'; description='<description>'; company='<société>';
-	product='<produit>'; copyright='<copyright>'; trademark='<marque_déposée>'; version='<version>'}]
-	[-CodeSigning @{Path='<chemin_du_fichier_PFX>'; Password='<mot_de_passe_PFX>'; Thumbprint='<empreinte_numérique_de_certificat>'; TimestampServer='<serveur_de_timestamp>'}]
-	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
-	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<version_du_runtime>']
-	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<code_de_langue>'] [-help]"
+	[-App @{Windowed=`$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default';
+	VisualStyles=`$true; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true}]
+	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
+	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'; Apartment='STA'|'MTA';
+	Culture='<culture>'; Options='<options>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<dossier>'}]
+	[-Resources @{Icon='<nom_de_fichier|url>'; Title='<titre>'; Description='<description>'; Company='<société>';
+	Product='<produit>'; Copyright='<copyright>'; Trademark='<marque_déposée>'; Version='<version>'}]
+	[-Signing @{Certificate='<chemin_du_fichier_PFX>'; Password='<mot_de_passe_PFX>'; Thumbprint='<empreinte_numérique_de_certificat>'; Timestamp='<serveur_de_timestamp>'}]
+	[-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<code_de_langue>'] [-ConfigFile] [-help]"
 		PrarmsData = [ordered]@{
 			input            = "Chaîne de caractères du contenu du fichier de script PowerShell, identique à ``-Content``."
 			inputFile        = "Chemin d’accès ou URL du fichier de script PowerShell que vous voulez convertir en exécutable (le fichier doit être encodé en UTF8 ou UTF16)."
 			Content          = "Contenu du script PowerShell que vous voulez convertir en exécutable."
 			outputFile       = "Nom du fichier exécutable cible ou dossier, par défaut ``inputFile`` avec l’extension ``'.exe'``."
-			CompilerOptions  = "Options de compilation supplémentaires (voir ``https://msdn.microsoft.com/en-us/library/78f4aasd.aspx``)."
-			TempDir          = "Répertoire pour stocker les fichiers temporaires (par défaut, un répertoire temporaire généré de façon aléatoire dans ``%temp%``)."
-			minifyer         = "Bloc de script pour réduire le script avant la compilation."
-			lcid             = "ID de localisation du fichier exécutable compilé. Si non spécifié, la culture de l’utilisateur actuel sera utilisée."
-			prepareDebug     = "Créer des informations utiles pour le débogage."
-			architecture     = "Compiler uniquement pour un environnement d’exécution spécifique. Les valeurs possibles sont ``'x64'``, ``'x86'`` et ``'anycpu'``."
-			threadingModel   = "Mode ``'Appartement à thread unique'`` ou ``'Appartement à threads multiples'``."
-			noConsole        = "Le fichier exécutable généré sera une application Windows Forms sans fenêtre de console."
-			UNICODEEncoding  = "Encoder la sortie en UNICODE en mode console."
-			credentialGUI    = "Utiliser une interface graphique pour demander les informations d’identification en mode console."
-			resourceParams   = "Table de hachage contenant les paramètres de ressource du fichier exécutable compilé."
-			CodeSigning      = "Table de hachage contenant les paramètres de signature de code pour le fichier exécutable compilé."
-			configFile       = "Écrire un fichier de configuration (``<fichier_de_sortie>.exe.config``)."
-			noOutput         = "Le fichier exécutable généré ne produira pas de sortie standard (y compris les flux détaillés et d’informations)."
-			noError          = "Le fichier exécutable généré ne produira pas de sortie d’erreur (y compris les flux d’avertissements et de débogage)."
-			noVisualStyles   = "Désactiver les styles visuels pour les applications GUI Windows générées (utilisé uniquement avec ``-noConsole``)."
-			exitOnCancel     = "Quitter le programme lorsque ``Annuler`` ou ``'X'`` est sélectionné dans la zone de saisie ``Read-Host`` (utilisé uniquement avec ``-noConsole``)."
-			DPIAware         = "Si la mise à l’échelle de l’affichage est activée, les contrôles de l’interface graphique seront mis à l’échelle autant que possible."
-			winFormsDPIAware = "Si la mise à l’échelle de l’affichage est activée, WinForms utilisera la mise à l’échelle DPI (nécessite Windows 10 et .Net 4.7 ou version ultérieure)."
-			requireAdmin     = "Si le contrôle de compte d’utilisateur est activé, le fichier exécutable compilé ne peut s’exécuter que dans un contexte élevé (une boîte de dialogue de contrôle de compte d’utilisateur s’affichera si nécessaire)."
-			supportOS        = "Utiliser les fonctionnalités de la dernière version de Windows (exécutez ``[Environment]::OSVersion`` pour voir la différence)."
-			virtualize       = "La virtualisation d’application est activée (force l’environnement d’exécution x86)."
-			longPaths        = "Si activé sur le système d’exploitation, active les chemins longs (> 260 caractères) (uniquement pour Windows 10 ou version ultérieure)."
-			targetRuntime    = "Version de l’environnement d’exécution cible, par défaut ``'Framework4.0'``, ``'Framework2.0'`` ou ``'Core'``. ``'Core'`` produit un exécutable PowerShell Core (.NET) (nécessite PowerShell Core et .NET sur les machines de compilation et cible ; le résultat est bien plus volumineux)."
-			SkipVersionCheck = "Ignorer la vérification de la nouvelle version de ps12exe."
-			GuestMode        = "Compiler le script avec une protection supplémentaire, empêchant l’accès aux fichiers natifs."
+			App              = [ordered]@{
+				Windowed         = "Le fichier exécutable généré sera une application Windows Forms sans fenêtre de console."
+				Silence          = "Noms des flux à rendre silencieux ; un ou plusieurs parmi ``'Output'``, ``'Verbose'``, ``'Error'``, ``'Warning'``, ``'Debug'``, ou ``'*'`` pour tous."
+				OutputEncoding   = "Encodage de sortie de la console ; ``'Default'``, ``'UTF8'`` ou ``'UTF16LE'``."
+				VisualStyles     = "Active les styles visuels pour les applications GUI (par défaut `` `$true ``)."
+				ExitOnCancel     = "Quitte le programme lorsqu'Annuler ou ``'X'`` est sélectionné dans la boîte de dialogue ``Read-Host``."
+				CredentialGUI    = "Utilise une invite GUI pour les informations d'identification en mode console."
+				DpiAware         = "Marque le fichier exécutable compilé comme compatible DPI."
+				WinFormsDpiAware = "Laisse WinForms utiliser la mise à l'échelle DPI (nécessite Windows 10 et .Net 4.7 ou supérieur)."
+			}
+			Os               = [ordered]@{
+				Admin      = "Si UAC est activé, l'exécutable compilé ne peut s'exécuter que dans un contexte élevé (une boîte de dialogue UAC apparaîtra si nécessaire)."
+				ModernOS   = "Utilise les fonctionnalités de la dernière version de Windows (exécutez ``[Environment]::OSVersion`` pour voir la différence)."
+				LongPaths  = "Active les chemins longs (``> 260`` caractères) si activé sur l'OS (ne fonctionne qu'avec Windows 10 ou plus récent)."
+				Virtualize = "La virtualisation de l'application est activée (force le runtime x86)."
+			}
+			Build            = [ordered]@{
+				Target     = "Version du runtime cible, par défaut ``'Framework4.0'``, prend également en charge ``'Framework2.0'`` et ``'Core'``. ``'Core'`` produit un exécutable PowerShell Core (.NET) (nécessite PowerShell Core et .NET sur les machines de compilation et cible ; le résultat est bien plus volumineux)."
+				Platform   = "Compile uniquement pour un runtime spécifique. Les valeurs possibles sont ``'AnyCpu'``, ``'x64'`` et ``'x86'``."
+				Apartment  = "Mode ``'Appartement à un seul thread'`` ou ``'Appartement à plusieurs threads'``."
+				Culture    = "Culture du fichier exécutable compilé. Si non spécifié, la culture de l'utilisateur actuel sera utilisée."
+				Options    = "Options de compilation supplémentaires (voir ``https://msdn.microsoft.com/en-us/library/78f4aasd.aspx``)."
+				KeepSource = "Crée des informations utiles pour le débogage."
+				Minify     = "Bloc de script pour réduire la taille du script avant la compilation."
+				TempDir    = "Répertoire pour stocker les fichiers temporaires (par défaut un répertoire temporaire aléatoire généré dans ``%temp%``)."
+			}
+			Resources        = [ordered]@{
+				Icon        = "Icône de l'exécutable ; peut être un chemin de fichier ou une URL."
+				Title       = "Titre (description du fichier) de l'exécutable."
+				Description = "Brève description de l'exécutable."
+				Company     = "Nom de la société de l'exécutable."
+				Product     = "Nom du produit de l'exécutable."
+				Copyright   = "Mention de droits d'auteur de l'exécutable."
+				Trademark   = "Informations sur la marque de l'exécutable."
+				Version     = "Numéro de version de l'exécutable (par exemple ``'1.0.0.0'``)."
+			}
+			Signing          = [ordered]@{
+				Certificate = "Chemin du fichier de certificat PFX ; vous devez spécifier ``Certificate`` ou ``Thumbprint``."
+				Password    = "Mot de passe du certificat PFX."
+				Thumbprint  = "Empreinte du certificat ; vous devez spécifier ``Certificate`` ou ``Thumbprint``."
+				Timestamp   = "URL du serveur d'horodatage utilisé pour la signature de code."
+			}
 			PreprocessOnly   = "Prétraite le script d'entrée et le retourne sans compilation."
-			GolfMode         = "Activer le mode golf : ajoute des abréviations et des fonctions courantes au script."
-			Localize         = "Spécifier la langue de localisation."
+			Golf             = "Activer le mode golf : ajoute des abréviations et des fonctions courantes au script."
+			Sandbox          = "Compiler le script avec une protection supplémentaire, empêchant l’accès aux fichiers natifs."
+			NoUpdateCheck    = "Ignorer la vérification de la nouvelle version de ps12exe."
+			Locale           = "Spécifier la langue de localisation."
+			ConfigFile       = "Écrire un fichier de configuration (``<fichier_de_sortie>.exe.config``)."
 			Help             = "Affiche cette aide."
 		}
 	}
 	GUIHelpData                  = @{
 		title      = "Utilisation :"
 		Usage      = @"
-ps12exeGUI [[-ConfigFile] '<fichier_de_configuration>'] [-PS1File '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-ConfigFile] '<fichier_de_configuration>'] [-PS1File '<fichier_de_script>'] [-Locale '<code_de_langue>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 
-ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Locale '<code_de_langue>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 "@
 		PrarmsData = [ordered]@{
 			ConfigFile	= "Fichier de configuration à charger."
 			PS1File    = "Fichier de script à compiler."
-			Localize   = "Code de langue à utiliser."
+			Locale     = "Code de langue à utiliser."
 			UIMode     = "Mode d’interface utilisateur."
 			help       = "Affiche cette aide."
 		}
 	}
 	SetContextMenuHelpData       = @{
 		title      = "Utilisation :"
-		Usage      = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<code_de_langue>'] [-SkipEditorExtension] [-help]"
+		Usage      = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Locale '<code_de_langue>'] [-SkipEditorExtension] [-help]"
 		PrarmsData = [ordered]@{
 			action              = "Action à exécuter."
-			Localize            = "Code de langue à utiliser."
+			Locale              = "Code de langue à utiliser."
 			SkipEditorExtension	= "Ignore l'installation de l'extension ps12exe VS Code dans les éditeurs détectés."
 			help                = "Affiche cette aide."
 		}
@@ -99,7 +119,7 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 		title      = "Utilisation :"
 		Usage      = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
 	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<chemin>']
-	[-Localize '<code_de_langue>'] [-help]"
+	[-Locale '<code_de_langue>'] [-help]"
 		PrarmsData = [ordered]@{
 			HostUrl           = "Adresse du serveur HTTP à enregistrer."
 			MaxCompileThreads = "Nombre maximal de threads de compilation."
@@ -108,7 +128,7 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 			MaxCachedFileSize = "Taille maximale du fichier mis en cache."
 			MaxScriptFileSize = "Taille maximale du fichier script."
 			CacheDir          = "Répertoire du cache."
-			Localize          = "Code de langue à utiliser pour les journaux du côté serveur."
+			Locale            = "Code de langue à utiliser pour les journaux du côté serveur."
 			help              = "Affiche cette aide."
 		}
 	}
@@ -134,15 +154,15 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 		MinifyerFailedUsingOriginalScript         = "Échec du compresseur, utilisation du script d’origine."
 		TempFileMissing                           = "Fichier temporaire introuvable {0} !"
 		PreprocessOnlyDone                        = "Prétraitement seulement terminé."
-		InvalidResourceParam                      = "Clé non valide pour le paramètre -resourceParams : {0}"
+		InvalidResourceParam                      = "Clé non valide pour le paramètre -Resources : {0}"
 		InputSyntaxError                          = "Erreur de syntaxe du script !"
 		SyntaxErrorLineStart                      = "Ligne {0}, colonne {1} :"
 		IdenticalInputOutput                      = "Le fichier d’entrée est identique au fichier de sortie !"
-		CombinedArg_Virtualize_requireAdmin       = "-virtualize ne peut pas être utilisé avec -requireAdmin"
-		CombinedArg_Virtualize_supportOS          = "-virtualize ne peut pas être utilisé avec -supportOS"
-		CombinedArg_Virtualize_longPaths          = "-virtualize ne peut pas être utilisé avec -longPaths"
-		CombinedArg_NoConfigFile_LongPaths        = "La génération d’un fichier de configuration est forcée, car l’option -longPaths nécessite ce fichier."
-		CombinedArg_NoConfigFile_winFormsDPIAware = "La génération d’un fichier de configuration est forcée, car l’option -winFormsDPIAware nécessite ce fichier."
+		CombinedArg_Virtualize_requireAdmin       = "-Os @{Virtualize=`$true} ne peut pas être utilisé avec -Os @{Admin=`$true}"
+		CombinedArg_Virtualize_supportOS          = "-Os @{Virtualize=`$true} ne peut pas être utilisé avec -Os @{ModernOS=`$true}"
+		CombinedArg_Virtualize_longPaths          = "-Os @{Virtualize=`$true} ne peut pas être utilisé avec -Os @{LongPaths=`$true}"
+		CombinedArg_NoConfigFile_LongPaths        = "La génération d’un fichier de configuration est forcée, car l’option -Os @{LongPaths=`$true} nécessite ce fichier."
+		CombinedArg_NoConfigFile_winFormsDPIAware = "La génération d’un fichier de configuration est forcée, car l’option -App @{WinFormsDpiAware=`$true} nécessite ce fichier."
 		SomeCmdletsMayNotAvailable                = "Des commandes susceptibles de ne pas être disponibles au moment de l’exécution ont été utilisées {0}, assurez-vous de les avoir vérifiées !"
 		SomeNotFoundCmdlets                       = "Les commandes inconnues {0} ont été utilisées."
 		SomeTypesMayNotAvailable                  = "Des types susceptibles de ne pas être disponibles au moment de l’exécution ont été utilisés {0}, assurez-vous de les avoir vérifiés !"
@@ -155,7 +175,7 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 		EnterToSubmitIssue                        = "Appuyez sur Entrée pour soumettre un problème pour obtenir de l’aide."
 		GuestModeFileTooLarge                     = "Le fichier {0} est trop grand pour être lu."
 		GuestModeIconFileTooLarge                 = "L’icône {0} est trop grande pour être lue."
-		GuestModeFtpNotSupported                  = "FTP n’est pas pris en charge en mode invité."
+		GuestModeFtpNotSupported                  = "FTP n’est pas pris en charge en mode Sandbox."
 		IconFileNotFound                          = "Fichier d’icône introuvable : {0}"
 		ReadFileFailed                            = "Échec de la lecture du fichier : {0}"
 		PreprocessUnknownIfCondition              = "Condition inconnue : {0}\nSupposé être faux."
@@ -164,12 +184,12 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 		ConfigFileCreated                         = "Fichier de configuration créé pour l’EXE."
 		SourceFileCopied                          = "Nom du fichier source copié pour le débogage : {0}"
 		CoreCompilePublishing                     = "Publishing single-file executable with the .NET SDK..."
-		CoreCompileNeedDotnet                     = "PowerShell Core compilation requires the .NET SDK (dotnet). Install it, or pass -targetRuntime Framework4.0."
+		CoreCompileNeedDotnet                     = "PowerShell Core compilation requires the .NET SDK (dotnet). Install it, or pass -Build @{Target='Framework4.0'}."
 		CoreCompileUnsupported                    = "These options are not supported by the PowerShell Core compiler yet: {0}"
-		CoreCompileNeedPwsh                       = "This is Windows PowerShell; -targetRuntime Core needs PowerShell Core (pwsh) installed and on PATH."
-		CoreCompileNeedWindowsPowerShell          = "Windows PowerShell was not found; pass -targetRuntime Core to compile a PowerShell Core executable."
+		CoreCompileNeedPwsh                       = "This is Windows PowerShell; -Build @{Target='Core'} needs PowerShell Core (pwsh) installed and on PATH."
+		CoreCompileNeedWindowsPowerShell          = "Windows PowerShell was not found; pass -Build @{Target='Core'} to compile a PowerShell Core executable."
 		CoreCompileNeedPwshHost                   = "The compiled ps12exe executable cannot build PowerShell Core executables; run ps12exe from the script/module under pwsh instead."
-		CoreCompileHint                           = "If this is a PowerShell Core-only script, pass -targetRuntime Core (requires PowerShell Core and .NET on the build and target machines; the resulting exe is much larger)."
+		CoreCompileHint                           = "If this is a PowerShell Core-only script, pass -Build @{Target='Core'} (requires PowerShell Core and .NET on the build and target machines; the resulting exe is much larger)."
 		ReadingFile                               = "Lecture de {0}, {1} octets."
 		ForceX86byVirtualization                  = "La virtualisation d’application est activée, forçant l’utilisation de la plateforme x86."
 		TryingTinySharpCompile                    = "Le résultat est une constante, essayez le compilateur TinySharp..."

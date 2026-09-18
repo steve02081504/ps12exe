@@ -412,7 +412,7 @@ const formattingProvider = {
 
 const definitionProvider = {
 	/**
-	 * 从 `#_include*` 和 `#_pragma resourceParams.iconFile` 参数跳转到它们引用的文件。
+	 * 从 `#_include*` 和 `#_pragma Resources.Icon` 参数跳转到它们引用的文件。
 	 *
 	 * @param {vscode.TextDocument} document
 	 * @param {vscode.Position} position

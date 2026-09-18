@@ -12,7 +12,7 @@ const SAMPLE = [
 	'#_else',
 	'Write-Output 2',
 	'#_endif',
-	'#_pragma resourceParams.iconFile img/icon.ico'
+	'#_pragma Resources.Icon img/icon.ico'
 ].join('\n')
 
 /** 为 `text` 捕获的所有 `keyword.control.directive.ps12exe` 风格作用域。 */
@@ -73,7 +73,7 @@ suite('ps12exe grammar', () => {
 		assert.ok(has('endif', 'keyword.control.directive.ps12exe'), '#_endif must be a directive keyword')
 		assert.ok(has('PSScript', 'constant.language.condition.ps12exe'), 'the condition must be highlighted')
 		assert.ok(
-			has('resourceParams.iconFile', 'entity.name.tag.pragma.ps12exe'),
+			has('Resources.Icon', 'entity.name.tag.pragma.ps12exe'),
 			'a dotted pragma name must be highlighted as a whole'
 		)
 

@@ -20,7 +20,7 @@ Web 服务器的 URL
 脚本文件的最大大小
 .PARAMETER CacheDir
 存放缓存文件的目录
-.PARAMETER Localize
+.PARAMETER Locale
 用于服务器端日志记录的语言代码
 .PARAMETER help
 显示帮助信息
@@ -45,12 +45,12 @@ param (
 			. "$PSScriptRoot\..\LocaleArgCompleter.ps1" @PSBoundParameters
 		})]
 	#_endif
-	[string]$Localize,
+	[string]$Locale,
 	[switch]$help
 )
 
 #_if PSScript
-	$LocalizeData = . $PSScriptRoot\..\LocaleLoader.ps1 -Localize $Localize
+	$LocalizeData = . $PSScriptRoot\..\LocaleLoader.ps1 -Locale $Locale
 
 	if ($help) {
 		$MyHelp = $LocalizeData.WebServerHelpData
@@ -90,7 +90,7 @@ param (
 	$runspacePool = [runspacefactory]::CreateRunspacePool(1, $MaxCompileThreads)
 	$runspacePool.Open()
 
-	function HandleWebCompileRequest($userInput, $context, $Localize) {
+	function HandleWebCompileRequest($userInput, $context, $Locale) {
 		Write-Verbose ($LocalizeData.CompilingUserInput -f $userInput)
 		if (!$userInput) {
 			Write-Verbose $LocalizeData.EmptyResponse
@@ -130,7 +130,7 @@ param (
 		$runspace = [powershell]::Create()
 		$runspace.RunspacePool = $runspacePool
 		$AsyncResult = $runspace.AddScript({
-			param ($userInput, $Response, $ScriptRoot, $CacheDir, $compiledExePath, $clientIP, $Localize)
+			param ($userInput, $Response, $ScriptRoot, $CacheDir, $compiledExePath, $clientIP, $Locale)
 
 			# 加载ps12exe用于处理编译请求
 			Import-Module $ScriptRoot/../../ps12exe.psm1 -ErrorAction Stop
@@ -139,7 +139,7 @@ param (
 
 			# 编译代码
 			try {
-				$userInput | ps12exe -outputFile $compiledExePath -GuestMode:$($clientIP -ne '127.0.0.1') -ErrorAction Stop -Localize $Localize
+				$userInput | ps12exe -outputFile $compiledExePath -Sandbox:$($clientIP -ne '127.0.0.1') -ErrorAction Stop -Locale $Locale
 			}
 			catch { $LastExitCode = 1 }
 			if ($LastExitCode) {
@@ -165,7 +165,7 @@ param (
 		}).
 		AddArgument($userInput).AddArgument($context.Response).
 		AddArgument($PSScriptRoot).AddArgument($CacheDir).
-		AddArgument($compiledExePath).AddArgument($clientIP).AddArgument($Localize).
+		AddArgument($compiledExePath).AddArgument($clientIP).AddArgument($Locale).
 		BeginInvoke()
 		$AsyncResultArray.Add(@{
 			AsyncHandle = $AsyncResult
@@ -290,8 +290,8 @@ param (
 	}
 #_else
 	#_require ps12exe
-	#_pragma resourceParams.iconFile $PSScriptRoot/../../img/icon.ico
-	#_pragma resourceParams.title ps12exeWebServer
-	#_pragma resourceParams.description 'A webserver runner for compile powershell scripts online'
+	#_pragma Resources.iconFile $PSScriptRoot/../../img/icon.ico
+	#_pragma Resources.title ps12exeWebServer
+	#_pragma Resources.description 'A webserver runner for compile powershell scripts online'
 	#_!!Start-ps12exeWebServer @PSBoundParameters
 #_endif

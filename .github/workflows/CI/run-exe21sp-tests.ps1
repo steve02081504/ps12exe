@@ -53,14 +53,14 @@ try {
 	}
 
 	# 4) TinySharp GUI、退出码 0（MessageBox，此处仅测 exe21sp 提取）
-	"'tinysharp-gui-zero'" | ps12exe -noConsole -outputFile $repoRoot/build/ts_gui_0.exe -Verbose -resourceParams @{ title = 'CI' } | Write-Host
+	"'tinysharp-gui-zero'" | ps12exe -App @{Windowed=$true} -outputFile $repoRoot/build/ts_gui_0.exe -Verbose -Resources @{ Title = 'CI' } | Write-Host
 	if (Test-Path $repoRoot/build/ts_gui_0.exe) {
 		$e4 = Get-Exe21spContent 'build/ts_gui_0.exe'
 		if ($e4 -notmatch "tinysharp-gui-zero") { throw "exe21sp TinySharp GUI 0: expected content, got: $e4" }
 	}
 
 	# 5) TinySharp GUI、非零退出码
-	"'tinysharp-gui-42'; exit 42" | ps12exe -noConsole -outputFile $repoRoot/build/ts_gui_42.exe -Verbose -resourceParams @{ title = 'CI' } | Write-Host
+	"'tinysharp-gui-42'; exit 42" | ps12exe -App @{Windowed=$true} -outputFile $repoRoot/build/ts_gui_42.exe -Verbose -Resources @{ Title = 'CI' } | Write-Host
 	if (Test-Path $repoRoot/build/ts_gui_42.exe) {
 		$e5 = Get-Exe21spContent 'build/ts_gui_42.exe'
 		if ($e5 -notmatch "tinysharp-gui-42" -or $e5 -notmatch "exit 42") { throw "exe21sp TinySharp GUI 42: expected content+exit 42, got: $e5" }
@@ -77,7 +77,7 @@ try {
 	# 7) Core exe（dotnet 单文件）：exe21sp 需能穿透单文件 bundle 找到托管负载并解包还原脚本
 	if (-not (Get-Command dotnet -ErrorAction Ignore)) { throw 'Core target requires the .NET SDK (dotnet)' }
 	$coreScript = "Get-Date | Out-Null; Write-Output 'core-packed-embed'"
-	$coreScript | ps12exe -targetRuntime Core -outputFile $repoRoot/build/core_packed.exe -Verbose | Write-Host
+	$coreScript | ps12exe -Build @{Target='Core'} -outputFile $repoRoot/build/core_packed.exe -Verbose | Write-Host
 	$e7 = Get-Exe21spContent 'build/core_packed.exe'
 	if ($e7 -notmatch 'core-packed-embed') { throw "exe21sp Core: expected 'core-packed-embed' in: $e7" }
 	# 7b) Windows PowerShell（.NET Framework 无 BrotliStream）下：转交 pwsh 解压后同样能还原
@@ -113,11 +113,11 @@ try {
 
 	$resourceScript = "Get-Date | Out-Null; Write-Output 'resource-roundtrip'"
 	$resourceExe = Join-Path $buildDir 'resource.exe'
-	$resourceScript | ps12exe -outputFile $resourceExe -resourceParams @{ title = 'RT Title'; description = 'RT Desc'; company = 'RT Co'; version = '2.3.4.5'; iconFile = $iconPath } | Write-Host
+	$resourceScript | ps12exe -outputFile $resourceExe -Resources @{ Title = 'RT Title'; Description = 'RT Desc'; Company = 'RT Co'; Version = '2.3.4.5'; Icon = $iconPath } | Write-Host
 	$extractOut = Join-Path $buildDir 'resource.extracted.ps1'
 	exe21sp -inputFile $resourceExe -outputFile $extractOut
 	$extractedText = Get-Content -LiteralPath $extractOut -Raw -Encoding UTF8
-	foreach ($expected in @("#_pragma resourceParams.title 'RT Title'", "#_pragma resourceParams.description 'RT Desc'", "#_pragma resourceParams.company 'RT Co'", "#_pragma resourceParams.version '2.3.4.5'", '#_pragma resourceParams.iconFile')) {
+	foreach ($expected in @("#_pragma Resources.Title 'RT Title'", "#_pragma Resources.Description 'RT Desc'", "#_pragma Resources.Company 'RT Co'", "#_pragma Resources.Version '2.3.4.5'", '#_pragma Resources.Icon')) {
 		if ($extractedText -notlike "*$expected*") { throw "exe21sp resource: missing [$expected] in: $extractedText" }
 	}
 	$releasedIcon = Join-Path $buildDir 'resource.extracted.ico'
@@ -136,17 +136,17 @@ try {
 	$extractOut2 = Join-Path $buildDir 'resource.recompiled.ps1'
 	exe21sp -inputFile $recompiled -outputFile $extractOut2
 	$text2 = Get-Content -LiteralPath $extractOut2 -Raw -Encoding UTF8
-	if (([regex]::Matches($text2, '(?m)^\s*#_pragma\s+resourceParams\.title\b')).Count -ne 1) { throw "exe21sp idempotent: title pragma duplicated: $text2" }
-	if (([regex]::Matches($text2, '(?m)^\s*#_pragma\s+resourceParams\.iconFile\b')).Count -ne 1) { throw "exe21sp idempotent: icon pragma duplicated: $text2" }
+	if (([regex]::Matches($text2, '(?m)^\s*#_pragma\s+Resources\.Title\b')).Count -ne 1) { throw "exe21sp idempotent: title pragma duplicated: $text2" }
+	if (([regex]::Matches($text2, '(?m)^\s*#_pragma\s+Resources\.Icon\b')).Count -ne 1) { throw "exe21sp idempotent: icon pragma duplicated: $text2" }
 
 	# 9) Core 目标的 SDK 默认值（标题/公司/产品=程序集名，版本=1.0.0.0）不应被当成资源参数补回。
 	if (Get-Command dotnet -ErrorAction Ignore) {
 		$corePlain = Join-Path $buildDir 'core-resource-plain.exe'
-		"Get-Date | Out-Null; Write-Output 'core-resource'" | ps12exe -targetRuntime Core -outputFile $corePlain | Write-Host
+		"Get-Date | Out-Null; Write-Output 'core-resource'" | ps12exe -Build @{Target='Core'} -outputFile $corePlain | Write-Host
 		$coreOut = Join-Path $buildDir 'core-resource-plain.ps1'
 		exe21sp -inputFile $corePlain -outputFile $coreOut
 		$coreText = Get-Content -LiteralPath $coreOut -Raw -Encoding UTF8
-		foreach ($unexpected in @('#_pragma resourceParams.company', '#_pragma resourceParams.product', '#_pragma resourceParams.version', '#_pragma resourceParams.title')) {
+		foreach ($unexpected in @('#_pragma Resources.Company', '#_pragma Resources.Product', '#_pragma Resources.Version', '#_pragma Resources.Title')) {
 			if ($coreText -like "*$unexpected*") { throw "exe21sp Core defaults: unexpected [$unexpected] in: $coreText" }
 		}
 	}

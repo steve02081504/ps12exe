@@ -111,15 +111,15 @@ Start-ps12exeWebServer
 ### GUI参数
 
 ```powershell
-ps12exeGUI [[-ConfigFile] '<配置文件>'] [-PS1File '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-ConfigFile] '<配置文件>'] [-PS1File '<脚本文件>'] [-Locale '<语言代码>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 
-ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-PS1File] '<脚本文件>'] [-Locale '<语言代码>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 ```
 
 ```text
 ConfigFile : 要加载的配置文件。
 PS1File    : 要编译的脚本文件。
-Localize   : 要使用的语言代码。
+Locale     : 要使用的语言代码。
 UIMode     : 要使用的用户界面模式。
 help       : 显示此帮助信息。
 ```
@@ -128,14 +128,15 @@ help       : 显示此帮助信息。
 
 ```powershell
 [input |] ps12exe [[-inputFile] '<文件名|url>' | -Content '<脚本>'] [-outputFile '<文件名>']
-        [-CompilerOptions '<选项>'] [-TempDir '<文件夹>'] [-minifyer '<scriptblock>'] [-noConsole]
-        [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
-        [-resourceParams @{iconFile='<文件名|url>'; title='<标题>'; description='<简介>'; company='<公司>';
-        product='<产品>'; copyright='<版权>'; trademark='<水印>'; version='<版本>'}]
-        [-CodeSigning @{Path='<PFX文件路径>'; Password='<PFX密码>'; Thumbprint='<证书指纹>'; TimestampServer='<时间戳服务器>'}]
-        [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
-        [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<运行时版本>']
-        [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<语言代码>'] [-help]
+        [-App @{Windowed=$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default'; VisualStyles=$true;
+        ExitOnCancel=$true; CredentialGUI=$true; DpiAware=$true; WinFormsDpiAware=$true}]
+        [-Os @{Admin=$true; ModernOS=$true; LongPaths=$true; Virtualize=$true}]
+        [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'; Apartment='STA'|'MTA';
+        Culture='<文化>'; Options='<选项>'; KeepSource=$true; Minify={<scriptblock>}; TempDir='<文件夹>'}]
+        [-Resources @{Icon='<文件名|url>'; Title='<标题>'; Description='<简介>'; Company='<公司>';
+        Product='<产品>'; Copyright='<版权>'; Trademark='<水印>'; Version='<版本>'}]
+        [-Signing @{Certificate='<PFX文件路径>'; Password='<PFX密码>'; Thumbprint='<证书指纹>'; Timestamp='<时间戳服务器>'}]
+        [-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<语言代码>'] [-ConfigFile] [-help]
 ```
 
 ```text
@@ -143,36 +144,38 @@ input            : PowerShell脚本文件内容的字符串，与-Content相同�
 inputFile        : 您想要转换为可执行文件的PowerShell脚本文件路径或URL（文件必须是UTF8或UTF16编码）
 Content          : 您想要转换为可执行文件的PowerShell脚本内容
 outputFile       : 目标可执行文件名或文件夹，默认为带有'.exe'扩展名的inputFile
-CompilerOptions  : 额外的编译器选项（参见 https://msdn.microsoft.com/en-us/library/78f4aasd.aspx）
-TempDir          : 存储临时文件的目录（默认为%temp%中随机生成的临时目录）
-minifyer         : 在编译之前缩小脚本的脚本块
-lcid             : 编译的可执行文件的位置ID。如果未指定，则为当前用户文化
-prepareDebug     : 创建有助于调试的信息
-architecture     : 仅为特定运行时编译。可能的值为'x64'，'x86'和'anycpu'
-threadingModel   : '单线程单元'或'多线程单元'模式
-noConsole        : 生成的可执行文件将是一个没有控制台窗口的Windows Forms应用程序
-UNICODEEncoding  : 在控制台模式下将输出编码为UNICODE
-credentialGUI    : 在控制台模式下使用GUI提示凭据
-resourceParams   : 包含编译的可执行文件的资源参数的哈希表
-CodeSigning      : 包含代码签名参数的哈希表
-configFile       : 写一个配置文件（<outputfile>.exe.config）
-noOutput         : 生成的可执行文件将不生成标准输出（包括详细和信息通道）
-noError          : 生成的可执行文件将不生成错误输出（包括警告和调试通道）
-noVisualStyles   : 禁用生成的Windows GUI应用程序的视觉样式（仅与-noConsole一起使用）
-exitOnCancel     : 当在Read-Host输入框中选择Cancel或'X'时退出程序（仅与-noConsole一起使用）
-DPIAware         : 如果启用了显示缩放，GUI控件将尽可能进行缩放
-winFormsDPIAware : 如果启用了显示缩放，WinForms将使用DPI缩放（需要Windows 10和.Net 4.7或更高版本）
-requireAdmin     : 如果启用了UAC，编译的可执行文件只能在提升的上下文中运行（如果需要，会出现UAC对话框）
-supportOS        : 使用最新Windows版本的功能（执行[Environment]::OSVersion以查看差异）
-virtualize       : 已激活应用程序虚拟化（强制x86运行时）
-longPaths        : 如果在OS上启用，启用长路径（> 260个字符）（仅适用于Windows 10或更高版本）
-targetRuntime    : 目标运行时版本，默认为 'Framework4.0'，支持 'Framework2.0' 与 'Core'；'Core' 编译为 PowerShell Core (.NET) 可执行程序（需要编译机与目标机都装有 PowerShell Core 与 .NET，且产物体积大很多）。
-SkipVersionCheck : 跳过ps12exe的新版本检查
-GuestMode        : 在额外的保护下编译脚本，避免本机文件被访问
-PreprocessOnly   : 预处理输入脚本并在不编译的情况下返回它
-GolfMode         : 启用golf模式，添加缩写和常用函数
-Localize         : 指定本地化语言
-Help             : 显示此帮助信息
+App              : 描述生成的应用程序行为的哈希表。支持的键：
+                   Windowed         : 生成的可执行文件将是一个没有控制台窗口的Windows Forms应用程序。
+                   Silence          : 要静默的输出流；可取 'Output'、'Verbose'、'Error'、'Warning'、'Debug' 中的一个或多个，或 '*' 表示全部。
+                   OutputEncoding   : 控制台输出编码；'Default'、'UTF8' 或 'UTF16LE'。
+                   VisualStyles     : 为GUI应用程序启用视觉样式（默认 $true）。
+                   ExitOnCancel     : 当在Read-Host输入框中选择Cancel或'X'时退出程序。
+                   CredentialGUI    : 在控制台模式下使用GUI提示凭据。
+                   DpiAware         : 将编译的可执行文件标记为DPI感知。
+                   WinFormsDpiAware : 让WinForms使用DPI缩放（需要Windows 10和.Net 4.7或更高版本）。
+Os               : 操作系统集成选项的哈希表。支持的键：
+                   Admin            : 如果启用了UAC，编译的可执行文件只能在提升的上下文中运行（如果需要，会出现UAC对话框）。
+                   ModernOS         : 使用最新Windows版本的功能（执行[Environment]::OSVersion以查看差异）。
+                   LongPaths        : 如果在OS上启用，启用长路径（> 260个字符）（仅适用于Windows 10或更高版本）。
+                   Virtualize       : 已激活应用程序虚拟化（强制x86运行时）。
+Build            : 构建/工具链选项的哈希表。支持的键：
+                   Target           : 目标运行时版本，默认为 'Framework4.0'，支持 'Framework2.0' 与 'Core'；'Core' 编译为 PowerShell Core (.NET) 可执行程序（需要编译机与目标机都装有 PowerShell Core 与 .NET，且产物体积大很多）。
+                   Platform         : 仅为特定运行时编译。可能的值为 'AnyCpu'、'x64' 和 'x86'。
+                   Apartment        : 'STA'（单线程单元）或 'MTA'（多线程单元）模式。
+                   Culture          : 编译的可执行文件的文化。如果未指定，则为当前用户文化。
+                   Options          : 额外的编译器选项（参见 https://msdn.microsoft.com/en-us/library/78f4aasd.aspx）。
+                   KeepSource       : 创建有助于调试的信息。
+                   Minify           : 在编译之前缩小脚本的脚本块。
+                   TempDir          : 存储临时文件的目录（默认为%temp%中随机生成的临时目录）。
+Resources        : 编译的可执行文件的版本资源哈希表（Icon、Title、Description、Company、Product、Copyright、Trademark、Version）。Icon 可以是图标文件路径或URL。
+Signing          : 编译的可执行文件的代码签名选项哈希表（Certificate、Password、Thumbprint、Timestamp）。必须指定 Certificate 或 Thumbprint 之一。
+PreprocessOnly   : 预处理输入脚本并在不编译的情况下返回它。
+Golf             : 启用golf模式，添加缩写和常用函数。
+Sandbox          : 在额外的保护下编译脚本，避免本机文件被访问。
+NoUpdateCheck    : 跳过ps12exe的新版本检查。
+Locale           : 指定本地化语言。
+ConfigFile       : 写一个配置文件（<outputfile>.exe.config）。
+Help             : 显示此帮助信息。
 ```
 
 ## 备注
@@ -309,7 +312,7 @@ elseif
 
 ```powershell
 #_require ps12exe
-#_pragma Console 0
+#_pragma App.Windowed
 $Number = [bigint]::Parse('0')
 $NextNumber = $Number+1
 $NextScript = $PSEXEscript.Replace("Parse('$Number')", "Parse('$NextNumber')")
@@ -348,26 +351,24 @@ PS C:\Users\steve02081504> '12' | ps12exe
 Compiled file written -> 1024 bytes
 PS C:\Users\steve02081504> ./a.exe
 12
-PS C:\Users\steve02081504> '#_pragma Console no
+PS C:\Users\steve02081504> '#_pragma App.Windowed
 >> 12' | ps12exe
 Preprocessed script -> 23 bytes
 Compiled file written -> 2560 bytes
 ```
 
-可以看到，`#_pragma Console no` 使得生成的exe文件以窗口模式运行，即使我们在编译时没有指定`-noConsole`。
+可以看到，`#_pragma App.Windowed` 使得生成的exe文件以窗口模式运行，即使我们在编译时没有指定`-App @{Windowed=$true}`。
 pragma命令可以设置任何编译参数；参数名用 `.` 可以设置嵌套值：
 
 ```powershell
-#_pragma noConsole #窗口模式
-#_pragma Console #控制台模式
-#_pragma Console no #窗口模式
-#_pragma Console true #控制台模式
-#_pragma resourceParams.iconFile $PSScriptRoot/icon.ico #设置图标
-#_pragma resourceParams.title "title" #设置exe标题
-#_pragma CodeSigning.Path "C:\Cert\mycert.pfx" #设置代码签名证书
+#_pragma App.Windowed #窗口模式
+#_pragma App.Windowed $false #控制台模式
+#_pragma Resources.Icon $PSScriptRoot/icon.ico #设置图标
+#_pragma Resources.Title "title" #设置exe标题
+#_pragma Signing.Certificate "C:\Cert\mycert.pfx" #设置代码签名证书
 ```
 
-字符串类型的 pragma 值也可以包含 `$(...)` 子表达式，并在预处理时求值，例如 `#_pragma resourceParams.iconFile $(Join-Path $env:USERPROFILE 'foo.ico')`。仅允许白名单内的 path 相关命令（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`，以及非访客模式下的 `Get-Content`）、变量（`$env:*`、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）和常见无害实例方法（如 `ToUpper`、`Trim`、`Split`、`ToString`）；其他内容将中止编译。单引号值保持完全字面。
+字符串类型的 pragma 值也可以包含 `$(...)` 子表达式，并在预处理时求值，例如 `#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`。仅允许白名单内的 path 相关命令（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`，以及非沙箱模式下的 `Get-Content`）、变量（`$env:*`、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）和常见无害实例方法（如 `ToUpper`、`Trim`、`Split`、`ToString`）；其他内容将中止编译。单引号值保持完全字面。
 
 #### `#_balus`
 
@@ -380,15 +381,15 @@ pragma命令可以设置任何编译参数；参数名用 `.` 可以设置嵌套
 
 当代码执行到此处时，以给定的退出码退出进程，并删除exe文件。
 
-### Minifyer
+### 压缩（Minify）
 
 由于ps12exe的"编译"会将脚本中的所有内容作为资源逐字嵌入到生成的可执行文件中，因此如果脚本中有大量无用字符串，生成的可执行文件就会很大。  
-你可以使用 `-Minifyer` 参数指定一个脚本块，它将在编译前对脚本进行预处理，以获得更小的生成可执行文件。
+你可以使用 `-Build` 的 `Minify` 键指定一个脚本块，它将在编译前对脚本进行预处理，以获得更小的生成可执行文件。
 
 如果不知道如何编写这样的脚本块，可以使用 [psminnifyer](https://github.com/steve02081504/psminnifyer)。
 
 ```powershell
-& ./ps12exe.ps1 ./main.ps1 -NoConsole -Minifyer { $_ | &./psminnifyer.ps1 }
+& ./ps12exe.ps1 ./main.ps1 -App @{Windowed=$true} -Build @{Minify={ $_ | &./psminnifyer.ps1 }}
 ```
 
 ### 未实现的 cmdlet 列表
@@ -440,9 +441,9 @@ if ($Host.Name -eq "PSEXE") { Write-Output "ps12exe" } else { Write-Output "Some
 
 你仍然可以使用`$PSScriptRoot`来获取可执行文件所在的目录路径，并使用`$PSCommandPath`来获取可执行文件本身的路径。
 
-### 在 -noConsole 模式下的后台窗口
+### 在 `App.Windowed` 模式下的后台窗口
 
-在使用`-noConsole`模式的脚本中打开外部窗口时（如`Get-Credential`或需要`cmd.exe`的命令），一个窗口将在后台打开。
+在使用`App.Windowed`模式的脚本中打开外部窗口时（如`Get-Credential`或需要`cmd.exe`的命令），一个窗口将在后台打开。
 
 原因是关闭外部窗口时，Windows 会尝试激活父窗口。编译后的脚本没有窗口，因而会激活其父窗口，通常是文件资源管理器或 PowerShell 窗口。
 
@@ -471,10 +472,10 @@ $Host.UI.RawUI.FlushInputBuffer()
 
 对于只含常量、无副作用的脚本，ps12exe 会在编译期求值，并把结果直接编进极小的 exe（TinySharp 路径，通常 1KB 上下）；超时（默认 7 秒）或结果过长时会退回普通编译。如果求值环境与运行期不一致，或你本来就想要完整的 PowerShell 宿主，可以在脚本里加下面任一 pragma 显式放弃该优化：
 
-- `#_pragma noConstEval`：声明本脚本不是常量，跳过常量求值。
-- `#_pragma constEvalTimeout`：声明本次常量求值已超时，直接按超时回退。
+- `#_pragma Build.ConstEval.Enabled 0`：声明本脚本不是常量，跳过常量求值。
+- `#_pragma Build.ConstEval.Timeout 1`：声明本次常量求值已超时，直接按超时回退。
 
-两者在编译期按关键字匹配脚本内容，放在任意一行即可；退回普通宿主后这两行就是普通注释。
+两者在预处理阶段作为普通嵌套 pragma 解析，放在任意一行即可；退回普通宿主后这两行就是普通注释。
 
 ## 优势对比 🏆
 
@@ -487,7 +488,7 @@ $Host.UI.RawUI.FlushInputBuffer()
 | 生成的常量 hello world 文件大小 💾   | 🥰1024 字节（编译期常量求值）                                   | ❌ 不支持；25088 字节                                                          |
 | 生成的非常量 hello world 文件大小 💾 | 🥰14848 字节                                                    | 😨25088 字节                                                                   |
 | 编译期常量求值 ⚡                    | ✔️                                                              | ❌                                                                             |
-| PowerShell Core（7+）/ 跨平台目标 🧬 | ✔️ `-targetRuntime Core`（Windows / Linux / macOS）             | ❌ 仅支持 Windows PowerShell 5.1                                               |
+| PowerShell Core（7+）/ 跨平台目标 🧬 | ✔️ `Build.Target Core`（Windows / Linux / macOS）              | ❌ 仅支持 Windows PowerShell 5.1                                               |
 | GUI 多语言支持 🌐                    | ✔️（7 种语言、深色模式）                                        | ❌                                                                             |
 | 编译时的语法检查 ✔️                  | ✔️                                                              | ❌                                                                             |
 | 预处理功能 🔄                        | ✔️                                                              | ❌                                                                             |
@@ -545,12 +546,12 @@ PS2EXE 1.0.18 总是把脚本输出经 `Out-String` 收集，并在运行脚本�
 | ------------------------------------------------------ | ------------------------------------------------------------------- |
 | ✔️ 编译时的语法检查                                    | 在编译时进行语法检查，提高代码质量                                  |
 | ⚡ 编译期常量求值                                      | 对无副作用脚本在构建期求值，生成约 1 KB 的 exe                      |
-| 🧬 PowerShell Core / 跨平台目标                        | `-targetRuntime Core` 面向 Windows、Linux、macOS 上的 PowerShell 7+ |
+| 🧬 PowerShell Core / 跨平台目标                        | `Build.Target Core` 面向 Windows、Linux、macOS 上的 PowerShell 7+ |
 | 🔄 强大的预处理功能                                    | 在编译前预处理脚本，无需再复制粘贴所有内容到脚本中                  |
-| 🛠️ `-CompilerOptions` 参数                             | 新增参数，让你能进一步定制生成的可执行文件                          |
-| 📦️ `-Minifyer` 参数                                    | 在编译前预处理脚本，生成更小的可执行文件                            |
+| 🛠️ `Build.Options` 参数                               | 新增参数，让你能进一步定制生成的可执行文件                          |
+| 📦️ `Build.Minify` 参数                                | 在编译前预处理脚本，生成更小的可执行文件                            |
 | 🌐 支持从 URL 编译脚本和包含文件                       | 支持从 URL 下载图标                                                 |
-| 🖥️ `-noConsole` 参数优化                               | 优化了选项处理和窗口标题显示，你现在可以设置自定义弹出窗口的标题    |
+| 🖥️ `App.Windowed` 参数优化                             | 优化了选项处理和窗口标题显示，你现在可以设置自定义弹出窗口的标题    |
 | ✍️ 代码签名与图标自动转换                              | 支持用 PFX 证书或证书存储指纹签名，并自动转换图标                   |
 | 🧰 附加工具：`exe21sp`、Web 服务器、右键菜单、交互模式 | 反编译 exe、在线编译、右键编译等等                                  |
 | 🧹 移除了 exe 文件                                     | 从代码仓库中移除了 exe 文件                                         |

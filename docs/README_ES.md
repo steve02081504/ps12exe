@@ -111,15 +111,15 @@ exe21sp -inputFile .\target.exe -outputFile .\target.ps1
 ### Parámetros GUI
 
 ```powershell
-ps12exeGUI [[-ConfigFile] '<archivo de configuración>'] [-PS1File '<archivo de código>'] [-Localize '<código de idioma>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-ConfigFile] '<archivo de configuración>'] [-PS1File '<archivo de código>'] [-Locale '<código de idioma>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 
-ps12exeGUI [[-PS1File] '<archivo de código>'] [-Localize '<código de idioma>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-PS1File] '<archivo de código>'] [-Locale '<código de idioma>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 ```
 
 ```text
 ConfigFile : El archivo de configuración que desea cargar.
 PS1File    : El archivo de script a compilar.
-Localize   : El código de idioma que desea usar.
+Locale     : El código de idioma que desea usar.
 UIMode     : El modo de interfaz de usuario que desea usar.
 help       : Mostrar esta información de ayuda.
 ```
@@ -128,14 +128,15 @@ help       : Mostrar esta información de ayuda.
 
 ```powershell
 [input |] ps12exe [[-inputFile] '<nombre de archivo|url>' | -Content '<script>'] [-outputFile '<nombre de archivo>']
-        [-CompilerOptions '<opciones>'] [-TempDir '<carpeta>'] [-minifyer '<scriptblock>'] [-noConsole]
-        [-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
-        [-resourceParams @{iconFile='<nombre de archivo|url>'; title='<título>'; description='<descripción>'; company='<compañía>';
-        product='<producto>'; copyright='<derechos de autor>'; trademark='<marca>'; version='<versión>'}]
-        [-CodeSigning @{Path='<ruta del archivo PFX>'; Password='<contraseña PFX>'; Thumbprint='<huella digital del certificado>'; TimestampServer='<servidor de marca de tiempo>'}]
-        [-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
-        [-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<Versión de tiempo de ejecución>']
-        [-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<código de idioma>'] [-help]
+        [-App @{Windowed=$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default'; VisualStyles=$true;
+        ExitOnCancel=$true; CredentialGUI=$true; DpiAware=$true; WinFormsDpiAware=$true}]
+        [-Os @{Admin=$true; ModernOS=$true; LongPaths=$true; Virtualize=$true}]
+        [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'; Apartment='STA'|'MTA';
+        Culture='<cultura>'; Options='<opciones>'; KeepSource=$true; Minify={<scriptblock>}; TempDir='<carpeta>'}]
+        [-Resources @{Icon='<nombre de archivo|url>'; Title='<título>'; Description='<descripción>'; Company='<compañía>';
+        Product='<producto>'; Copyright='<derechos de autor>'; Trademark='<marca>'; Version='<versión>'}]
+        [-Signing @{Certificate='<ruta del archivo PFX>'; Password='<contraseña PFX>'; Thumbprint='<huella digital del certificado>'; Timestamp='<servidor de marca de tiempo>'}]
+        [-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<código de idioma>'] [-ConfigFile] [-help]
 ```
 
 ```text
@@ -143,36 +144,38 @@ input            : La cadena del contenido del archivo de script de PowerShell, 
 inputFile        : La ruta o URL del archivo de script de PowerShell que desea convertir en un archivo ejecutable (el archivo debe estar codificado en UTF8 o UTF16)
 Content          : El contenido del script de PowerShell que desea convertir en un archivo ejecutable
 outputFile       : El nombre del archivo o carpeta de destino, por defecto es el inputFile con la extensión '.exe'
-CompilerOptions  : Opciones adicionales del compilador (ver https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)
-TempDir          : El directorio donde se almacenan los archivos temporales (por defecto es un directorio temporal generado aleatoriamente en %temp%)
-minifyer         : Un bloque de script que reduce el tamaño del script antes de la compilación
-lcid             : El identificador de ubicación del archivo ejecutable compilado. Si no se especifica, será la cultura del usuario actual
-prepareDebug     : Crear información que ayude a la depuración
-architecture     : Compilar sólo para un tiempo de ejecución específico. Los valores posibles son 'x64', 'x86' y 'anycpu'
-threadingModel   : Modo 'apartamento de un solo hilo' o 'apartamento de varios hilos'
-noConsole        : El archivo ejecutable generado será una aplicación de Windows Forms sin ventana de consola
-UNICODEEncoding  : Codificar la salida como UNICODE en el modo de consola
-credentialGUI    : Usar un GUI para solicitar credenciales en el modo de consola
-resourceParams   : Una tabla hash que contiene los parámetros de recursos del archivo ejecutable compilado
-CodeSigning      : Tabla hash que contiene los parámetros de firma de código para el archivo ejecutable compilado
-configFile       : Escribir un archivo de configuración (<outputfile>.exe.config)
-noOutput         : El archivo ejecutable generado no producirá salida estándar (incluyendo los canales detallado e informativo)
-noError          : El archivo ejecutable generado no producirá salida de error (incluyendo los canales de advertencia y depuración)
-noVisualStyles   : Desactivar los estilos visuales de la aplicación GUI de Windows generada (sólo se usa con -noConsole)
-exitOnCancel     : Salir del programa cuando se elija Cancelar o 'X' en el cuadro de entrada de Read-Host (sólo se usa con -noConsole)
-DPIAware         : Si se habilita el escalado de pantalla, los controles GUI se escalarán lo más posible
-winFormsDPIAware : Si se habilita el escalado de pantalla, WinForms usará el escalado DPI (requiere Windows 10 y .Net 4.7 o superior)
-requireAdmin     : Si se habilita el UAC, el archivo ejecutable compilado sólo se podrá ejecutar en un contexto elevado (si es necesario, aparecerá el cuadro de diálogo del UAC)
-supportOS        : Usar las características de las últimas versiones de Windows (ejecutar [Environment]::OSVersion para ver las diferencias)
-virtualize       : Se ha activado la virtualización de aplicaciones (se fuerza el tiempo de ejecución x86)
-longPaths        : Habilitar las rutas largas (> 260 caracteres) si están habilitadas en el sistema operativo (sólo para Windows 10 o superior)
-targetRuntime    : Versión de tiempo de ejecución de destino, 'Framework4.0' por defecto; se admiten 'Framework2.0' y 'Core'. 'Core' genera un ejecutable de PowerShell Core (.NET) (requiere PowerShell Core y .NET en las máquinas de compilación y de destino; el resultado es mucho mayor).
-SkipVersionCheck : Omitir la comprobación de nuevas versiones de ps12exe
-GuestMode        : Compilación de scripts con protección adicional frente al acceso a archivos nativos
-PreprocessOnly   : Preprocesa el script de entrada y devuélvelo sin compilar
-GolfMode         : Activar el modo golf, agregando abreviaturas y funciones comunes
-Localize         : El código de idioma que desea usar
-Help             : Mostrar esta información de ayuda
+App              : Una tabla hash que describe el comportamiento de la aplicación producida. Claves admitidas:
+                   Windowed         : El archivo ejecutable generado será una aplicación de Windows Forms sin ventana de consola.
+                   Silence          : Nombres de flujos a silenciar; uno o varios de 'Output', 'Verbose', 'Error', 'Warning', 'Debug', o '*' para todos.
+                   OutputEncoding   : Codificación de salida de la consola; 'Default', 'UTF8' o 'UTF16LE'.
+                   VisualStyles     : Habilitar los estilos visuales para las aplicaciones GUI (por defecto $true).
+                   ExitOnCancel     : Salir del programa cuando se elija Cancelar o 'X' en el cuadro de entrada de Read-Host.
+                   CredentialGUI    : Usar una GUI para solicitar credenciales en el modo de consola.
+                   DpiAware         : Marcar el archivo ejecutable compilado como DPI aware.
+                   WinFormsDpiAware : Permitir que WinForms use el escalado DPI (requiere Windows 10 y .Net 4.7 o superior).
+Os               : Una tabla hash de opciones de integración con el sistema operativo. Claves admitidas:
+                   Admin            : Si se habilita el UAC, el archivo ejecutable compilado sólo se podrá ejecutar en un contexto elevado (si es necesario, aparecerá el cuadro de diálogo del UAC).
+                   ModernOS         : Usar las características de las últimas versiones de Windows (ejecutar [Environment]::OSVersion para ver las diferencias).
+                   LongPaths        : Habilitar las rutas largas (> 260 caracteres) si están habilitadas en el sistema operativo (sólo para Windows 10 o superior).
+                   Virtualize       : Se ha activado la virtualización de aplicaciones (se fuerza el tiempo de ejecución x86).
+Build            : Una tabla hash de opciones de compilación/cadena de herramientas. Claves admitidas:
+                   Target           : Versión de tiempo de ejecución de destino, 'Framework4.0' por defecto; se admiten 'Framework2.0' y 'Core'. 'Core' genera un ejecutable de PowerShell Core (.NET) (requiere PowerShell Core y .NET en las máquinas de compilación y de destino; el resultado es mucho mayor).
+                   Platform         : Compilar sólo para un tiempo de ejecución específico. Los valores posibles son 'AnyCpu', 'x64' y 'x86'.
+                   Apartment        : Modo 'apartamento de un solo hilo' o 'apartamento de varios hilos'.
+                   Culture          : Referencia cultural del archivo ejecutable compilado. Si no se especifica, será la cultura del usuario actual.
+                   Options          : Opciones adicionales del compilador (ver https://msdn.microsoft.com/en-us/library/78f4aasd.aspx).
+                   KeepSource       : Crear información que ayude a la depuración.
+                   Minify           : Bloque de script que reduce el tamaño del script antes de la compilación.
+                   TempDir          : El directorio donde se almacenan los archivos temporales (por defecto es un directorio temporal generado aleatoriamente en %temp%).
+Resources        : Una tabla hash de recursos de versión incrustados en el ejecutable (Icon, Title, Description, Company, Product, Copyright, Trademark, Version). Icon puede ser una ruta de archivo o URL.
+Signing          : Una tabla hash de opciones de firma de código (Certificate, Password, Thumbprint, Timestamp). Se debe especificar Certificate o Thumbprint.
+PreprocessOnly   : Preprocesa el script de entrada y devuélvelo sin compilar.
+Golf             : Activar el modo golf, agregando abreviaturas y funciones comunes.
+Sandbox          : Compilación de scripts con protección adicional frente al acceso a archivos nativos.
+NoUpdateCheck    : Omitir la comprobación de nuevas versiones de ps12exe.
+Locale           : El código de idioma que desea usar.
+ConfigFile       : Escribir un archivo de configuración (<outputfile>.exe.config).
+Help             : Mostrar esta información de ayuda.
 ```
 
 ## Observaciones
@@ -309,7 +312,7 @@ Cualquier línea que empiece por `#_!!` al principio de una línea con `#_!!` se
 
 ```powershell
 #_require ps12exe
-#_pragma Console 0
+#_pragma App.Windowed
 $Número = [bigint]::Parse('0')
 $NúmeroSiguiente = $Número+1
 $NextScript = $PSEXEscript.Replace("Parse('$Número')", "Parse('$NúmeroSiguiente')")
@@ -348,26 +351,24 @@ PS C:\Users\steve02081504> '12' | ps12exe
 Compiled file written -> 1024 bytes
 PS C:\Users\steve02081504> ./a.exe
 12
-PS C:\Users\steve02081504> '#_pragma Console no
+PS C:\Users\steve02081504> '#_pragma App.Windowed
 >> 12' | ps12exe
 Preprocessed script -> 23 bytes
 Compiled file written -> 2560 bytes
 ```
 
-Como puede ver, `#_pragma Console no` hace que el archivo exe generado se ejecute en modo ventana, incluso si no especificamos `-noConsole` en tiempo de compilación.
+Como puede ver, `#_pragma App.Windowed` hace que el archivo exe generado se ejecute en modo ventana, incluso si no especificamos `-App @{Windowed=$true}` en tiempo de compilación.
 El comando pragma puede establecer cualquier parámetro de compilación; usa `.` en el nombre para establecer valores anidados:
 
 ```powershell
-#_pragma noConsole #Modo ventana
-#_pragma Console #Modo consola
-#_pragma Console no #Modo ventana
-#_pragma Console true #Modo consola
-#_pragma resourceParams.iconFile $PSScriptRoot/icon.ico #Configurar icono
-#_pragma resourceParams.title "title" #Establecer título del exe
-#_pragma CodeSigning.Path "C:\Cert\mycert.pfx" #Establecer el certificado de firma de código
+#_pragma App.Windowed #Modo ventana
+#_pragma App.Windowed $false #Modo consola
+#_pragma Resources.Icon $PSScriptRoot/icon.ico #Configurar icono
+#_pragma Resources.Title "title" #Establecer título del exe
+#_pragma Signing.Certificate "C:\Cert\mycert.pfx" #Establecer el certificado de firma de código
 ```
 
-Los valores de pragma de tipo cadena también pueden contener subexpresiones `$(...)`, que se evalúan en tiempo de preprocesamiento, p. ej. `#_pragma resourceParams.iconFile $(Join-Path $env:USERPROFILE 'foo.ico')`. Solo se permiten comandos relacionados con rutas en la lista blanca (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, más `Get-Content` fuera del modo invitado), variables (`$env:*`, `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) y métodos de instancia inofensivos comunes (p. ej. `ToUpper`, `Trim`, `Split`, `ToString`); cualquier otra cosa aborta la compilación. Los valores entre comillas simples permanecen completamente literales.
+Los valores de pragma de tipo cadena también pueden contener subexpresiones `$(...)`, que se evalúan en tiempo de preprocesamiento, p. ej. `#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`. Solo se permiten comandos relacionados con rutas en la lista blanca (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, más `Get-Content` fuera de Sandbox), variables (`$env:*`, `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) y métodos de instancia inofensivos comunes (p. ej. `ToUpper`, `Trim`, `Split`, `ToString`); cualquier otra cosa aborta la compilación. Los valores entre comillas simples permanecen completamente literales.
 
 #### `#_balus`
 
@@ -380,15 +381,15 @@ Los valores de pragma de tipo cadena también pueden contener subexpresiones `$(
 
 Cuando el código llega a este punto, el proceso sale con el código de salida dado y elimina el archivo EXE.
 
-### Minifyer
+### Minificación
 
 Dado que la "compilación" de ps12exe incrusta todo en el script textualmente como un recurso en el ejecutable resultante, si el script tiene muchas cadenas inútiles, el ejecutable resultante será muy grande.  
-Puede utilizar el parámetro `-Minifyer` para especificar un bloque de script que preprocesará el script antes de la compilación para obtener un ejecutable generado más pequeño.
+Puede utilizar la clave `Minify` de `-Build` para especificar un bloque de script que preprocesará el script antes de la compilación para obtener un ejecutable generado más pequeño.
 
 Si no sabe cómo escribir un bloque de script de este tipo, puede utilizar [psminnifyer](https://github.com/steve02081504/psminnifyer).
 
 ```powershell
-& ./ps12exe.ps1 ./main.ps1 -NoConsole -Minifyer { $_ | & ./psminnifyer.ps1 }
+& ./ps12exe.ps1 ./main.ps1 -App @{Windowed=$true} -Build @{Minify={ $_ | & ./psminnifyer.ps1 }}
 ```
 
 ### Lista de cmdlets no implementados
@@ -440,9 +441,9 @@ Dado que ps12exe convierte los scripts en ejecutables, el valor de la variable `
 
 Todavía puede usar `$PSScriptRoot` para obtener la ruta al directorio donde se encuentra el ejecutable, y `$PSCommandPath` para obtener la ruta al ejecutable en sí.
 
-### Ventanas de fondo en modo -noConsole
+### Ventanas de fondo en modo `App.Windowed`
 
-Cuando se abre una ventana externa en un script que utiliza el modo `-noConsole` (por ejemplo `Get-Credential` o un comando que requiere `cmd.exe`), se abrirá una ventana en segundo plano.
+Cuando se abre una ventana externa en un script que utiliza el modo `App.Windowed` (por ejemplo `Get-Credential` o un comando que requiere `cmd.exe`), se abrirá una ventana en segundo plano.
 
 La razón de esto es que cuando se cierra una ventana externa, windows intenta activar la ventana padre. Dado que los scripts compilados no tienen ventanas, esto activa la ventana padre del script compilado, que suele ser una ventana de Explorer o Powershell.
 
@@ -471,10 +472,10 @@ Por ejemplo, si el script llama a `[Console]::In.ReadToEnd()` y nunca usa `$inpu
 
 Para scripts que solo contienen constantes y no tienen efectos secundarios, ps12exe los evalúa en tiempo de compilación e integra el resultado directamente en un exe diminuto (la ruta TinySharp, normalmente alrededor de 1 KB); vuelve a la compilación normal cuando la evaluación agota el tiempo de espera (7 segundos por defecto) o el resultado es demasiado largo. Si el entorno de evaluación difiere del de ejecución, o simplemente quiere el host completo de PowerShell, añada cualquiera de los siguientes pragmas para renunciar explícitamente a esa optimización:
 
-- `#_pragma noConstEval`: declara que este script no es una constante; omite la evaluación de constantes.
-- `#_pragma constEvalTimeout`: declara que esta evaluación de constantes ya agotó el tiempo; aplica el mismo retroceso que en caso de tiempo de espera.
+- `#_pragma Build.ConstEval.Enabled 0`: declara que este script no es una constante; omite la evaluación de constantes.
+- `#_pragma Build.ConstEval.Timeout 1`: declara que esta evaluación de constantes ya agotó el tiempo; aplica el mismo retroceso que en caso de tiempo de espera.
 
-Ambos se buscan por palabra clave en el script en tiempo de compilación, por lo que pueden ir en cualquier línea; tras el retroceso al host normal, esas líneas son solo comentarios normales.
+Ambos se analizan como pragmas anidados normales durante el preprocesamiento, por lo que pueden ir en cualquier línea; tras el retroceso al host normal, esas líneas son solo comentarios normales.
 
 ## Comparación de Ventajas 🏆
 
@@ -487,7 +488,7 @@ Ambos se buscan por palabra clave en el script en tiempo de compilación, por lo
 | Ejecutable "Hello World" constante 💾                | 🥰1024 bytes (evaluado en tiempo de compilación)                                                                 | ❌ No compatible; 25088 bytes                                                                                           |
 | Ejecutable "Hello World" no constante 💾             | 🥰14848 bytes                                                                                                    | 😨25088 bytes                                                                                                           |
 | Evaluación constante en tiempo de compilación ⚡     | ✔️                                                                                                               | ❌                                                                                                                      |
-| Destino PowerShell Core (7+) / multiplataforma 🧬    | ✔️ `-targetRuntime Core` (Windows / Linux / macOS)                                                               | ❌ Solo Windows PowerShell 5.1                                                                                          |
+| Destino PowerShell Core (7+) / multiplataforma 🧬    | ✔️ `Build.Target Core` (Windows / Linux / macOS)                                                                | ❌ Solo Windows PowerShell 5.1                                                                                          |
 | Soporte multilingüe en la GUI 🌐                     | ✔️ (7 idiomas, modo oscuro)                                                                                      | ❌                                                                                                                      |
 | Verificación de sintaxis en tiempo de compilación ✔️ | ✔️                                                                                                               | ❌                                                                                                                      |
 | Función de preprocesamiento 🔄                       | ✔️                                                                                                               | ❌                                                                                                                      |
@@ -545,12 +546,12 @@ En comparación con [`MScholtes/PS2EXE@1.0.18`](https://github.com/MScholtes/PS2
 | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | ✔️ Verificación de sintaxis en tiempo de compilación                  | Realiza una verificación de sintaxis durante la compilación para mejorar la calidad del código                                         |
 | ⚡ Evaluación constante en tiempo de compilación                      | Los scripts sin efectos secundarios se evalúan en la compilación y se emiten como exe de ~1 KB                                         |
-| 🧬 Destino PowerShell Core / multiplataforma                          | `-targetRuntime Core` apunta a PowerShell 7+ en Windows, Linux y macOS                                                                 |
+| 🧬 Destino PowerShell Core / multiplataforma                          | `Build.Target Core` apunta a PowerShell 7+ en Windows, Linux y macOS                                                                  |
 | 🔄 Potente función de preprocesamiento                                | Realiza un preprocesamiento del script antes de la compilación, evitando la necesidad de copiar y pegar todo el contenido en el script |
-| 🛠️ Parámetro `-CompilerOptions`                                       | Permite una mayor personalización del archivo ejecutable generado                                                                      |
-| 📦️ Parámetro `-Minifyer`                                              | Realiza un preprocesamiento antes de la compilación para generar un archivo ejecutable más pequeño                                     |
+| 🛠️ Parámetro `Build.Options`                                         | Permite una mayor personalización del archivo ejecutable generado                                                                      |
+| 📦️ Parámetro `Build.Minify`                                          | Realiza un preprocesamiento antes de la compilación para generar un archivo ejecutable más pequeño                                     |
 | 🌐 Soporte para compilar scripts y archivos de inclusión desde URL    | Admite la descarga de iconos desde una URL                                                                                             |
-| 🖥️ Optimización del parámetro `-noConsole`                            | Mejora el manejo de opciones y la visualización del título de la ventana emergente personalizada                                       |
+| 🖥️ Optimización del parámetro `App.Windowed`                          | Mejora el manejo de opciones y la visualización del título de la ventana emergente personalizada                                       |
 | ✍️ Firma de código y conversión automática de iconos                  | Firma la salida con un certificado PFX o una huella del almacén, y convierte iconos automáticamente                                    |
 | 🧰 Extras: `exe21sp`, servidor web, menú contextual, modo interactivo | Descompilar exe, compilar en línea, compilar con clic derecho y más                                                                    |
 | 🧹 Eliminación del archivo exe                                        | Se eliminó el archivo exe del repositorio de código                                                                                    |

@@ -31,8 +31,8 @@ try {
 	# 无状态：仅在测试中临时启用右键菜单（若需测试菜单则启用），测试后恢复
 	Set-ps12exeContextMenu -action enable | Out-Null
 
-	# 控制台 + noConsole + 二次编译
-	& $repoRoot/build/ps12exe.exe $repoRoot/ps12exe.ps1 -Verbose -noConsole | Write-Host
+	# 控制台 + Windowed + 二次编译
+	& $repoRoot/build/ps12exe.exe $repoRoot/ps12exe.ps1 -Verbose -App @{Windowed=$true} | Write-Host
 	& $repoRoot/build/ps12exe.exe $repoRoot/ps12exe.ps1 $repoRoot/build/ps12exe2.exe -Verbose | Write-Host
 	"'Hello 世界！👾'" | ps12exe -outputFile $repoRoot/build/hello.exe -Verbose | Write-Host
 	& $repoRoot/build/ps12exe2.exe -Content '$PSCommandPath;$PSScriptRoot' -outputFile $repoRoot/build/pathtest.exe | Write-Host
@@ -136,7 +136,7 @@ if ($LASTEXITCODE) { exit $LASTEXITCODE }
 	Set-Content -LiteralPath $nestedOkHostPs1 -Encoding UTF8 -Value @"
 Import-Module '$repoRoot' -Force
 `$Error.Clear()
-ps12exe -inputFile '$nestedInnerPs1' -outputFile '$nestedOkInnerExe' -SkipVersionCheck
+ps12exe -inputFile '$nestedInnerPs1' -outputFile '$nestedOkInnerExe' -NoUpdateCheck
 Write-Host "NESTED_LASTEXITCODE=`$LastExitCode"
 Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 "@
@@ -155,7 +155,7 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 	Set-Content -LiteralPath $nestedFailHostPs1 -Encoding UTF8 -Value @"
 Import-Module '$repoRoot' -Force
 `$Error.Clear()
-ps12exe -inputFile '$nestedInnerPs1' -outputFile `$PSCommandPath -SkipVersionCheck
+ps12exe -inputFile '$nestedInnerPs1' -outputFile `$PSCommandPath -NoUpdateCheck
 Write-Host "NESTED_LASTEXITCODE=`$LastExitCode"
 Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 `$Error | ForEach-Object { Write-Host "NESTED_ERROR_TEXT: `$_" }
@@ -173,7 +173,7 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 	$fw20Ps1 = Join-Path $buildDir 'fw20-err-order.ps1'
 	$fw20Exe = Join-Path $buildDir 'fw20-err-order.exe'
 	Set-Content -LiteralPath $fw20Ps1 -Encoding UTF8 -Value "Write-Error 'a'; Write-Output '123'"
-	ps12exe -inputFile $fw20Ps1 -outputFile $fw20Exe -targetRuntime Framework2.0 | Write-Host
+	ps12exe -inputFile $fw20Ps1 -outputFile $fw20Exe -Build @{Target='Framework2.0'} | Write-Host
 	if (-not (Test-Path -LiteralPath $fw20Exe)) { throw 'Framework2.0 compile produced no exe' }
 	$fw20 = Invoke-ExeCaptureMergedOutput -ExePath $fw20Exe
 	if ($fw20.Output -notmatch '(?s)a.*123') {
@@ -185,7 +185,7 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 	$corePs1 = Join-Path $buildDir 'core-run.ps1'
 	$coreExe = Join-Path $buildDir 'core-run.exe'
 	Set-Content -LiteralPath $corePs1 -Encoding UTF8 -Value "Get-Date | Out-Null; Write-Output 'core-run-ok'"
-	ps12exe -inputFile $corePs1 -outputFile $coreExe -targetRuntime Core | Write-Host
+	ps12exe -inputFile $corePs1 -outputFile $coreExe -Build @{Target='Core'} | Write-Host
 	if (-not (Test-Path -LiteralPath $coreExe)) { throw 'Core compile produced no exe' }
 	$core = Invoke-ExeCaptureMergedOutput -ExePath $coreExe
 	if ($core.Output -notmatch 'core-run-ok') {
@@ -210,8 +210,11 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 	$script:GuestMode = $false
 	$script:Params = @{}
 	$ParamList = @{
-		resourceParams = @{ ParameterType = [hashtable] }
-		CodeSigning    = @{ ParameterType = [hashtable] }
+		App       = @{ ParameterType = [hashtable] }
+		Os        = @{ ParameterType = [hashtable] }
+		Build     = @{ ParameterType = [hashtable] }
+		Resources = @{ ParameterType = [hashtable] }
+		Signing   = @{ ParameterType = [hashtable] }
 	}
 	$script:i18nWarnings = [System.Collections.Generic.List[string]]::new()
 	function Write-I18n {
@@ -225,7 +228,7 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 		foreach ($seg in ($Path -split '\.')) { $cur = $cur[$seg] }
 		$cur
 	}
-	function Invoke-PragmaTest([string]$pragma, [bool]$guest, [string]$expect, [string]$assertParam = 'resourceParams.iconFile') {
+	function Invoke-PragmaTest([string]$pragma, [bool]$guest, [string]$expect, [string]$assertParam = 'Resources.Icon') {
 		$script:GuestMode = $guest
 		$script:Params = @{}
 		$rejected = $false
@@ -244,18 +247,18 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 	$secretFile = Join-Path $buildDir 'pragma-secret.txt'
 	Set-Content -LiteralPath $secretFile -Encoding UTF8 -Value 'secret-value'
 	$env:PRAGMA_SECRET = $secretFile
-	Invoke-PragmaTest '#_pragma resourceParams.iconFile $(Join-Path $env:USERPROFILE "foo.ico")' $false $userProfileFoo
-	Invoke-PragmaTest '#_pragma resourceParams.iconFile $(Join-Path $env:USERPROFILE "foo.ico")' $true $userProfileFoo
-	Invoke-PragmaTest '#_pragma resourceParams.iconFile $((Get-Command pwsh).Source)' $false $pwshSource
-	Invoke-PragmaTest '#_pragma resourceParams.iconFile $((Join-Path $env:USERPROFILE "Foo.ico").ToLower())' $false (Join-Path $env:USERPROFILE 'foo.ico')
-	Invoke-PragmaTest '#_pragma resourceParams.iconFile $((Get-Item C:\Windows).Delete())' $false 'REJECTED'
-	Invoke-PragmaTest '#_pragma resourceParams.iconFile $(Remove-Item C:\x -Recurse)' $false 'REJECTED'
-	Invoke-PragmaTest '#_pragma resourceParams.iconFile $(Get-Content $env:PRAGMA_SECRET)' $false 'secret-value'
-	Invoke-PragmaTest '#_pragma resourceParams.iconFile $(Get-Content $env:PRAGMA_SECRET)' $true 'REJECTED'
-	Invoke-PragmaTest '#_pragma resourceParams.iconFile $PSScriptRoot/foo.ico' $false 'C:\compiled/foo.ico'
-	Invoke-PragmaTest '#_pragma resourceParams.title "prefix$(Split-Path $PSScriptRoot -Leaf)suffix"' $false 'prefixcompiledsuffix' 'resourceParams.title'
-	Invoke-PragmaTest '#_pragma CodeSigning.Path C:\cert.pfx' $false 'C:\cert.pfx' 'CodeSigning.Path'
-	Invoke-PragmaTest '#_pragma resourceParams.meta.deep C:\deep\v' $false 'C:\deep\v' 'resourceParams.meta.deep'
+	Invoke-PragmaTest '#_pragma Resources.Icon $(Join-Path $env:USERPROFILE "foo.ico")' $false $userProfileFoo
+	Invoke-PragmaTest '#_pragma Resources.Icon $(Join-Path $env:USERPROFILE "foo.ico")' $true $userProfileFoo
+	Invoke-PragmaTest '#_pragma Resources.Icon $((Get-Command pwsh).Source)' $false $pwshSource
+	Invoke-PragmaTest '#_pragma Resources.Icon $((Join-Path $env:USERPROFILE "Foo.ico").ToLower())' $false (Join-Path $env:USERPROFILE 'foo.ico')
+	Invoke-PragmaTest '#_pragma Resources.Icon $((Get-Item C:\Windows).Delete())' $false 'REJECTED'
+	Invoke-PragmaTest '#_pragma Resources.Icon $(Remove-Item C:\x -Recurse)' $false 'REJECTED'
+	Invoke-PragmaTest '#_pragma Resources.Icon $(Get-Content $env:PRAGMA_SECRET)' $false 'secret-value'
+	Invoke-PragmaTest '#_pragma Resources.Icon $(Get-Content $env:PRAGMA_SECRET)' $true 'REJECTED'
+	Invoke-PragmaTest '#_pragma Resources.Icon $PSScriptRoot/foo.ico' $false 'C:\compiled/foo.ico'
+	Invoke-PragmaTest '#_pragma Resources.Title "prefix$(Split-Path $PSScriptRoot -Leaf)suffix"' $false 'prefixcompiledsuffix' 'Resources.Title'
+	Invoke-PragmaTest '#_pragma Signing.Certificate C:\cert.pfx' $false 'C:\cert.pfx' 'Signing.Certificate'
+	Invoke-PragmaTest '#_pragma Resources.meta.deep C:\deep\v' $false 'C:\deep\v' 'Resources.meta.deep'
 	# 嵌套 pragma 的根参数必须是哈希表，否则告警 UnknownPragma
 	$script:i18nWarnings.Clear()
 	$script:GuestMode = $false
@@ -290,36 +293,28 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 		throw "nested #_if did not warn about dead code, warnings: $($script:i18nWarnings -join ', ')"
 	}
 
-	# Const-eval 回退（issue 63）：所有回退路径（超时/超长/异常/显式声明）都必须把 IsConst 置回 $false。否则下游会拿从未赋值的 $RowResult 去走 TinySharp，编出一个只输出空行的哑 exe（默认宿主编译被跳过）。#_pragma constEvalTimeout / #_pragma noConstEval 是脚本可用的显式逃生舱，也让本测试无需真的等 7 秒超时。先单测 ConstProgramCheck.ps1 的回退分支，避免为造超时再跑一次完整宿主编译。
-	$constTimeoutPs1 = Join-Path $buildDir 'const-timeout.ps1'
-	Set-Content -LiteralPath $constTimeoutPs1 -Encoding UTF8 -Value @'
-#_pragma constEvalTimeout
-'const-eval-timeout-fallback-ok'
-'@
+	# Const-eval 回退（issue 63）：所有回退路径（超时/超长/异常/显式声明）都必须把 IsConst 置回 $false。否则下游会拿从未赋值的 $RowResult 去走 TinySharp，编出一个只输出空行的哑 exe（默认宿主编译被跳过）。Build.ConstEval.Enabled=0 / Build.ConstEval.Timeout=1 是脚本可用的显式逃生舱，也让本测试无需真的等 7 秒超时。先单测 ConstProgramCheck.ps1 的回退分支，避免为造超时再跑一次完整宿主编译。
 	$AstAnalyzeResult = @{ IsConst = $true }
-	$Content = Get-Content -LiteralPath $constTimeoutPs1 -Raw
+	$noConstEval = $false
+	$constEvalTimeout = $true
 	. (Join-Path $repoRoot 'src/ConstProgramCheck.ps1')
 	if ($AstAnalyzeResult.IsConst) {
-		throw 'constEvalTimeout pragma left IsConst=$true (issue 63): should fall back to the normal program frame'
+		throw 'Build.ConstEval.Timeout left IsConst=$true (issue 63): should fall back to the normal program frame'
 	}
 
-	$constNoEvalPs1 = Join-Path $buildDir 'const-noeval.ps1'
-	Set-Content -LiteralPath $constNoEvalPs1 -Encoding UTF8 -Value @'
-#_pragma noConstEval
-'const-noeval-fallback-ok'
-'@
 	$AstAnalyzeResult = @{ IsConst = $true }
-	$Content = Get-Content -LiteralPath $constNoEvalPs1 -Raw
+	$noConstEval = $true
+	$constEvalTimeout = $false
 	. (Join-Path $repoRoot 'src/ConstProgramCheck.ps1')
 	if ($AstAnalyzeResult.IsConst) {
-		throw 'noConstEval pragma left IsConst=$true (issue 63): should skip const eval'
+		throw 'Build.ConstEval.Enabled=0 left IsConst=$true (issue 63): should skip const eval'
 	}
 
 	# 端到端：带逃生舱 pragma 的脚本必须回退成可用的普通宿主 exe（而不是哑 exe），且预处理器不得把它当未知 pragma 报错。
 	$constE2ePs1 = Join-Path $buildDir 'const-fallback-e2e.ps1'
 	$constE2eExe = Join-Path $buildDir 'const-fallback-e2e.exe'
 	Set-Content -LiteralPath $constE2ePs1 -Encoding UTF8 -Value @'
-#_pragma constEvalTimeout
+#_pragma Build.ConstEval.Timeout 1
 'const-fallback-e2e-ok'
 '@
 	ps12exe -inputFile $constE2ePs1 -outputFile $constE2eExe | Write-Host

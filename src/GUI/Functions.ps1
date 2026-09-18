@@ -1,55 +1,64 @@
 ﻿function Get-UIData {
 	@{
-		inputFile        = $Script:refs.CompileFileTextBox.Text
-		outputFile       = $Script:refs.OutputFileTextBox.Text
-		CompilerOptions  = $Script:refs.CompileParamsTextBox.Text
-		TempDir          = $Script:refs.TempDirTextBox.Text
-		minifyer         = $Script:refs.MinifyScriptTextBox.Text
-		prepareDebug     = $Script:refs.DebugInfoCheckBox.Checked
-		architecture     = if ($Script:refs.x64CheckBox.Checked) { 'x64' } elseif ($Script:refs.x86CheckBox.Checked) { 'x86' } else { 'anycpu' }
-		lcid             = $Script:refs.RegionIDTextBox.Text
-		threadingModel   = if ($Script:refs.SingleThreadCheckBox.Checked) { 'STA' } else { 'MTA' }
-		noConsole        = -not $Script:refs.ConsoleAppCheckBox.Checked
-		UNICODEEncoding  = $Script:refs.UnicodeEncodingCheckBox.Enabled -and $Script:refs.UnicodeEncodingCheckBox.Checked
-		credentialGUI    = $Script:refs.CredentialGUICheckBox.Enabled -and $Script:refs.CredentialGUICheckBox.Checked
-		resourceParams   = @{
-			iconFile    = $Script:refs.IconFileTextBox.Text
-			title       = $Script:refs.TitleTextBox.Text
-			description = $Script:refs.DescriptionTextBox.Text
-			company     = $Script:refs.CompanyTextBox.Text
-			product     = $Script:refs.ProductNameTextBox.Text
-			copyright   = $Script:refs.CopyrightInfoTextBox.Text
-			trademark   = $Script:refs.TrademarkInfoTextBox.Text
-			version     = $Script:refs.VersionTextBox.Text
+		inputFile  = $Script:refs.CompileFileTextBox.Text
+		outputFile = $Script:refs.OutputFileTextBox.Text
+		App        = @{
+			Windowed         = -not $Script:refs.ConsoleAppCheckBox.Checked
+			Silence          = @(
+				if ($Script:refs.DisableOutputStreamCheckBox.Checked) { 'Output'; 'Verbose' }
+				if ($Script:refs.DisableErrorStreamCheckBox.Checked) { 'Error'; 'Warning'; 'Debug' }
+			)
+			OutputEncoding   = if ($Script:refs.UnicodeEncodingCheckBox.Enabled -and $Script:refs.UnicodeEncodingCheckBox.Checked) { 'UTF16LE' } else { 'Default' }
+			VisualStyles     = -not ($Script:refs.IgnoreVisualStylesCheckBox.Enabled -and $Script:refs.IgnoreVisualStylesCheckBox.Checked)
+			ExitOnCancel     = $Script:refs.ExitOnCancelCheckBox.Enabled -and $Script:refs.ExitOnCancelCheckBox.Checked
+			CredentialGUI    = $Script:refs.CredentialGUICheckBox.Enabled -and $Script:refs.CredentialGUICheckBox.Checked
+			DpiAware         = $Script:refs.DPIAwareCheckBox.Enabled -and $Script:refs.DPIAwareCheckBox.Checked
+			WinFormsDpiAware = $Script:refs.WinFormsDPIAwareCheckBox.Enabled -and $Script:refs.WinFormsDPIAwareCheckBox.Checked
 		}
-		configFile       = $Script:refs.ConfigFileCheckBox.Checked
-		noOutput         = $Script:refs.DisableOutputStreamCheckBox.Checked
-		noError          = $Script:refs.DisableErrorStreamCheckBox.Checked
-		noVisualStyles   = $Script:refs.IgnoreVisualStylesCheckBox.Enabled -and $Script:refs.IgnoreVisualStylesCheckBox.Checked
-		exitOnCancel     = $Script:refs.ExitOnCancelCheckBox.Enabled -and $Script:refs.ExitOnCancelCheckBox.Checked
-		DPIAware         = $Script:refs.DPIAwareCheckBox.Enabled -and $Script:refs.DPIAwareCheckBox.Checked
-		winFormsDPIAware = $Script:refs.WinFormsDPIAwareCheckBox.Enabled -and $Script:refs.WinFormsDPIAwareCheckBox.Checked
-		requireAdmin     = $Script:refs.RequestAdminCheckBox.Checked
-		supportOS        = $Script:refs.MoreOSFeaturesCheckBox.Checked
-		virtualize       = $Script:refs.EnableVirtualizationCheckBox.Checked
-		longPaths        = $Script:refs.LongPathSupportCheckBox.Checked
-		CodeSigning      = if ($Script:refs.EnableCodeSigningCheckBox.Checked) {
-			$codeSigning = @{}
+		Os         = @{
+			Admin      = $Script:refs.RequestAdminCheckBox.Checked
+			ModernOS   = $Script:refs.MoreOSFeaturesCheckBox.Checked
+			LongPaths  = $Script:refs.LongPathSupportCheckBox.Checked
+			Virtualize = $Script:refs.EnableVirtualizationCheckBox.Checked
+		}
+		Build      = @{
+			Target     = 'Framework4.0'
+			Platform   = if ($Script:refs.x64CheckBox.Checked) { 'x64' } elseif ($Script:refs.x86CheckBox.Checked) { 'x86' } else { 'AnyCpu' }
+			Apartment  = if ($Script:refs.SingleThreadCheckBox.Checked) { 'STA' } else { 'MTA' }
+			Culture    = $Script:refs.RegionIDTextBox.Text
+			Options    = $Script:refs.CompileParamsTextBox.Text
+			KeepSource = $Script:refs.DebugInfoCheckBox.Checked
+			Minify     = $Script:refs.MinifyScriptTextBox.Text
+			TempDir    = $Script:refs.TempDirTextBox.Text
+		}
+		Resources  = @{
+			Icon        = $Script:refs.IconFileTextBox.Text
+			Title       = $Script:refs.TitleTextBox.Text
+			Description = $Script:refs.DescriptionTextBox.Text
+			Company     = $Script:refs.CompanyTextBox.Text
+			Product     = $Script:refs.ProductNameTextBox.Text
+			Copyright   = $Script:refs.CopyrightInfoTextBox.Text
+			Trademark   = $Script:refs.TrademarkInfoTextBox.Text
+			Version     = $Script:refs.VersionTextBox.Text
+		}
+		Signing    = if ($Script:refs.EnableCodeSigningCheckBox.Checked) {
+			$signing = @{}
 			if ($Script:refs.CertificatePathTextBox.Text) {
-				$codeSigning.Path = $Script:refs.CertificatePathTextBox.Text
+				$signing.Certificate = $Script:refs.CertificatePathTextBox.Text
 				if ($Script:refs.CertificatePasswordTextBox.Text) {
-					$codeSigning.Password = ConvertTo-SecureString $Script:refs.CertificatePasswordTextBox.Text -AsPlainText -Force
+					$signing.Password = ConvertTo-SecureString $Script:refs.CertificatePasswordTextBox.Text -AsPlainText -Force
 				}
 			}
 			if ($Script:refs.CertificateThumbprintTextBox.Text) {
-				$codeSigning.Thumbprint = $Script:refs.CertificateThumbprintTextBox.Text
+				$signing.Thumbprint = $Script:refs.CertificateThumbprintTextBox.Text
 			}
 			if ($Script:refs.TimestampServerTextBox.Text) {
-				$codeSigning.TimestampServer = $Script:refs.TimestampServerTextBox.Text
+				$signing.Timestamp = $Script:refs.TimestampServerTextBox.Text
 			}
-			if ($codeSigning.Count -gt 0) { $codeSigning } else { $null }
+			if ($signing.Count -gt 0) { $signing } else { $null }
 		}
 		else { $null }
+		ConfigFile = $Script:refs.ConfigFileCheckBox.Checked
 	}
 }
 function Set-UIData {
@@ -59,48 +68,49 @@ function Set-UIData {
 	)
 	$Script:refs.CompileFileTextBox.Text = $UIData.inputFile
 	$Script:refs.OutputFileTextBox.Text = $UIData.outputFile
-	$Script:refs.CompileParamsTextBox.Text = $UIData.CompilerOptions
-	$Script:refs.TempDirTextBox.Text = $UIData.TempDir
-	$Script:refs.MinifyScriptTextBox.Text = $UIData.minifyer
-	$Script:refs.DebugInfoCheckBox.Checked = $UIData.prepareDebug
-	$Script:refs.x64CheckBox.Checked = $UIData.architecture -eq 'x64'
-	$Script:refs.x86CheckBox.Checked = $UIData.architecture -eq 'x86'
-	$Script:refs.AnyCPUCheckBox.Checked = $UIData.architecture -eq 'anycpu'
-	$Script:refs.RegionIDTextBox.Text = $UIData.lcid
-	$Script:refs.SingleThreadCheckBox.Checked = $UIData.threadingModel -eq 'STA'
-	$Script:refs.MultiThreadCheckBox.Checked = $UIData.threadingModel -eq 'MTA'
-	$Script:refs.ConsoleAppCheckBox.Checked = -not $UIData.noConsole
-	$Script:refs.UnicodeEncodingCheckBox.Checked = $UIData.UNICODEEncoding
-	$Script:refs.CredentialGUICheckBox.Checked = $UIData.credentialGUI
-	$Script:refs.IconFileTextBox.Text = $UIData.resourceParams.iconFile
-	$Script:refs.TitleTextBox.Text = $UIData.resourceParams.title
-	$Script:refs.DescriptionTextBox.Text = $UIData.resourceParams.description
-	$Script:refs.CompanyTextBox.Text = $UIData.resourceParams.company
-	$Script:refs.ProductNameTextBox.Text = $UIData.resourceParams.product
-	$Script:refs.CopyrightInfoTextBox.Text = $UIData.resourceParams.copyright
-	$Script:refs.TrademarkInfoTextBox.Text = $UIData.resourceParams.trademark
-	$Script:refs.VersionTextBox.Text = $UIData.resourceParams.version
-	$Script:refs.ConfigFileCheckBox.Checked = $UIData.configFile
-	$Script:refs.DisableOutputStreamCheckBox.Checked = $UIData.noOutput
-	$Script:refs.DisableErrorStreamCheckBox.Checked = $UIData.noError
-	$Script:refs.IgnoreVisualStylesCheckBox.Checked = $UIData.noVisualStyles
-	$Script:refs.ExitOnCancelCheckBox.Checked = $UIData.exitOnCancel
-	$Script:refs.DPIAwareCheckBox.Checked = $UIData.DPIAware
-	$Script:refs.WinFormsDPIAwareCheckBox.Checked = $UIData.winFormsDPIAware
-	$Script:refs.RequestAdminCheckBox.Checked = $UIData.requireAdmin
-	$Script:refs.MoreOSFeaturesCheckBox.Checked = $UIData.supportOS
-	$Script:refs.EnableVirtualizationCheckBox.Checked = $UIData.virtualize
-	$Script:refs.LongPathSupportCheckBox.Checked = $UIData.longPaths
-	if ($UIData.CodeSigning) {
+	$Script:refs.CompileParamsTextBox.Text = $UIData.Build.Options
+	$Script:refs.TempDirTextBox.Text = $UIData.Build.TempDir
+	$Script:refs.MinifyScriptTextBox.Text = $UIData.Build.Minify
+	$Script:refs.DebugInfoCheckBox.Checked = $UIData.Build.KeepSource
+	$Script:refs.x64CheckBox.Checked = $UIData.Build.Platform -eq 'x64'
+	$Script:refs.x86CheckBox.Checked = $UIData.Build.Platform -eq 'x86'
+	$Script:refs.AnyCPUCheckBox.Checked = $UIData.Build.Platform -notin @('x64', 'x86')
+	$Script:refs.RegionIDTextBox.Text = $UIData.Build.Culture
+	$Script:refs.SingleThreadCheckBox.Checked = $UIData.Build.Apartment -ne 'MTA'
+	$Script:refs.MultiThreadCheckBox.Checked = $UIData.Build.Apartment -eq 'MTA'
+	$Script:refs.ConsoleAppCheckBox.Checked = -not $UIData.App.Windowed
+	$Script:refs.UnicodeEncodingCheckBox.Checked = $UIData.App.OutputEncoding -eq 'UTF16LE'
+	$Script:refs.CredentialGUICheckBox.Checked = $UIData.App.CredentialGUI
+	$Script:refs.IconFileTextBox.Text = $UIData.Resources.Icon
+	$Script:refs.TitleTextBox.Text = $UIData.Resources.Title
+	$Script:refs.DescriptionTextBox.Text = $UIData.Resources.Description
+	$Script:refs.CompanyTextBox.Text = $UIData.Resources.Company
+	$Script:refs.ProductNameTextBox.Text = $UIData.Resources.Product
+	$Script:refs.CopyrightInfoTextBox.Text = $UIData.Resources.Copyright
+	$Script:refs.TrademarkInfoTextBox.Text = $UIData.Resources.Trademark
+	$Script:refs.VersionTextBox.Text = $UIData.Resources.Version
+	$Script:refs.ConfigFileCheckBox.Checked = $UIData.ConfigFile
+	$Silence = @($UIData.App.Silence)
+	$Script:refs.DisableOutputStreamCheckBox.Checked = ($Silence -contains 'Output') -or ($Silence -contains '*')
+	$Script:refs.DisableErrorStreamCheckBox.Checked = ($Silence -contains 'Error') -or ($Silence -contains '*')
+	$Script:refs.IgnoreVisualStylesCheckBox.Checked = -not $UIData.App.VisualStyles
+	$Script:refs.ExitOnCancelCheckBox.Checked = $UIData.App.ExitOnCancel
+	$Script:refs.DPIAwareCheckBox.Checked = $UIData.App.DpiAware
+	$Script:refs.WinFormsDPIAwareCheckBox.Checked = $UIData.App.WinFormsDpiAware
+	$Script:refs.RequestAdminCheckBox.Checked = $UIData.Os.Admin
+	$Script:refs.MoreOSFeaturesCheckBox.Checked = $UIData.Os.ModernOS
+	$Script:refs.EnableVirtualizationCheckBox.Checked = $UIData.Os.Virtualize
+	$Script:refs.LongPathSupportCheckBox.Checked = $UIData.Os.LongPaths
+	if ($UIData.Signing) {
 		$Script:refs.EnableCodeSigningCheckBox.Checked = $true
-		$Script:refs.CertificatePathTextBox.Text = $UIData.CodeSigning.Path
-		if ($UIData.CodeSigning.Password) {
-			$BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($UIData.CodeSigning.Password)
+		$Script:refs.CertificatePathTextBox.Text = $UIData.Signing.Certificate
+		if ($UIData.Signing.Password) {
+			$BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($UIData.Signing.Password)
 			$Script:refs.CertificatePasswordTextBox.Text = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
 			[System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
 		}
-		$Script:refs.CertificateThumbprintTextBox.Text = $UIData.CodeSigning.Thumbprint
-		$Script:refs.TimestampServerTextBox.Text = $UIData.CodeSigning.TimestampServer
+		$Script:refs.CertificateThumbprintTextBox.Text = $UIData.Signing.Thumbprint
+		$Script:refs.TimestampServerTextBox.Text = $UIData.Signing.Timestamp
 	}
 	else {
 		$Script:refs.EnableCodeSigningCheckBox.Checked = $false
@@ -114,32 +124,34 @@ function Set-UIData {
 function Get-ps12exeArgs {
 	$UIData = Get-UIData
 	$result = $UIData.Clone()
-	$result.minifyer = [System.Management.Automation.Language.Parser]::ParseInput($UIData.minifyer, [ref]$null, [ref]$null).GetScriptBlock()
+	$result.Build.Minify = [System.Management.Automation.Language.Parser]::ParseInput($UIData.Build.Minify, [ref]$null, [ref]$null).GetScriptBlock()
 	if ($ConfigFile) {
-		# 若inputFile、outputFile、TempDir为相对路径，转换为绝对路径
-		@('inputFile', 'outputFile', 'TempDir') | ForEach-Object {
+		# 若 inputFile、outputFile、Build.TempDir 为相对路径，转换为绝对路径
+		@('inputFile', 'outputFile') | ForEach-Object {
 			if ($UIData.$_ -and -not [System.IO.Path]::IsPathRooted($UIData.$_)) {
 				$UIData.$_ = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfigFile -ChildPath $UIData.$_))
 			}
 		}
-		# 若资源图标为相对路径，转换为绝对路径
-		if ($UIData.resourceParams.iconFile -and -not [System.IO.Path]::IsPathRooted($UIData.resourceParams.iconFile)) {
-			$UIData.resourceParams.iconFile = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfigFile -ChildPath $UIData.resourceParams.iconFile))
+		if ($UIData.Build.TempDir -and -not [System.IO.Path]::IsPathRooted($UIData.Build.TempDir)) {
+			$UIData.Build.TempDir = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfigFile -ChildPath $UIData.Build.TempDir))
 		}
-		# 处理 CodeSigning 中的 Path 相对路径
-		if ($UIData.CodeSigning -and $UIData.CodeSigning.Path -and -not [System.IO.Path]::IsPathRooted($UIData.CodeSigning.Path)) {
-			$UIData.CodeSigning.Path = [System.IO.Path]::GetFullPath((Join-Path -Path (Split-Path $ConfigFile -Parent) -ChildPath $UIData.CodeSigning.Path))
+		# 若资源图标为相对路径，转换为绝对路径
+		if ($UIData.Resources.Icon -and -not [System.IO.Path]::IsPathRooted($UIData.Resources.Icon)) {
+			$UIData.Resources.Icon = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfigFile -ChildPath $UIData.Resources.Icon))
+		}
+		# 处理 Signing 中 Certificate 的相对路径
+		if ($UIData.Signing -and $UIData.Signing.Certificate -and -not [System.IO.Path]::IsPathRooted($UIData.Signing.Certificate)) {
+			$UIData.Signing.Certificate = [System.IO.Path]::GetFullPath((Join-Path -Path (Split-Path $ConfigFile -Parent) -ChildPath $UIData.Signing.Certificate))
 		}
 	}
-	$UIData.GetEnumerator() | Where-Object { $_.Value -eq '' } | ForEach-Object { $result.Remove($_.Key) }
-	# 清理 CodeSigning hashtable 中的空值
-	if ($result.CodeSigning) {
-		$result.CodeSigning.GetEnumerator() | Where-Object { $_.Value -eq '' -or $_.Value -eq $null } | ForEach-Object {
-			$result.CodeSigning.Remove($_.Key)
+	# 清理各对象中的空值
+	foreach ($groupName in @('App', 'Os', 'Build', 'Resources', 'Signing')) {
+		$group = $result[$groupName]
+		if ($group -isnot [hashtable]) { continue }
+		@($group.Keys) | ForEach-Object {
+			if ($group[$_] -eq '' -or $null -eq $group[$_]) { $group.Remove($_) }
 		}
-		if ($result.CodeSigning.Count -eq 0) {
-			$result.Remove('CodeSigning')
-		}
+		if ($group.Count -eq 0) { $result.Remove($groupName) }
 	}
 	$result
 }

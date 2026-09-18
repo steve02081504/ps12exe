@@ -9,7 +9,7 @@ real windows executables are generated. You may use the graphical front end ps12
 Alternatively, preprocesses a PowerShell script, handling directives like `#_if`, `#_else`, `#_endif`, and `#_include`.
 
 Please see Remarks on project page for topics "GUI mode output formatting", "Config files", "Password security",
-"Script variables" and "Window in background in -noConsole mode".
+"Script variables" and "Window in background in App.Windowed mode".
 
 .PARAMETER inputFile
 Powershell script file path or url to convert to executable (file has to be UTF8 or UTF16 encoded)
@@ -20,122 +20,86 @@ The content of the PowerShell script to convert to executable
 .PARAMETER outputFile
 destination executable file name or folder, defaults to inputFile with extension '.exe'
 
-.PARAMETER CompilerOptions
-additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)
+.PARAMETER App
+A hashtable describing how the produced application behaves. Supported keys:
+- Windowed: build a Windows Forms application without a console window (default: $false)
+- Silence: stream names to suppress; one or more of 'Output', 'Verbose', 'Error', 'Warning', 'Debug', or '*' (default: empty)
+- OutputEncoding: console output encoding; 'Default', 'UTF8' or 'UTF16LE' (default: 'Default')
+- VisualStyles: enable visual styles for GUI applications (default: $true)
+- ExitOnCancel: exit when Cancel or "X" is selected in a Read-Host input box (default: $false)
+- CredentialGUI: use a GUI for prompting credentials in console mode (default: $false)
+- DpiAware: mark the compiled executable as DPI aware (default: $false)
+- WinFormsDpiAware: let WinForms use DPI scaling; forces -ConfigFile (default: $false)
 
-.PARAMETER TempDir
-directory for storing temporary files (default is random generated temp directory in %temp%)
+.PARAMETER Os
+A hashtable of OS integration options. Supported keys:
+- Admin: require an elevated context, i.e. UAC (default: $false)
+- ModernOS: declare support for the newest Windows versions (default: $false)
+- LongPaths: enable paths longer than 260 characters (default: $false)
+- Virtualize: activate application virtualization; forces x86 (default: $false)
 
-.PARAMETER minifyer
-scriptblock to minify the script before compiling
+.PARAMETER Build
+A hashtable of build/toolchain options. Supported keys:
+- Target: target runtime; 'Framework4.0' (default), 'Framework2.0' or 'Core'.
+  'Core' compiles a PowerShell Core (.NET) executable: both the build machine and the target machine must have
+  PowerShell Core and a matching .NET runtime installed, and the generated executable is much larger.
+- Platform: 'AnyCpu' (default), 'x64' or 'x86'
+- Apartment: 'STA' (default) or 'MTA'
+- Culture: culture name used at runtime by the compiled executable (default: current user culture)
+- Options: additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)
+- KeepSource: keep the generated C# source for debugging (default: $false)
+- Minify: scriptblock to minify the script before compiling
+- TempDir: directory for storing temporary files (default: random directory in %temp%)
 
-.PARAMETER lcid
-location ID for the compiled executable. Current user culture if not specified
-
-.PARAMETER noConsole
-the resulting executable will be a Windows Forms app without a console window.
-You might want to pipe your output to Out-String to prevent a message box for every line of output
-(example: dir C:\ | Out-String)
-
-.PARAMETER prepareDebug
-create helpful information for debugging of generated executable. See parameter -debug there
-
-.PARAMETER architecture
-compile for specific runtime only. Possible values are 'x64' and 'x86' and 'anycpu'
-
-.PARAMETER threadingModel
-Threading model for the compiled executable. Possible values are 'STA' and 'MTA'
-
-.PARAMETER resourceParams
-A hashtable that contains resource parameters for the compiled executable. Possible keys are 'iconFile', 'title', 'description', 'company', 'product', 'copyright', 'trademark', 'version'
-iconFile can be a file path or url to an icon file. All other values are strings.
+.PARAMETER Resources
+A hashtable of version resources embedded into the compiled executable.
+Supported keys are 'Icon', 'Title', 'Description', 'Company', 'Product', 'Copyright', 'Trademark', 'Version'.
+Icon can be a file path or URL to an icon file. All other values are strings.
 see https://msdn.microsoft.com/en-us/library/system.reflection.assemblytitleattribute(v=vs.110).aspx for details
 
-.PARAMETER UNICODEEncoding
-encode output as UNICODE in console mode, useful to display special encoded chars
-
-.PARAMETER credentialGUI
-use GUI for prompting credentials in console mode instead of console input
-
-.PARAMETER configFile
-write a config file (<outputfile>.exe.config)
-
-.PARAMETER noOutput
-the resulting executable will generate no standard output (includes verbose and information channel)
-
-.PARAMETER noError
-the resulting executable will generate no error output (includes warning and debug channel)
-
-.PARAMETER noVisualStyles
-disable visual styles for a generated windows GUI application. Only applicable with parameter -noConsole
-
-.PARAMETER exitOnCancel
-exits program when Cancel or "X" is selected in a Read-Host input box. Only applicable with parameter -noConsole
-
-.PARAMETER DPIAware
-if display scaling is activated, GUI controls will be scaled if possible.
-
-.PARAMETER winFormsDPIAware
-creates an entry in the config file for WinForms to use DPI scaling. Forces -configFile and -supportOS
-
-.PARAMETER requireAdmin
-if UAC is enabled, compiled executable will run only in elevated context (UAC dialog appears if required)
-
-.PARAMETER supportOS
-use functions of newest Windows versions (execute [Environment]::OSVersion to see the difference)
-
-.PARAMETER virtualize
-application virtualization is activated (forcing x86 runtime)
-
-.PARAMETER longPaths
-enable long paths ( > 260 characters) if enabled on OS (works only with Windows 10 or up)
-
-.PARAMETER targetRuntime
-the target runtime to compile for. Possible values are 'Framework4.0', 'Framework2.0' or 'Core', default is 'Framework4.0'.
-'Core' compiles a PowerShell Core (.NET) executable: both the build machine and the target machine must have
-PowerShell Core and a matching .NET runtime installed, and the generated executable is much larger.
-
-.PARAMETER GuestMode
-Compile scripts with additional protection, prevent native files from being accessed
-
-.PARAMETER Localize
-The language code to be used for server-side logging
-
-.PARAMETER SkipVersionCheck
-Do not check for updates
-
-.PARAMETER help
-Display localized help message
+.PARAMETER Signing
+A hashtable of code signing options. Supported keys:
+- Certificate: path to a PFX certificate file
+- Password: SecureString password for the PFX file
+- Thumbprint: certificate thumbprint from the Windows Certificate Store
+- Timestamp: timestamp server URL (default: http://timestamp.digicert.com)
+Either Certificate or Thumbprint must be specified.
 
 .PARAMETER PreprocessOnly
 only preprocesses the input PowerShell script and outputs the preprocessed code. No executable is generated.
 
-.PARAMETER GolfMode
+.PARAMETER Golf
 Enables golf mode, adding abbreviations and common functions to the script.
 
-.PARAMETER CodeSigning
-A hashtable containing code signing options for the compiled executable. Supported keys:
-- Path: Path to PFX certificate file
-- Password: SecureString password for the PFX file
-- Thumbprint: Certificate thumbprint from Windows Certificate Store
-- TimestampServer: Timestamp server URL (default: http://timestamp.digicert.com)
+.PARAMETER Sandbox
+Compile scripts with additional protection, prevent native files from being accessed.
 
-Either Path or Thumbprint must be specified.
+.PARAMETER NoUpdateCheck
+Do not check for updates.
+
+.PARAMETER Locale
+The language code to be used for compiler messages.
+
+.PARAMETER ConfigFile
+write a config file (<outputfile>.exe.config)
+
+.PARAMETER help
+Display localized help message
 
 .EXAMPLE
 ps12exe C:\Data\MyScript.ps1
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScript.exe as console executable
 .EXAMPLE
-ps12exe -inputFile C:\Data\MyScript.ps1 -outputFile C:\Data\MyScriptGUI.exe -resourceParams @{iconFile='C:\Data\Icon.ico'; title='MyScript'; version='0.0.0.1'} -noConsole
+ps12exe -inputFile C:\Data\MyScript.ps1 -outputFile C:\Data\MyScriptGUI.exe -Resources @{Icon='C:\Data\Icon.ico'; Title='MyScript'; Version='0.0.0.1'} -App @{Windowed=$true}
 Compiles C:\Data\MyScript.ps1 to C:\Data\MyScriptGUI.exe as graphical executable, icon and meta data
 .EXAMPLE
 ps12exe -inputFile C:\Data\MyScript.ps1 -PreprocessOnly
 Preprocesses C:\Data\MyScript.ps1 and outputs the preprocessed code.
 .EXAMPLE
-ps12exe -inputFile C:\Data\MyScript.ps1 -outputFile C:\Data\MyScript.exe -CodeSigning @{Path="C:\Cert\mycert.pfx"; Password=(ConvertTo-SecureString "password" -AsPlainText -Force); TimestampServer="http://timestamp.digicert.com"}
+ps12exe -inputFile C:\Data\MyScript.ps1 -outputFile C:\Data\MyScript.exe -Signing @{Certificate='C:\Cert\mycert.pfx'; Password=(ConvertTo-SecureString 'password' -AsPlainText -Force); Timestamp='http://timestamp.digicert.com'}
 Compiles C:\Data\MyScript.ps1 and signs it with a PFX certificate.
 .EXAMPLE
-ps12exe -inputFile C:\Data\MyScript.ps1 -outputFile C:\Data\MyScript.exe -CodeSigning @{Thumbprint="ABC123DEF456"}
+ps12exe -inputFile C:\Data\MyScript.ps1 -outputFile C:\Data\MyScript.exe -Signing @{Thumbprint='ABC123DEF456'}
 Compiles C:\Data\MyScript.ps1 and signs it with a certificate from Windows Certificate Store.
 #>
 [CmdletBinding(DefaultParameterSetName = 'InputFile')]
@@ -148,67 +112,74 @@ Param(
 	[Parameter(ParameterSetName = 'InputFile', Position = 1)]
 	[Parameter(ParameterSetName = 'Content', Position = 0)]
 	[ValidatePattern(".*\.(exe|com|scr|bin|bat|cmd)$")]
-	[String]$outputFile = $NULL, [String]$CompilerOptions = '/o+ /debug-', [String]$TempDir = $NULL,
-	[scriptblock]$minifyer = $null, [Switch]$noConsole, [Switch]$prepareDebug, [int]$lcid,
-	[ValidateSet('x64', 'x86', 'anycpu')]
-	[String]$architecture = 'anycpu',
-	[ValidateSet('STA', 'MTA')]
-	[String]$threadingModel = 'STA',
+	[String]$outputFile = $NULL,
 	[ArgumentCompleter({
 		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-		$validKeys = @('iconFile', 'title', 'description', 'company', 'product', 'copyright', 'trademark', 'version')
+		$validKeys = @('Windowed', 'Silence', 'OutputEncoding', 'VisualStyles', 'ExitOnCancel', 'CredentialGUI', 'DpiAware', 'WinFormsDpiAware')
 		if (-not $wordToComplete) { return "@{}" }
 		$wordToComplete = $wordToComplete.Trim('"', "'", ' ', '`t', '{', '}')
 		if ($wordToComplete -match '=') { return }
 		$validKeys | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object { "$_=" }
 	})]
-	[HashTable]$resourceParams = @{},
+	[HashTable]$App = @{},
 	[ArgumentCompleter({
 		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+		$validKeys = @('Admin', 'ModernOS', 'LongPaths', 'Virtualize')
 		if (-not $wordToComplete) { return "@{}" }
-		$validKeys = @('Path', 'Password', 'Thumbprint', 'TimestampServer')
 		$wordToComplete = $wordToComplete.Trim('"', "'", ' ', '`t', '{', '}')
 		if ($wordToComplete -match '=') { return }
 		$validKeys | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object { "$_=" }
 	})]
-	[Hashtable]$CodeSigning,
-	[Switch]$UNICODEEncoding,
-	[Switch]$credentialGUI,
-	[Switch]$configFile,
-	[Switch]$noOutput,
-	[Switch]$noError,
-	[Switch]$noVisualStyles,
-	[Switch]$exitOnCancel,
-	[Switch]$DPIAware,
-	[Switch]$winFormsDPIAware,
-	[Switch]$requireAdmin,
-	[Switch]$supportOS,
-	[Switch]$virtualize,
-	[Switch]$longPaths,
-	[ValidateSet('Framework2.0', 'Framework4.0', 'Core')]
-	[String]$targetRuntime = 'Framework4.0',
-	[Switch]$SkipVersionCheck,
-	[Switch]$GuestMode,
+	[HashTable]$Os = @{},
+	[ArgumentCompleter({
+		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+		$validKeys = @('Target', 'Platform', 'Apartment', 'Culture', 'Options', 'KeepSource', 'Minify', 'TempDir')
+		if (-not $wordToComplete) { return "@{}" }
+		$wordToComplete = $wordToComplete.Trim('"', "'", ' ', '`t', '{', '}')
+		if ($wordToComplete -match '=') { return }
+		$validKeys | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object { "$_=" }
+	})]
+	[HashTable]$Build = @{},
+	[ArgumentCompleter({
+		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+		$validKeys = @('Icon', 'Title', 'Description', 'Company', 'Product', 'Copyright', 'Trademark', 'Version')
+		if (-not $wordToComplete) { return "@{}" }
+		$wordToComplete = $wordToComplete.Trim('"', "'", ' ', '`t', '{', '}')
+		if ($wordToComplete -match '=') { return }
+		$validKeys | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object { "$_=" }
+	})]
+	[HashTable]$Resources = @{},
+	[ArgumentCompleter({
+		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+		if (-not $wordToComplete) { return "@{}" }
+		$validKeys = @('Certificate', 'Password', 'Thumbprint', 'Timestamp')
+		$wordToComplete = $wordToComplete.Trim('"', "'", ' ', '`t', '{', '}')
+		if ($wordToComplete -match '=') { return }
+		$validKeys | Where-Object { $_ -like "$wordToComplete*" } | ForEach-Object { "$_=" }
+	})]
+	[Hashtable]$Signing,
 	[Switch]$PreprocessOnly,
-	[Switch]$GolfMode,
+	[Switch]$Golf,
+	[Switch]$Sandbox,
+	[Switch]$NoUpdateCheck,
 	#_if PSScript
 		[ArgumentCompleter({
 			Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
 			. "$PSScriptRoot\src\LocaleArgCompleter.ps1" @PSBoundParameters
 		})]
 	#_endif
-	[string]$Localize,
-	[Switch]$help,
-	# 内部使用。除非你清楚自己在做什么，否则不要使用。
-	[Parameter(DontShow)]
-	[Switch]$nested,
-	# 内部使用。除非你清楚自己在做什么，否则不要使用。
-	[Parameter(DontShow)]
-	[string]$DllExportList,
-	# 开发用。除非你清楚自己在做什么，否则不要使用。
-	[Parameter(DontShow)]
-	[Switch]$StartupTiming
+	[string]$Locale,
+	[Switch]$ConfigFile,
+	[Switch]$help
 )
+# 对象 API → 内部规范变量。模式类参数必须在预处理之前就绪。
+# 是否由父 ps12exe 交接而来（子宿主）通过环境变量传递，不再占用参数；读到即删，避免污染子进程的后续调用。
+$nested = [bool]$env:PS12EXE_NESTED
+Remove-Item Env:PS12EXE_NESTED -ErrorAction Ignore
+$GuestMode = [bool]$Sandbox
+$GolfMode = [bool]$Golf
+$SkipVersionCheck = [bool]$NoUpdateCheck
+$minifyer = $Build.Minify
 $global:LastExitCode = 0 # 无错误
 $Verbose = $PSCmdlet.MyInvocation.BoundParameters["Verbose"].IsPresent
 $Debug = $DebugPreference -ne 'SilentlyContinue'
@@ -232,7 +203,7 @@ function RollUp {
 }
 if ($Debug) { $DebugPreference = 'Continue' } # 修复 -debug 会把它设为 'Inquire' 的问题
 #_if PSScript
-	$LocaleLoaderArg = @{ Localize = $Localize }
+	$LocaleLoaderArg = @{ Locale = $Locale }
 	if ($nested) { $LocaleLoaderArg.FailedLoadLocaleData = {} }
 #_endif
 $LocalizeData =
@@ -281,7 +252,7 @@ if (-not ($inputFile -or $Content)) {
 		$global:LastExitCode = 2 # 调用格式错误
 	}
 	else {
-		& "$PSScriptRoot\src\Interact\main.ps1" -Localize $Localize # 没有输入时启动交互模式
+		& "$PSScriptRoot\src\Interact\main.ps1" -Locale $Locale # 没有输入时启动交互模式
 	}
 	return
 }
@@ -289,7 +260,6 @@ if (-not ($inputFile -or $Content)) {
 $Params = $PSBoundParameters
 $ParamList = $MyInvocation.MyCommand.Parameters
 $Params.Remove('Content') | Out-Null #防止回滚覆盖
-$Params.Remove('DllExportList') | Out-Null
 $Params.Remove('PreprocessOnly') | Out-Null # 从参数中移除 PreprocessOnly，供编译步骤使用
 
 function bytesOfString([string]$str) {
@@ -390,9 +360,6 @@ else {
 	if (!$TempDir) {
 		Remove-Item $inputFile -ErrorAction SilentlyContinue
 	}
-	if ($DllExportList) {
-		[System.Collections.ArrayList]$DllExportList = $DllExportList | ConvertFrom-Json
-	}
 }
 #_endif
 
@@ -407,21 +374,121 @@ $Params.GetEnumerator() | ForEach-Object {
 	Set-Variable -Name $_.Key -Value $_.Value
 }
 
-# 把默认值与 pragma 结果一起写回 $Params，供跨宿主编译与后续步骤使用
-$Params.architecture = $architecture
-$Params.threadingModel = $threadingModel
-$Params.targetRuntime = $targetRuntime
-$isCoreTarget = $targetRuntime -eq 'Core'
-$resourceParamKeys = @('iconFile', 'title', 'description', 'company', 'product', 'copyright', 'trademark', 'version')
-$resourceParams.GetEnumerator() | ForEach-Object {
-	if (-not $resourceParamKeys.Contains($_.Key)) {
-		Write-I18n Warning InvalidResourceParam $_.Key
+# 对象 API（可能已被 pragma 覆盖）→ 内部规范变量；下游编译器与 C# 帧使用约定的内部变量名。
+function Get-Opt([System.Collections.IDictionary]$Table, [string]$Key, $Default) {
+	if ($Table -and ($Table.Keys -contains $Key)) {
+		$v = $Table[$Key]
+		if ($null -ne $v -and "$v" -ne '') { return $v }
 	}
+	return $Default
+}
+function ConvertTo-OptBool($Value, [bool]$Default) {
+	if ($null -eq $Value) { return $Default }
+	if ($Value -is [bool]) { return $Value }
+	if ($Value -is [switch]) { return [bool]$Value }
+	$s = "$Value".Trim().ToLowerInvariant()
+	if ($s -in @('off', 'false', 'n', 'no', 'unset', '0', 'disable')) { return $false }
+	if ($s -in @('on', 'true', 'y', 'yes', 'set', '1', 'enable')) { return $true }
+	return [bool]$Value
+}
+
+# App
+$noConsole = ConvertTo-OptBool (Get-Opt $App 'Windowed' $false) $false
+$outputEncodingName = "$(Get-Opt $App 'OutputEncoding' 'Default')"
+$UNICODEEncoding = $outputEncodingName -ieq 'UTF16LE'
+$UTF8Encoding = $outputEncodingName -ieq 'UTF8'
+$noVisualStyles = -not (ConvertTo-OptBool (Get-Opt $App 'VisualStyles' $true) $true)
+$exitOnCancel = ConvertTo-OptBool (Get-Opt $App 'ExitOnCancel' $false) $false
+$credentialGUI = ConvertTo-OptBool (Get-Opt $App 'CredentialGUI' $false) $false
+$DPIAware = ConvertTo-OptBool (Get-Opt $App 'DpiAware' $false) $false
+$winFormsDPIAware = ConvertTo-OptBool (Get-Opt $App 'WinFormsDpiAware' $false) $false
+
+# Os
+$requireAdmin = ConvertTo-OptBool (Get-Opt $Os 'Admin' $false) $false
+$supportOS = ConvertTo-OptBool (Get-Opt $Os 'ModernOS' $false) $false
+$longPaths = ConvertTo-OptBool (Get-Opt $Os 'LongPaths' $false) $false
+$virtualize = ConvertTo-OptBool (Get-Opt $Os 'Virtualize' $false) $false
+
+# Build
+$targetRuntime = "$(Get-Opt $Build 'Target' 'Framework4.0')"
+$architecture = "$(Get-Opt $Build 'Platform' 'AnyCpu')"
+$threadingModel = "$(Get-Opt $Build 'Apartment' 'STA')"
+$lcid = "$(Get-Opt $Build 'Culture' '')"
+$CompilerOptions = "$(Get-Opt $Build 'Options' '/o+ /debug-')"
+$prepareDebug = ConvertTo-OptBool (Get-Opt $Build 'KeepSource' $false) $false
+if (Get-Opt $Build 'Minify' $null) { $minifyer = Get-Opt $Build 'Minify' $null }
+$TempDir = "$(Get-Opt $Build 'TempDir' '')"
+if (-not $TempDir) { $TempDir = $NULL }
+# 常量求值控制：ConstEval.Enabled 为 $false 时跳过常量求值；ConstEval.Timeout 为 $true 时按已超时回退
+$ConstEvalOption = Get-Opt $Build 'ConstEval' $null
+$noConstEval = -not (ConvertTo-OptBool (Get-Opt $ConstEvalOption 'Enabled' $true) $true)
+$constEvalTimeout = ConvertTo-OptBool (Get-Opt $ConstEvalOption 'Timeout' $false) $false
+# 内部/开发用（暂不写入文档）
+if (Get-Opt $Build 'DllExports' $null) {
+	[System.Collections.ArrayList]$DllExportList = @(Get-Opt $Build 'DllExports' $null)
+}
+$StartupTiming = ConvertTo-OptBool (Get-Opt $Build 'StartupTiming' $false) $false
+
+# 归一化枚举大小写，保证下游比较与取值一致
+switch -Regex ($architecture) {
+	'(?i)^x64$' { $architecture = 'x64' }
+	'(?i)^x86$' { $architecture = 'x86' }
+	'(?i)^anycpu$' { $architecture = 'anycpu' }
+	default {
+		Write-I18n Warning InvalidBuildPlatform $architecture
+		$architecture = 'anycpu'
+	}
+}
+$threadingModel = if ($threadingModel -ieq 'MTA') { 'MTA' } else { 'STA' }
+switch -Regex ($targetRuntime) {
+	'(?i)^Framework2\.0$' { $targetRuntime = 'Framework2.0' }
+	'(?i)^Framework4\.0$' { $targetRuntime = 'Framework4.0' }
+	'(?i)^Core$' { $targetRuntime = 'Core' }
+	default {
+		Write-I18n Warning InvalidBuildTarget $targetRuntime
+		$targetRuntime = 'Framework4.0'
+	}
+}
+$isCoreTarget = $targetRuntime -eq 'Core'
+
+# App.Silence：静音流，细分到每个 PowerShell 流
+$SilenceStreams = @(Get-Opt $App 'Silence' @())
+if ($SilenceStreams.Count -eq 1 -and $SilenceStreams[0] -is [string]) {
+	$SilenceStreams = $SilenceStreams[0] -split '[,;\s]+'
+}
+$SilenceStreams = @($SilenceStreams | ForEach-Object { "$_".Trim() } | Where-Object { $_ })
+$noOutput = $SilenceStreams -contains 'Output' -or $SilenceStreams -contains '*'
+$noVerbose = $SilenceStreams -contains 'Verbose' -or $SilenceStreams -contains '*'
+$noError = $SilenceStreams -contains 'Error' -or $SilenceStreams -contains '*'
+$noWarning = $SilenceStreams -contains 'Warning' -or $SilenceStreams -contains '*'
+$noDebug = $SilenceStreams -contains 'Debug' -or $SilenceStreams -contains '*'
+
+# Resources → 内部 resourceParams（键名与 C# 帧占位符一致）
+$resourceParamKeys = @('iconFile', 'title', 'description', 'company', 'product', 'copyright', 'trademark', 'version')
+$resourceAlias = @{
+	icon = 'iconFile'; title = 'title'; description = 'description'; company = 'company'
+	product = 'product'; copyright = 'copyright'; trademark = 'trademark'; version = 'version'
+}
+$resourceParams = @{}
+foreach ($k in @($Resources.Keys)) {
+	$lk = "$k".ToLowerInvariant()
+	if ($resourceAlias.ContainsKey($lk)) { $resourceParams[$resourceAlias[$lk]] = $Resources[$k] }
+	else { Write-I18n Warning InvalidResourceParam $k }
 }
 $NoResource = -not $resourceParams.Count
 # 由于其他的resourceParams参数需要转义，iconFile参数不需要转义，所以提取出来单独处理
 $iconFile = $resourceParams['iconFile']
 $resourceParams.Remove('iconFile')
+
+# Signing → 内部 CodeSigning
+$CodeSigning = $null
+if ($Signing -and $Signing.Count) {
+	$CodeSigning = @{}
+	if (Get-Opt $Signing 'Certificate' '') { $CodeSigning.Path = Get-Opt $Signing 'Certificate' '' }
+	if (Get-Opt $Signing 'Password' '') { $CodeSigning.Password = Get-Opt $Signing 'Password' '' }
+	if (Get-Opt $Signing 'Thumbprint' '') { $CodeSigning.Thumbprint = Get-Opt $Signing 'Thumbprint' '' }
+	if (Get-Opt $Signing 'Timestamp' '') { $CodeSigning.TimestampServer = Get-Opt $Signing 'Timestamp' '' }
+}
 
 # 无论给定的是相对路径还是绝对路径，都获取绝对路径
 if (-not $inputFile) {
@@ -449,10 +516,15 @@ else {
 	function UsingHost($Boundparameters, $HostExe) {
 		# 写临时脚本，把参数串成命令行交给另一个 PowerShell 宿主编译，再等它退出。
 		$Params = ([hashtable]$Boundparameters).Clone()
-		$Params.Remove("minifyer")
 		$Params.Remove("Content")
 		$Params.Remove("inputFile")
 		$Params.Remove("outputFile")
+		# scriptblock 无法序列化，从 Build 里剔除 Minify 再交给子宿主
+		if ($Params.Build -is [hashtable]) {
+			$BuildForChild = @{}
+			$Params.Build.GetEnumerator() | ForEach-Object { if ($_.Key -ne 'Minify') { $BuildForChild[$_.Key] = $_.Value } }
+			if ($BuildForChild.Count) { $Params.Build = $BuildForChild } else { $Params.Remove('Build') }
+		}
 		$TempFile = if ($TempDir) {
 			New-Item -ItemType Directory -Path $TempDir -ErrorAction SilentlyContinue | Out-Null
 			[System.IO.Path]::Combine($TempDir, 'main.ps1')
@@ -461,20 +533,23 @@ else {
 		$Content | Set-Content $TempFile -Encoding UTF8 -NoNewline
 		$Params.Add("outputFile", $outputFile)
 		$Params.Add("inputFile", $TempFile)
-		if ($TempDir) { $Params.TempDir = $TempDir }
-		# resourceParams 以哈希表整体序列化给子宿主；iconFile 已单独提取，这里补回去
-		$UsingResourceParams = @{}
-		$resourceParams.GetEnumerator() | ForEach-Object { $UsingResourceParams[$_.Key] = $_.Value }
-		if ($iconFile) { $UsingResourceParams.iconFile = $iconFile }
-		if ($UsingResourceParams.Count) { $Params.resourceParams = $UsingResourceParams }
-		else { $Params.Remove("resourceParams") }
-		if ($DllExportList.Length) { $Params.DllExportList = ConvertTo-Json -depth 7 -Compress -InputObject $DllExportList }
+		if ($TempDir) {
+			if (-not ($Params.Build -is [hashtable])) { $Params.Build = @{} }
+			$Params.Build.TempDir = $TempDir
+		}
+		if ($DllExportList.Length) {
+			if (-not ($Params.Build -is [hashtable])) { $Params.Build = @{} }
+			$Params.Build.DllExports = $DllExportList
+		}
 		$CallParam = Get-ArgsString $Params
 
 		Write-Debug "Starting $HostExe ps12exe with parameters: $CallParam"
 
-		& $HostExe -NoProfile -Command "&'$PSScriptRoot\ps12exe.ps1' $CallParam -nested; exit `$LastExitCode" | Write-Host
+		# 子宿主通过环境变量得知自己是被交接来的，不再用 -nested 参数；子进程读到会自行删除，这里调用后也删掉自己的。
+		$env:PS12EXE_NESTED = '1'
+		& $HostExe -NoProfile -Command "&'$PSScriptRoot\ps12exe.ps1' $CallParam; exit `$LastExitCode" | Write-Host
 		$global:LastExitCode = $LASTEXITCODE
+		Remove-Item Env:PS12EXE_NESTED -ErrorAction Ignore
 	}
 	# Windows PowerShell 解析不了 Core 语法，因此 Core 目标必须在解析前交接给 pwsh。
 	if (!$nested -and $isCoreTarget -and ($PSVersionTable.PSEdition -ne "Core")) {
@@ -507,7 +582,7 @@ else {
 	[cultureinfo]::CurrentUICulture = $UICultureBackup
 }
 if ($SyntaxErrors) {
-	$errorData = & $PSScriptRoot/src/SyntaxErrorI18nDataBuilder.ps1 -SyntaxErrors $SyntaxErrors -CodeContent $Content -Localize:$LocalizeData.LangID
+	$errorData = & $PSScriptRoot/src/SyntaxErrorI18nDataBuilder.ps1 -SyntaxErrors $SyntaxErrors -CodeContent $Content -Locale:$LocalizeData.LangID
 	$lastFullText = $null
 	$ErrMessage = @()
 	foreach ($errinfo in $errorData) {
@@ -578,8 +653,9 @@ if ($winFormsDPIAware) {
 }
 
 if ($virtualize) {
-	foreach ($a in @("requireAdmin", "supportOS", "longPaths")) {
-		if ($Params[$a]) {
+	$VirtualizeConflicts = [ordered]@{ requireAdmin = $requireAdmin; supportOS = $supportOS; longPaths = $longPaths }
+	foreach ($a in $VirtualizeConflicts.Keys) {
+		if ($VirtualizeConflicts[$a]) {
 			Write-I18n Error "CombinedArg_Virtualize_$a" -Category InvalidArgument
 			$global:LastExitCode = 2 # 调用格式错误
 			return
@@ -588,8 +664,9 @@ if ($virtualize) {
 }
 
 if (!$configFile) {
-	foreach ($a in @("longPaths", "winFormsDPIAware")) {
-		if ($Params[$a]) {
+	$ConfigForcing = [ordered]@{ longPaths = $longPaths; winFormsDPIAware = $winFormsDPIAware }
+	foreach ($a in $ConfigForcing.Keys) {
+		if ($ConfigForcing[$a]) {
 			Write-I18n Warning "CombinedArg_NoConfigFile_$a" -Category InvalidArgument
 			$configFile = $true
 		}

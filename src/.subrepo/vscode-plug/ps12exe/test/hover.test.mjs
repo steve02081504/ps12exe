@@ -15,7 +15,7 @@ suite('ps12exe directive hover', () => {
 			['#_include_as_bytes blob "assets/data.bin"', 'includeAs', '#_include_as_bytes'],
 			['#_!!if ($x) {', 'bang', '#_!!'],
 			['#_require ps12exe', 'require', '#_require'],
-			['#_pragma Console no', 'pragma', '#_pragma'],
+			['#_pragma App.Windowed no', 'pragma', '#_pragma'],
 			['#_balus 1', 'balus', '#_balus'],
 			['#_DllExport int Add(int a, int b)', 'dllExport', '#_DllExport']
 		]

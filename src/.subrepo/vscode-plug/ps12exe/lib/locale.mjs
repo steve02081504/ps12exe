@@ -1,5 +1,5 @@
 /**
- * 把 `vscode.env.language` 报告的语言映射为 ps12exe/ps12exeGUI 能识别的区域代码（`-Localize`）。
+ * 把 `vscode.env.language` 报告的语言映射为 ps12exe/ps12exeGUI 能识别的区域代码（`-Locale`）。
  *
  * ps12exe 附带以下区域：
  *   en-UK, en-US, es-ES, fr-FR, hi-IN, ja-JP, zh-CN

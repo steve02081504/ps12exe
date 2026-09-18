@@ -67,10 +67,11 @@ public static class ps12exeConstCompressor {
 if ($AstAnalyzeResult.IsConst) {
 	$timeoutSeconds = 7  # 设置超时限制（秒）
 
-	#   #_pragma noConstEval      显式声明本脚本不是常量，直接跳过常量求值
-	#   #_pragma constEvalTimeout 显式声明本次常量求值已超时，按超时回退处理
-	$NoConstEvalPragma = $Content -match '(?m)^\s*#_pragma\s+noConstEval\b'
-	$ConstEvalTimeoutPragma = $Content -match '(?m)^\s*#_pragma\s+constEvalTimeout\b'
+	#   #_pragma Build.ConstEval.Enabled 0   显式声明本脚本不是常量，直接跳过常量求值
+	#   #_pragma Build.ConstEval.Timeout 1   显式声明本次常量求值已超时，按超时回退处理
+	# 由 ps12exe.ps1 的适配层（Build.ConstEval）解析后以 $noConstEval / $constEvalTimeout 传入。
+	$NoConstEvalPragma = $noConstEval
+	$ConstEvalTimeoutPragma = $constEvalTimeout
 
 	if ($NoConstEvalPragma) {
 		Write-I18n Verbose ConstEvalNotConstFallback

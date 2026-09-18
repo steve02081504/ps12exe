@@ -25,72 +25,92 @@
 	ConsoleHelpData              = @{
 		title      = "उपयोग:"
 		Usage      = "[input |] ps12exe [[-inputFile] '<फ़ाइल नाम|url>' | -Content '<स्क्रिप्ट>'] [-outputFile '<फ़ाइल नाम>']
-	[-CompilerOptions '<विकल्प>'] [-TempDir '<फ़ोल्डर>'] [-minifyer '<स्क्रिप्टब्लॉक>'] [-noConsole]
-	[-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
-	[-resourceParams @{iconFile='<फ़ाइल नाम|url>'; title='<शीर्षक>'; description='<सारांश>'; company='<कंपनी>';
-	product='<उत्पाद>'; copyright='<कॉपीराइट>'; trademark='<नामकरण>'; version='<संस्करण>'}]
-	[-CodeSigning @{Path='<PFX फ़ाइल पथ>'; Password='<PFX पासवर्ड>'; Thumbprint='<प्रमाणपत्र फ़िंगरप्रिंट>'; TimestampServer='<समय चिह्न सर्वर>'}]
-	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
-	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<रनटाइम संस्करण>']
-	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<भाषा कोड>'] [-help]"
+	[-App @{Windowed=`$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default';
+	VisualStyles=`$true; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true}]
+	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
+	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'; Apartment='STA'|'MTA';
+	Culture='<संस्कृति>'; Options='<विकल्प>'; KeepSource=`$true; Minify={<स्क्रिप्टब्लॉक>}; TempDir='<फ़ोल्डर>'}]
+	[-Resources @{Icon='<फ़ाइल नाम|url>'; Title='<शीर्षक>'; Description='<सारांश>'; Company='<कंपनी>';
+	Product='<उत्पाद>'; Copyright='<कॉपीराइट>'; Trademark='<नामकरण>'; Version='<संस्करण>'}]
+	[-Signing @{Certificate='<PFX फ़ाइल पथ>'; Password='<PFX पासवर्ड>'; Thumbprint='<प्रमाणपत्र फ़िंगरप्रिंट>'; Timestamp='<समय चिह्न सर्वर>'}]
+	[-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<भाषा कोड>'] [-ConfigFile] [-help]"
 		PrarmsData = [ordered]@{
 			input            = "PowerShell स्क्रिप्ट फ़ाइल की सामग्री का स्ट्रिंग, ``-Content`` के समान"
 			inputFile        = "परिवर्तित करने के लिए PowerShell स्क्रिप्ट का पथ या URL (फ़ाइल UTF-8 या UTF-16 एन्कोड होनी चाहिए)।"
 			Content          = "जिसे आप एक्सीक्यूटेबल फ़ाइल में परिवर्तित करना चाहते हैं, उस PowerShell स्क्रिप्ट की सामग्री"
 			outputFile       = "लक्षित एक्सीक्यूटेबल फ़ाइल का नाम या फ़ोल्डर, डिफ़ॉल्ट रूप से ``inputFile`` के साथ ``'.exe'`` एक्सटेंशन के साथ"
-			CompilerOptions  = "अतिरिक्त कंपाइलर विकल्प (देखें ``https://msdn.microsoft.com/en-us/library/78f4aasd.aspx``)"
-			TempDir          = "सामयिक फ़ाइलें संग्रहित करने के लिए फ़ोल्डर (डिफ़ॉल्ट रूप से रैंडम फ़ोल्डर में उत्पन्न होने वाला फ़ोल्डर)"
-			minifyer         = "कॉम्पाइल से पहले स्क्रिप्ट को कम करने के लिए स्क्रिप्ट ब्लॉक"
-			lcid             = "कॉम्पाइल की गई एक्सीक्यूटेबल फ़ाइल का स्थानीयभाषा आईडी। अगर निर्दिष्ट नहीं किया गया है, तो वर्तमान उपयोगकर्ता संस्कृति कोड होगा"
-			prepareDebug     = "डीबगिंग के लिए मददगार जानकारी बनाएं"
-			architecture     = "केवल विशेष रनटाइम के लिए कॉम्पाइल करें। संभावित मान हैं ``'x64'``, ``'x86'`` और ``'anycpu'``"
-			threadingModel   = "``'STA'`` या ``'MTA'`` मॉडल"
-			noConsole        = "निर्मित एक्सीक्यूटेबल फ़ाइल एक विंडोज फ़ॉर्म्स एप्लिकेशन होगी जिसमें कोई कंसोल विंडो नहीं होगी"
-			UNICODEEncoding  = "कंसोल मोड में आउटपुट को यूनिकोड में कोड करें"
-			credentialGUI    = "कंसोल मोड में GUI क्रेडेंशल का उपयोग करें"
-			resourceParams   = "कॉम्पाइल की गई एक्सीक्यूटेबल फ़ाइल के संसाधन पैरामीटर शामिल करें"
-			CodeSigning      = "कोड साइनिंग पैरामीटर शामिल होने वाले हैं"
-			configFile       = "एक कॉन्फ़िगरेशन फ़ाइल लिखें (``<आउटपुटफ़ाइल>.exe.config``)"
-			noOutput         = "निर्मित एक्सीक्यूटेबल फ़ाइल में स्टैंडर्ड आउटपुट (सहित विस्तारित और सूचना चैनल) नहीं बनेगा"
-			noError          = "निर्मित एक्सीक्यूटेबल फ़ाइल में त्रुटि आउटपुट (सहित चेतावनी और डीबग चैनल) नहीं बनेगा"
-			noVisualStyles   = "निर्मित एक्सीक्यूटेबल फ़ाइल के विजुअल स्टाइल को अक्षम करें (केवल ``-noConsole`` के साथ उपयोग किए जाने वाला)"
-			exitOnCancel     = "``Read-Host`` इनपुट बॉक्स में ``Cancel`` या ``'X'`` का चयन करते समय प्रोग्राम से बाहर निकलें (केवल ``-noConsole`` के साथ उपयोग किए जाने वाला)"
-			DPIAware         = "अगर प्रदर्शन माप शुरू है, तो GUI विजेट्स को जितना संभव हो सकता है स्केल करेगा"
-			winFormsDPIAware = "अगर प्रदर्शन माप शुरू है, तो WinForms DPI स्केलिंग का उपयोग करेगा (Windows 10 और.Net 4.7 या इससे ऊपर की आवश्यकता है)"
-			requireAdmin     = "अगर UAC सक्षम है, तो कॉम्पाइल की गई एक्सीक्यूटेबल फ़ाइल को सिर्फ उच्चाधिकार कांटेक्स्ट में चलाया जा सकेगा (आवश्यकता होने पर, UAC संवाद बॉक्स प्रकट होगा)"
-			supportOS        = "नवीनतम Windows संस्करण की विशेषताओं का उपयोग करें (विभिन्नता देखने के लिए ``[Environment]::OSVersion`` का चालन करें)"
-			virtualize       = "ऐप्लिकेशन वर्चुअलाईजेशन सक्रिय कर दिया गया है (एक्स86 रनटाइम को प्रयोगशाला माना)"
-			longPaths        = "यदि ऑपरेटिंग सिस्टम पर सक्षम है, तो लंबी पथ (अधिकतम 260 वर्ण) को सक्षम करें (केवल Windows 10 या इससे ऊपर के लिए)"
-			targetRuntime    = "लक्ष्य रनटाइम संस्करण, डिफ़ॉल्ट रूप से ``'Framework4.0'``, ``'Framework2.0'`` और ``'Core'`` समर्थित हैं। ``'Core'`` PowerShell Core (.NET) निष्पादन योग्य बनाता है (कंपाइल और लक्ष्य मशीन दोनों पर PowerShell Core और .NET आवश्यक; आउटपुट बहुत बड़ा होता है)।"
-			SkipVersionCheck = "ps12exe के नए संस्करण की जाँच छोड़ें"
-			GuestMode        = "एक्सट्रा सुरक्षा के साथ स्क्रिप्ट को कॉम्पाइल करें, स्थानीय फ़ाइलों की पहुँच को टालें"
+			App              = [ordered]@{
+				Windowed         = "निर्मित एक्सीक्यूटेबल फ़ाइल एक विंडोज फ़ॉर्म्स एप्लिकेशन होगी जिसमें कोई कंसोल विंडो नहीं होगी।"
+				Silence          = "शांत किए जाने वाले आउटपुट स्ट्रीम; ``'Output'``, ``'Verbose'``, ``'Error'``, ``'Warning'``, ``'Debug'`` में से एक या अधिक, या सभी के लिए ``'*'``।"
+				OutputEncoding   = "कंसोल आउटपुट एन्कोडिंग; ``'Default'``, ``'UTF8'`` या ``'UTF16LE'``।"
+				VisualStyles     = "GUI एप्लिकेशन के लिए विजुअल स्टाइल सक्षम करें (डिफ़ॉल्ट `` `$true ``)।"
+				ExitOnCancel     = "``Read-Host`` इनपुट बॉक्स में Cancel या ``'X'`` का चयन करते समय प्रोग्राम से बाहर निकलें।"
+				CredentialGUI    = "कंसोल मोड में क्रेडेंशल के लिए GUI का उपयोग करें।"
+				DpiAware         = "संकलित एक्सीक्यूटेबल फ़ाइल को DPI aware के रूप में चिह्नित करें।"
+				WinFormsDpiAware = "WinForms को DPI स्केलिंग का उपयोग करने दें (Windows 10 और .Net 4.7 या इससे ऊपर की आवश्यकता है)।"
+			}
+			Os               = [ordered]@{
+				Admin      = "अगर UAC सक्षम है, तो कॉम्पाइल की गई एक्सीक्यूटेबल फ़ाइल को सिर्फ उच्चाधिकार कांटेक्स्ट में चलाया जा सकेगा (आवश्यकता होने पर, UAC संवाद बॉक्स प्रकट होगा)।"
+				ModernOS   = "नवीनतम Windows संस्करण की विशेषताओं का उपयोग करें (विभिन्नता देखने के लिए ``[Environment]::OSVersion`` का चालन करें)।"
+				LongPaths  = "यदि ऑपरेटिंग सिस्टम पर सक्षम है, तो लंबी पथ (260 वर्ण से अधिक) को सक्षम करें (केवल Windows 10 या इससे ऊपर के लिए)।"
+				Virtualize = "ऐप्लिकेशन वर्चुअलाईजेशन सक्रिय कर दिया गया है (x86 रनटाइम को बाध्य करता है)।"
+			}
+			Build            = [ordered]@{
+				Target     = "लक्ष्य रनटाइम संस्करण, डिफ़ॉल्ट रूप से ``'Framework4.0'``; ``'Framework2.0'`` और ``'Core'`` समर्थित हैं। ``'Core'`` PowerShell Core (.NET) निष्पादन योग्य बनाता है (कंपाइल और लक्ष्य मशीन दोनों पर PowerShell Core और .NET आवश्यक; आउटपुट बहुत बड़ा होता है)।"
+				Platform   = "केवल विशेष रनटाइम के लिए कॉम्पाइल करें। संभावित मान हैं ``'AnyCpu'``, ``'x64'`` और ``'x86'``।"
+				Apartment  = "``'STA'`` या ``'MTA'`` मॉडल।"
+				Culture    = "संकलित एक्सीक्यूटेबल फ़ाइल की संस्कृति। अगर निर्दिष्ट नहीं किया गया है, तो वर्तमान उपयोगकर्ता संस्कृति होगी।"
+				Options    = "अतिरिक्त कंपाइलर विकल्प (देखें ``https://msdn.microsoft.com/en-us/library/78f4aasd.aspx``)।"
+				KeepSource = "डीबगिंग के लिए मददगार जानकारी बनाएं।"
+				Minify     = "कॉम्पाइल से पहले स्क्रिप्ट को छोटा करने के लिए स्क्रिप्ट ब्लॉक।"
+				TempDir    = "अस्थायी फ़ाइलें संग्रहित करने का फ़ोल्डर (डिफ़ॉल्ट रूप से ``%temp%`` में यादृच्छिक फ़ोल्डर)।"
+			}
+			Resources        = [ordered]@{
+				Icon        = "एक्सीक्यूटेबल का आइकन; एक फ़ाइल पथ या URL हो सकता है।"
+				Title       = "एक्सीक्यूटेबल का शीर्षक (फ़ाइल विवरण)।"
+				Description = "एक्सीक्यूटेबल का संक्षिप्त विवरण।"
+				Company     = "एक्सीक्यूटेबल की कंपनी का नाम।"
+				Product     = "एक्सीक्यूटेबल का उत्पाद नाम।"
+				Copyright   = "एक्सीक्यूटेबल की कॉपीराइट सूचना।"
+				Trademark   = "एक्सीक्यूटेबल की ट्रेडमार्क जानकारी।"
+				Version     = "एक्सीक्यूटेबल का संस्करण संख्या (उदाहरण ``'1.0.0.0'``)।"
+			}
+			Signing          = [ordered]@{
+				Certificate = "PFX प्रमाणपत्र फ़ाइल का पथ; ``Certificate`` या ``Thumbprint`` में से एक निर्दिष्ट करना आवश्यक है।"
+				Password    = "PFX प्रमाणपत्र का पासवर्ड।"
+				Thumbprint  = "प्रमाणपत्र फ़िंगरप्रिंट; ``Certificate`` या ``Thumbprint`` में से एक निर्दिष्ट करना आवश्यक है।"
+				Timestamp   = "कोड साइनिंग के लिए उपयोग किए जाने वाले समय चिह्न सर्वर का URL।"
+			}
 			PreprocessOnly   = "इनपुट स्क्रिप्ट को प्रीप्रोसेस करें और इसे संकलित किए बिना वापस करें"
-			GolfMode         = "गॉल्फ मोड सक्षम करें, संक्षिप्त रूप और सामान्य फ़ंक्शन जोड़ें"
-			Localize         = "संदेशों के लिए भाषा कोड।"
+			Golf             = "गॉल्फ मोड सक्षम करें, संक्षिप्त रूप और सामान्य फ़ंक्शन जोड़ें"
+			Sandbox          = "एक्सट्रा सुरक्षा के साथ स्क्रिप्ट को कॉम्पाइल करें, स्थानीय फ़ाइलों की पहुँच को टालें"
+			NoUpdateCheck    = "ps12exe के नए संस्करण की जाँच छोड़ें"
+			Locale           = "संदेशों के लिए भाषा कोड।"
+			ConfigFile       = "एक कॉन्फ़िगरेशन फ़ाइल लिखें (``<आउटपुटफ़ाइल>.exe.config``)"
 			Help             = "इस मदद सूचना को दिखाएँ"
 		}
 	}
 	GUIHelpData                  = @{
 		title      = "उपयोग:"
 		Usage      = @"
-ps12exeGUI [[-ConfigFile] '<कॉन्फ़िगरेशन फ़ाइल>'] [-PS1File '<स्क्रिप्ट फ़ाइल>'] [-Localize '<भाषा कोड>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-ConfigFile] '<कॉन्फ़िगरेशन फ़ाइल>'] [-PS1File '<स्क्रिप्ट फ़ाइल>'] [-Locale '<भाषा कोड>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 
-ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize '<भाषा कोड>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Locale '<भाषा कोड>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 "@
 		PrarmsData = [ordered]@{
 			ConfigFile	= "लोड करने के लिए कॉन्फ़िगरेशन फ़ाइल।"
 			PS1File    = "कंपाइल करने के लिए स्क्रिप्ट फ़ाइल।"
-			Localize   = "उपयोग किया जाने वाला भाषा कोड।"
+			Locale     = "उपयोग किया जाने वाला भाषा कोड।"
 			UIMode     = "UI मोड।"
 			help       = "इस मदद सूचना को दिखाएँ।"
 		}
 	}
 	SetContextMenuHelpData       = @{
 		title      = "उपयोग:"
-		Usage      = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<भाषा कोड>'] [-SkipEditorExtension] [-help]"
+		Usage      = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Locale '<भाषा कोड>'] [-SkipEditorExtension] [-help]"
 		PrarmsData = [ordered]@{
 			action              = "क्रिया का कार्यान्वयन।"
-			Localize            = "उपयोग किए जाने वाले भाषा कोड।"
+			Locale              = "उपयोग किए जाने वाले भाषा कोड।"
 			SkipEditorExtension	= "पहचाने गए संपादकों में ps12exe VS Code एक्सटेंशन इंस्टॉल करना छोड़ें।"
 			help                = "इस मदद सूचना को दिखाएँ।"
 		}
@@ -99,7 +119,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		title      = "उपयोग:"
 		Usage      = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
 	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<पथ>']
-	[-Localize '<भाषा कोड>'] [-help]"
+	[-Locale '<भाषा कोड>'] [-help]"
 		PrarmsData = [ordered]@{
 			HostUrl           = "रजिस्टर करने के लिए HTTP सर्वर पता।"
 			MaxCompileThreads = "अधिकतम कॉम्पाइल धागों की संख्या।"
@@ -108,7 +128,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 			MaxCachedFileSize = "अधिकतम कैश फ़ाइल का आकार।"
 			MaxScriptFileSize = "अधिकतम स्क्रिप्ट फ़ाइल का आकार।"
 			CacheDir          = "अधिकतम कैश फ़ाइल का डाइरेक्टरी पथ।"
-			Localize          = "सर्वर साइड रिकॉर्ड करने के लिए उपयोग किए जाने वाले भाषा कोड।"
+			Locale            = "सर्वर साइड रिकॉर्ड करने के लिए उपयोग किए जाने वाले भाषा कोड।"
 			help              = "इस मदद सूचना को दिखाएँ।"
 		}
 	}
@@ -134,15 +154,15 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		MinifyerFailedUsingOriginalScript         = "छोटा करने वाला विफल, मूल स्क्रिप्ट का उपयोग करना।"
 		TempFileMissing                           = "अस्थायी फ़ाइल {0} नहीं मिली!"
 		PreprocessOnlyDone                        = "इनपुट स्क्रिप्ट को प्रीप्रोसेस करना पूर्ण हुआ"
-		InvalidResourceParam                      = "पैरामीटर -resourceParams में एक अमान्य कुंजी है: {0}"
+		InvalidResourceParam                      = "पैरामीटर -Resources में एक अमान्य कुंजी है: {0}"
 		InputSyntaxError                          = "स्क्रिप्ट में वाक्य रचना त्रुटि!"
 		SyntaxErrorLineStart                      = "पंक्ति {0}, स्तंभ {1}:"
 		IdenticalInputOutput                      = "इनपुट फ़ाइल आउटपुट फ़ाइल के समान है!"
-		CombinedArg_Virtualize_requireAdmin       = "-virtualize का उपयोग -requireAdmin के साथ नहीं किया जा सकता"
-		CombinedArg_Virtualize_supportOS          = "-virtualize का उपयोग -supportOS के साथ नहीं किया जा सकता"
-		CombinedArg_Virtualize_longPaths          = "-virtualize का उपयोग -longPaths के साथ नहीं किया जा सकता"
-		CombinedArg_NoConfigFile_LongPaths        = "एक कॉन्फ़िगरेशन फ़ाइल के निर्माण को मजबूर करना, क्योंकि विकल्प -longPaths को इसकी आवश्यकता होती है"
-		CombinedArg_NoConfigFile_winFormsDPIAware = "एक कॉन्फ़िगरेशन फ़ाइल के निर्माण को मजबूर करना, क्योंकि विकल्प -winFormsDPIAware को इसकी आवश्यकता होती है"
+		CombinedArg_Virtualize_requireAdmin       = "-Os @{Virtualize=`$true} का उपयोग -Os @{Admin=`$true} के साथ नहीं किया जा सकता"
+		CombinedArg_Virtualize_supportOS          = "-Os @{Virtualize=`$true} का उपयोग -Os @{ModernOS=`$true} के साथ नहीं किया जा सकता"
+		CombinedArg_Virtualize_longPaths          = "-Os @{Virtualize=`$true} का उपयोग -Os @{LongPaths=`$true} के साथ नहीं किया जा सकता"
+		CombinedArg_NoConfigFile_LongPaths        = "एक कॉन्फ़िगरेशन फ़ाइल के निर्माण को मजबूर करना, क्योंकि विकल्प -Os @{LongPaths=`$true} को इसकी आवश्यकता होती है"
+		CombinedArg_NoConfigFile_winFormsDPIAware = "एक कॉन्फ़िगरेशन फ़ाइल के निर्माण को मजबूर करना, क्योंकि विकल्प -App @{WinFormsDpiAware=`$true} को इसकी आवश्यकता होती है"
 		SomeCmdletsMayNotAvailable                = "उपयोग किए गए Cmdlets {0} लेकिन रनटाइम में उपलब्ध नहीं हो सकते हैं, सुनिश्चित करें कि आपने उनकी जांच की है!"
 		SomeNotFoundCmdlets                       = "अज्ञात कार्यों {0} का उपयोग किया गया"
 		SomeTypesMayNotAvailable                  = "उपयोग किए गए टाइप {0} रनटाइम में उपलब्ध नहीं हो सकते हैं, सुनिश्चित करें कि आपने उनकी जांच की है!"
@@ -155,7 +175,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		EnterToSubmitIssue                        = "मदद के लिए, कृपया एक समस्या सबमिट करने के लिए Enter दबाएं।"
 		GuestModeFileTooLarge                     = "फ़ाइल {0} पढ़ने के लिए बहुत बड़ी है।"
 		GuestModeIconFileTooLarge                 = "आइकन {0} पढ़ने के लिए बहुत बड़ा है।"
-		GuestModeFtpNotSupported                  = "FTP को GuestMode में समर्थित नहीं किया जाता है।"
+		GuestModeFtpNotSupported                  = "FTP को Sandbox मोड में समर्थित नहीं किया जाता है।"
 		IconFileNotFound                          = "आइकन फ़ाइल नहीं मिली: {0}"
 		ConvertingImageToIcon                     = "छवि को आइकन प्रारूप में बदल रहा है..."
 		ImageConvertedToIcon                      = "छवि को आइकन में बदल दिया गया: {0}"
@@ -173,12 +193,12 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 		ConfigFileCreated                         = "EXE के लिए कॉन्फ़िगरेशन फ़ाइल बनाई गई"
 		SourceFileCopied                          = "डिबग के लिए स्रोत फ़ाइल नाम कॉपी किया गया: {0}"
 		CoreCompilePublishing                     = "Publishing single-file executable with the .NET SDK..."
-		CoreCompileNeedDotnet                     = "PowerShell Core compilation requires the .NET SDK (dotnet). Install it, or pass -targetRuntime Framework4.0."
+		CoreCompileNeedDotnet                     = "PowerShell Core compilation requires the .NET SDK (dotnet). Install it, or pass -Build @{Target='Framework4.0'}."
 		CoreCompileUnsupported                    = "These options are not supported by the PowerShell Core compiler yet: {0}"
-		CoreCompileNeedPwsh                       = "This is Windows PowerShell; -targetRuntime Core needs PowerShell Core (pwsh) installed and on PATH."
-		CoreCompileNeedWindowsPowerShell          = "Windows PowerShell was not found; pass -targetRuntime Core to compile a PowerShell Core executable."
+		CoreCompileNeedPwsh                       = "This is Windows PowerShell; -Build @{Target='Core'} needs PowerShell Core (pwsh) installed and on PATH."
+		CoreCompileNeedWindowsPowerShell          = "Windows PowerShell was not found; pass -Build @{Target='Core'} to compile a PowerShell Core executable."
 		CoreCompileNeedPwshHost                   = "The compiled ps12exe executable cannot build PowerShell Core executables; run ps12exe from the script/module under pwsh instead."
-		CoreCompileHint                           = "If this is a PowerShell Core-only script, pass -targetRuntime Core (requires PowerShell Core and .NET on the build and target machines; the resulting exe is much larger)."
+		CoreCompileHint                           = "If this is a PowerShell Core-only script, pass -Build @{Target='Core'} (requires PowerShell Core and .NET on the build and target machines; the resulting exe is much larger)."
 		ReadingFile                               = "फ़ाइल {0} आकार {1} बाइट्स पढ़ रहा है"
 		ForceX86byVirtualization                  = "अनुप्रयोग वर्चुअलाइजेशन सक्रिय है, x86 प्लेटफ़ॉर्म को मजबूर कर रहा है।"
 		TryingTinySharpCompile                    = "स्थिरांक परिणाम, TinySharp संकलक का प्रयास कर रहा है..."

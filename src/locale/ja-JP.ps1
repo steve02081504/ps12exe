@@ -25,72 +25,92 @@
 	ConsoleHelpData              = @{
 		title      = "使用方法："
 		Usage      = "[input |] ps12exe [[-inputFile] '<ファイル名|url>' | -Content '<スクリプト>'] [-outputFile '<ファイル名>']
-	[-CompilerOptions '<オプション>'] [-TempDir '<ディレクトリ>'] [-minifyer '<scriptblock>'] [-noConsole]
-	[-architecture 'x86'|'x64'] [-threadingModel 'STA'|'MTA'] [-prepareDebug] [-lcid <lcid>]
-	[-resourceParams @{iconFile='<ファイル名|url>'; title='<タイトル>'; description='<説明>'; company='<会社>';
-	product='<製品>'; copyright='<著作権>'; trademark='<商標>'; version='<バージョン>'}]
-	[-CodeSigning @{Path='<PFXファイルパス>'; Password='<PFXパスワード>'; Thumbprint='<証明書指紋>'; TimestampServer='<時刻同期サーバー>'}]
-	[-UNICODEEncoding] [-credentialGUI] [-configFile] [-noOutput] [-noError] [-noVisualStyles] [-exitOnCancel]
-	[-DPIAware] [-winFormsDPIAware] [-requireAdmin] [-supportOS] [-virtualize] [-longPaths] [-targetRuntime '<ランタイムバージョン>']
-	[-SkipVersionCheck] [-GuestMode] [-PreprocessOnly] [-GolfMode] [-Localize '<言語コード>'] [-help]"
+	[-App @{Windowed=`$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default';
+	VisualStyles=`$true; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true}]
+	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
+	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'; Apartment='STA'|'MTA';
+	Culture='<カルチャ>'; Options='<オプション>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<ディレクトリ>'}]
+	[-Resources @{Icon='<ファイル名|url>'; Title='<タイトル>'; Description='<説明>'; Company='<会社>';
+	Product='<製品>'; Copyright='<著作権>'; Trademark='<商標>'; Version='<バージョン>'}]
+	[-Signing @{Certificate='<PFXファイルパス>'; Password='<PFXパスワード>'; Thumbprint='<証明書指紋>'; Timestamp='<時刻同期サーバー>'}]
+	[-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<言語コード>'] [-ConfigFile] [-help]"
 		PrarmsData = [ordered]@{
 			input            = "PowerShell スクリプトファイルの内容の文字列で、``-Content`` と同じです"
 			inputFile        = "変換元の PowerShell スクリプトのパスまたは URL（ファイルは UTF-8 または UTF-16 エンコードである必要があります）。"
 			Content          = "実行可能ファイルに変換したい PowerShell スクリプトの内容"
 			outputFile       = "ターゲットの実行可能ファイル名またはディレクトリ。デフォルトは ``'.exe'`` 拡張子を持つ ``inputFile`` です"
-			CompilerOptions  = "追加のコンパイラオプション（参照： ``https://msdn.microsoft.com/en-us/library/78f4aasd.aspx``）"
-			TempDir          = "一時ファイルを保存するディレクトリ（デフォルトは ``%temp%`` にランダムに生成される一時ディレクトリ）"
-			minifyer         = "コンパイル前にスクリプトを縮小するスクリプトブロック"
-			lcid             = "コンパイルされた実行可能ファイルのロケール ID。指定されていない場合は、現在のユーザーのカルチャです"
-			prepareDebug     = "デバッグに役立つ情報を作成します"
-			architecture     = "特定のランタイムのみのコンパイル。可能な値は ``'x64'``、``'x86'``、``'anycpu'`` です"
-			threadingModel   = "``'STA'``（シングルスレッドアパートメント）または ``'MTA'``（マルチスレッドアパートメント）モード"
-			noConsole        = "生成された実行可能ファイルは、コンソールウィンドウのない Windows Forms アプリケーションになります"
-			UNICODEEncoding  = "コンソールモードで出力を UNICODE でエンコードします"
-			credentialGUI    = "コンソールモードで GUI プロンプトを使用して資格情報を求めます"
-			resourceParams   = "コンパイルされた実行可能ファイルのリソースパラメータを含むハッシュテーブル"
-			CodeSigning      = "コード署名パラメータを含むハッシュテーブル"
-			configFile       = "設定ファイル（``<outputfile>.exe.config``）を書き込みます"
-			noOutput         = "生成された実行可能ファイルは、標準出力（詳細情報や情報チャネルを含む）を生成しません"
-			noError          = "生成された実行可能ファイルは、エラー出力（警告情報やデバッグ情報を含む）を生成しません"
-			noVisualStyles   = "生成された Windows GUI アプリケーションのビジュアルスタイルを無効にします（``-noConsole`` と共に使用）"
-			exitOnCancel     = "``Read-Host`` 入力ボックスで ``Cancel`` または ``'X'`` を選択したときにプログラムを終了します（``-noConsole`` と共に使用）"
-			DPIAware         = "表示スケーリングが有効になっている場合、GUI コントロールは可能な限りスケーリングされます"
-			winFormsDPIAware = "表示スケーリングが有効になっている場合、WinForms は DPI スケーリングを使用します（Windows 10 および .Net 4.7 以上が必要）"
-			requireAdmin     = "UAC が有効になっている場合、コンパイルされた実行可能ファイルは昇格されたコンテキストでのみ実行可能です（必要に応じて UAC ダイアログが表示されます）"
-			supportOS        = "最新の Windows バージョンの機能を使用します（``[Environment]::OSVersion`` を実行して違いを確認）"
-			virtualize       = "アプリケーションの仮想化が有効になっています（x86 ランタイムを強制）"
-			longPaths        = "OS で有効になっている場合、長いパス（260 文字以上）を有効にします（Windows 10 以上にのみ適用）"
-			targetRuntime    = "ターゲット ランタイム バージョン、既定値は ``'Framework4.0'``、``'Framework2.0'`` と ``'Core'`` がサポートされています。``'Core'`` は PowerShell Core (.NET) 実行可能ファイルを生成します（コンパイル機とターゲット機の両方に PowerShell Core と .NET が必要で、成果物は大幅に大きくなります）。"
-			SkipVersionCheck = "ps12exe の新しいバージョンの確認をスキップします。"
-			GuestMode        = "ネイティブ ファイルへのアクセスを防ぐために、スクリプトをコンパイルする際に保護を追加します"
+			App              = [ordered]@{
+				Windowed         = "生成された実行可能ファイルは、コンソールウィンドウのない Windows Forms アプリケーションになります。"
+				Silence          = "抑制する出力ストリームの名前。``'Output'``、``'Verbose'``、``'Error'``、``'Warning'``、``'Debug'`` のいずれか 1 つ以上、またはすべてを表す ``'*'``。"
+				OutputEncoding   = "コンソール出力のエンコーディング。``'Default'``、``'UTF8'``、``'UTF16LE'``。"
+				VisualStyles     = "GUI アプリケーションのビジュアルスタイルを有効にします（既定値 `` `$true ``）。"
+				ExitOnCancel     = "``Read-Host`` 入力ボックスで Cancel または ``'X'`` を選択したときにプログラムを終了します。"
+				CredentialGUI    = "コンソールモードで GUI プロンプトを使用して資格情報を求めます。"
+				DpiAware         = "コンパイルされた実行可能ファイルを DPI 対応としてマークします。"
+				WinFormsDpiAware = "WinForms で DPI スケーリングを使用します（Windows 10 および .Net 4.7 以上が必要）。"
+			}
+			Os               = [ordered]@{
+				Admin      = "UAC が有効になっている場合、コンパイルされた実行可能ファイルは昇格されたコンテキストでのみ実行可能です（必要に応じて UAC ダイアログが表示されます）。"
+				ModernOS   = "最新の Windows バージョンの機能を使用します（``[Environment]::OSVersion`` を実行して違いを確認）。"
+				LongPaths  = "OS で有効になっている場合、長いパス（260 文字超）を有効にします（Windows 10 以上にのみ適用）。"
+				Virtualize = "アプリケーションの仮想化が有効になっています（x86 ランタイムを強制）。"
+			}
+			Build            = [ordered]@{
+				Target     = "ターゲット ランタイム バージョン、既定値は ``'Framework4.0'``、``'Framework2.0'`` と ``'Core'`` がサポートされています。``'Core'`` は PowerShell Core (.NET) 実行可能ファイルを生成します（コンパイル機とターゲット機の両方に PowerShell Core と .NET が必要で、成果物は大幅に大きくなります）。"
+				Platform   = "特定のランタイムのみのコンパイル。可能な値は ``'AnyCpu'``、``'x64'``、``'x86'`` です。"
+				Apartment  = "``'STA'``（シングルスレッドアパートメント）または ``'MTA'``（マルチスレッドアパートメント）モード。"
+				Culture    = "コンパイルされた実行可能ファイルのカルチャ。指定されていない場合は、現在のユーザーのカルチャです。"
+				Options    = "追加のコンパイラオプション（参照： ``https://msdn.microsoft.com/en-us/library/78f4aasd.aspx``）。"
+				KeepSource = "デバッグに役立つ情報を作成します。"
+				Minify     = "コンパイル前にスクリプトを縮小するスクリプトブロック。"
+				TempDir    = "一時ファイルを保存するディレクトリ（デフォルトは ``%temp%`` にランダムに生成される一時ディレクトリ）。"
+			}
+			Resources        = [ordered]@{
+				Icon        = "実行可能ファイルのアイコン。アイコンファイルのパスまたは URL にできます。"
+				Title       = "実行可能ファイルのタイトル（ファイルの説明）。"
+				Description = "実行可能ファイルの簡単な説明。"
+				Company     = "実行可能ファイルの会社名。"
+				Product     = "実行可能ファイルの製品名。"
+				Copyright   = "実行可能ファイルの著作権表示。"
+				Trademark   = "実行可能ファイルの商標情報。"
+				Version     = "実行可能ファイルのバージョン番号（例： ``'1.0.0.0'``）。"
+			}
+			Signing          = [ordered]@{
+				Certificate = "PFX 証明書ファイルのパス。``Certificate`` または ``Thumbprint`` のいずれかを指定する必要があります。"
+				Password    = "PFX 証明書のパスワード。"
+				Thumbprint  = "証明書のサムプリント。``Certificate`` または ``Thumbprint`` のいずれかを指定する必要があります。"
+				Timestamp   = "コード署名に使用するタイムスタンプ サーバーの URL。"
+			}
 			PreprocessOnly   = "入力スクリプトをプリプロセス処理し、コンパイルせずに返します"
-			GolfMode         = "golf モードを有効にします、略語と一般的な関数を追加します"
-			Localize         = "使用する言語コード"
+			Golf             = "golf モードを有効にします、略語と一般的な関数を追加します"
+			Sandbox          = "ネイティブ ファイルへのアクセスを防ぐために、スクリプトをコンパイルする際に保護を追加します"
+			NoUpdateCheck    = "ps12exe の新しいバージョンの確認をスキップします。"
+			Locale           = "使用する言語コード"
+			ConfigFile       = "設定ファイル（``<outputfile>.exe.config``）を書き込みます"
 			Help             = "このヘルプ情報を表示します"
 		}
 	}
 	GUIHelpData                  = @{
 		title      = "使用方法："
 		Usage      = @"
-ps12exeGUI [[-ConfigFile] '<設定ファイル>'] [-PS1File '<スクリプトファイル>'] [-Localize '<言語コード>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-ConfigFile] '<設定ファイル>'] [-PS1File '<スクリプトファイル>'] [-Locale '<言語コード>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 
-ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コード>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
+ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Locale '<言語コード>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
 "@
 		PrarmsData = [ordered]@{
 			ConfigFile	= "読み込む設定ファイル。"
 			PS1File    = "コンパイルするスクリプトファイル。"
-			Localize   = "使用する言語コード。"
+			Locale     = "使用する言語コード。"
 			UIMode     = "使用する UI モード。"
 			help       = "このヘルプ情報を表示します。"
 		}
 	}
 	SetContextMenuHelpData       = @{
 		title      = "使用方法："
-		Usage      = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<言語コード>'] [-SkipEditorExtension] [-help]"
+		Usage      = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Locale '<言語コード>'] [-SkipEditorExtension] [-help]"
 		PrarmsData = [ordered]@{
 			action              = "実行するアクション。"
-			Localize            = "使用する言語コード。"
+			Locale              = "使用する言語コード。"
 			SkipEditorExtension	= "検出されたエディターへの ps12exe VS Code 拡張機能のインストールをスキップします。"
 			help                = "このヘルプ情報を表示します。"
 		}
@@ -99,7 +119,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 		title      = "使用方法："
 		Usage      = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
 	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<パス>']
-	[-Localize '<言語コード>'] [-help]"
+	[-Locale '<言語コード>'] [-help]"
 		PrarmsData = [ordered]@{
 			HostUrl           = "登録する HTTP サーバーのアドレス。"
 			MaxCompileThreads = "最大コンパイル スレッド数。"
@@ -108,7 +128,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 			MaxCachedFileSize = "最大キャッシュファイルサイズ。"
 			MaxScriptFileSize = "最大スクリプトファイルサイズ。"
 			CacheDir          = "キャッシュディレクトリ。"
-			Localize          = "サーバー側のログに使用する言語コード。"
+			Locale            = "サーバー側のログに使用する言語コード。"
 			help              = "このヘルプ情報を表示します。"
 		}
 	}
@@ -134,15 +154,15 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 		MinifyerFailedUsingOriginalScript         = "圧縮に失敗しました。元のスクリプトを使用します。"
 		TempFileMissing                           = "一時ファイル {0} が見つかりません！"
 		PreprocessOnlyDone                        = "入力スクリプトの前処理が完了しました"
-		InvalidResourceParam                      = "パラメーター -resourceParams に無効なキーがあります：{0}"
+		InvalidResourceParam                      = "パラメーター -Resources に無効なキーがあります：{0}"
 		InputSyntaxError                          = "スクリプトに構文エラーがあります！"
 		SyntaxErrorLineStart                      = "行 {0} 列 {1}："
 		IdenticalInputOutput                      = "入力ファイルと出力ファイルが同じです！"
-		CombinedArg_Virtualize_requireAdmin       = "-virtualize は -requireAdmin と組み合わせることはできません"
-		CombinedArg_Virtualize_supportOS          = "-virtualize は -supportOS と組み合わせることはできません"
-		CombinedArg_Virtualize_longPaths          = "-virtualize は -longPaths と組み合わせることはできません"
-		CombinedArg_NoConfigFile_LongPaths        = "オプション -longPaths はこの設定ファイルを必要とするため、設定ファイルの生成を強制します"
-		CombinedArg_NoConfigFile_winFormsDPIAware = "オプション -winFormsDPIAware はこの設定ファイルを必要とするため、設定ファイルの生成を強制します"
+		CombinedArg_Virtualize_requireAdmin       = "-Os @{Virtualize=`$true} は -Os @{Admin=`$true} と組み合わせることはできません"
+		CombinedArg_Virtualize_supportOS          = "-Os @{Virtualize=`$true} は -Os @{ModernOS=`$true} と組み合わせることはできません"
+		CombinedArg_Virtualize_longPaths          = "-Os @{Virtualize=`$true} は -Os @{LongPaths=`$true} と組み合わせることはできません"
+		CombinedArg_NoConfigFile_LongPaths        = "オプション -Os @{LongPaths=`$true} はこの設定ファイルを必要とするため、設定ファイルの生成を強制します"
+		CombinedArg_NoConfigFile_winFormsDPIAware = "オプション -App @{WinFormsDpiAware=`$true} はこの設定ファイルを必要とするため、設定ファイルの生成を強制します"
 		SomeCmdletsMayNotAvailable                = "実行時に利用できない可能性のあるコマンドレット {0} が使用されています。確認してください！"
 		SomeNotFoundCmdlets                       = "未知のコマンド {0} が使用されています"
 		SomeTypesMayNotAvailable                  = "実行時に利用できない可能性のある型 {0} が使用されています。確認してください！"
@@ -155,7 +175,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 		EnterToSubmitIssue                        = "ヘルプが必要な場合は、Enter キーを押して問題を報告してください。"
 		GuestModeFileTooLarge                     = "ファイル {0} は大きすぎて読み取れません。"
 		GuestModeIconFileTooLarge                 = "アイコン {0} は大きすぎて読み取れません。"
-		GuestModeFtpNotSupported                  = "ゲストモードでは FTP はサポートされていません。"
+		GuestModeFtpNotSupported                  = "Sandbox モードでは FTP はサポートされていません。"
 		IconFileNotFound                          = "アイコンファイルが見つかりません：{0}"
 		ConvertingImageToIcon                     = "画像をアイコン形式に変換中..."
 		ImageConvertedToIcon                      = "画像をアイコンに変換しました：{0}"
@@ -173,12 +193,12 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 		ConfigFileCreated                         = "EXE の設定ファイルが作成されました"
 		SourceFileCopied                          = "デバッグ用のソースファイル名がコピーされました：{0}"
 		CoreCompilePublishing                     = "Publishing single-file executable with the .NET SDK..."
-		CoreCompileNeedDotnet                     = "PowerShell Core compilation requires the .NET SDK (dotnet). Install it, or pass -targetRuntime Framework4.0."
+		CoreCompileNeedDotnet                     = "PowerShell Core compilation requires the .NET SDK (dotnet). Install it, or pass -Build @{Target='Framework4.0'}."
 		CoreCompileUnsupported                    = "These options are not supported by the PowerShell Core compiler yet: {0}"
-		CoreCompileNeedPwsh                       = "This is Windows PowerShell; -targetRuntime Core needs PowerShell Core (pwsh) installed and on PATH."
-		CoreCompileNeedWindowsPowerShell          = "Windows PowerShell was not found; pass -targetRuntime Core to compile a PowerShell Core executable."
+		CoreCompileNeedPwsh                       = "This is Windows PowerShell; -Build @{Target='Core'} needs PowerShell Core (pwsh) installed and on PATH."
+		CoreCompileNeedWindowsPowerShell          = "Windows PowerShell was not found; pass -Build @{Target='Core'} to compile a PowerShell Core executable."
 		CoreCompileNeedPwshHost                   = "The compiled ps12exe executable cannot build PowerShell Core executables; run ps12exe from the script/module under pwsh instead."
-		CoreCompileHint                           = "If this is a PowerShell Core-only script, pass -targetRuntime Core (requires PowerShell Core and .NET on the build and target machines; the resulting exe is much larger)."
+		CoreCompileHint                           = "If this is a PowerShell Core-only script, pass -Build @{Target='Core'} (requires PowerShell Core and .NET on the build and target machines; the resulting exe is much larger)."
 		ReadingFile                               = "ファイル {0} を読み取っています ({1} バイト)"
 		ForceX86byVirtualization                  = "アプリケーション仮想化が有効化されているため、x86 プラットフォームを強制します。"
 		TryingTinySharpCompile                    = "結果が定数であるため、TinySharp コンパイラを試しています..."

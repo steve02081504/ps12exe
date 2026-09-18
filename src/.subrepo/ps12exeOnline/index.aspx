@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="index.aspx.cs" Inherits="ps12exeOnlineMain" Async="true" %>
+<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="index.aspx.cs" Inherits="ps12exeOnlineMain" Async="true" %>
 
 <!DOCTYPE html>
 <meta charset="utf-8" />
@@ -39,9 +39,9 @@
 
 <body>
 	<form id="MainForm" runat="server">
-		<textarea runat="server" id="inputText" style="width: 98%; height:95vh;" is="highlighted-code" language="powershell" tabSize="4" placeholder="#_pragma noConsole
+		<textarea runat="server" id="inputText" style="width: 98%; height:95vh;" is="highlighted-code" language="powershell" tabSize="4" placeholder="#_pragma App.Windowed
 'Hello 世界！👾'
-">#_pragma noConsole
+">#_pragma App.Windowed
 'Hello 世界！👾'
 </textarea>
 		<br />

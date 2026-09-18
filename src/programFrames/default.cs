@@ -1594,7 +1594,7 @@ namespace PSRunnerNS {
 
 		// 由 Write-Debug 调用
 		public override void WriteDebugLine(string message) {
-			#if !noError
+			#if !noDebug
 			#if !noConsole
 				WriteLineInternal(DebugForegroundColor, DebugBackgroundColor, string.Format("DEBUG: {0}", message));
 			#else
@@ -1662,7 +1662,7 @@ namespace PSRunnerNS {
 			#endif
 		}
 
-		#if !(noError || noConsole)
+		#if !noConsole
 		private void WriteLineInternal(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value) {
 			// 同上：ERROR/WARNING/DEBUG 走这条路，上色失败绝不能让失败原因本身消失（issue 60）。
 			try {
@@ -1726,9 +1726,9 @@ namespace PSRunnerNS {
 
 		// 由 Write-Verbose 调用
 		public override void WriteVerboseLine(string message) {
-			#if !noOutput
+			#if !noVerbose
 			#if !noConsole
-			WriteLine(VerboseForegroundColor, VerboseBackgroundColor, string.Format("VERBOSE: {0}", message));
+			WriteLineInternal(VerboseForegroundColor, VerboseBackgroundColor, string.Format("VERBOSE: {0}", message));
 			#else
 			MessageBox.Show(message, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
 			#endif
@@ -1737,7 +1737,7 @@ namespace PSRunnerNS {
 
 		// 由 Write-Warning 调用
 		public override void WriteWarningLine(string message) {
-			#if !noError
+			#if !noWarning
 				#if !noConsole
 					WriteLineInternal(WarningForegroundColor, WarningBackgroundColor, string.Format("WARNING: {0}", message));
 				#else
@@ -1974,6 +1974,9 @@ namespace PSRunnerNS {
 		public static void BaseInit() {
 			#if UNICODEEncoding && !noConsole
 			System.Console.OutputEncoding = new System.Text.UnicodeEncoding();
+			#endif
+			#if UTF8Encoding && !noConsole
+			System.Console.OutputEncoding = new System.Text.UTF8Encoding();
 			#endif
 
 			#if culture
