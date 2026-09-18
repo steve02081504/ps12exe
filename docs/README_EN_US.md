@@ -205,6 +205,8 @@ finally {
 
 ### Preprocessing
 
+<a id="preprocessing-overview"></a>
+
 ps12exe pre-processes the script before compiling.
 
 ```powershell
@@ -217,6 +219,8 @@ ps12exe pre-processes the script before compiling.
 ```
 
 #### `#_if <condition>`/`#_else`/`#_endif`
+
+<a id="preprocessing-if"></a>
 
 ```powershell
 $LocalizeData =
@@ -231,6 +235,8 @@ Right now, only these conditions are supported: `PSEXE` and `PSScript`.
 `PSEXE` is true; `PSScript` is false.
 
 #### `#_include <filename|url>`/`#_include_as_value <valuename> <file|url>`
+
+<a id="preprocessing-include"></a>
 
 ```powershell
 #_include <filename|url>
@@ -260,6 +266,8 @@ $result = & "$PSScriptRoot/another.ps1" -args
 
 #### `#_include_as_(base64|bytes) <valuename> <file|url>`
 
+<a id="preprocessing-include-as"></a>
+
 ```powershell
 #_include_as_base64 <valuename> <file|url>
 #_include_as_bytes <valuename> <file|url>
@@ -278,6 +286,8 @@ When run, this EXE extracts the `data.bin` file that was embedded in the script 
 
 #### `#_!!`
 
+<a id="preprocessing-bang"></a>
+
 ```powershell
 $Script:eshDir =
 #_if PSScript # It's not possible to have $EshellUI in PSEXE
@@ -293,6 +303,8 @@ elseif
 The `#_!!` prefix is stripped from any line that starts with it.
 
 #### `#_require <modulesList>`
+
+<a id="preprocessing-require"></a>
 
 ```powershell
 #_require ps12exe
@@ -325,6 +337,8 @@ When you need several modules, you can separate them with spaces, commas, or sem
 
 #### `#_pragma`
 
+<a id="preprocessing-pragma"></a>
+
 The pragma preprocessor directive doesn't change the script's content, but it changes the parameters used for compilation.
 Here's an example:
 
@@ -354,6 +368,8 @@ The pragma command can set any compilation parameter:
 String pragma values can also contain `$(...)` subexpressions, which are evaluated at preprocess time, e.g. `#_pragma icon $(Join-Path $env:USERPROFILE 'foo.ico')`. Only whitelisted path-related commands (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, plus `Get-Content` outside GuestMode), variables (`$env:*`, `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) and common harmless instance methods (e.g. `ToUpper`, `Trim`, `Split`, `ToString`) are allowed; anything else aborts the compile. Single-quoted values stay fully literal.
 
 #### `#_balus`
+
+<a id="preprocessing-balus"></a>
 
 ```powershell
 #_balus <exitcode>

@@ -32,5 +32,14 @@
 	"Please select an executable (.exe) file.": "Seleccione un archivo ejecutable (.exe).",
 	"Not a ps12exe executable: {0}": "No es un ejecutable de ps12exe: {0}",
 	"Failed to open exe source: {0}": "No se pudo abrir el código fuente del exe: {0}",
-	"Previous executable kept as {0}.": "El ejecutable anterior se conservó como {0}."
+	"Previous executable kept as {0}.": "El ejecutable anterior se conservó como {0}.",
+	"`#_if <condition>` / `#_else` / `#_endif` — conditional preprocessing. `PSEXE` is true while compiling; `PSScript` is false.": "`#_if <condition>` / `#_else` / `#_endif` — preprocesado condicional. `PSEXE` es true al compilar; `PSScript` es false.",
+	"`#_include <filename|url>` inserts a file (which is preprocessed) here; `#_include_as_value <valuename> <file|url>` inserts it as a string value (not preprocessed).": "`#_include <filename|url>` inserta aquí un archivo (preprocesado); `#_include_as_value <valuename> <file|url>` inserta su contenido como valor de cadena (sin preprocesar).",
+	"`#_include_as_base64 <valuename> <file|url>` / `#_include_as_bytes <valuename> <file|url>` insert a file as a base64 string or a byte array.": "`#_include_as_base64 <valuename> <file|url>` / `#_include_as_bytes <valuename> <file|url>` insertan un archivo como cadena base64 o matriz de bytes.",
+	"`#_!!` is an escape marker: it is stripped from the line, so the line is a comment when run directly and real code in the compiled EXE.": "`#_!!` es un marcador de escape: se elimina del inicio de línea, así que la línea es un comentario al ejecutar directamente y código real en el EXE compilado.",
+	"`#_require <modulesList>` installs the listed PowerShell modules before the script runs; it installs but does not import them.": "`#_require <modulesList>` instala los módulos de PowerShell indicados antes de ejecutar el script; los instala, pero no los importa.",
+	"`#_pragma <name> [value]` sets a compilation parameter such as `Console`, `noConsole`, `icon` or `title` without modifying the script.": "`#_pragma <name> [value]` establece un parámetro de compilación (`Console`, `noConsole`, `icon`, `title`, etc.) sin modificar el script.",
+	"`#_balus <exitcode>` exits the process with the given exit code and deletes the compiled EXE.": "`#_balus <exitcode>` termina el proceso con el código de salida indicado y elimina el EXE compilado.",
+	"`#_DllExport <signature>` exports a PowerShell function from the compiled assembly; this macro is still experimental and undocumented.": "`#_DllExport <signature>` exporta una función de PowerShell desde el ensamblado compilado; esta macro aún es experimental y no está documentada.",
+	"Read more in the ps12exe README": "Más información en el README de ps12exe"
 }

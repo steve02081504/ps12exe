@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { MESSAGES } from '../lib/preprocessor.mjs'
+import { HOVER_MESSAGES } from '../lib/hover.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -12,7 +13,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
  * @returns {Set<string>}
  */
 function usedRuntimeKeys () {
-	const keys = new Set(Object.values(MESSAGES))
+	const keys = new Set([...Object.values(MESSAGES), ...Object.values(HOVER_MESSAGES)])
 	for (const dir of [ROOT, path.join(ROOT, 'lib')]) {
 		for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
 			if (!entry.isFile() || !entry.name.endsWith('.mjs')) continue

@@ -205,6 +205,8 @@ finally {
 
 ### 预处理
 
+<a id="preprocessing-overview"></a>
+
 ps12exe 会在编译前对脚本进行预处理。
 
 ```powershell
@@ -217,6 +219,8 @@ ps12exe 会在编译前对脚本进行预处理。
 ```
 
 #### `#_if <condition>`/`#_else`/`#_endif`
+
+<a id="preprocessing-if"></a>
 
 ```powershell
 $LocalizeData =
@@ -231,6 +235,8 @@ $LocalizeData =
 `PSEXE` 为 true；`PSScript` 为 false。
 
 #### `#_include <filename|url>`/`#_include_as_value <valuename> <file|url>`
+
+<a id="preprocessing-include"></a>
 
 ```powershell
 #_include <filename|url>
@@ -260,6 +266,8 @@ $result = & "$PSScriptRoot/another.ps1" -args
 
 #### `#_include_as_(base64|bytes) <valuename> <file|url>`
 
+<a id="preprocessing-include-as"></a>
+
 ```powershell
 #_include_as_base64 <valuename> <file|url>
 #_include_as_bytes <valuename> <file|url>
@@ -278,6 +286,8 @@ $result = & "$PSScriptRoot/another.ps1" -args
 
 #### `#_!!`
 
+<a id="preprocessing-bang"></a>
+
 ```powershell
 $Script:eshDir =
 #_if PSScript #在PSEXE中不可能有$EshellUI
@@ -293,6 +303,8 @@ elseif
 任何以`#_!!`开头的行，其开头的`#_!!`会被去除。
 
 #### `#_require <modulesList>`
+
+<a id="preprocessing-require"></a>
 
 ```powershell
 #_require ps12exe
@@ -325,6 +337,8 @@ $modules | ForEach-Object{
 
 #### `#_pragma`
 
+<a id="preprocessing-pragma"></a>
+
 pragma预处理指令对脚本内容没有任何影响，但会修改编译所使用的参数。  
 以下是一个例子：
 
@@ -354,6 +368,8 @@ pragma命令可以设置任何编译参数：
 字符串类型的 pragma 值也可以包含 `$(...)` 子表达式，并在预处理时求值，例如 `#_pragma icon $(Join-Path $env:USERPROFILE 'foo.ico')`。仅允许白名单内的 path 相关命令（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`，以及非访客模式下的 `Get-Content`）、变量（`$env:*`、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）和常见无害实例方法（如 `ToUpper`、`Trim`、`Split`、`ToString`）；其他内容将中止编译。单引号值保持完全字面。
 
 #### `#_balus`
+
+<a id="preprocessing-balus"></a>
 
 ```powershell
 #_balus <exitcode>

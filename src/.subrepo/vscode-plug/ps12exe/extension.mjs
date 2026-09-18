@@ -6,6 +6,7 @@ import { toPs12exeLocale } from './lib/locale.mjs'
 import { analyze, endifAutoClose, foldingRanges, toggleBangLines, computeSkipMask } from './lib/preprocessor.mjs'
 import { applyPreprocessorFormatting } from './lib/format.mjs'
 import { resolveDirectivePath } from './lib/definition.mjs'
+import { HOVER_MESSAGES, directiveAt, documentationUrl } from './lib/hover.mjs'
 import { POWER_SHELL_EXTENSION_ID, isPowerShellExtensionInstalled, getOfficialEdits, applyTextEdits } from './lib/officialFormatter.mjs'
 import { registerExeSource } from './lib/exeSource.mjs'
 
@@ -428,6 +429,29 @@ const definitionProvider = {
 	}
 }
 
+const hoverProvider = {
+	/**
+	 * 在 preprocessor 指令上显示本地化的说明，并链接到当前区域 README 中对应的小节。here-string 函数体和块注释内的 `#_…` 不是指令，因此不提示。
+	 *
+	 * @param {vscode.TextDocument} document
+	 * @param {vscode.Position} position
+	 * @returns {vscode.Hover | null}
+	 */
+	provideHover (document, position) {
+		if (document.languageId !== 'powershell') return null
+		const line = document.lineAt(position.line).text
+		const directive = directiveAt(line, position.character)
+		if (!directive) return null
+		if (computeSkipMask(document.getText().split(/\r\n|\n|\r/))[position.line]) return null
+
+		const contents = new vscode.MarkdownString()
+		contents.appendMarkdown(t(HOVER_MESSAGES[directive.section]))
+		const url = documentationUrl(toPs12exeLocale(vscode.env.language), directive.section)
+		contents.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${url})`)
+		return new vscode.Hover(contents, new vscode.Range(position.line, directive.start, position.line, directive.end))
+	}
+}
+
 const foldingProvider = {
 	/**
 	 * 把每个 preprocessor 块从其 `#_if` 行折叠到其 `#_endif` 之前的一行。对 PowerShell 扩展自身基于 AST 的折叠是附加的。
@@ -475,6 +499,7 @@ function activate (context) {
 		vscode.commands.registerCommand('ps12exe.formatDocument', formatDocumentCommand),
 		vscode.languages.registerDocumentFormattingEditProvider(POWER_SHELL_SELECTOR, formattingProvider),
 		vscode.languages.registerDefinitionProvider(POWER_SHELL_SELECTOR, definitionProvider),
+		vscode.languages.registerHoverProvider(POWER_SHELL_SELECTOR, hoverProvider),
 		vscode.languages.registerFoldingRangeProvider(POWER_SHELL_SELECTOR, foldingProvider),
 		vscode.languages.registerCodeActionsProvider(POWER_SHELL_SELECTOR, codeActionProvider, { providedCodeActionKinds: [FIX_ALL_KIND] }),
 		vscode.workspace.onDidOpenTextDocument(updateDiagnostics),

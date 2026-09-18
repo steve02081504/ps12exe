@@ -205,6 +205,8 @@ finally {
 
 ### 前処理
 
+<a id="preprocessing-overview"></a>
+
 ps12exe はコンパイル前にスクリプトを前処理します。
 
 ```powershell
@@ -217,6 +219,8 @@ ps12exe はコンパイル前にスクリプトを前処理します。
 ```
 
 #### `#_if <condition>`/`#_else`/`#_endif`
+
+<a id="preprocessing-if"></a>
 
 ```powershell
 $LocalizeData =
@@ -231,6 +235,8 @@ $LocalizeData =
 `PSEXE` は真、`PSScript` は偽。
 
 #### `#_include <ファイル名|url>`/`#_include_as_value <値> <ファイル名|url>`
+
+<a id="preprocessing-include"></a>
 
 ```powershell
 #_include <filename|url>
@@ -258,6 +264,8 @@ $result = & "$PSScriptRoot/another.ps1" -args
 
 #### `#_include_as_(base64|bytes) <valuename> <file|url>`
 
+<a id="preprocessing-include-as"></a>
+
 ```powershell
 #_include_as_base64 <valuename> <file|url>
 #_include_as_bytes <valuename> <file|url>
@@ -276,6 +284,8 @@ $result = & "$PSScriptRoot/another.ps1" -args
 
 #### `#_!!`
 
+<a id="preprocessing-bang"></a>
+
 ```powershell
 $Script:eshDir =
 #_if PSScript #$EshellUIをPSEXEに入れることはできない
@@ -291,6 +301,8 @@ elseif
 行頭の `#_!!` は取り除かれます。
 
 #### `#_require <モジュールリスト>`
+
+<a id="preprocessing-require"></a>
 
 ```powershell
 #_require ps12exe
@@ -323,6 +335,8 @@ $modules | ForEach-Object{
 
 #### `#_pragma`
 
+<a id="preprocessing-pragma"></a>
+
 pragma プリプロセッシングディレクティブはスクリプトの内容には影響しませんが、コンパイルに使用するパラメータを変更します。  
 以下に例を示します。
 
@@ -352,6 +366,8 @@ pragma コマンドは任意のコンパイルパラメータを設定できま�
 文字列型の pragma 値には `$(...)` 部分式を記述でき、プリプロセス時に評価されます（例：`#_pragma icon $(Join-Path $env:USERPROFILE 'foo.ico')`）。許可されるのはホワイトリストに含まれる path 関連コマンド（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`、および GuestMode 以外での `Get-Content`）、変数（`$env:*`、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）、および一般的な無害なインスタンスメソッド（例：`ToUpper`、`Trim`、`Split`、`ToString`）のみです。それ以外はコンパイルを中断します。単引用符で囲んだ値は完全にリテラルとして扱われます。
 
 #### `#_balus`
+
+<a id="preprocessing-balus"></a>
 
 ```powershell
 #_balus <exitcode>
