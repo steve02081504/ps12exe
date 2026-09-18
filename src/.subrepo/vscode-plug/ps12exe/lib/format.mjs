@@ -1,6 +1,6 @@
 // ps12exe formatter 中与 VS Code 无关的纯逻辑部分：官方 PowerShell formatter 生成基础文本之后发生的所有事情。放在这里能让测试在没有运行中编辑器实例的情况下走完整条流水线。
 import { createHash } from 'node:crypto'
-import { analyze, indentText, branchFragments, restoreParenIndentation, restoreClauseIndentation } from './preprocessor.mjs'
+import { analyze, indentText, branchFragments, restoreParenIndentation, restoreClauseIndentation, restoreMarkerIndentation } from './preprocessor.mjs'
 import { resolvePlainPowerShell, findIncompleteFragments } from './powershell.mjs'
 
 const INCOMPLETE_CACHE_LIMIT = 32
@@ -52,6 +52,7 @@ async function findIncompleteBlocks (text, onError) {
  * @param {string} baseText
  * @param {object} [options]
  * @param {string} [options.indentUnit] 默认为制表符
+ * @param {string} [options.originalText] 官方 formatter 之前的文档；提供时用它还原 `#_!!`/`#_balus` 行的嵌套缩进
  * @param {(message: string) => void} [options.onError]
  * @returns {Promise<string>}
  */
@@ -60,7 +61,9 @@ async function formatPreprocessedText (baseText, options = {}) {
 	let styled = restoreParenIndentation(baseText, indentUnit)
 	styled = restoreClauseIndentation(styled)
 	const incomplete = await findIncompleteBlocks(styled, options.onError)
-	return indentText(styled, { indentUnit, incompleteBlocks: incomplete })
+	const indented = indentText(styled, { indentUnit, incompleteBlocks: incomplete })
+	if (!options.originalText) return indented
+	return restoreMarkerIndentation(indented, options.originalText)
 }
 
 /**
@@ -76,7 +79,7 @@ async function formatPreprocessedText (baseText, options = {}) {
  */
 async function applyPreprocessorFormatting (currentText, baseText, officialApplied, options = {}) {
 	if (!officialApplied) return currentText
-	return formatPreprocessedText(baseText, options)
+	return formatPreprocessedText(baseText, { ...options, originalText: currentText })
 }
 
 export { findIncompleteBlocks, formatPreprocessedText, applyPreprocessorFormatting }

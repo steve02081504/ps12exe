@@ -2,7 +2,7 @@ import assert from 'node:assert'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { analyze, indentText, endifAutoClose, foldingRanges, toggleBangLine, toggleBangLines, branchFragments, pickExemptBlock, computeSkipMask, restoreParenIndentation, restoreClauseIndentation, MESSAGES } from '../lib/preprocessor.mjs'
+import { analyze, indentText, endifAutoClose, foldingRanges, toggleBangLine, toggleBangLines, branchFragments, pickExemptBlock, computeSkipMask, restoreMarkerIndentation, restoreParenIndentation, restoreClauseIndentation, MESSAGES } from '../lib/preprocessor.mjs'
 
 // 该扩展位于 <repo>/src/.subrepo/vscode-plug/ps12exe，因此本测试文件位于 ps12exe 仓库根目录下五层。
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..')
@@ -217,6 +217,73 @@ suite('ps12exe preprocessor', () => {
 			'$x = 1'
 		])
 		assert.deepStrictEqual(withRedirect, [false, true, true, false])
+
+		// 只含块注释的行跳过，但先有代码再内联 `<# … #>` 的行是代码，必须参与缩进。
+		const inline = computeSkipMask([
+			'catch { <# ignore #> }',
+			'\t<# pure comment #>',
+			'$x = 1 <# trailing #>',
+			'<# open',
+			'still #>',
+			'$y = 2'
+		])
+		assert.deepStrictEqual(inline, [false, true, false, true, true, false])
+	})
+
+	test('indents code lines that carry an inline block comment', () => {
+		// 回归：`catch { <# … #> }` 以前被 skip mask 整行跳过，永远得不到 preprocessor 层级，于是和上方的 `try {` 错位。
+		const base = [
+			'function f {',
+			'\t#_if PSEXE',
+			'\ttry {',
+			'\t\tWrite-Output 1',
+			'\t}',
+			'\tcatch { <# ignore #> }',
+			'\t#_endif',
+			'}'
+		].join('\n')
+		const expected = [
+			'function f {',
+			'\t#_if PSEXE',
+			'\t\ttry {',
+			'\t\t\tWrite-Output 1',
+			'\t\t}',
+			'\t\tcatch { <# ignore #> }',
+			'\t#_endif',
+			'}'
+		].join('\n')
+		assert.strictEqual(indentText(base, { indentUnit: '\t' }), expected)
+	})
+
+	test('restores the nesting of #_!! and #_balus lines from the original', () => {
+		// 官方 formatter 把这些「展开为代码」的指令当成注释，压平到 `#_if` 的层级；用原文的相对缩进还原。
+		const original = [
+			'function f {',
+			'\t#_if PSEXE',
+			'\t\t#_!! if ($a) {',
+			'\t\t\t#_!! foo',
+			'\t\t#_!! }',
+			'\t#_else',
+			'\t\tbar',
+			'\t#_endif',
+			'}'
+		].join('\n')
+		const flattened = original.replace(/\t\t\t?#_!!/g, '\t#_!!')
+		assert.strictEqual(restoreMarkerIndentation(flattened, original), original)
+
+		// `#_balus` 与顶层块同样处理。
+		const tailOriginal = [
+			'#_if PSEXE',
+			'\t#_!! if ($x) {',
+			'\t\t#_balus $y',
+			'\t#_!! }',
+			'#_endif'
+		].join('\n')
+		const tailFlattened = tailOriginal.replace('\t\t#_balus', '\t#_balus')
+		assert.strictEqual(restoreMarkerIndentation(tailFlattened, tailOriginal), tailOriginal)
+
+		// 内容一旦对不上（结构已变），原样返回而不是猜。
+		assert.strictEqual(restoreMarkerIndentation(flattened, original.replace('#_!! foo', '#_!! qux')), flattened)
 	})
 
 	test('splits blocks into one fragment per branch', () => {

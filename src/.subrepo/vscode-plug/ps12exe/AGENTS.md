@@ -1,9 +1,6 @@
 # AGENTS.md — ps12exe VS Code extension
 
-This directory is the `steve02081504.ps12exe` extension (packaged from
-`src/.subrepo/vscode-plug/ps12exe` in the main repository). It is also the
-`defaultFormatter` for PowerShell files in that repository, so the formatter has
-to leave the repository's own scripts untouched.
+This directory is the `steve02081504.ps12exe` extension (packaged from `src/.subrepo/vscode-plug/ps12exe` in the main repository). It is also the `defaultFormatter` for PowerShell files in that repository, so the formatter has to leave the repository's own scripts untouched.
 
 ## Commands
 
@@ -15,79 +12,30 @@ npm run build # package the VSIX and install it into the local VS Code
 
 ## Formatter invariants
 
-- **Formatting the repository's own scripts must be a byte-for-byte no-op**
-  (after normalizing the BOM): `ps12exe.ps1` and `src/CodeDomCompiler.ps1`. This
-  is enforced by `test/formatting.test.mjs`; keep it passing when touching
-  anything below.
-- The extension runs the official PowerShell formatter (`ms-vscode.powershell`,
-  i.e. PowerShell Editor Services → PSScriptAnalyzer `Invoke-Formatter`) first
-  and then applies the preprocessor indentation
-  (`lib/format.mjs#formatPreprocessedText`). The preprocessor indentation builds
-  on the syntax indentation that base produces, so it is only applied when the
-  official formatter ran (`lib/format.mjs#applyPreprocessorFormatting`); when the
-  PowerShell extension is missing the document is left unchanged instead of
-  compounding one level per format.
-- `test/officialFormatter.mjs` emulates that official formatter by mirroring the
-  PSES `powershell.codeFormatting.*` → PSScriptAnalyzer mapping
-  (`LanguageServerSettings.cs`) and running `Invoke-Formatter` through a
-  PowerShell host. When the official extension changes its mapping, update this
-  file.
-- The workspace style comes from this extension's
-  `contributes.configurationDefaults` in `package.json`: `[powershell]` defaults
-  to `editor.insertSpaces: false` (tabs) and to this extension as
-  `editor.defaultFormatter`, and `powershell.codeFormatting.newLineAfterOpenBrace`
-  defaults to `false`. Explicit user or workspace settings still win over these
-  defaults, so the repository does not need a `.vscode/settings.json`.
-  `test/officialFormatter.mjs` reads those defaults from `package.json` before
-  applying workspace overrides.
+- **Formatting the repository's own scripts must be a byte-for-byte no-op** (after normalizing the BOM): `ps12exe.ps1` and `src/CodeDomCompiler.ps1`. This is enforced by `test/formatting.test.mjs`; keep it passing when touching anything below.
+- The extension runs the official PowerShell formatter (`ms-vscode.powershell`, i.e. PowerShell Editor Services → PSScriptAnalyzer `Invoke-Formatter`) first and then applies the preprocessor indentation (`lib/format.mjs#formatPreprocessedText`). The preprocessor indentation builds on the syntax indentation that base produces, so it is only applied when the official formatter ran (`lib/format.mjs#applyPreprocessorFormatting`); when the PowerShell extension is missing the document is left unchanged instead of compounding one level per format.
+- `#_!!` and `#_balus` are code once ps12exe strips the marker, but the official formatter sees only comments and flattens their indentation ([PSScriptAnalyzer#2217](https://github.com/PowerShell/PSScriptAnalyzer/issues/2217)). `formatPreprocessedText` passes the pre-format document as `originalText` so `lib/preprocessor.mjs#restoreMarkerIndentation` can put the nesting back (relative to the branch's `#_if`/`#_else` line); `applyPreprocessorFormatting` supplies it. Keep `restoreMarkerIndentation` in sync when changing the pipeline.
+- `computeSkipMask` only treats a line as opaque when it is entirely inside a here-string or block comment. A code line that merely carries an inline comment (`catch { <# ignore #> }`) is code and must receive the preprocessor indentation like any other.
+- `test/officialFormatter.mjs` emulates that official formatter by mirroring the PSES `powershell.codeFormatting.*` → PSScriptAnalyzer mapping (`LanguageServerSettings.cs`) and running `Invoke-Formatter` through a PowerShell host. When the official extension changes its mapping, update this file.
+- The workspace style comes from this extension's `contributes.configurationDefaults` in `package.json`: `[powershell]` defaults to `editor.insertSpaces: false` (tabs) and to this extension as `editor.defaultFormatter`, and `powershell.codeFormatting.newLineAfterOpenBrace` defaults to `false`. Explicit user or workspace settings still win over these defaults, so the repository does not need a `.vscode/settings.json`. `test/officialFormatter.mjs` reads those defaults from `package.json` before applying workspace overrides.
 
 ## Upstream bugs we work around
 
-Keep these linked next to the code so they can be removed once upstream fixes
-them. Record new workarounds the same way (issue URL + what to delete).
+Keep these linked next to the code so they can be removed once upstream fixes them. Record new workarounds the same way (issue URL + what to delete).
 
 | Issue | Symptom | Workaround |
 | --- | --- | --- |
 | [PSScriptAnalyzer#2216](https://github.com/PowerShell/PSScriptAnalyzer/issues/2216), [#1168](https://github.com/PowerShell/PSScriptAnalyzer/issues/1168), [#1378](https://github.com/PowerShell/PSScriptAnalyzer/issues/1378) | `PSUseConsistentIndentation` counts an open parenthesis on top of a scriptblock/hashtable opener, so `$x = (1..3 \| ForEach-Object {`, `$list.Add([PSCustomObject]@{`, `[ArgumentCompleter({` and backtick continuations such as ``Write-Host ("{0}" -f ` `` get one extra level per unclosed `(` (body at opener+N+1, closing line at opener+N). `#2216` also has exact repros outside attributes. Reproduces on 1.25.0 with pwsh 7.6.6 and Windows PowerShell 5.1, with tabs and spaces. | `restoreParenIndentation` in `lib/preprocessor.mjs` detects the exact signature and pulls the region back `N` levels. Delete the function, its export and the `repairs the official formatter over-indentation after an open parenthesis` test once upstream ships a fix. |
 | [PSScriptAnalyzer#1055](https://github.com/PowerShell/PSScriptAnalyzer/issues/1055), [#1441](https://github.com/PowerShell/PSScriptAnalyzer/issues/1441) | The brace rules (`PSPlaceCloseBrace`/`PSPlaceOpenBrace`) hardcode a space for the indentation they rewrite, so with `Kind = 'tab'` a `} else {` / `} elseif {` / `} catch {` / `} finally {` nested exactly one level deep becomes `}` + newline + ` else {` instead of `}` + newline + tab + `else {`. Reproduces on 1.25.0 with pwsh 7.6.6 and Windows PowerShell 5.1. | `restoreClauseIndentation` in `lib/preprocessor.mjs` realigns the moved clause with the `}` directly above it. Delete the function, its export and the `realigns an else/catch moved onto its own line` test once the brace rules honour `Kind = 'tab'`. |
+| [PSScriptAnalyzer#2217](https://github.com/PowerShell/PSScriptAnalyzer/issues/2217) | `PSUseConsistentIndentation` rewrites the whitespace *before* each comment's `#`, so a run of commented-out code (whose nesting is expressed before the `#`) is flattened to the block indentation; whitespace *after* the `#` is preserved, so `# \tfoo` survives while `\t# foo` and `\t\t# foo` both collapse to `\t# foo`. Reproduces on 1.25.0 with pwsh 7.6.6 (tabs and spaces). | `restoreMarkerIndentation` in `lib/preprocessor.mjs` puts the `#_!!`/`#_balus` lines back at their indentation relative to the branch's `#_if`/`#_else` line, sourced from the pre-format document. Delete the function, its export, the `restores the nesting of #_!! and #_balus lines from the original` and `preserves the nesting of #_!! escapes inside a block` tests, and this row once upstream ships a fix. |
 
 ## Notes
 
-- The extension is written as native ES modules (`"type": "module"`, `.mjs` entry
-  and modules), which requires VS Code 1.100+. `npm test` reuses the VS Code
-  installed on this machine; it is located through `@steve02081504/exec`'s
-  `where_command`, and `PS12EXE_VSCODE_EXECUTABLE_PATH` can point it at a specific
-  executable. When the install lives on another Windows drive, a junction is
-  created under `.vscode-test/` because `@vscode/test-electron` silently skips
-  tests for cross-drive installs. Without a local install a VS Code copy is
-  downloaded once into `.vscode-test/` and cached.
-- Formatter completeness check: each preprocessor block's branch bodies are
-  parsed in one batched call with
-  `[System.Management.Automation.Language.Parser]::ParseInput`; bodies that
-  produce parse errors are never pushed one level deeper. A bare attribute body
-  (`[ArgumentCompleter({…})]`) is retried with a trailing dummy statement so it
-  is not mistaken for an incomplete block. Results are cached per document text.
-- The wrapper script sets `$global:LASTEXITCODE = 0` before calling `ps12exe` and
-  ends with `exit $LASTEXITCODE`, because ps12exe reports failures through
-  `$LASTEXITCODE` rather than a terminating error.
-- **Find files with `rg --files` (or the Glob tool); never `Get-ChildItem -Recurse`.**
-  The repository vendors `node_modules/` and `.vscode-test/` (a whole VS Code
-  install), so a recursive listing explodes and gets truncated. Filter during the
-  walk (`rg --files -g '!**/node_modules/**'`, or Glob's `path`/`pattern`);
-  `-Exclude` only matches the leaf file name and a `Where-Object` at the end of
-  the pipeline does not stop the traversal. Beware that `rg`/Glob skip
-  dot-directories by default, so this extension's own
-  `src/.subrepo/vscode-plug/ps12exe` needs `--hidden` (or `-uu`) to show up.
-- PowerShell is always invoked with `-EncodedCommand` (Base64 UTF-16LE) to avoid
-  every Windows command-line quoting pitfall.
-- `-OutputFormat Text` is mandatory, otherwise a redirected host serializes
-  `Write-Host` to stderr as a CLIXML blob.
-- New UI strings go through `vscode.l10n.t('…')` and must be added verbatim to
-  every `l10n/bundle.l10n.<locale>.json` (guarded by `test/l10n.test.mjs`).
-  `lib/hover.mjs#HOVER_MESSAGES` is collected by that test like
-  `lib/preprocessor.mjs#MESSAGES`, so its values need bundle entries too.
-- Directive hovers (`lib/hover.mjs`) link to the main repository's
-  `docs/README_*` through the explicit `<a id="preprocessing-…">` anchors those
-  files carry (not through headings, whose auto-generated anchors differ by
-  language). Keep `SECTION_ANCHORS` in sync with the `docs/README_*.md` anchors
-  when adding or renaming a directive.
+- The extension is written as native ES modules (`"type": "module"`, `.mjs` entry and modules), which requires VS Code 1.100+. `npm test` reuses the VS Code installed on this machine; it is located through `@steve02081504/exec`'s `where_command`, and `PS12EXE_VSCODE_EXECUTABLE_PATH` can point it at a specific executable. When the install lives on another Windows drive, a junction is created under `.vscode-test/` because `@vscode/test-electron` silently skips tests for cross-drive installs. Without a local install a VS Code copy is downloaded once into `.vscode-test/` and cached.
+- Formatter completeness check: each preprocessor block's branch bodies are parsed in one batched call with `[System.Management.Automation.Language.Parser]::ParseInput`; bodies that produce parse errors are never pushed one level deeper. A bare attribute body (`[ArgumentCompleter({…})]`) is retried with a trailing dummy statement so it is not mistaken for an incomplete block. Results are cached per document text.
+- The wrapper script sets `$global:LASTEXITCODE = 0` before calling `ps12exe` and ends with `exit $LASTEXITCODE`, because ps12exe reports failures through `$LASTEXITCODE` rather than a terminating error.
+- **Find files with `rg --files` (or the Glob tool); never `Get-ChildItem -Recurse`.** The repository vendors `node_modules/` and `.vscode-test/` (a whole VS Code install), so a recursive listing explodes and gets truncated. Filter during the walk (`rg --files -g '!**/node_modules/**'`, or Glob's `path`/`pattern`); `-Exclude` only matches the leaf file name and a `Where-Object` at the end of the pipeline does not stop the traversal. Beware that `rg`/Glob skip dot-directories by default, so this extension's own `src/.subrepo/vscode-plug/ps12exe` needs `--hidden` (or `-uu`) to show up.
+- PowerShell is always invoked with `-EncodedCommand` (Base64 UTF-16LE) to avoid every Windows command-line quoting pitfall.
+- `-OutputFormat Text` is mandatory, otherwise a redirected host serializes `Write-Host` to stderr as a CLIXML blob.
+- New UI strings go through `vscode.l10n.t('…')` and must be added verbatim to every `l10n/bundle.l10n.<locale>.json` (guarded by `test/l10n.test.mjs`). `lib/hover.mjs#HOVER_MESSAGES` is collected by that test like `lib/preprocessor.mjs#MESSAGES`, so its values need bundle entries too.
+- Directive hovers (`lib/hover.mjs`) link to the main repository's `docs/README_*` through the explicit `<a id="preprocessing-…">` anchors those files carry (not through headings, whose auto-generated anchors differ by language). Keep `SECTION_ANCHORS` in sync with the `docs/README_*.md` anchors when adding or renaming a directive.

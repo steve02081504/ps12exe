@@ -164,6 +164,8 @@ function endifAutoClose (currentLine, insertedText) {
 const BANG_RE = /^([ \t]*)#_!! ?(.*)$/
 // 任何其他 preprocessor 指令（`#_if`、`#_else`、`#_endif`、`#_include` 等）。
 const OTHER_DIRECTIVE_RE = /^[ \t]*#_/
+// 展开为真实代码、因而需要保留其周围代码缩进的指令行：`#_!!` 转义与 `#_balus`。
+const CODE_MARKER_RE = /^[ \t]*#_(?:!!|balus\b)/
 
 /**
  * 在单行上切换 `#_!!` 转义标记。脚本直接运行时 `#_!!` 使该行成为注释，而 ps12exe 剥离标记后则是真实代码，因此切换操作会对普通代码添加它、再将其移除。
@@ -245,7 +247,9 @@ function pickExemptBlock (blocks, totalLines) {
 }
 
 /**
- * 必须保持不变的行：here-string 函数体和块注释。它们的内容有意义（或是 formatter 原样保留的注释）。
+ * 必须保持不变的行：here-string 函数体，以及*完全*位于块注释内的行。它们的内容有意义（或是 formatter 原样保留的注释）。
+ *
+ * 只包含块注释的行会被跳过，但一行上先有代码、再出现 `<# … #>`（例如 `catch { <# ignore #> }`）时不是「块注释行」：它是代码，任何前导空白都必须照常参与 preprocessor 缩进。旧实现只要一行出现 `<#` 就整行跳过，导致这类代码行永远得不到块的缩进层级。
  *
  * @param {string[]} lines
  * @returns {boolean[]}
@@ -265,6 +269,7 @@ function computeSkipMask (lines) {
 			if (trimmed.startsWith(hereTerminator)) hereTerminator = null
 			continue
 		}
+
 		if (inBlockComment) {
 			skip[i] = true
 			if (line.includes('#>')) inBlockComment = false
@@ -276,10 +281,25 @@ function computeSkipMask (lines) {
 			hereTerminator = `${here[1]}@`
 			continue
 		}
-		if (line.includes('<#')) {
-			skip[i] = true
-			if (!line.includes('#>')) inBlockComment = true
+
+		// 扫描这一行，判断块注释之外是否还有代码。整行都是块注释时跳过；先有代码再出现 `<# … #>` 时是代码行，必须参与缩进。
+		let rest = line
+		let hasCode = false
+		for (;;) {
+			const open = rest.indexOf('<#')
+			if (open < 0) {
+				if (rest.trim() !== '') hasCode = true
+				break
+			}
+			if (rest.slice(0, open).trim() !== '') hasCode = true
+			const close = rest.indexOf('#>', open + 2)
+			if (close < 0) {
+				inBlockComment = true
+				break
+			}
+			rest = rest.slice(close + 2)
 		}
+		if (!hasCode) skip[i] = true
 	}
 
 	return skip
@@ -526,4 +546,92 @@ function restoreClauseIndentation (text) {
 	return lines.join(eol)
 }
 
-export { analyze, indentText, endifAutoClose, foldingRanges, toggleBangLine, toggleBangLines, branchFragments, pickExemptBlock, computeSkipMask, restoreParenIndentation, restoreClauseIndentation, MESSAGES, IF_RE, ELSE_RE, ENDIF_RE }
+/**
+ * 找到 `line` 所属的最内层 preprocessor 块，并返回该行所在分支的指令行（分支在 `#_else` 之前时是 `#_if` 行，之后是 `#_else` 行）。返回 `null` 表示该行不在任何块内。
+ *
+ * @param {Array<{ startLine: number, endLine: number, elseLine: number | null, depth: number }>} blocks
+ * @param {number} line
+ * @returns {{ index: number, line: number } | null}
+ */
+function referenceDirective (blocks, line) {
+	let best = null
+	for (let index = 0; index < blocks.length; index++) {
+		const block = blocks[index]
+		if (line >= block.startLine && line <= block.endLine && (!best || block.depth > blocks[best.index].depth)) {
+			best = { index, block }
+		}
+	}
+	if (!best) return null
+	const directive = best.block.elseLine !== null && line > best.block.elseLine ? best.block.elseLine : best.block.startLine
+	return { index: best.index, line: directive }
+}
+
+/**
+ * 把 `#_!!` / `#_balus` 行相对其所在分支指令的缩进，从 `originalText` 搬回 `text`。
+ *
+ * 这些指令展开为真实代码，官方 formatter 却把它们当作注释，于是把整段注释的缩进抹平成所在块的基础缩进（例如 `#_!! if (…) {` / `#_!! …` / `#_!! }` 全部对齐到 `#_if` 的层级）。这里用原文里它们相对分支指令的缩进还原，从而保住代码的嵌套层级。
+ *
+ * 上游行为：`PSUseConsistentIndentation` 重写注释 `#` 之前的空白，因而压平注释掉的代码，见 https://github.com/PowerShell/PSScriptAnalyzer/issues/2217（未关闭）。那个 issue 修好后删除此函数（及其测试）。
+ *
+ * 只有当两份文本的指令行和指令数量完全对应时才改写；任何结构差异都原样返回，避免猜错。
+ *
+ * @param {string} text 已应用 preprocessor 缩进的文本
+ * @param {string} originalText 官方 formatter 之前的文本
+ * @returns {string}
+ */
+function restoreMarkerIndentation (text, originalText) {
+	if (!originalText) return text
+	const eol = detectEol(text)
+	const lines = splitLines(text)
+	const originalLines = splitLines(originalText)
+	const { blocks } = analyze(text)
+	const { blocks: originalBlocks } = analyze(originalText)
+
+	const markerLines = []
+	for (let i = 0; i < lines.length; i++) {
+		if (CODE_MARKER_RE.test(lines[i])) markerLines.push(i)
+	}
+	const originalMarkerLines = []
+	for (let i = 0; i < originalLines.length; i++) {
+		if (CODE_MARKER_RE.test(originalLines[i])) originalMarkerLines.push(i)
+	}
+	if (!markerLines.length || markerLines.length !== originalMarkerLines.length) return text
+
+	const out = [...lines]
+	for (let index = 0; index < markerLines.length; index++) {
+		const i = markerLines[index]
+		const j = originalMarkerLines[index]
+		// 官方 formatter 只改注释的缩进、不改内容；内容一旦不同说明文本已经错位，放弃还原。
+		if (lines[i].trim() !== originalLines[j].trim()) return text
+
+		const reference = referenceDirective(blocks, i)
+		const originalReference = referenceDirective(originalBlocks, j)
+		let leading
+		if (reference && originalReference && reference.index === originalReference.index) {
+			const originalIndent = leadingOf(originalLines[originalReference.line])
+			const relative = stripLeading(originalLines[j], originalIndent)
+			if (relative === null) return text
+			leading = leadingOf(lines[reference.line]) + relative
+		}
+		else {
+			leading = leadingOf(originalLines[j])
+		}
+		out[i] = leading + lines[i].replace(/^[ \t]*/, '')
+	}
+	return out.join(eol)
+}
+
+/**
+ * `line` 的前导空白去掉 `prefix` 后的剩余部分；`line` 不以 `prefix` 开头（且前缀非空）时返回 `null`。
+ *
+ * @param {string} line
+ * @param {string} prefix
+ * @returns {string | null}
+ */
+function stripLeading (line, prefix) {
+	const leading = leadingOf(line)
+	if (prefix && !leading.startsWith(prefix)) return null
+	return leading.slice(prefix.length)
+}
+
+export { analyze, indentText, endifAutoClose, foldingRanges, toggleBangLine, toggleBangLines, branchFragments, pickExemptBlock, computeSkipMask, restoreMarkerIndentation, restoreParenIndentation, restoreClauseIndentation, MESSAGES, IF_RE, ELSE_RE, ENDIF_RE }
