@@ -1,9 +1,12 @@
+/* global suite: readonly, test: readonly */
 import assert from 'node:assert'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { resolvePlainPowerShell } from '../lib/powershell.mjs'
+
 import { formatPreprocessedText, applyPreprocessorFormatting } from '../lib/format.mjs'
+import { resolvePlainPowerShell } from '../lib/powershell.mjs'
+
 import { buildSettings, readWorkspaceFormatting, formatWithOfficialFormatter } from './officialFormatter.mjs'
 
 // 该扩展位于 <repo>/src/.subrepo/vscode-plug/ps12exe，因此本测试文件位于 ps12exe 仓库根目录下五层。
@@ -15,7 +18,12 @@ const WORKSPACE_TARGETS = [
 	'src/CodeDomCompiler.ps1'
 ]
 
-/** @returns {{ text: string, indentUnit: string, settings: object } | undefined} */
+/**
+ * 加载工作区目标文件的文本与格式化设置。
+ *
+ * @param {string} relativePath - 相对路径
+ * @returns {{ text: string, indentUnit: string, settings: object } | undefined} 目标数据，文件不存在时返回空
+ */
 function loadWorkspaceTarget (relativePath) {
 	const file = path.join(REPO_ROOT, relativePath)
 	if (!fs.existsSync(file)) return undefined

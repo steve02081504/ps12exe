@@ -1,6 +1,7 @@
 import fs from 'node:fs'
-import { analyze, indentText, branchFragments, computeSkipMask } from './lib/preprocessor.mjs'
+
 import { resolvePlainPowerShell, findIncompleteFragments } from './lib/powershell.mjs'
+import { analyze, indentText, branchFragments } from './lib/preprocessor.mjs'
 
 const repo = 'C:/Users/steve02081504/Documents/workstation/pwsh_workdirs/ps12exe'
 const orig = fs.readFileSync(repo + '/ps12exe.ps1', 'utf8').replace(/^\uFEFF/, '')

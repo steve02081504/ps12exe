@@ -5,10 +5,11 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
 import { runScript, psQuote } from '../lib/powershell.mjs'
 
-// ms-vscode.powershell 中 `powershell.codeFormatting.*` 的默认值。
-const DEFAULTS = Object.freeze({
+/** ms-vscode.powershell 中 `powershell.codeFormatting.*` 的默认值。 */
+export const DEFAULTS = Object.freeze({
 	preset: 'Custom',
 	autoCorrectAliases: false,
 	avoidSemicolonsAsLineTerminators: false,
@@ -36,14 +37,14 @@ const CODE_FORMATTING_PREFIX = 'powershell.codeFormatting.'
 /**
  * 从 VS Code 设置构建 PSScriptAnalyzer 设置哈希表。
  *
- * @param {object} [options]
+ * @param {object} [options] - 构建选项
  * @param {Record<string, unknown>} [options.overrides] `powershell.codeFormatting.*` 的值（不含前缀）
- * @param {boolean} [options.insertSpaces]
- * @param {number} [options.tabSize]
- * @returns {object}
+ * @param {boolean} [options.insertSpaces] - 是否使用空格缩进
+ * @param {number} [options.tabSize] - 缩进宽度
+ * @returns {object} 设置哈希表
  */
-function buildSettings (options = {}) {
-	const config = { ...DEFAULTS, ...(options.overrides || {}) }
+export function buildSettings (options = {}) {
+	const config = { ...DEFAULTS, ...options.overrides || {} }
 	const insertSpaces = options.insertSpaces !== false
 	const tabSize = options.tabSize || 4
 
@@ -124,7 +125,7 @@ function buildSettings (options = {}) {
 /**
  * 读取本扩展为官方 formatter 提供的默认值（`package.json` 中的 `contributes.configurationDefaults`）。VS Code 会将未被用户或工作区覆盖的设置解析为这些值。
  *
- * @returns {{ codeFormatting: Record<string, unknown>, insertSpaces: boolean | undefined }}
+ * @returns {{ codeFormatting: Record<string, unknown>, insertSpaces: boolean | undefined }} 扩展默认配置
  */
 function readExtensionConfigurationDefaults () {
 	const manifestPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json')
@@ -137,9 +138,9 @@ function readExtensionConfigurationDefaults () {
 		// 缺少清单文件不应导致测试运行失败。
 	}
 	const codeFormatting = {}
-	for (const [key, value] of Object.entries(defaults)) {
+	for (const [key, value] of Object.entries(defaults)) 
 		if (key.startsWith(CODE_FORMATTING_PREFIX)) codeFormatting[key.slice(CODE_FORMATTING_PREFIX.length)] = value
-	}
+	
 	const editor = defaults['[powershell]'] || {}
 	return { codeFormatting, insertSpaces: editor['editor.insertSpaces'] }
 }
@@ -147,25 +148,25 @@ function readExtensionConfigurationDefaults () {
 /**
  * 解析官方 formatter 会看到的 `powershell.codeFormatting.*` 和 `[powershell]` 编辑器设置：先是本扩展提供的默认值，然后叠加工作区的 `.vscode/settings.json` 覆盖值。
  *
- * @param {string} repoRoot
- * @returns {{ overrides: Record<string, unknown>, insertSpaces: boolean, tabSize: number }}
+ * @param {string} repoRoot - 仓库根目录
+ * @returns {{ overrides: Record<string, unknown>, insertSpaces: boolean, tabSize: number }} 解析后的格式化设置
  */
-function readWorkspaceFormatting (repoRoot) {
+export function readWorkspaceFormatting (repoRoot) {
 	const extension = readExtensionConfigurationDefaults()
 	const overrides = { ...extension.codeFormatting }
 	let fileSettings = {}
 	const settingsPath = path.join(repoRoot, '.vscode', 'settings.json')
-	if (fs.existsSync(settingsPath)) {
+	if (fs.existsSync(settingsPath)) 
 		try {
 			fileSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'))
 		}
 		catch {
 			// 格式错误的工作区文件不应导致测试运行失败。
 		}
-	}
-	for (const [key, value] of Object.entries(fileSettings)) {
+	
+	for (const [key, value] of Object.entries(fileSettings)) 
 		if (key.startsWith(CODE_FORMATTING_PREFIX)) overrides[key.slice(CODE_FORMATTING_PREFIX.length)] = value
-	}
+	
 	const editor = fileSettings['[powershell]'] || {}
 	const workspaceInsertSpaces = editor['editor.insertSpaces']
 	// VS Code 自身的默认值是空格；本扩展提供的是制表符。
@@ -211,13 +212,13 @@ const FORMAT_SCRIPT = [
 /**
  * 对 `text` 运行模拟的官方 formatter。
  *
- * @param {object} options
- * @param {{ command: string }} options.host
- * @param {string} options.text
+ * @param {object} options - 运行选项
+ * @param {{ command: string }} options.host - PowerShell 主机
+ * @param {string} options.text - 待格式化文本
  * @param {object} options.settings PSScriptAnalyzer 设置哈希表（参见 {@link buildSettings}）
- * @returns {Promise<{ available: boolean, text: string }>}
+ * @returns {Promise<{ available: boolean, text: string }>} 格式化结果
  */
-async function formatWithOfficialFormatter ({ host, text, settings }) {
+export async function formatWithOfficialFormatter ({ host, text, settings }) {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ps12exe-fmt-'))
 	const settingsPath = path.join(dir, 'settings.json')
 	const textPath = path.join(dir, 'input.ps1')
@@ -247,5 +248,3 @@ async function formatWithOfficialFormatter ({ host, text, settings }) {
 		}
 	}
 }
-
-export { DEFAULTS, buildSettings, readWorkspaceFormatting, formatWithOfficialFormatter }

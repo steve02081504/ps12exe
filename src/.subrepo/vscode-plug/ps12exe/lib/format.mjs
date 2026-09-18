@@ -1,7 +1,8 @@
 // ps12exe formatter 中与 VS Code 无关的纯逻辑部分：官方 PowerShell formatter 生成基础文本之后发生的所有事情。放在这里能让测试在没有运行中编辑器实例的情况下走完整条流水线。
 import { createHash } from 'node:crypto'
-import { analyze, indentText, branchFragments, restoreParenIndentation, restoreClauseIndentation, restoreMarkerIndentation } from './preprocessor.mjs'
+
 import { resolvePlainPowerShell, findIncompleteFragments } from './powershell.mjs'
+import { analyze, indentText, branchFragments, restoreParenIndentation, restoreClauseIndentation, restoreMarkerIndentation } from './preprocessor.mjs'
 
 const INCOMPLETE_CACHE_LIMIT = 32
 /** @type {Map<string, Set<number>>} */
@@ -12,11 +13,11 @@ const incompleteCache = new Map()
  *
  * 该检查使用真正的 PowerShell 解析器；没有可用宿主时不会标记任何内容。结果按文档文本缓存。
  *
- * @param {string} text
- * @param {(message: string) => void} [onError]
- * @returns {Promise<Set<number>>}
+ * @param {string} text - 待检查的文档全文
+ * @param {(message: string) => void} [onError] - 出错时的回调
+ * @returns {Promise<Set<number>>} 不完整块的索引集合
  */
-async function findIncompleteBlocks (text, onError) {
+export async function findIncompleteBlocks (text, onError) {
 	const { blocks, lines } = analyze(text)
 	const fragments = branchFragments(blocks, lines)
 	if (!fragments.length) return new Set()
@@ -49,14 +50,14 @@ async function findIncompleteBlocks (text, onError) {
 /**
  * 对 `baseText`（官方 formatter 产生的文本，若其不可用则为原始文档）应用 ps12exe 格式化规则：修复官方 formatter 的 attribute/scriptblock 怪癖，然后缩进 preprocessor 块。
  *
- * @param {string} baseText
- * @param {object} [options]
+ * @param {string} baseText - 官方 formatter 产生的文本
+ * @param {object} [options] - 格式化选项
  * @param {string} [options.indentUnit] 默认为制表符
  * @param {string} [options.originalText] 官方 formatter 之前的文档；提供时用它还原 `#_!!`/`#_balus` 行的嵌套缩进
- * @param {(message: string) => void} [options.onError]
- * @returns {Promise<string>}
+ * @param {(message: string) => void} [options.onError] - 出错时的回调
+ * @returns {Promise<string>} 格式化后的文本
  */
-async function formatPreprocessedText (baseText, options = {}) {
+export async function formatPreprocessedText (baseText, options = {}) {
 	const indentUnit = options.indentUnit || '\t'
 	let styled = restoreParenIndentation(baseText, indentUnit)
 	styled = restoreClauseIndentation(styled)
@@ -75,11 +76,9 @@ async function formatPreprocessedText (baseText, options = {}) {
  * @param {string} baseText `formatPreprocessedText` 运行所基于的文本
  * @param {boolean} officialApplied `baseText` 是否来自官方 formatter
  * @param {object} [options] 转发给 {@link formatPreprocessedText}
- * @returns {Promise<string>}
+ * @returns {Promise<string>} 格式化后的文档文本
  */
-async function applyPreprocessorFormatting (currentText, baseText, officialApplied, options = {}) {
+export async function applyPreprocessorFormatting (currentText, baseText, officialApplied, options = {}) {
 	if (!officialApplied) return currentText
 	return formatPreprocessedText(baseText, { ...options, originalText: currentText })
 }
-
-export { findIncompleteBlocks, formatPreprocessedText, applyPreprocessorFormatting }

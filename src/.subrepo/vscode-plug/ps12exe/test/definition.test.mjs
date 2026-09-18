@@ -1,14 +1,22 @@
+/* global suite: readonly, test: readonly */
 import assert from 'node:assert'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
 import { resolveDirectivePath, unquote } from '../lib/definition.mjs'
 
 suite('ps12exe directive paths', () => {
 	const base = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+	/**
+	 * 拼接仓库根目录下的路径并规范化。
+	 *
+	 * @param {...string} parts - 路径片段
+	 * @returns {string} 规范化后的绝对路径
+	 */
 	const join = (...parts) => path.normalize(path.join(base, ...parts))
 
 	test('resolves #_include paths', () => {
-		assert.strictEqual(resolveDirectivePath(" #_include 'lib/helper.ps1'", base).file, join('lib/helper.ps1'))
+		assert.strictEqual(resolveDirectivePath(' #_include \'lib/helper.ps1\'', base).file, join('lib/helper.ps1'))
 		assert.strictEqual(resolveDirectivePath('#_include lib/helper.ps1', base).file, join('lib/helper.ps1'))
 	})
 
@@ -17,13 +25,13 @@ suite('ps12exe directive paths', () => {
 	})
 
 	test('resolves #_include_as_* and Resources.Icon pragma paths', () => {
-		assert.strictEqual(resolveDirectivePath("#_include_as_value data 'assets/data.txt'", base).file, join('assets/data.txt'))
+		assert.strictEqual(resolveDirectivePath('#_include_as_value data \'assets/data.txt\'', base).file, join('assets/data.txt'))
 		assert.strictEqual(resolveDirectivePath('#_include_as_base64 blob "assets/data.bin"', base).file, join('assets/data.bin'))
 		assert.strictEqual(resolveDirectivePath('#_pragma Resources.Icon "img/icon.ico"', base).file, join('img/icon.ico'))
 	})
 
 	test('ignores urls, dynamic expressions and unrelated lines', () => {
-		assert.strictEqual(resolveDirectivePath("#_include 'https://example.com/a.ps1'", base), null)
+		assert.strictEqual(resolveDirectivePath('#_include \'https://example.com/a.ps1\'', base), null)
 		assert.strictEqual(resolveDirectivePath('#_pragma Resources.Icon "$(Join-Path $PSScriptRoot icon.ico)"', base), null)
 		assert.strictEqual(resolveDirectivePath('Write-Output "hi"', base), null)
 	})
@@ -35,7 +43,7 @@ suite('ps12exe directive paths', () => {
 	})
 
 	test('unquotes single and double quotes', () => {
-		assert.strictEqual(unquote("'it''s.ps1'"), "it's.ps1")
+		assert.strictEqual(unquote('\'it\'\'s.ps1\''), 'it\'s.ps1')
 		assert.strictEqual(unquote('"a""b.ps1"'), 'a"b.ps1')
 	})
 })

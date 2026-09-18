@@ -1,15 +1,17 @@
 import fs from 'node:fs'
 import path from 'node:path'
+
 import * as vscode from 'vscode'
-import { resolvePowerShell, compileScript, syncModule, launchGUI } from './lib/powershell.mjs'
-import { toPs12exeLocale } from './lib/locale.mjs'
-import { analyze, endifAutoClose, foldingRanges, toggleBangLines, computeSkipMask } from './lib/preprocessor.mjs'
-import { applyPreprocessorFormatting } from './lib/format.mjs'
+
 import { resolveDirectivePath } from './lib/definition.mjs'
-import { HOVER_MESSAGES, directiveAt, documentationUrl } from './lib/hover.mjs'
-import { pragmaNameAt, getPragmaData, lookupPragma, buildPragmaCandidates, clearPragmaCache } from './lib/pragma.mjs'
-import { POWER_SHELL_EXTENSION_ID, isPowerShellExtensionInstalled, getOfficialEdits, applyTextEdits } from './lib/officialFormatter.mjs'
 import { registerExeSource } from './lib/exeSource.mjs'
+import { applyPreprocessorFormatting } from './lib/format.mjs'
+import { HOVER_MESSAGES, directiveAt, documentationUrl } from './lib/hover.mjs'
+import { toPs12exeLocale } from './lib/locale.mjs'
+import { POWER_SHELL_EXTENSION_ID, isPowerShellExtensionInstalled, getOfficialEdits, applyTextEdits } from './lib/officialFormatter.mjs'
+import { resolvePowerShell, compileScript, syncModule, launchGUI } from './lib/powershell.mjs'
+import { pragmaNameAt, getPragmaData, lookupPragma, buildPragmaCandidates, clearPragmaCache } from './lib/pragma.mjs'
+import { analyze, endifAutoClose, foldingRanges, toggleBangLines, computeSkipMask } from './lib/preprocessor.mjs'
 
 const OUTPUT_CHANNEL_NAME = 'ps12exe'
 const POWER_SHELL_SELECTOR = { language: 'powershell' }
@@ -22,11 +24,22 @@ let diagnosticCollection
 let missingPowerShellNotified = false
 const diagnosticsTimers = new Map()
 
-/** 本地化字符串辅助函数。 */
+/**
+ * 本地化字符串辅助函数。
+ *
+ * @param {string} message - 本地化消息模板
+ * @param {...any} args - 格式化参数列表
+ * @returns {string} 本地化后的字符串
+ */
 function t (message, ...args) {
 	return vscode.l10n.t(message, ...args)
 }
 
+/**
+ * 获取共享输出通道。
+ *
+ * @returns {vscode.OutputChannel} 共享输出通道实例
+ */
 function getOutputChannel () {
 	if (!outputChannel) outputChannel = vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME)
 	return outputChannel
@@ -35,8 +48,8 @@ function getOutputChannel () {
 /**
  * 解析命令应作用的文件。从资源管理器/编辑器菜单触发的命令通过参数接收资源，从命令面板触发的命令回退到当前活动编辑器。
  *
- * @param {unknown} resource
- * @returns {vscode.Uri | undefined}
+ * @param {unknown} resource - 命令触发时传入的资源参数
+ * @returns {vscode.Uri | undefined} 解析到的目标文件地址，未找到时为 undefined
  */
 function resolveTarget (resource) {
 	if (resource instanceof vscode.Uri) return resource
@@ -45,12 +58,21 @@ function resolveTarget (resource) {
 	return undefined
 }
 
-/** @param {vscode.Uri | undefined} uri */
+/**
+ * 判断给定地址是否为本地 .ps1 文件。
+ *
+ * @param {vscode.Uri | undefined} uri - 待判断的文档地址
+ * @returns {boolean} 是本地 .ps1 文件时为真
+ */
 function isPs1 (uri) {
 	return !!uri && uri.scheme === 'file' && path.extname(uri.fsPath).toLowerCase() === '.ps1'
 }
 
-/** 把 VS Code 颜色主题映射为 ps12exeGUI 的 `-UIMode` 值。 */
+/**
+ * 把 VS Code 颜色主题映射为 ps12exeGUI 的 `-UIMode` 值。
+ *
+ * @returns {string} 对应的界面模式取值
+ */
 function currentUiMode () {
 	switch (vscode.window.activeColorTheme.kind) {
 		case vscode.ColorThemeKind.Dark:
@@ -64,7 +86,10 @@ function currentUiMode () {
 	}
 }
 
-/** 打开一个终端，为当前用户安装 ps12exe 模块。 */
+/**
+ * 打开一个终端，为当前用户安装 ps12exe 模块。
+ * @param {{command: string}} host - PowerShell 宿主信息，包含可执行命令
+ */
 function installModule (host) {
 	const terminal = vscode.window.createTerminal(OUTPUT_CHANNEL_NAME)
 	terminal.sendText(`${host.command} -NoProfile -ExecutionPolicy Bypass -Command "Install-Module ps12exe -Scope CurrentUser -Force"`)
@@ -75,7 +100,7 @@ function installModule (host) {
 /**
  * 解析可用的 PowerShell 宿主。若缺少 ps12exe 模块，会自动安装（最新版），仅在失败时才提供手动终端安装。
  *
- * @returns {Promise<{ command: string } | undefined>}
+ * @returns {Promise<{ command: string } | undefined>} 解析到的可用宿主，未找到或安装失败时为 undefined
  */
 async function requireHost () {
 	const host = await resolvePowerShell()
@@ -113,7 +138,7 @@ async function requireHost () {
 /**
  * 在后台保持 ps12exe 模块为最新版。在激活时运行，除非被禁用或处于扩展测试框架下。
  *
- * @param {vscode.ExtensionContext} context
+ * @param {vscode.ExtensionContext} context - 扩展上下文，用于读取配置与订阅
  */
 async function autoUpdateModule (context) {
 	if (context.extensionMode === vscode.ExtensionMode.Test) return
@@ -129,15 +154,15 @@ async function autoUpdateModule (context) {
 		if (result.status === 'installed') vscode.window.showInformationMessage(t('ps12exe {0} has been installed.', result.version || ''))
 		else vscode.window.showInformationMessage(t('ps12exe has been updated to {0}.', result.version || ''))
 	}
-	else if (result.status === 'error') {
+	else if (result.status === 'error') 
 		getOutputChannel().appendLine(`ps12exe auto-update failed: ${result.error || 'unknown error'}`)
-	}
+	
 }
 
 /**
  * 编译给定的 `.ps1` 文件：像命令行那样用该文件调用 ps12exe。
  *
- * @param {vscode.Uri | undefined} resource
+ * @param {vscode.Uri | undefined} resource - 待编译的脚本资源，未提供时使用活动编辑器
  */
 async function compileCommand (resource) {
 	const uri = resolveTarget(resource)
@@ -179,9 +204,9 @@ async function compileCommand (resource) {
 			if (choice === revealLabel) vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(outputPath))
 			else if (choice === showOutputLabel) getOutputChannel().show(true)
 		}
-		else {
+		else 
 			vscode.window.showInformationMessage(message)
-		}
+		
 		return
 	}
 
@@ -192,7 +217,7 @@ async function compileCommand (resource) {
 /**
  * 为给定的 `.ps1` 文件打开 ps12exeGUI。
  *
- * @param {vscode.Uri | undefined} resource
+ * @param {vscode.Uri | undefined} resource - 待打开的脚本资源，未提供时使用活动编辑器
  */
 async function guiCommand (resource) {
 	const uri = resolveTarget(resource)
@@ -230,8 +255,7 @@ async function toggleBangCommand () {
 		return
 	}
 
-	const document = editor.document
-	const selection = editor.selection
+	const { document, selection } = editor
 	const wholeDocument = selection.isEmpty
 	const first = wholeDocument ? 0 : selection.start.line
 	let last = wholeDocument ? document.lineCount - 1 : selection.end.line
@@ -247,11 +271,23 @@ async function toggleBangCommand () {
 	await vscode.workspace.applyEdit(edit)
 }
 
+/**
+ * 获取整个文档的范围。
+ *
+ * @param {vscode.TextDocument} document - 目标文本文档
+ * @returns {vscode.Range} 覆盖全文的范围
+ */
 function fullDocumentRange (document) {
 	const lastLine = Math.max(document.lineCount - 1, 0)
 	return new vscode.Range(new vscode.Position(0, 0), document.lineAt(lastLine).range.end)
 }
 
+/**
+ * 读取文档对应的编辑器格式化选项。
+ *
+ * @param {vscode.TextDocument} document - 目标文本文档
+ * @returns {{insertSpaces: boolean, tabSize: number}} 编辑器缩进选项
+ */
 function editorFormattingOptions (document) {
 	const config = vscode.workspace.getConfiguration('editor', document)
 	return {
@@ -261,7 +297,11 @@ function editorFormattingOptions (document) {
 	}
 }
 
-/** @param {vscode.TextDocument} document */
+/**
+ * 刷新指定文档的诊断信息。
+ *
+ * @param {vscode.TextDocument} document - 目标文本文档
+ */
 function updateDiagnostics (document) {
 	if (!diagnosticCollection || document.languageId !== 'powershell') return
 	const found = analyze(document.getText()).diagnostics
@@ -278,7 +318,11 @@ function updateDiagnostics (document) {
 	diagnosticCollection.set(document.uri, items)
 }
 
-/** @param {vscode.TextDocument} document */
+/**
+ * 延迟刷新指定文档的诊断信息，避免频繁解析。
+ *
+ * @param {vscode.TextDocument} document - 目标文本文档
+ */
 function scheduleDiagnostics (document) {
 	if (document.languageId !== 'powershell') return
 	const key = document.uri.toString()
@@ -289,6 +333,9 @@ function scheduleDiagnostics (document) {
 	}, 200))
 }
 
+/**
+ * 缺少 PowerShell 扩展时弹窗提示安装。
+ */
 function notifyMissingPowerShell () {
 	if (missingPowerShellNotified) return
 	missingPowerShellNotified = true
@@ -304,9 +351,9 @@ function notifyMissingPowerShell () {
 /**
  * 运行官方 formatter（可用时），然后应用 ps12exe preprocessor 缩进。
  *
- * @param {vscode.TextDocument} document
- * @param {vscode.FormattingOptions} options
- * @returns {Promise<string>}
+ * @param {vscode.TextDocument} document - 要格式化的文本文档
+ * @param {vscode.FormattingOptions} options - VS Code 传入的格式化选项
+ * @returns {Promise<string>} 格式化后的完整文档文本
  */
 async function formatDocumentText (document, options) {
 	const current = document.getText()
@@ -315,7 +362,7 @@ async function formatDocumentText (document, options) {
 
 	let base = current
 	let officialApplied = false
-	if (isPowerShellExtensionInstalled()) {
+	if (isPowerShellExtensionInstalled()) 
 		try {
 			const edits = await getOfficialEdits(document, formattingOptions)
 			officialApplied = true
@@ -326,18 +373,28 @@ async function formatDocumentText (document, options) {
 			channel.appendLine(t('Failed to run the official PowerShell formatter; the document was left unchanged.'))
 			channel.appendLine(String(error && error.message ? error.message : error))
 		}
-	}
-	else {
+	
+	else 
 		notifyMissingPowerShell()
-	}
+	
 
 	return applyPreprocessorFormatting(current, base, officialApplied, {
 		indentUnit,
+		/**
+		 * 输出格式化错误信息。
+		 *
+		 * @param {string} message - 错误信息文本
+		 * @returns {void} 无返回值
+		 */
 		onError: (message) => getOutputChannel().appendLine(message)
 	})
 }
 
-/** @param {string | undefined} uri */
+/**
+ * 格式化当前 PowerShell 文档并应用编辑。
+ *
+ * @param {string | undefined} uri - 触发命令时传入的文档地址字符串，未提供时使用活动编辑器
+ */
 async function formatDocumentCommand (uri) {
 	let document
 	if (uri) document = await vscode.workspace.openTextDocument(vscode.Uri.parse(uri))
@@ -359,12 +416,12 @@ async function formatDocumentCommand (uri) {
 /**
  * 在刚打开的块下方追加匹配的 `#_endif`。光标停留在空行上，因此可以直接键入块函数体。
  *
- * @param {vscode.TextEditor} editor
+ * @param {vscode.TextEditor} editor - 目标编辑器
  * @param {number} line 换行后光标移动到的行
  * @param {string} indent `#_if` 行的缩进
  */
 async function insertEndif (editor, line, indent) {
-	const document = editor.document
+	const {document} = editor
 	if (line >= document.lineCount) return
 	const target = document.lineAt(line)
 	if (/^\s*#_endif\b/.test(target.text)) return
@@ -378,7 +435,7 @@ async function insertEndif (editor, line, indent) {
 /**
  * 用户一开始输入块函数体，就用 `#_endif` 闭合 `#_if …` 行。可通过 `ps12exe.autoCloseIf` 禁用。
  *
- * @param {vscode.ExtensionContext} context
+ * @param {vscode.ExtensionContext} context - 扩展上下文，用于注册文档变更监听
  */
 function registerIfAutoClose (context) {
 	context.subscriptions.push(vscode.workspace.onDidChangeTextDocument((event) => {
@@ -402,9 +459,11 @@ function registerIfAutoClose (context) {
 
 const formattingProvider = {
 	/**
-	 * @param {vscode.TextDocument} document
-	 * @param {vscode.FormattingOptions} options
-	 * @returns {Promise<vscode.TextEdit[]>}
+	 * 提供文档格式化编辑。
+	 *
+	 * @param {vscode.TextDocument} document - 要格式化的文本文档
+	 * @param {vscode.FormattingOptions} options - VS Code 传入的格式化选项
+	 * @returns {Promise<vscode.TextEdit[]>} 格式化编辑列表
 	 */
 	async provideDocumentFormattingEdits (document, options) {
 		const formatted = await formatDocumentText(document, options)
@@ -417,9 +476,9 @@ const definitionProvider = {
 	/**
 	 * 从 `#_include*` 和 `#_pragma Resources.Icon` 参数跳转到它们引用的文件。
 	 *
-	 * @param {vscode.TextDocument} document
-	 * @param {vscode.Position} position
-	 * @returns {vscode.Location | null}
+	 * @param {vscode.TextDocument} document - 当前文本文档
+	 * @param {vscode.Position} position - 光标位置
+	 * @returns {vscode.Location | null} 跳转目标位置，未找到时为空
 	 */
 	provideDefinition (document, position) {
 		if (document.languageId !== 'powershell' || document.uri.scheme !== 'file') return null
@@ -435,10 +494,10 @@ const definitionProvider = {
 /**
  * 为 `#_pragma` 变量名构造悬浮提示：其本地化说明来自当前安装的 ps12exe 模块（见 `lib/pragma.mjs`），并链接到 README 的预处理小节。区域数据不可用时回退到通用的 `#_pragma` 说明。
  *
- * @param {number} line
- * @param {{ name: string, start: number, end: number }} pragma
- * @param {string | undefined} locale
- * @returns {Promise<vscode.Hover>}
+ * @param {number} line - 悬浮提示所在行号
+ * @param {{ name: string, start: number, end: number }} pragma - 识别到的 pragma 名称及其列范围
+ * @param {string | undefined} locale - 当前区域标识，未知时为 undefined
+ * @returns {Promise<vscode.Hover>} 构造好的悬浮提示
  */
 async function createPragmaHover (line, pragma, locale) {
 	let description
@@ -463,9 +522,9 @@ const hoverProvider = {
 	/**
 	 * 在 preprocessor 指令（以及 `#_pragma` 变量名）上显示本地化的说明，并链接到当前区域 README 中对应的小节。here-string 函数体和块注释内的 `#_…` 不是指令，因此不提示。
 	 *
-	 * @param {vscode.TextDocument} document
-	 * @param {vscode.Position} position
-	 * @returns {Promise<vscode.Hover | null>}
+	 * @param {vscode.TextDocument} document - 当前文本文档
+	 * @param {vscode.Position} position - 光标位置
+	 * @returns {Promise<vscode.Hover | null>} 悬浮提示，未命中指令时为空
 	 */
 	async provideHover (document, position) {
 		if (document.languageId !== 'powershell') return null
@@ -494,15 +553,15 @@ const completionProvider = {
 	/**
 	 * 在 `#_pragma ` 后补全参数名；已输入父级点号（`App.`）时只列出该父级的直接子键。候选及其说明同样来自当前安装的模块。
 	 *
-	 * @param {vscode.TextDocument} document
-	 * @param {vscode.Position} position
-	 * @returns {Promise<vscode.CompletionItem[] | undefined>}
+	 * @param {vscode.TextDocument} document - 当前文本文档
+	 * @param {vscode.Position} position - 光标位置
+	 * @returns {Promise<vscode.CompletionItem[] | undefined>} 补全候选列表，无候选时为 undefined
 	 */
 	async provideCompletionItems (document, position) {
 		if (document.languageId !== 'powershell') return undefined
 		const line = document.lineAt(position.line).text
 		const before = line.slice(0, position.character)
-		const match = /^([ \t]*#_pragma[ \t]+)([a-zA-Z_][a-zA-Z_0-9.]*)?$/.exec(before)
+		const match = /^([\t ]*#_pragma[\t ]+)([A-Z_a-z][\w.]*)?$/.exec(before)
 		if (!match) return undefined
 		if (computeSkipMask(document.getText().split(/\r\n|\n|\r/))[position.line]) return undefined
 
@@ -537,8 +596,8 @@ const foldingProvider = {
 	/**
 	 * 把每个 preprocessor 块从其 `#_if` 行折叠到其 `#_endif` 之前的一行。对 PowerShell 扩展自身基于 AST 的折叠是附加的。
 	 *
-	 * @param {vscode.TextDocument} document
-	 * @returns {vscode.FoldingRange[]}
+	 * @param {vscode.TextDocument} document - 当前文本文档
+	 * @returns {vscode.FoldingRange[]} 折叠区域列表
 	 */
 	provideFoldingRanges (document) {
 		if (document.languageId !== 'powershell') return []
@@ -550,8 +609,10 @@ const foldingProvider = {
 
 const codeActionProvider = {
 	/**
-	 * @param {vscode.TextDocument} document
-	 * @returns {vscode.CodeAction[]}
+	 * 提供快速修复操作，用于格式化 preprocessor 块。
+	 *
+	 * @param {vscode.TextDocument} document - 当前文本文档
+	 * @returns {vscode.CodeAction[]} 代码操作列表
 	 */
 	provideCodeActions (document) {
 		if (document.languageId !== 'powershell') return []
@@ -566,9 +627,11 @@ const codeActionProvider = {
 }
 
 /**
- * @param {vscode.ExtensionContext} context
+ * 激活扩展，注册命令与语言功能。
+ *
+ * @param {vscode.ExtensionContext} context - 扩展上下文，用于注册订阅
  */
-function activate (context) {
+export function activate (context) {
 	outputChannel = vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME)
 	diagnosticCollection = vscode.languages.createDiagnosticCollection(OUTPUT_CHANNEL_NAME)
 	context.subscriptions.push(outputChannel, diagnosticCollection)
@@ -597,8 +660,9 @@ function activate (context) {
 	void autoUpdateModule(context)
 }
 
-function deactivate () {
+/**
+ * 停用扩展，订阅会由 VS Code 自动释放。
+ */
+export function deactivate () {
 	// 一切都通过 `context.subscriptions` 释放。
 }
-
-export { activate, deactivate }

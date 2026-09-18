@@ -1,4 +1,6 @@
+/* global suite: readonly, test: readonly */
 import assert from 'node:assert'
+
 import { HOVER_MESSAGES, directiveAt, documentationUrl } from '../lib/hover.mjs'
 import { pragmaNameAt, lookupPragma, buildPragmaCandidates } from '../lib/pragma.mjs'
 

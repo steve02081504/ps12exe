@@ -1,12 +1,24 @@
 // 复刻 ps12exe Preprocessor（src/ReadScriptFile.ps1）使用的指令检测：指令是一行以可选空白开头、后跟 `#_…` 的行，且允许尾随 `#comment`（ps12exe 使用相同的 `(?!#.*)` 前瞻）。`computeSkipMask` 会把 here-string 函数体和块注释视为不透明内容，因此 formatter 永远不会改写它们。`(?!#)` 前瞻复刻了 ps12exe 的 `(?!#.*)`：指令后允许尾随注释（例如 `#_if PSEXE #reason`），其他内容则不允许。
-const IF_RE = /^\s*#_if\s+(\S+)\s*(?!#)/
-const ELSE_RE = /^\s*#_else\s*(?!#)/
-const ENDIF_RE = /^\s*#_endif\s*(?!#)/
+/**
+ * 匹配 `#_if` 指令行的正则。
+ */
+export const IF_RE = /^\s*#_if\s+(\S+)\s*(?!#)/
+/**
+ * 匹配 `#_else` 指令行的正则。
+ */
+export const ELSE_RE = /^\s*#_else\s*(?!#)/
+/**
+ * 匹配 `#_endif` 指令行的正则。
+ */
+export const ENDIF_RE = /^\s*#_endif\s*(?!#)/
 
 const KNOWN_CONDITIONS = new Set(['psexe', 'psscript'])
 
 // 英文源字符串；它们同时也是 l10n bundle 的键。
-const MESSAGES = Object.freeze({
+/**
+ * 预处理器诊断的消息模板。
+ */
+export const MESSAGES = Object.freeze({
 	missingEndIf: 'Missing end of if statement: {0}',
 	nestedIfDeadCode: 'Nested #_if {0} inside #_if {1}: the enclosing condition already fixes this branch, so one side is dead code.',
 	unknownCondition: 'Unknown condition: {0}; assuming false.',
@@ -15,30 +27,48 @@ const MESSAGES = Object.freeze({
 	duplicateElse: 'Duplicate #_else in the same #_if block.'
 })
 
+/**
+ * 检测文档使用的换行符。
+ *
+ * @param {string} text - 待检测的文档全文
+ * @returns {string} 文档使用的换行符
+ */
 function detectEol (text) {
 	return text.includes('\r\n') ? '\r\n' : '\n'
 }
 
+/**
+ * 按行切分文档。
+ *
+ * @param {string} text - 待切分的文档全文
+ * @returns {string[]} 切分后的行数组
+ */
 function splitLines (text) {
 	return text.split(/\r\n|\n|\r/)
 }
 
+/**
+ * 取一行的前导空白。
+ *
+ * @param {string} line - 待处理的行
+ * @returns {string} 该行的前导空白
+ */
 function leadingOf (line) {
-	const match = line.match(/^[ \t]*/)
+	const match = line.match(/^[\t ]*/)
 	return match ? match[0] : ''
 }
 
 /**
  * 解析文档中的结构性 preprocessor 指令。
  *
- * @param {string} text
+ * @param {string} text - 待分析的文档全文
  * @returns {{
  *   lines: string[],
  *   blocks: Array<{ startLine: number, endLine: number, elseLine: number | null, condition: string, parent: number | null, depth: number, closed: boolean }>,
  *   diagnostics: Array<{ line: number, severity: 'error' | 'warning', message: string, args: string[] }>
- * }}
+ * }} 解析出的行、块与诊断
  */
-function analyze (text) {
+export function analyze (text) {
 	const lines = splitLines(text)
 	const skip = computeSkipMask(lines)
 	const blocks = []
@@ -54,22 +84,22 @@ function analyze (text) {
 		if (ifMatch) {
 			const condition = ifMatch[1]
 			const parent = stack.length ? stack[stack.length - 1] : null
-			if (parent !== null) {
+			if (parent !== null) 
 				diagnostics.push({
 					line,
 					severity: 'warning',
 					message: MESSAGES.nestedIfDeadCode,
 					args: [condition, blocks[parent].condition]
 				})
-			}
-			if (!KNOWN_CONDITIONS.has(condition.toLowerCase())) {
+			
+			if (!KNOWN_CONDITIONS.has(condition.toLowerCase())) 
 				diagnostics.push({
 					line,
 					severity: 'error',
 					message: MESSAGES.unknownCondition,
 					args: [condition]
 				})
-			}
+			
 			const block = {
 				startLine: line,
 				endLine: lines.length - 1,
@@ -90,9 +120,9 @@ function analyze (text) {
 				continue
 			}
 			const top = blocks[stack[stack.length - 1]]
-			if (top.elseLine !== null) {
+			if (top.elseLine !== null) 
 				diagnostics.push({ line, severity: 'warning', message: MESSAGES.duplicateElse, args: [] })
-			}
+			
 			top.elseLine = line
 			continue
 		}
@@ -133,10 +163,10 @@ function analyze (text) {
  *
  * 真正的 `if` 在块唯一的函数体行上打开，因此它的 AST 范围与小的 `#_if … #_endif` 范围重叠；编辑器随后会显示两个折叠标记。两个 provider 都不会改写文档，因此这纯粹是显示上的重叠，而不是折叠损坏。
  *
- * @param {string} text
+ * @param {string} text - 待计算的文档全文
  * @returns {Array<{ start: number, end: number }>} 从零开始、包含末尾的行
  */
-function foldingRanges (text) {
+export function foldingRanges (text) {
 	const { lines, blocks } = analyze(text)
 	const ranges = []
 	for (const block of blocks) {
@@ -153,47 +183,47 @@ function foldingRanges (text) {
  * @param {string} insertedText 编辑插入的文本
  * @returns {{ offset: number, indent: string } | undefined} 换行下方 `offset` 行处，缩进与 `#_if` 行相同
  */
-function endifAutoClose (currentLine, insertedText) {
+export function endifAutoClose (currentLine, insertedText) {
 	if (currentLine === undefined || !/\r?\n/.test(insertedText)) return undefined
 	if (!IF_RE.test(currentLine)) return undefined
-	const indent = (currentLine.match(/^[ \t]*/) || [''])[0]
+	const indent = (currentLine.match(/^[\t ]*/) || [''])[0]
 	return { offset: insertedText.split(/\r?\n/).length - 1, indent }
 }
 
 // 一条 `#_!!` 转义行，包含标记及其后一个可选空格。
-const BANG_RE = /^([ \t]*)#_!! ?(.*)$/
+const BANG_RE = /^([\t ]*)#_!! ?(.*)$/
 // 任何其他 preprocessor 指令（`#_if`、`#_else`、`#_endif`、`#_include` 等）。
-const OTHER_DIRECTIVE_RE = /^[ \t]*#_/
+const OTHER_DIRECTIVE_RE = /^[\t ]*#_/
 // 展开为真实代码、因而需要保留其周围代码缩进的指令行：`#_!!` 转义与 `#_balus`。
-const CODE_MARKER_RE = /^[ \t]*#_(?:!!|balus\b)/
+const CODE_MARKER_RE = /^[\t ]*#_(?:!!|balus\b)/
 
 /**
  * 在单行上切换 `#_!!` 转义标记。脚本直接运行时 `#_!!` 使该行成为注释，而 ps12exe 剥离标记后则是真实代码，因此切换操作会对普通代码添加它、再将其移除。
  *
  * 空行或另一条 preprocessor 指令的行保持不变（`undefined`）：在指令前添加 `#_!!` 会禁用它。
  *
- * @param {string} line
+ * @param {string} line - 待切换的行
  * @returns {string | undefined} 切换后的行；未改动时为 undefined
  */
-function toggleBangLine (line) {
+export function toggleBangLine (line) {
 	if (!/\S/.test(line)) return undefined
 	const marked = line.match(BANG_RE)
 	if (marked) return marked[1] + marked[2]
 	if (OTHER_DIRECTIVE_RE.test(line)) return undefined
-	const indent = (line.match(/^[ \t]*/) || [''])[0]
+	const indent = (line.match(/^[\t ]*/) || [''])[0]
 	return `${indent}#_!!${line.slice(indent.length)}`
 }
 
 /**
  * 在 `[startLine, endLine]` 范围内的每一行上切换 `#_!!`。
  *
- * @param {string[]} lines
+ * @param {string[]} lines - 文档的所有行
  * @param {number} startLine 从零开始、包含
  * @param {number} endLine 从零开始、包含
  * @param {boolean[]} [skipMask] 保持不变的行（here-string、块注释）；见 `computeSkipMask`
  * @returns {Array<{ line: number, text: string }>} 发生变更的行
  */
-function toggleBangLines (lines, startLine, endLine, skipMask) {
+export function toggleBangLines (lines, startLine, endLine, skipMask) {
 	const changes = []
 	const first = Math.max(0, startLine)
 	const last = Math.min(endLine, lines.length - 1)
@@ -208,18 +238,18 @@ function toggleBangLines (lines, startLine, endLine, skipMask) {
 /**
  * 把每个块拆分为 ps12exe 送入构建的代码片段，每个分支一个。嵌套指令会留在文本中，因为它们对 PowerShell 而言只是注释；只有块自身的指令行会被丢弃。
  *
- * @param {Array<{ startLine: number, endLine: number, elseLine: number | null }>} blocks
- * @param {string[]} lines
+ * @param {Array<{ startLine: number, endLine: number, elseLine: number | null }>} blocks - 待拆分的块列表
+ * @param {string[]} lines - 文档的所有行
  * @returns {Array<{ block: number, text: string }>} `block` 是块索引
  */
-function branchFragments (blocks, lines) {
+export function branchFragments (blocks, lines) {
 	const fragments = []
 	blocks.forEach((entry, index) => {
 		const firstEnd = entry.elseLine === null ? entry.endLine : entry.elseLine
 		fragments.push({ block: index, text: lines.slice(entry.startLine + 1, firstEnd).join('\n') })
-		if (entry.elseLine !== null) {
+		if (entry.elseLine !== null) 
 			fragments.push({ block: index, text: lines.slice(entry.elseLine + 1, entry.endLine).join('\n') })
-		}
+		
 	})
 	return fragments
 }
@@ -227,11 +257,11 @@ function branchFragments (blocks, lines) {
 /**
  * 覆盖文件至少 90% 的块永不缩进。只会豁免一个这样的块；当有多个符合条件时，最大的那个胜出。
  *
- * @param {Array<{ startLine: number, endLine: number }>} blocks
- * @param {number} totalLines
- * @returns {object | null}
+ * @param {Array<{ startLine: number, endLine: number }>} blocks - 待判断的块列表
+ * @param {number} totalLines - 文档总行数
+ * @returns {object | null} 豁免的块，无豁免时为 null
  */
-function pickExemptBlock (blocks, totalLines) {
+export function pickExemptBlock (blocks, totalLines) {
 	if (!totalLines) return null
 	const threshold = totalLines * 0.9
 	let best = null
@@ -251,10 +281,10 @@ function pickExemptBlock (blocks, totalLines) {
  *
  * 只包含块注释的行会被跳过，但一行上先有代码、再出现 `<# … #>`（例如 `catch { <# ignore #> }`）时不是「块注释行」：它是代码，任何前导空白都必须照常参与 preprocessor 缩进。旧实现只要一行出现 `<#` 就整行跳过，导致这类代码行永远得不到块的缩进层级。
  *
- * @param {string[]} lines
- * @returns {boolean[]}
+ * @param {string[]} lines - 文档的所有行
+ * @returns {boolean[]} 逐行的跳过标记
  */
-function computeSkipMask (lines) {
+export function computeSkipMask (lines) {
 	const skip = new Array(lines.length).fill(false)
 	let hereTerminator = null
 	let inBlockComment = false
@@ -312,11 +342,11 @@ function computeSkipMask (lines) {
  * - 指令行和注释行会被*设置*为最近代码的语法缩进加上 preprocessor 深度。设置（而非前置）能让文档被反复格式化时结果保持稳定。
  * - here-string 函数体和块注释保持原样。
  *
- * @param {string} text
+ * @param {string} text - 待缩进的文档全文
  * @param {{ indentUnit?: string, incompleteBlocks?: Iterable<number> }} [options] `incompleteBlocks` 列出函数体不构成完整 PowerShell 单元的块（例如在块内打开、在块外关闭的 `if`）；这些块永不加深，见 `branchFragments`。
- * @returns {string}
+ * @returns {string} 缩进后的文档文本
  */
-function indentText (text, options = {}) {
+export function indentText (text, options = {}) {
 	const indentUnit = options.indentUnit || '\t'
 	const eol = detectEol(text)
 	const { lines, blocks } = analyze(text)
@@ -330,7 +360,7 @@ function indentText (text, options = {}) {
 		if (entry) incompleteStartLines.add(entry.startLine)
 	}
 
-	const isComment = lines.map((line) => /^[ \t]*#/.test(line))
+	const isComment = lines.map((line) => /^[\t ]*#/.test(line))
 	const isCode = lines.map((line, i) => lines[i].trim() !== '' && !skip[i] && !isComment[i])
 	const leading = lines.map(leadingOf)
 
@@ -356,27 +386,27 @@ function indentText (text, options = {}) {
 			depth[i] = depthFull - (top && !top.exempt ? 1 : 0)
 			if (ENDIF_RE.test(content)) stack.pop()
 		}
-		else {
+		else 
 			depth[i] = depthFull
-		}
+		
 	}
 
 	// 每个块的语法缩进：其第一条代码行的缩进。`null` 标记「尚未找到」，这样合法的空缩进（顶层块）不会被误认为未找到并被周围代码覆盖。
 	for (const block of blocks) {
 		block.bodyIndent = null
 		const bodyEnd = block.elseLine !== null ? block.elseLine : block.endLine
-		for (let i = block.startLine + 1; i < bodyEnd; i++) {
+		for (let i = block.startLine + 1; i < bodyEnd; i++) 
 			if (isCode[i]) { block.bodyIndent = leading[i]; break }
-		}
-		if (block.bodyIndent === null) {
-			for (let i = bodyEnd + 1; i < block.endLine; i++) {
+		
+		if (block.bodyIndent === null) 
+			for (let i = bodyEnd + 1; i < block.endLine; i++) 
 				if (isCode[i]) { block.bodyIndent = leading[i]; break }
-			}
-		}
-		if (block.bodyIndent === null) {
+			
+		
+		if (block.bodyIndent === null) 
 			// 两个分支中都没有代码（例如函数体只有 `#_!!` 转义或注释）。官方 formatter 已经把该指令放在周围的语法缩进处，因此使用它自身的行首缩进，而不是最近的不相关代码行（后者可能位于外层构造的缩进处，如在 `if (` + 续行中那样）。
 			block.bodyIndent = leading[block.startLine]
-		}
+		
 	}
 
 	// 最近的前/后代码缩进，用作未附着到块的注释的语法缩进。
@@ -392,6 +422,12 @@ function indentText (text, options = {}) {
 		nextCodeIndent[i] = last
 		if (isCode[i]) last = leading[i]
 	}
+	/**
+	 * 取周围代码的缩进，用作注释的语法缩进。
+	 *
+	 * @param {number} i - 注释所在的行号
+	 * @returns {string} 周围代码的缩进
+	 */
 	const commentContext = (i) => {
 		const prev = prevCodeIndent[i]
 		const next = nextCodeIndent[i]
@@ -411,7 +447,7 @@ function indentText (text, options = {}) {
 			// 指令行（块自身的 `#_if`/`#_else`/`#_endif`）属于该块，因此与其函数体对齐。普通注释回退到周围代码。对于顶层块，`bodyIndent` 合法地可以是 ''，因此不能被视为「缺失」。
 			const block = startToBlock.get(i)
 			const base = block ? block.bodyIndent : commentContext(i)
-			return base + extra + line.replace(/^[ \t]*/, '')
+			return base + extra + line.replace(/^[\t ]*/, '')
 		}
 		return extra + line
 	})
@@ -422,8 +458,8 @@ function indentText (text, options = {}) {
 /**
  * `line` 上 `(` 减去 `)` 的净值，忽略单引号和双引号字符串（含反引号转义）以及 `#` 注释。
  *
- * @param {string} line
- * @returns {number}
+ * @param {string} line - 待统计的行
+ * @returns {number} 左括号减右括号的净值
  */
 function parenDelta (line) {
 	let depth = 0
@@ -431,10 +467,10 @@ function parenDelta (line) {
 	for (let i = 0; i < line.length; i++) {
 		const char = line[i]
 		if (state === 'single') {
-			if (char === "'") {
-				if (line[i + 1] === "'") i++
+			if (char === '\'') 
+				if (line[i + 1] === '\'') i++
 				else state = 'code'
-			}
+			
 			continue
 		}
 		if (state === 'double') {
@@ -442,7 +478,7 @@ function parenDelta (line) {
 			if (char === '"') state = 'code'
 			continue
 		}
-		if (char === "'") { state = 'single'; continue }
+		if (char === '\'') { state = 'single'; continue }
 		if (char === '"') { state = 'double'; continue }
 		if (char === '#') break
 		if (char === '(') depth++
@@ -458,11 +494,11 @@ function parenDelta (line) {
  *
  * 上游 bug（在 PSScriptAnalyzer 1.25.0 + pwsh 7.6.6 以及 Windows PowerShell 5.1 上、制表符和空格下均可复现）：`LParen` 和 scriptblock 的 `{`/`@{` 各自增加一层缩进。attribute 形式记录在 https://github.com/PowerShell/PSScriptAnalyzer/issues/2216（未关闭），`.where`/`.foreach` 方法形式记录在 https://github.com/PowerShell/PSScriptAnalyzer/issues/1168（未关闭），括号化管道记录在 https://github.com/PowerShell/PSScriptAnalyzer/issues/1378（未关闭）。某个版本修复它们后，删除此函数（及其测试）。
  *
- * @param {string} text
+ * @param {string} text - 待修复的文本
  * @param {string} indentUnit formatter 的缩进单位（制表符或空格）
- * @returns {string}
+ * @returns {string} 修复后的文本
  */
-function restoreParenIndentation (text, indentUnit) {
+export function restoreParenIndentation (text, indentUnit) {
 	if (!indentUnit) return text
 	const eol = detectEol(text)
 	const lines = splitLines(text)
@@ -472,7 +508,7 @@ function restoreParenIndentation (text, indentUnit) {
 		if (!content) continue
 		const openIndent = leadingOf(lines[i])
 		const body = content.slice(openIndent.length)
-		const opensBlock = /[{(]$/.test(body)
+		const opensBlock = /[({]$/.test(body)
 		const continues = body.endsWith('`')
 		if (!opensBlock && !continues) continue
 
@@ -482,14 +518,14 @@ function restoreParenIndentation (text, indentUnit) {
 		const bodyIndent = closeIndent + indentUnit
 
 		let close = -1
-		if (opensBlock) {
+		if (opensBlock) 
 			for (let j = i + 1; j < lines.length; j++) {
 				if (leadingOf(lines[j]) === closeIndent && lines[j].slice(closeIndent.length).startsWith('}')) {
 					close = j
 					break
 				}
 			}
-		}
+		
 		else {
 			let depth = extra
 			for (let j = i + 1; j < lines.length; j++) {
@@ -504,9 +540,9 @@ function restoreParenIndentation (text, indentUnit) {
 		const firstBody = lines.findIndex((line, index) => index > i && index < bodyLimit && line.trim() !== '')
 		if (firstBody < 0 || leadingOf(lines[firstBody]) !== bodyIndent) continue
 
-		for (let k = i + 1; k <= close; k++) {
+		for (let k = i + 1; k <= close; k++) 
 			if (lines[k].startsWith(closeIndent)) lines[k] = lines[k].slice(indentUnit.repeat(extra).length)
-		}
+		
 	}
 
 	return lines.join(eol)
@@ -525,15 +561,15 @@ function restoreParenIndentation (text, indentUnit) {
  *
  * 上游限制：PSScriptAnalyzer 的括号规则不了解制表符缩进，见 https://github.com/PowerShell/PSScriptAnalyzer/issues/1055 以及重复的 https://github.com/PowerShell/PSScriptAnalyzer/issues/1441。当这些规则支持 `Kind = 'tab'` 后，删除此函数（及其测试）。
  *
- * @param {string} text
- * @returns {string}
+ * @param {string} text - 待修复的文本
+ * @returns {string} 修复后的文本
  */
-function restoreClauseIndentation (text) {
+export function restoreClauseIndentation (text) {
 	const eol = detectEol(text)
 	const lines = splitLines(text)
 
 	for (let i = 1; i < lines.length; i++) {
-		const clause = lines[i].match(/^([ \t]+)((?:else|elseif|catch|finally)\b.*)$/)
+		const clause = lines[i].match(/^([\t ]+)((?:else|elseif|catch|finally)\b.*)$/)
 		if (!clause) continue
 		let previous = i - 1
 		while (previous >= 0 && lines[previous].trim() === '') previous--
@@ -549,17 +585,17 @@ function restoreClauseIndentation (text) {
 /**
  * 找到 `line` 所属的最内层 preprocessor 块，并返回该行所在分支的指令行（分支在 `#_else` 之前时是 `#_if` 行，之后是 `#_else` 行）。返回 `null` 表示该行不在任何块内。
  *
- * @param {Array<{ startLine: number, endLine: number, elseLine: number | null, depth: number }>} blocks
- * @param {number} line
- * @returns {{ index: number, line: number } | null}
+ * @param {Array<{ startLine: number, endLine: number, elseLine: number | null, depth: number }>} blocks - 待查找的块列表
+ * @param {number} line - 待查找的行号
+ * @returns {{ index: number, line: number } | null} 最内层块及其分支指令行，不在块内时为 null
  */
 function referenceDirective (blocks, line) {
 	let best = null
 	for (let index = 0; index < blocks.length; index++) {
 		const block = blocks[index]
-		if (line >= block.startLine && line <= block.endLine && (!best || block.depth > blocks[best.index].depth)) {
+		if (line >= block.startLine && line <= block.endLine && (!best || block.depth > blocks[best.index].depth)) 
 			best = { index, block }
-		}
+		
 	}
 	if (!best) return null
 	const directive = best.block.elseLine !== null && line > best.block.elseLine ? best.block.elseLine : best.block.startLine
@@ -577,9 +613,9 @@ function referenceDirective (blocks, line) {
  *
  * @param {string} text 已应用 preprocessor 缩进的文本
  * @param {string} originalText 官方 formatter 之前的文本
- * @returns {string}
+ * @returns {string} 还原标记缩进后的文本
  */
-function restoreMarkerIndentation (text, originalText) {
+export function restoreMarkerIndentation (text, originalText) {
 	if (!originalText) return text
 	const eol = detectEol(text)
 	const lines = splitLines(text)
@@ -588,13 +624,13 @@ function restoreMarkerIndentation (text, originalText) {
 	const { blocks: originalBlocks } = analyze(originalText)
 
 	const markerLines = []
-	for (let i = 0; i < lines.length; i++) {
+	for (let i = 0; i < lines.length; i++) 
 		if (CODE_MARKER_RE.test(lines[i])) markerLines.push(i)
-	}
+	
 	const originalMarkerLines = []
-	for (let i = 0; i < originalLines.length; i++) {
+	for (let i = 0; i < originalLines.length; i++) 
 		if (CODE_MARKER_RE.test(originalLines[i])) originalMarkerLines.push(i)
-	}
+	
 	if (!markerLines.length || markerLines.length !== originalMarkerLines.length) return text
 
 	const out = [...lines]
@@ -613,10 +649,10 @@ function restoreMarkerIndentation (text, originalText) {
 			if (relative === null) return text
 			leading = leadingOf(lines[reference.line]) + relative
 		}
-		else {
+		else 
 			leading = leadingOf(originalLines[j])
-		}
-		out[i] = leading + lines[i].replace(/^[ \t]*/, '')
+		
+		out[i] = leading + lines[i].replace(/^[\t ]*/, '')
 	}
 	return out.join(eol)
 }
@@ -624,9 +660,9 @@ function restoreMarkerIndentation (text, originalText) {
 /**
  * `line` 的前导空白去掉 `prefix` 后的剩余部分；`line` 不以 `prefix` 开头（且前缀非空）时返回 `null`。
  *
- * @param {string} line
- * @param {string} prefix
- * @returns {string | null}
+ * @param {string} line - 待处理的行
+ * @param {string} prefix - 待去掉的前导空白
+ * @returns {string | null} 去掉前缀后的剩余部分，前缀不匹配时为 null
  */
 function stripLeading (line, prefix) {
 	const leading = leadingOf(line)
@@ -634,4 +670,3 @@ function stripLeading (line, prefix) {
 	return leading.slice(prefix.length)
 }
 
-export { analyze, indentText, endifAutoClose, foldingRanges, toggleBangLine, toggleBangLines, branchFragments, pickExemptBlock, computeSkipMask, restoreMarkerIndentation, restoreParenIndentation, restoreClauseIndentation, MESSAGES, IF_RE, ELSE_RE, ENDIF_RE }

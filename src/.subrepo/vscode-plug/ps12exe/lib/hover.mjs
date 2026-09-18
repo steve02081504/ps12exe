@@ -44,8 +44,8 @@ const DIRECTIVE_SECTIONS = Object.freeze({
 	dllexport: 'dllExport'
 })
 
-// 英文源字符串；它们同时也是 l10n bundle 的键。
-const HOVER_MESSAGES = Object.freeze({
+/** 英文源字符串；它们同时也是 l10n bundle 的键。 */
+export const HOVER_MESSAGES = Object.freeze({
 	if: '`#_if <condition>` / `#_else` / `#_endif` — conditional preprocessing. `PSEXE` is true while compiling; `PSScript` is false.',
 	include: '`#_include <filename|url>` inserts a file (which is preprocessed) here; `#_include_as_value <valuename> <file|url>` inserts it as a string value (not preprocessed).',
 	includeAs: '`#_include_as_base64 <valuename> <file|url>` / `#_include_as_bytes <valuename> <file|url>` insert a file as a base64 string or a byte array.',
@@ -58,18 +58,18 @@ const HOVER_MESSAGES = Object.freeze({
 })
 
 // 带边界的关键字指令（`#_if`、`#_include_as_value` …）；`\b` 提供边界，因此 `#_iffy` 或 `#_include_other` 这类未知指令不会被误认。
-const WORD_DIRECTIVE_RE = /^([ \t]*)#_(if|else|endif|include_as_base64|include_as_bytes|include_as_value|include|require|pragma|DllExport|balus)\b/
+const WORD_DIRECTIVE_RE = /^([\t ]*)#_(if|else|endif|include_as_base64|include_as_bytes|include_as_value|include|require|pragma|DllExport|balus)\b/
 // `#_!!` 后紧跟任意代码（`#_!!if`），因此单独匹配且不加边界。
-const BANG_DIRECTIVE_RE = /^([ \t]*)#_(!!)/
+const BANG_DIRECTIVE_RE = /^([\t ]*)#_(!!)/
 
 /**
  * 返回 `line` 上 `character` 列处的 preprocessor 指令。
  *
- * @param {string} line
- * @param {number} character
+ * @param {string} line - 待检查的脚本行
+ * @param {number} character - 光标所在的列号
  * @returns {{ name: string, section: string, start: number, end: number } | null} `start`/`end` 是含 `#_` 标记的区间（从零开始、含末尾）
  */
-function directiveAt (line, character) {
+export function directiveAt (line, character) {
 	const word = WORD_DIRECTIVE_RE.exec(line)
 	if (word) {
 		const start = word[1].length
@@ -96,12 +96,10 @@ function directiveAt (line, character) {
  *
  * @param {string | undefined} locale ps12exe 区域代码（见 `toPs12exeLocale`）
  * @param {string} section `HOVER_MESSAGES` 的小节键
- * @returns {string}
+ * @returns {string} 对应小节的文档链接
  */
-function documentationUrl (locale, section) {
+export function documentationUrl (locale, section) {
 	const region = README_FILES[locale] ? locale : 'en-UK'
 	const anchor = SECTION_ANCHORS[section] || SECTION_ANCHORS.dllExport
 	return `${README_BASE}${README_FILES[region]}#${anchor}`
 }
-
-export { HOVER_MESSAGES, directiveAt, documentationUrl }

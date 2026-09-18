@@ -1,11 +1,15 @@
+/* global suite: readonly, test: readonly, suiteSetup: readonly */
 import assert from 'node:assert'
+import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+
 import * as vscode from 'vscode'
+
+import { looksLikePs12Exe, replaceFile } from '../lib/exeSource.mjs'
 import { toPs12exeLocale } from '../lib/locale.mjs'
 import { encodeCommand, psQuote, parseSyncOutput, parseIncompleteOutput, resolvePlainPowerShell, findIncompleteFragments } from '../lib/powershell.mjs'
-import { looksLikePs12Exe, replaceFile } from '../lib/exeSource.mjs'
 
 suite('ps12exe extension', () => {
 	suiteSetup(async () => {
@@ -108,8 +112,8 @@ suite('ps12exe extension', () => {
 	})
 
 	test('quotes PowerShell values safely', () => {
-		assert.strictEqual(psQuote('C:\\a b\\c.ps1'), "'C:\\a b\\c.ps1'")
-		assert.strictEqual(psQuote("it's"), "'it''s'")
+		assert.strictEqual(psQuote('C:\\a b\\c.ps1'), '\'C:\\a b\\c.ps1\'')
+		assert.strictEqual(psQuote('it\'s'), '\'it\'\'s\'')
 	})
 
 	test('encodes commands for -EncodedCommand as Base64 UTF-16LE', () => {

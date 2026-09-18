@@ -1,21 +1,29 @@
+/* global suite: readonly, test: readonly */
 import assert from 'node:assert'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+
 import { analyze, indentText, endifAutoClose, foldingRanges, toggleBangLine, toggleBangLines, branchFragments, pickExemptBlock, computeSkipMask, restoreMarkerIndentation, restoreParenIndentation, restoreClauseIndentation, MESSAGES } from '../lib/preprocessor.mjs'
 
 // 该扩展位于 <repo>/src/.subrepo/vscode-plug/ps12exe，因此本测试文件位于 ps12exe 仓库根目录下五层。
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..')
 const IGNORED_DIRS = new Set(['node_modules', '.subrepo', '.vscode-test', '.git', 'out', 'dist'])
 
-/** @param {string} dir @param {string[]} [out] */
+/**
+ * 递归收集目录下的脚本文件。
+ *
+ * @param {string} dir - 目录路径
+ * @param {string[]} [out] - 输出数组
+ * @returns {string[]} 脚本文件路径列表
+ */
 function collectPs1 (dir, out = []) {
-	for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+	for (const entry of fs.readdirSync(dir, { withFileTypes: true })) 
 		if (entry.isDirectory()) {
 			if (!IGNORED_DIRS.has(entry.name)) collectPs1(path.join(dir, entry.name), out)
 		}
 		else if (entry.name.toLowerCase().endsWith('.ps1')) out.push(path.join(dir, entry.name))
-	}
+	
 	return out
 }
 
@@ -406,7 +414,7 @@ suite('ps12exe preprocessor', () => {
 		assert.strictEqual(restoreClauseIndentation(topLevel), topLevel)
 	})
 
-	test("ps12exe's own scripts analyse without diagnostics", function () {
+	test('ps12exe\'s own scripts analyse without diagnostics', function () {
 		// 防止编辑器规则与 ps12exe 随附的脚本发生偏移。
 		if (!fs.existsSync(path.join(REPO_ROOT, 'ps12exe.ps1'))) this.skip()
 
@@ -416,9 +424,9 @@ suite('ps12exe preprocessor', () => {
 		const failures = []
 		for (const file of files) {
 			const { diagnostics } = analyze(fs.readFileSync(file, 'utf8'))
-			for (const d of diagnostics) {
+			for (const d of diagnostics) 
 				failures.push(`${path.relative(REPO_ROOT, file)}:${d.line + 1} [${d.severity}] ${d.message}`)
-			}
+			
 		}
 		assert.deepStrictEqual(failures, [], `ps12exe's own scripts must be warning-free:\n${failures.join('\n')}`)
 	})
