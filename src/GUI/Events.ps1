@@ -89,11 +89,11 @@ $Script:refs.ConsoleAppCheckBox.add_CheckedChanged((CallAndUse {
 	}
 }))
 # cpu架构选项只能选一个
-$ArchCheckBoxs = @($Script:refs.x64CheckBox, $Script:refs.x86CheckBox, $Script:refs.AnyCPUCheckBox)
-$ArchCheckBoxs | ForEach-Object {
+$ArchCheckBoxes = @($Script:refs.x64CheckBox, $Script:refs.x86CheckBox, $Script:refs.AnyCPUCheckBox)
+$ArchCheckBoxes | ForEach-Object {
 	$_.add_CheckStateChanged({
 		if ($this.Checked) {
-			$ArchCheckBoxs | ForEach-Object {
+			$ArchCheckBoxes | ForEach-Object {
 				if ($_ -ne $this) { $_.Checked = $false }
 				else { $_.AutoCheck = $false }
 			}
@@ -104,11 +104,11 @@ $ArchCheckBoxs | ForEach-Object {
 	})
 }
 # 线程模型选项只能选一个
-$ThreadCheckBoxs = @($Script:refs.SingleThreadCheckBox, $Script:refs.MultiThreadCheckBox)
-$ThreadCheckBoxs | ForEach-Object {
+$ThreadCheckBoxes = @($Script:refs.SingleThreadCheckBox, $Script:refs.MultiThreadCheckBox)
+$ThreadCheckBoxes | ForEach-Object {
 	$_.add_CheckStateChanged({
 		if ($this.Checked) {
-			$ThreadCheckBoxs | ForEach-Object {
+			$ThreadCheckBoxes | ForEach-Object {
 				if ($_ -ne $this) { $_.Checked = $false }
 				else { $_.AutoCheck = $false }
 			}

@@ -1,0 +1,45 @@
+# typos 拼写检查配置
+# 参考: https://github.com/crate-ci/typos/blob/master/docs/reference.md
+
+[files]
+extend-exclude = [
+	# 非英语本地化文件与翻译文档由译者维护，英语拼写检查不适用
+	"/src/locale/fr-FR.ps1",
+	"/src/locale/fr-FR.fbs",
+	"/src/locale/es-ES.ps1",
+	"/src/locale/es-ES.fbs",
+	"/src/locale/ja-JP.ps1",
+	"/src/locale/ja-JP.fbs",
+	"/src/locale/hi-IN.ps1",
+	"/src/locale/hi-IN.fbs",
+	"/src/locale/zh-CN.ps1",
+	"/src/locale/zh-CN.fbs",
+	"/docs/README_CN.md",
+	"/docs/README_ES.md",
+	"/docs/README_FR.md",
+	"/docs/README_HI.md",
+	"/docs/README_JP.md",
+]
+ignore-hidden = true
+ignore-files = true
+ignore-dot = false
+ignore-vcs = true
+ignore-global = true
+ignore-parent = true
+
+[default]
+# 仅忽略特定上下文，不全局放行
+extend-ignore-re = [
+	# PowerShell 合法运算符：-ccontains（区分大小写包含）、-ine（不区分大小写不等于）
+	"-ccontains",
+	"-ine",
+]
+# 白名单：允许的“词”（correction 与 key 相同时表示该词始终视为正确）
+[default.extend-words]
+# golf 模式中有意使用的极短函数名，并非拼写错误
+pn = "pn"
+iif = "iif"
+# default.cs 中保留的德语注释/变量名（源自 PS2EXE）
+Variablen = "Variablen"
+Titel = "Titel"
+ist = "ist"

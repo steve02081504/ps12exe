@@ -278,7 +278,7 @@ function RollUp {
 if ($Debug) { $DebugPreference = 'Continue' } # fix -debug sets it to 'Inquire'
 #_if PSScript
 	$LocaleLoaderArg = @{ Localize = $Localize }
-	if ($nested) { $LocaleLoaderArg.FaildLoadLocaleData = {} }
+	if ($nested) { $LocaleLoaderArg.FailedLoadLocaleData = {} }
 #_endif
 $LocalizeData =
 #_if PSScript
@@ -509,7 +509,7 @@ $NoResource = -not $resourceParams.Count
 $iconFile = $resourceParams['iconFile']
 $resourceParams.Remove('iconFile')
 
-# retrieve absolute paths independent if path is given relative oder absolute
+# retrieve absolute paths independent if path is given relative or absolute
 if (-not $inputFile) {
 	$inputFile = '.\a.ps1'
 }
@@ -696,35 +696,35 @@ $resourceParamKeys | ForEach-Object {
 $AstAnalyzeResult = AstAnalyze $Ast
 Write-Debug "AstAnalyzeResult: $(($AstAnalyzeResult|ConvertTo-Json) -split "\r?\n" -ne '' -join "`n")"
 $CommandNames = (Get-Command).Name + (Get-Alias).Name
-$FindedCmdlets = @()
-$NotFindedCmdlets = @()
+$FoundCmdlets = @()
+$NotFoundCmdlets = @()
 $AstAnalyzeResult.UsedNonConstFunctions | ForEach-Object {
 	if ($_ -match '\$' -or -not $_) { return }
 	if ($CommandNames -notcontains $_) {
 		if ($_ -match '^[\w\-_]+$' -and (Get-Command $_ -ErrorAction Ignore)) {
-			$FindedCmdlets += $_
+			$FoundCmdlets += $_
 		}
 		# 跳过成员函数，因为解析Add-Type太过复杂
 		elseif (-not $_.Contains(']::')) {
-			$NotFindedCmdlets += $_
+			$NotFoundCmdlets += $_
 		}
 	}
 }
 if ($AST.ParamBlock) { $AstAnalyzeResult.IsConst = $false }
-$NotFindedTypes = @()
+$NotFoundTypes = @()
 $AstAnalyzeResult.UsedNonConstTypes | ForEach-Object {
 	if (!($_ -as [Type])) {
-		$NotFindedTypes += $_
+		$NotFoundTypes += $_
 	}
 }
-if ($FindedCmdlets) {
-	Write-I18n Warning SomeCmdletsMayNotAvailable $($FindedCmdlets -join '、')
+if ($FoundCmdlets) {
+	Write-I18n Warning SomeCmdletsMayNotAvailable $($FoundCmdlets -join '、')
 }
-if ($NotFindedCmdlets) {
-	Write-I18n Warning SomeNotFindedCmdlets $($NotFindedCmdlets -join '、')
+if ($NotFoundCmdlets) {
+	Write-I18n Warning SomeNotFoundCmdlets $($NotFoundCmdlets -join '、')
 }
-if ($NotFindedTypes) {
-	Write-I18n Warning SomeTypesMayNotAvailable $($NotFindedTypes -join '、')
+if ($NotFoundTypes) {
+	Write-I18n Warning SomeTypesMayNotAvailable $($NotFoundTypes -join '、')
 }
 if ($TempDir) {
 	New-Item -ItemType Directory -Path $TempDir -ErrorAction SilentlyContinue | Out-Null
@@ -880,7 +880,7 @@ $($_ | Format-List | Out-String)
 			foreach ($key in $urlParams.Keys) {
 				$githubfeedback += "&$key=$([system.uri]::EscapeDataString($urlParams[$key]))"
 			}
-			Write-I18n Host OppsSomethingWentWrong -ForegroundColor Yellow
+			Write-I18n Host OopsSomethingWentWrong -ForegroundColor Yellow
 			if ($versionNow -eq '0.0.0') {} # dev version, do noting
 			elseif ($versionNow -ne $versionOnline) {
 				Write-I18n Host TryUpgrade $versionOnline -ForegroundColor Yellow

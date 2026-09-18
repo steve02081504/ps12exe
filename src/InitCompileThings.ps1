@@ -158,7 +158,7 @@ if ($iconFile -match "^(https?|ftp)://") {
 	}
 }
 elseif ($iconFile) {
-	# retrieve absolute path independent if path is given relative oder absolute
+	# retrieve absolute path independent if path is given relative or absolute
 	$iconFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($iconFile)
 
 	if (!(Test-Path $iconFile -PathType Leaf)) {

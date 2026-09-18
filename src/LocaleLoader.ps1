@@ -2,7 +2,7 @@
 	[scriptblock]$CheckLocaleData = {
 		$null -ne $Script:LocalizeData
 	},
-	[scriptblock]$FaildLoadLocaleData = {
+	[scriptblock]$FailedLoadLocaleData = {
 		param (
 			[string]$Localize
 		)
@@ -43,7 +43,7 @@ if (!(&$CheckLocaleData)) {
 	$LocalizeList = Get-ChildItem $LocalizeDir | Where-Object { $_.Name -like '*.fbs' } | ForEach-Object { $_.BaseName }
 	$LocalizeHead = $Localize.Split('-')[0]
 	$SimilarLocalize = $LocalizeList | Where-Object { $_.StartsWith($LocalizeHead) }
-	if ($LocalizeHead -ne $Localize) { &$FaildLoadLocaleData $Localize }
+	if ($LocalizeHead -ne $Localize) { &$FailedLoadLocaleData $Localize }
 	foreach ($Localize in $SimilarLocalize) {
 		&$LoadLocaleData $Localize
 		if (&$CheckLocaleData) {
@@ -51,7 +51,7 @@ if (!(&$CheckLocaleData)) {
 		}
 	}
 	if (!(&$CheckLocaleData)) {
-		if ($LocalizeHead -eq $Localize) { &$FaildLoadLocaleData $Localize }
+		if ($LocalizeHead -eq $Localize) { &$FailedLoadLocaleData $Localize }
 		&$LoadLocaleData 'en-UK'
 	}
 }

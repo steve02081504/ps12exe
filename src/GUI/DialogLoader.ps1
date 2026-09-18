@@ -12,7 +12,7 @@ $Script:LocalizeData = ."$PSScriptRoot/../LocaleLoader.ps1" -Localize $Localize 
 	$Script:LocalizeData = &"$LocalizeDir\$Localize.ps1"
 } -CheckLocaleData {
 	$null -ne $Script:MainForm -and $Script:dialogInfo.Count -gt 0 -and $null -ne $Script:LocalizeData
-} -FaildLoadLocaleData {
+} -FailedLoadLocaleData {
 	param (
 		[string]$Localize
 	)

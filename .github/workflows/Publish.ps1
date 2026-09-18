@@ -34,6 +34,7 @@ try {
 	# 移除仅开发期使用、运行时与文档都用不到的文件
 	$devOnlyPaths = @(
 		"$repoPath/tools"
+		"$repoPath/typos.toml"
 		"$repoPath/src/locale/_fbs2txt.ps1"
 		"$repoPath/src/locale/_txt2fbs.ps1"
 		"$repoPath/src/locale/reorder_locale.ps1"

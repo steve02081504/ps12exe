@@ -13,7 +13,7 @@ try {
 	Import-Module $repoRoot -Force
 	New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
 
-	# winpwsh：引用收集不得往 $error 塞 Load 失败（EAP Stop 下会冒充编译失败，打出 CompilationFailed / OppsSomethingWentWrong）
+	# winpwsh：引用收集不得往 $error 塞 Load 失败（EAP Stop 下会冒充编译失败，打出 CompilationFailed / OopsSomethingWentWrong）
 	$error.Clear()
 	$errCleanPs1 = Join-Path $buildDir 'error-clean.ps1'
 	$errCleanExe = Join-Path $buildDir 'error-clean.exe'

@@ -17,7 +17,7 @@ function ShowParamsHelp($ParamsHelpData) {
 		$Key = $_
 		$Value = $ParamsHelpData[$Key]
 
-		# 在Vlaue中寻找``包裹的内容，对其进行色彩化
+		# 在Value中寻找``包裹的内容，对其进行色彩化
 		while ($Value -match '`(?<coloringstr>[^\`]+)`') {
 			$str = $Matches['coloringstr']
 			$newstr = $str

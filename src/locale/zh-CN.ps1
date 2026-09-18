@@ -177,7 +177,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		ReadFileFailed							  = "读取文件失败：{0}"
 		# 命令与类型检查
 		SomeCmdletsMayNotAvailable				  = "使用了可能会在运行时不可用的命令 {0}，确保已检查它们！"
-		SomeNotFindedCmdlets					  = "使用了未知的命令 {0}"
+		SomeNotFoundCmdlets					  = "使用了未知的命令 {0}"
 		SomeTypesMayNotAvailable				  = "使用了可能会在运行时不可用的类型 {0}，确保已检查它们！"
 		# 编译与输出
 		CompilingFile							  = "编译中..."
@@ -213,7 +213,7 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 		NewVersionAvailable						  = "ps12exe有了新版本：{0}！"
 		TryUpgrade								  = "最新版本是{0}，尝试升级?"
 		EnterToSubmitIssue						  = "如需帮助，按回车提交issue。"
-		OppsSomethingWentWrong					  = "我去，出错了。"
+		OopsSomethingWentWrong					  = "我去，出错了。"
 		CoreCompilePublishing					  = "正在使用 .NET SDK 发布单文件可执行程序..."
 		CoreCompileNeedDotnet					  = "PowerShell Core 编译需要 .NET SDK（dotnet）。请安装它，或传入 -targetRuntime Framework4.0。"
 		CoreCompileUnsupported					  = "PowerShell Core 编译器暂不支持以下选项：{0}"
