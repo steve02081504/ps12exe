@@ -68,4 +68,24 @@ Add-Test @{
 	}
 }
 
+Add-Test @{
+	Name  = 'tinysharp.unicode-redirect'
+	Group = 'tinysharp'
+	Deps  = $script:TsDeps
+	Build = @{ Name = 'unicode'; InputText = "'A世界B'"; Output = 'ts_unicode.exe' }
+	Run   = {
+		param($ctx)
+		$exe = $ctx.Builds['unicode']
+		$size = (Get-Item -LiteralPath $exe).Length
+		Assert-True ($size -lt 4096) "非 ASCII 常量仍应走 TinySharp 常量壳（<4KB），实际 $size"
+		$r = Invoke-ExeCaptureMergedOutput -ExePath $exe
+		Assert-Match $r.Output 'A世界B' "非 ASCII 常量在 stdout 被重定向时丢失输出：[$($r.Output)]"
+
+		# 真实控制台（非重定向）下走 WriteConsoleW 分支，不应崩溃。
+		Assert-Equal 0 (Invoke-ExeWithPrivateConsole -ExePath $exe) '非 ASCII 常量在真实控制台下的退出码'
+
+		$content = Get-Exe21spContent -ExePath $exe
+		Assert-Match $content 'A世界B' "exe21sp 未能还原非 ASCII 常量：$content"
+	}
+}
 

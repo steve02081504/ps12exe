@@ -57,6 +57,11 @@ namespace TinySharp {
 			string baseFunction = "7";
 			bool allASCIIoutput = outputValue.All(c => c >= 0 && c <= 127);
 
+			// 非 ASCII 控制台常量：WriteConsoleW 在 stdout 被重定向（管道/文件）时会失败并丢输出，
+			// 因此单独走「控制台 WriteConsoleW / 重定向 UTF-8 WriteFile」的壳（见 CompileUnicode）。
+			if (hasOutput && !allASCIIoutput)
+				return CompileUnicode(targetRuntime, architecture, outputValue, ExitCode);
+
 			// 输出字符串按 ASCII 或 UTF-16 编码，末尾补 NUL 方便 puts 直接输出。
 			byte[] payloadBytes = (allASCIIoutput?Encoding.ASCII:Encoding.Unicode).GetBytes(outputValue+'\0');
 			// 常量输出较大时用 XPRESS 压缩内嵌，运行时解压后再打印；只有压缩确实更小才走该路径。
@@ -267,6 +272,145 @@ namespace TinySharp {
 			// 把待输出的字符串放入填充数据。
 			if (hasOutput) result.OutSegment = segment;
 
+			return result;
+		}
+
+		/// <summary>非 ASCII 控制台常量壳：stdout 是控制台时用 WriteConsoleW 打印 UTF-16；句柄不是控制台（被重定向到管道/文件）时 WriteConsoleW 返回 0，改用 WriteFile 输出 UTF-8。这样重定向下不再丢失输出（旧实现直接用 WriteConsoleW，重定向时静默失败）。</summary>
+		private static Program CompileUnicode(
+			string targetRuntime, string architecture,
+			string outputValue, int ExitCode
+		) {
+			var module = new ModuleDefinition("Dummy");
+			// s16 末尾补 NUL（WriteConsoleW 用显式长度，NUL 只供 exe21sp 还原时定位字符串边界）；s8 供重定向输出。
+			var utf16Bytes = Encoding.Unicode.GetBytes(outputValue + '\0');
+			var utf8Bytes = Encoding.UTF8.GetBytes(outputValue);
+			var s16 = new DataSegment(utf16Bytes);
+			var s8 = new DataSegment(utf8Bytes);
+
+			var PEKind = OptionalHeaderMagic.PE64;
+			var ArchType = MachineType.Amd64;
+			if (architecture != "x64") {
+				PEKind = OptionalHeaderMagic.PE32;
+				ArchType = MachineType.I386;
+			}
+
+			var image = new PEImage {
+				ImageBase = 0x00000000004e0000,
+				PEKind = PEKind,
+				MachineType = ArchType
+			};
+			image.DllCharacteristics &= ~DllCharacteristics.DynamicBase;
+
+			var tablesStream = new TablesStream();
+			var blobStreamBuffer = new BlobStreamBuffer();
+			var stringsStreamBuffer = new StringsStreamBuffer();
+			tablesStream.GetTable<ModuleDefinitionRow>().Add(new ModuleDefinitionRow());
+			tablesStream.GetTable<TypeDefinitionRow>().Add(new TypeDefinitionRow(0, 0, 0, 0, 1, 1));
+
+			var methodTable = tablesStream.GetTable<MethodDefinitionRow>();
+			var corlib = module.CorLibTypeFactory;
+			uint getStdHandleIndex = AddPInvoke(tablesStream, module, stringsStreamBuffer, blobStreamBuffer, "GetStdHandle",
+				MethodSignature.CreateStatic(corlib.IntPtr, new[] { corlib.Int32 }));
+			uint writeConsoleIndex = AddPInvoke(tablesStream, module, stringsStreamBuffer, blobStreamBuffer, "WriteConsoleW",
+				MethodSignature.CreateStatic(corlib.Int32, new[] { corlib.IntPtr, corlib.IntPtr, corlib.Int32, corlib.IntPtr, corlib.IntPtr }));
+			uint writeFileIndex = AddPInvoke(tablesStream, module, stringsStreamBuffer, blobStreamBuffer, "WriteFile",
+				MethodSignature.CreateStatic(corlib.Int32, new[] { corlib.IntPtr, corlib.IntPtr, corlib.Int32, corlib.IntPtr, corlib.IntPtr }));
+
+			// WriteFile 的 lpNumberOfBytesWritten 不能为 NULL（同步写），需要一个 BSS 槽位。
+			var writtenBuf = new VirtualSegment(null, 8u);
+
+			using(var codeStream = new MemoryStream()) {
+				var patches = new Dictionary<int, ISegment>();
+				Action<byte> emit = b => codeStream.WriteByte(b);
+				Action<ISegment> ldcAddress = seg => {
+					codeStream.WriteByte(0x20); // ldc.i4 <addr>
+					patches[(int)codeStream.Position] = seg;
+					codeStream.Write(new byte[4], 0, 4);
+				};
+				Action<int> ldcInt = v => {
+					codeStream.WriteByte(0x20); // ldc.i4 <int32>
+					var bytes = BitConverter.GetBytes(v);
+					codeStream.Write(bytes, 0, 4);
+				};
+				Action<uint> callMethod = idx => {
+					codeStream.WriteByte(0x28); // call
+					var bytes = BitConverter.GetBytes(0x06000000u | idx);
+					codeStream.Write(bytes, 0, 4);
+				};
+
+				// WriteConsoleW(GetStdHandle(STD_OUTPUT_HANDLE), s16, len, NULL, NULL)
+				ldcInt(-11); // STD_OUTPUT_HANDLE
+				callMethod(getStdHandleIndex);
+				ldcAddress(s16);
+				ldcInt(outputValue.Length);
+				emit(0x16); // ldc.i4.0
+				emit(0x16); // ldc.i4.0
+				callMethod(writeConsoleIndex);
+				// 返回 0（非控制台句柄）则跳过下面的 UTF-8 回退块
+				emit(0x2D); // brtrue.s
+				emit(32);   // 回退块固定 32 字节
+
+				// WriteFile(GetStdHandle(STD_OUTPUT_HANDLE), s8, len, &written, NULL)
+				ldcInt(-11);
+				callMethod(getStdHandleIndex);
+				ldcAddress(s8);
+				ldcInt(utf8Bytes.Length);
+				ldcAddress(writtenBuf);
+				emit(0x16); // ldc.i4.0
+				callMethod(writeFileIndex);
+				emit(0x26); // pop
+
+				if (ExitCode != 0)
+					ldcInt(ExitCode);
+				emit(0x2A); // ret
+
+				var body = BuildFatMethodBody(codeStream.ToArray(), 8, patches);
+				var retype = module.CorLibTypeFactory.Void;
+				if (ExitCode != 0) retype = module.CorLibTypeFactory.Int32;
+				methodTable.Add(new MethodDefinitionRow(
+					body.ToReference(), 0, MethodAttributes.Static, 0,
+					blobStreamBuffer.GetBlobIndex(module, new DummyProvider(), MethodSignature.CreateStatic(retype), ThrowErrorListener.Instance), 1));
+			}
+			uint entryPointIndex = (uint)methodTable.Count;
+
+			tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex("Kernel32")));
+			var implMapTable = tablesStream.GetTable<ImplementationMapRow>();
+			Action<uint, string> addImplMap = (methodIndex, name) =>
+				implMapTable.Add(new ImplementationMapRow(
+					ImplementationMapAttributes.CallConvStdcall,
+					tablesStream.GetIndexEncoder(CodedIndex.MemberForwarded).EncodeToken(new MetadataToken(TableIndex.Method, methodIndex)),
+					stringsStreamBuffer.GetStringIndex(name), 1));
+			addImplMap(getStdHandleIndex, "GetStdHandle");
+			addImplMap(writeConsoleIndex, "WriteConsoleW");
+			addImplMap(writeFileIndex, "WriteFile");
+
+			tablesStream.GetTable<AssemblyDefinitionRow>().Add(new AssemblyDefinitionRow(
+				0, 1, 0, 0, 0, 0, 0,
+				stringsStreamBuffer.GetStringIndex("WriteConsoleW"), 0));
+
+			var metadataDirectory = new MetadataDirectory {
+				VersionString = ClrVersionString(targetRuntime)
+			};
+			metadataDirectory.Streams.Add(tablesStream);
+			metadataDirectory.Streams.Add(blobStreamBuffer.CreateStream());
+			metadataDirectory.Streams.Add(stringsStreamBuffer.CreateStream());
+			image.DotNetDirectory = new DotNetDirectory {
+				EntryPoint = new MetadataToken(TableIndex.Method, entryPointIndex),
+				Metadata = metadataDirectory
+			};
+			if (architecture == "anycpu")
+				image.DotNetDirectory.Flags &= ~DotNetDirectoryFlags.Bit32Required;
+
+			var result = new Program();
+			result.Image = image;
+			// s16 放在前面：exe21sp 还原时按文件偏移最小者取消息字符串。
+			var roData = new SegmentBuilder();
+			roData.Add(s16);
+			roData.Add(s8);
+			result.OutSegment = roData;
+			var bssData = new SegmentBuilder();
+			bssData.Add(writtenBuf);
+			result.WritableSegment = bssData;
 			return result;
 		}
 

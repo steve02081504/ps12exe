@@ -22,6 +22,7 @@ function Test-ConstResultTooLong([string]$Output) {
 
 	# MessageBox(noConsole) 恒用 UTF-16；控制台按 ASCII/UTF-16 自适应（与 TinySharp.cs 保持一致）
 	$payloadIsAscii = (-not $noConsole) -and (-not ($Output -match '[^\x00-\x7F]'))
+	$isNonAsciiConsole = (-not $noConsole) -and ($Output -match '[^\x00-\x7F]')
 	if ($payloadIsAscii) {
 		$payload = [Text.Encoding]::ASCII.GetBytes($Output + [char]0)
 	}
@@ -31,6 +32,8 @@ function Test-ConstResultTooLong([string]$Output) {
 	# 预算衡量的是 TinySharp 实际内嵌的字节数（未压缩原文，或压缩后）
 	if ($payload.Length -le $rawBudget) { return $false }
 	if ($requireAdmin -or $isCoreTarget) { return $true }
+	# 非 ASCII 控制台常量壳不做 XPRESS 压缩（见 TinySharp.CompileUnicode），预算按未压缩原文衡量。
+	if ($isNonAsciiConsole) { return $true }
 	$estimated = Get-XpressCompressedSize $payload
 	return (($estimated -lt 0) -or (($estimated + $ConstCompressedOverhead) -gt $rawBudget))
 }
