@@ -213,3 +213,38 @@ Add-Test @{
 		Assert-Equal 1 ([regex]::Matches($text, '(?m)^\s*#_pragma\s+App\.Windowed\b')).Count "Core windowed 应补回 App.Windowed：$text"
 	}
 }
+
+Add-Test @{
+	Name   = 'exe21sp.require'
+	Group  = 'exe21sp'
+	Deps   = $deps
+	Builds = @(
+		@{ Name = 'single'; InputText = "#_require ps12exe`nWrite-Output 'require-single'"; Output = 'require_single.exe' }
+		@{ Name = 'multi'; InputText = "#_require ps12exe`n#_require foo-bar`nWrite-Output 'require-multi'"; Output = 'require_multi.exe' }
+		# 非完全匹配（把 -ea Stop 改成 -ea Continue）应原样保留，不误还原。
+		@{ Name = 'fake'; InputText = "if(!(gmo ps12exe -ListAvailable -ea SilentlyContinue)){try{Import-PackageProvider NuGet}catch{Install-PackageProvider NuGet -Scope CurrentUser -Force -ea Ignore;Import-PackageProvider NuGet -ea Ignore};Install-Module ps12exe -Scope CurrentUser -Force -ea Continue}`nWrite-Output 'require-fake'"; Output = 'require_fake.exe' }
+	)
+	Run    = {
+		param($ctx)
+		$single = Get-Exe21spContent -ExePath $ctx.Builds['single']
+		Assert-Match $single '(?m)^#_require ps12exe\s*$' "单模块 #_require 未还原：$single"
+		Assert-NotMatch $single 'Install-Module' "单模块头代码未被替换：$single"
+
+		$multi = Get-Exe21spContent -ExePath $ctx.Builds['multi']
+		Assert-Match $multi '(?m)^#_require ps12exe\s*$' "多模块第一行未还原：$multi"
+		Assert-Match $multi '(?m)^#_require foo-bar\s*$' "多模块第二行未还原：$multi"
+		Assert-NotMatch $multi 'Install-Module' "多模块头代码未被替换：$multi"
+
+		$fake = Get-Exe21spContent -ExePath $ctx.Builds['fake']
+		Assert-NotMatch $fake '(?m)^#_require' "非完全匹配不应还原：$fake"
+		Assert-Match $fake 'Install-Module ps12exe' "非完全匹配应保留原头代码：$fake"
+
+		# 往返：还原出的 #_require 重新编译后应再次还原为同样的 #_require。
+		$rtInput = Join-Path $ctx.WorkDir 'require_rt.ps1'
+		[System.IO.File]::WriteAllText($rtInput, $single, [System.Text.UTF8Encoding]::new($false))
+		$rtExe = Join-Path $ctx.WorkDir 'require_rt.exe'
+		ps12exe -inputFile $rtInput -outputFile $rtExe -NoUpdateCheck | Out-Null
+		$rt = Get-Exe21spContent -ExePath $rtExe
+		Assert-Match $rt '(?m)^#_require ps12exe\s*$' "往返后 #_require 丢失：$rt"
+	}
+}

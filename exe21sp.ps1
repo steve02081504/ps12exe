@@ -116,6 +116,39 @@ param(
 		($Value -replace '\r?\n', ' ').Replace("'", "''")
 	}
 
+	# 还原 #_require 预处理生成的头代码。ps12exe 编译时把 #_require <模块> 展开成模块安装引导写入脚本，
+	# 反编译时若某行与该展开结果逐字符一致（完全匹配），则还原为原来的 #_require 行；否则原样保留。
+	function Restore-RequiredModulePragma([string]$Script) {
+		if ([string]::IsNullOrEmpty($Script)) { return $Script }
+		# 与 src/ReadScriptFile.ps1 里的 $NuGetIniter 保持一致；两处任一改动都会让完全匹配失效（安全地不还原）。
+		$NuGetIniter = 'try{Import-PackageProvider NuGet}catch{Install-PackageProvider NuGet -Scope CurrentUser -Force -ea Ignore;Import-PackageProvider NuGet -ea Ignore}'
+		$Nu = [regex]::Escape($NuGetIniter)
+
+		# 单模块：#_require <模块> 展开为 if(!(gmo <模块> -ListAvailable -ea SilentlyContinue)){<NuGet>;Install-Module <模块> -Scope CurrentUser -Force -ea Stop}
+		$SinglePattern = "(?m)^if\(!\(gmo (?<a>[^\r\n]+?) -ListAvailable -ea SilentlyContinue\)\)\{$Nu;Install-Module (?<b>[^\r\n]+?) -Scope CurrentUser -Force -ea Stop\}\r?$"
+		$Script = [regex]::Replace($Script, $SinglePattern, {
+				param($m)
+				if ($m.Groups['a'].Value.Length -gt 0 -and $m.Groups['a'].Value -ceq $m.Groups['b'].Value) {
+					"#_require $($m.Groups['a'].Value)"
+				}
+				else { $m.Value }
+			})
+
+		# 多模块（来自多行 #_require）：展开为 @('m1', 'm2')|%{if(!(gmo $_ -ListAvailable -ea SilentlyContinue)){<NuGet>;Install-Module $_ -Scope CurrentUser -Force -ea Stop}}
+		$MultiPattern = '(?m)^(?<list>@\(.*?\))\|%\{if\(!\(gmo \$_ -ListAvailable -ea SilentlyContinue\)\)\{' + $Nu + ';Install-Module \$_ -Scope CurrentUser -Force -ea Stop\}\}\r?$'
+		$Script = [regex]::Replace($Script, $MultiPattern, {
+				param($m)
+				$Names = @([regex]::Matches($m.Groups['list'].Value, "'(?<v>(?:[^']|'')*)'") | ForEach-Object { $_.Groups['v'].Value.Replace("''", "'") })
+				if ($Names.Count -eq 0) { return $m.Value }
+				# 重新拼出规范形式，要求与原文本逐字符一致，确保是 ps12exe 的原始展开而非用户手写。
+				$Canonical = '@(' + (($Names | ForEach-Object { "'" + $_.Replace("'", "''") + "'" }) -join ', ') + ')'
+				if ($Canonical -cne $m.Groups['list'].Value) { return $m.Value }
+				($Names | ForEach-Object { "#_require $_" }) -join "`n"
+			})
+
+		$Script
+	}
+
 	# 从产物的 Win32 版本资源里取回资源参数，转成源码里没有的 #_pragma 行。
 	function Get-PS12ExeResourcePragmaLines {
 		param(
@@ -238,6 +271,9 @@ param(
 			$currentIndex++
 			continue
 		}
+
+		# 还原编译期由 #_require 展开的模块安装引导头代码（仅完全匹配时）。
+		$script = Restore-RequiredModulePragma $script
 
 		# 反编译时从产物的 Win32 资源取回资源参数：源码里已有对应 #_pragma 的跳过，缺失的在程序开头补回；图标释放到输出目录并用 #_pragma Resources.Icon 引用。
 		$ExistingPragmaNames = Get-ExistingPragmaNames $script
