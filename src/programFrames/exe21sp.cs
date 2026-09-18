@@ -1,4 +1,4 @@
-// 使用 AsmResolver 读取 ps12exe 生成的 exe 中内嵌的脚本资源，并返回原始 PowerShell 脚本文本。通过 exe21sp PowerShell 辅助程序对外暴露。
+﻿// 使用 AsmResolver 读取 ps12exe 生成的 exe 中内嵌的脚本资源，并返回原始 PowerShell 脚本文本。通过 exe21sp PowerShell 辅助程序对外暴露。
 using System;
 using System.Collections.Generic;
 using System.IO;
