@@ -15,9 +15,15 @@
 	<script src='https://www.midijs.net/lib/midi.js'></script>
 	<script src="https://cdn.jsdelivr.net/npm/darkreader"></script>
 	<script>
+		/* global DarkReader: readonly */
 		DarkReader.setFetchMethod(window.fetch)
 		DarkReader.enable()
 		let HighlightCode
+		/**
+		 * 根据明暗模式切换页面主题。
+		 *
+		 * @param {boolean} Set - 是否启用暗色主题
+		 */
 		function SetDarkMode(Set) {
 			if (Set) DarkReader.enable()
 			else DarkReader.disable()
@@ -45,6 +51,7 @@
 	<button id="compileButton" onclick="compileCode()">cum out</button>
 	<a id="downloadLink" download="a.exe"></a>
 	<script type="text/javascript">
+		/* global MIDIjs: readonly */
 		const userInput = document.getElementById('inputText')
 		let playing = false
 		userInput.addEventListener('focus', event => {
@@ -54,6 +61,11 @@
 		})
 		userInput.addEventListener('blur', event => MIDIjs.pause())
 		const a = document.getElementById('downloadLink')
+		/**
+		 * 把输入框里的代码提交给服务端编译，成功后触发下载。
+		 *
+		 * @returns {void} 无返回值
+		 */
 		function compileCode() {
 			if (!userInput.value) return alert('No code to compile')
 			fetch('./api/compile', {

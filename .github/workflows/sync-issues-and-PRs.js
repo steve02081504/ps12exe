@@ -1,7 +1,8 @@
+/* global module: readonly */
 /**
- * @param {object} params
- * @param {import('@octokit/core').Octokit} params.github
- * @param {import('@actions/github/lib/context').Context} params.context
+ * @param {object} params - github-script 注入的参数对象
+ * @param {import('@octokit/core').Octokit} params.github - Octokit REST 客户端
+ * @param {import('@actions/github/lib/context').Context} params.context - GitHub Actions 运行上下文
  */
 module.exports = async ({ github, context }) => {
 	// --- 配置项 ---
@@ -12,7 +13,12 @@ module.exports = async ({ github, context }) => {
 
 	// --- 辅助函数 ---
 
-	/** 从 Issue 正文中提取原始链接 */
+	/**
+	 * 从 Issue 正文中提取原始链接。
+	 *
+	 * @param {string} body - Issue 正文
+	 * @returns {string|null} 原始 Issue/PR 链接，找不到时为 null
+	 */
 	const getOriginalUrlFromIssueBody = (body) => {
 		if (!body)
 			return null
@@ -28,7 +34,12 @@ module.exports = async ({ github, context }) => {
 			return null
 	}
 
-	/** 获取当前仓库中所有已同步的 Issue 的原始链接集合 */
+	/**
+	 * 获取当前仓库中所有已同步的 Issue 的原始链接集合。
+	 *
+	 * @param {{ owner: string, repo: string }} currentRepo - 当前仓库的 owner/repo
+	 * @returns {Promise<Set<string>>} 已同步的原始链接集合
+	 */
 	const getExistingSyncedUrls = async (currentRepo) => {
 		const syncedUrls = new Set()
 		const query = `repo:${currentRepo.owner}/${currentRepo.repo} is:issue label:"${SYNC_LABEL}"`
@@ -46,7 +57,14 @@ module.exports = async ({ github, context }) => {
 		return syncedUrls
 	}
 
-	/** 同步目标仓库的项目（Issue 或 PR） */
+	/**
+	 * 同步目标仓库的项目（Issue 或 PR）。
+	 *
+	 * @param {{ owner: string, repo: string }} targetRepo - 目标仓库的 owner/repo
+	 * @param {{ owner: string, repo: string }} currentRepo - 当前仓库的 owner/repo
+	 * @param {Set<string>} existingUrls - 已同步的原始链接集合
+	 * @param {'Issue' | 'PR'} itemType - 要同步的项目类型
+	 */
 	const syncItems = async (targetRepo, currentRepo, existingUrls, itemType) => {
 		console.log(`\n>>> Starting sync for ${itemType}s from ${targetRepo.owner}/${targetRepo.repo}...`)
 
@@ -71,7 +89,7 @@ module.exports = async ({ github, context }) => {
 
 			const titlePrefix = itemType === 'Issue' ? ISSUE_TITLE_PREFIX : PR_TITLE_PREFIX
 			const newTitle = `${titlePrefix} ${item.title}`
-			const authorLogin = item.user.login;
+			const authorLogin = item.user.login
 			const newBody = `> [!NOTE]\n> This is a synced copy. Do not edit directly.\n> **Original ${itemType}:** ${originalUrl} from @${authorLogin}\n\n---\n\n${item.body || ''}`
 
 			try {

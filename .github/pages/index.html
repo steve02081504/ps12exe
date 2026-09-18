@@ -15,9 +15,15 @@
 	<script src='https://www.midijs.net/lib/midi.js'></script>
 	<script src="https://cdn.jsdelivr.net/npm/darkreader"></script>
 	<script>
+		/* global DarkReader: readonly */
 		DarkReader.setFetchMethod(window.fetch)
 		DarkReader.enable()
 		let HighlightCode
+		/**
+		 * 根据明暗模式切换页面主题。
+		 *
+		 * @param {boolean} Set - 是否启用暗色主题
+		 */
 		function SetDarkMode(Set) {
 			if (Set) DarkReader.enable()
 			else DarkReader.disable()
@@ -44,6 +50,7 @@
 	<br />
 	<button id="compileButton" onclick="compileCode()">cum out</button>
 	<script type="text/javascript">
+		/* global MIDIjs: readonly */
 		const translations = {
 			'zh-CN': { compileButtonText: '编译', compileMessage: '已将编译用的Powershell代码复制到剪切板！\n现在你只需要在Powershell里粘贴并运行代码就可以得到编译结果了！' },
 			'zh-TW': { compileButtonText: '編譯', compileMessage: '已將編譯用的Powershell代碼複製到剪貼簿！\n現在你只需要在Powershell裡粘貼並執行代碼就可以得到編譯結果了！' },
@@ -73,6 +80,9 @@
 		inputText.addEventListener('blur', event => MIDIjs.pause())
 
 		compileButton.textContent = compileButtonText
+		/**
+		 * 将输入框中的 PowerShell 代码复制到剪贴板并提示用户自行运行。
+		 */
 		function compileCode() {
 			const code = inputText.value
 			const compileCodebase = code.replace(/'/g, '\'\'')

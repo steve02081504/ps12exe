@@ -91,7 +91,7 @@ export async function ensureDependencyTree (cwd, options = {}) {
 	if (await check(cwd)) return false
 	log.warn('node_modules 不是 npm 依赖树（可能由 Deno 等其它包管理器安装），正在运行 `npm install` 修复……')
 	await repair(cwd)
-	if (!(await check(cwd))) throw new Error('`npm install` 后依赖树仍不合法，请手动运行 `npm install` 后重试')
+	if (!await check(cwd)) throw new Error('`npm install` 后依赖树仍不合法，请手动运行 `npm install` 后重试')
 	return true
 }
 

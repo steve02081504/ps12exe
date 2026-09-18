@@ -1,4 +1,5 @@
-/** @param {import('@types/github-script').AsyncFunctionArguments} AsyncFunctionArguments */
+/* global module: readonly */
+/** @param {import('@types/github-script').AsyncFunctionArguments} AsyncFunctionArguments - github-script 注入的 Octokit 客户端与 Actions 上下文 */
 module.exports = async ({ github, context }) => {
 	const issueBody = context.payload.issue.body.toLowerCase()
 	const keywords = [
