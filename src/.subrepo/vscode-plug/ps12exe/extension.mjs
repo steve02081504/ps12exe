@@ -7,6 +7,7 @@ import { analyze, endifAutoClose, foldingRanges, toggleBangLines, computeSkipMas
 import { applyPreprocessorFormatting } from './lib/format.mjs'
 import { resolveDirectivePath } from './lib/definition.mjs'
 import { HOVER_MESSAGES, directiveAt, documentationUrl } from './lib/hover.mjs'
+import { pragmaNameAt, getPragmaData, lookupPragma, buildPragmaCandidates, clearPragmaCache } from './lib/pragma.mjs'
 import { POWER_SHELL_EXTENSION_ID, isPowerShellExtensionInstalled, getOfficialEdits, applyTextEdits } from './lib/officialFormatter.mjs'
 import { registerExeSource } from './lib/exeSource.mjs'
 
@@ -92,6 +93,7 @@ async function requireHost () {
 
 	if (result.status === 'installed' || result.status === 'updated') {
 		const refreshed = await resolvePowerShell(true)
+		clearPragmaCache()
 		if (refreshed && refreshed.moduleVersion) {
 			if (result.status === 'installed') vscode.window.showInformationMessage(t('ps12exe {0} has been installed.', result.version || ''))
 			return refreshed
@@ -123,6 +125,7 @@ async function autoUpdateModule (context) {
 	const result = await syncModule({ host, channel: getOutputChannel() })
 	if (result.status === 'installed' || result.status === 'updated') {
 		await resolvePowerShell(true)
+		clearPragmaCache()
 		if (result.status === 'installed') vscode.window.showInformationMessage(t('ps12exe {0} has been installed.', result.version || ''))
 		else vscode.window.showInformationMessage(t('ps12exe has been updated to {0}.', result.version || ''))
 	}
@@ -429,26 +432,104 @@ const definitionProvider = {
 	}
 }
 
+/**
+ * 为 `#_pragma` 变量名构造悬浮提示：其本地化说明来自当前安装的 ps12exe 模块（见 `lib/pragma.mjs`），并链接到 README 的预处理小节。区域数据不可用时回退到通用的 `#_pragma` 说明。
+ *
+ * @param {number} line
+ * @param {{ name: string, start: number, end: number }} pragma
+ * @param {string | undefined} locale
+ * @returns {Promise<vscode.Hover>}
+ */
+async function createPragmaHover (line, pragma, locale) {
+	let description
+	try {
+		const data = await getPragmaData(locale)
+		const entry = lookupPragma(data, pragma.name)
+		if (entry) description = entry.description
+	}
+	catch {
+		// 模块未安装或读取失败：退回通用说明，不改动悬停本身。
+	}
+
+	const contents = new vscode.MarkdownString()
+	if (description) contents.appendMarkdown(`\`#_pragma ${pragma.name}\`\n\n${description}`)
+	else contents.appendMarkdown(t(HOVER_MESSAGES.pragma))
+	const url = documentationUrl(locale, 'pragma')
+	contents.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${url})`)
+	return new vscode.Hover(contents, new vscode.Range(line, pragma.start, line, pragma.end))
+}
+
 const hoverProvider = {
 	/**
-	 * 在 preprocessor 指令上显示本地化的说明，并链接到当前区域 README 中对应的小节。here-string 函数体和块注释内的 `#_…` 不是指令，因此不提示。
+	 * 在 preprocessor 指令（以及 `#_pragma` 变量名）上显示本地化的说明，并链接到当前区域 README 中对应的小节。here-string 函数体和块注释内的 `#_…` 不是指令，因此不提示。
 	 *
 	 * @param {vscode.TextDocument} document
 	 * @param {vscode.Position} position
-	 * @returns {vscode.Hover | null}
+	 * @returns {Promise<vscode.Hover | null>}
 	 */
-	provideHover (document, position) {
+	async provideHover (document, position) {
 		if (document.languageId !== 'powershell') return null
 		const line = document.lineAt(position.line).text
+		const locale = toPs12exeLocale(vscode.env.language)
+
+		const pragma = pragmaNameAt(line, position.character)
+		if (pragma) {
+			if (computeSkipMask(document.getText().split(/\r\n|\n|\r/))[position.line]) return null
+			return createPragmaHover(position.line, pragma, locale)
+		}
+
 		const directive = directiveAt(line, position.character)
 		if (!directive) return null
 		if (computeSkipMask(document.getText().split(/\r\n|\n|\r/))[position.line]) return null
 
 		const contents = new vscode.MarkdownString()
 		contents.appendMarkdown(t(HOVER_MESSAGES[directive.section]))
-		const url = documentationUrl(toPs12exeLocale(vscode.env.language), directive.section)
+		const url = documentationUrl(locale, directive.section)
 		contents.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${url})`)
 		return new vscode.Hover(contents, new vscode.Range(position.line, directive.start, position.line, directive.end))
+	}
+}
+
+const completionProvider = {
+	/**
+	 * 在 `#_pragma ` 后补全参数名；已输入父级点号（`App.`）时只列出该父级的直接子键。候选及其说明同样来自当前安装的模块。
+	 *
+	 * @param {vscode.TextDocument} document
+	 * @param {vscode.Position} position
+	 * @returns {Promise<vscode.CompletionItem[] | undefined>}
+	 */
+	async provideCompletionItems (document, position) {
+		if (document.languageId !== 'powershell') return undefined
+		const line = document.lineAt(position.line).text
+		const before = line.slice(0, position.character)
+		const match = /^([ \t]*#_pragma[ \t]+)([a-zA-Z_][a-zA-Z_0-9.]*)?$/.exec(before)
+		if (!match) return undefined
+		if (computeSkipMask(document.getText().split(/\r\n|\n|\r/))[position.line]) return undefined
+
+		const locale = toPs12exeLocale(vscode.env.language)
+		let data
+		try {
+			data = await getPragmaData(locale)
+		}
+		catch {
+			return undefined
+		}
+
+		const url = documentationUrl(locale, 'pragma')
+		const range = new vscode.Range(position.line, match[1].length, position.line, position.character)
+		return buildPragmaCandidates(data, match[2] || '').map((candidate) => {
+			const item = new vscode.CompletionItem(
+				candidate.name,
+				candidate.kind === 'object' ? vscode.CompletionItemKind.Module : vscode.CompletionItemKind.Property
+			)
+			item.insertText = candidate.insertText
+			item.range = range
+			item.detail = t('ps12exe compilation parameter')
+			const docs = new vscode.MarkdownString(candidate.description)
+			docs.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${url})`)
+			item.documentation = docs
+			return item
+		})
 	}
 }
 
@@ -500,6 +581,7 @@ function activate (context) {
 		vscode.languages.registerDocumentFormattingEditProvider(POWER_SHELL_SELECTOR, formattingProvider),
 		vscode.languages.registerDefinitionProvider(POWER_SHELL_SELECTOR, definitionProvider),
 		vscode.languages.registerHoverProvider(POWER_SHELL_SELECTOR, hoverProvider),
+		vscode.languages.registerCompletionItemProvider(POWER_SHELL_SELECTOR, completionProvider, '.', ' '),
 		vscode.languages.registerFoldingRangeProvider(POWER_SHELL_SELECTOR, foldingProvider),
 		vscode.languages.registerCodeActionsProvider(POWER_SHELL_SELECTOR, codeActionProvider, { providedCodeActionKinds: [FIX_ALL_KIND] }),
 		vscode.workspace.onDidOpenTextDocument(updateDiagnostics),

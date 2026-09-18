@@ -41,5 +41,6 @@
 	"`#_pragma <name> [value]` sets a compilation parameter such as `App.Windowed`, `Resources.Icon` or `Resources.Title` without modifying the script.": "`#_pragma <name> [value]` स्क्रिप्ट बदले बिना कंपाइल पैरामीटर (`App.Windowed`, `Resources.Icon`, `Resources.Title` आदि) सेट करता है।",
 	"`#_balus <exitcode>` exits the process with the given exit code and deletes the compiled EXE.": "`#_balus <exitcode>` दिए गए एक्ज़िट कोड के साथ प्रक्रिया समाप्त करता है और कंपाइल किया गया EXE हटा देता है।",
 	"`#_DllExport <signature>` exports a PowerShell function from the compiled assembly; this macro is still experimental and undocumented.": "`#_DllExport <signature>` कंपाइल किए गए असेंबली से PowerShell फ़ंक्शन निर्यात करता है; यह मैक्रो अभी प्रयोगात्मक है और इसका दस्तावेज़ नहीं है।",
-	"Read more in the ps12exe README": "ps12exe README में और पढ़ें"
+	"Read more in the ps12exe README": "ps12exe README में और पढ़ें",
+	"ps12exe compilation parameter": "ps12exe संकलन पैरामीटर"
 }

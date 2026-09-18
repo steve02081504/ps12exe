@@ -41,5 +41,6 @@
 	"`#_pragma <name> [value]` sets a compilation parameter such as `App.Windowed`, `Resources.Icon` or `Resources.Title` without modifying the script.": "`#_pragma <name> [value]` 设置编译参数（如 `App.Windowed`、`Resources.Icon`、`Resources.Title`），但不修改脚本内容。",
 	"`#_balus <exitcode>` exits the process with the given exit code and deletes the compiled EXE.": "`#_balus <exitcode>` 以给定的退出码退出进程，并删除编译生成的 EXE。",
 	"`#_DllExport <signature>` exports a PowerShell function from the compiled assembly; this macro is still experimental and undocumented.": "`#_DllExport <signature>` 从编译后的程序集中导出 PowerShell 函数；此宏仍在实验阶段且尚无文档。",
-	"Read more in the ps12exe README": "在 ps12exe README 中了解更多"
+	"Read more in the ps12exe README": "在 ps12exe README 中了解更多",
+	"ps12exe compilation parameter": "ps12exe 编译参数"
 }

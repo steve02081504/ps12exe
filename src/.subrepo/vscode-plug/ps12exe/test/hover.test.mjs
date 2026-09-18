@@ -1,5 +1,6 @@
 import assert from 'node:assert'
 import { HOVER_MESSAGES, directiveAt, documentationUrl } from '../lib/hover.mjs'
+import { pragmaNameAt, lookupPragma, buildPragmaCandidates } from '../lib/pragma.mjs'
 
 const README_BASE = 'https://github.com/steve02081504/ps12exe/blob/master/docs/'
 
@@ -54,5 +55,59 @@ suite('ps12exe directive hover', () => {
 			if (section === 'more') continue
 			assert.match(documentationUrl('en-US', section), /#preprocessing-[\w-]+$/, `missing anchor for ${section}`)
 		}
+	})
+})
+
+suite('ps12exe pragma names', () => {
+	const line = '\t#_pragma App.Windowed $false'
+	const nameStart = line.indexOf('App')
+
+	test('detects the pragma name under the cursor', () => {
+		for (let character = nameStart; character <= nameStart + 'App.Windowed'.length; character++) {
+			const found = pragmaNameAt(line, character)
+			assert.ok(found, `no pragma name at column ${character}`)
+			assert.strictEqual(found.name, 'App.Windowed')
+			assert.strictEqual(found.start, nameStart)
+			assert.strictEqual(found.end, nameStart + 'App.Windowed'.length)
+			assert.strictEqual(line.slice(found.start, found.end), 'App.Windowed')
+		}
+	})
+
+	test('ignores the cursor on #_pragma itself or an unrelated line', () => {
+		assert.strictEqual(pragmaNameAt(line, nameStart - 1), null)
+		assert.strictEqual(pragmaNameAt(line, line.length), null)
+		assert.strictEqual(pragmaNameAt('#_pragma   ', 11), null)
+		assert.strictEqual(pragmaNameAt('Write-Output "#_pragma App"', 3), null)
+	})
+
+	test('resolves a pragma description, including the no prefix', () => {
+		const data = new Map([
+			['app.windowed', { name: 'App.Windowed', description: 'windowed' }],
+			['golf', { name: 'Golf', description: 'golf' }]
+		])
+		assert.deepStrictEqual(lookupPragma(data, 'App.Windowed'), { name: 'App.Windowed', description: 'windowed', negated: false })
+		assert.deepStrictEqual(lookupPragma(data, 'app.windowed'), { name: 'App.Windowed', description: 'windowed', negated: false })
+		assert.deepStrictEqual(lookupPragma(data, 'noGolf'), { name: 'Golf', description: 'golf', negated: true })
+		assert.strictEqual(lookupPragma(data, 'Unknown'), null)
+	})
+
+	test('lists top-level parameters, then the children of a dotted prefix', () => {
+		const data = new Map([
+			['app.windowed', { name: 'App.Windowed', description: 'windowed' }],
+			['app.silence', { name: 'App.Silence', description: 'silence' }],
+			['build.target', { name: 'Build.Target', description: 'target' }],
+			['golf', { name: 'Golf', description: 'golf' }]
+		])
+
+		const top = buildPragmaCandidates(data, '')
+		assert.deepStrictEqual(top.map((candidate) => candidate.insertText), ['App.', 'Build.', 'Golf'])
+		assert.strictEqual(top.find((candidate) => candidate.name === 'App').kind, 'object')
+		assert.strictEqual(top.find((candidate) => candidate.name === 'Golf').kind, 'value')
+
+		const nested = buildPragmaCandidates(data, 'App.Win')
+		assert.deepStrictEqual(nested.map((candidate) => candidate.insertText), ['App.Windowed'])
+
+		const exact = buildPragmaCandidates(data, 'app.sil')
+		assert.deepStrictEqual(exact.map((candidate) => candidate.name), ['App.Silence'])
 	})
 })
