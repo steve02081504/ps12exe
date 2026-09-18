@@ -5,6 +5,8 @@
 	CompileTitle			= "EXE にコンパイル"
 	OpenInGUI				= "ps12exeGUI で開く"
 	GUICfgFileDesc			= "ps12exe GUI 設定ファイル"
+	VSCodeExtensionInstalling = "{0} 用の ps12exe 拡張機能をインストールしています..."
+	VSCodeExtensionInstallFailed = "{0} 用の ps12exe 拡張機能をインストールできませんでした（まだ公開されていない可能性があります）: {1}"
 	# Web サーバー
 	ErrorHead				= "エラー："
 	CompileResult			= "コンパイル結果"
@@ -85,11 +87,12 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Localize '<言語コ�
 	}
 	SetContextMenuHelpData	= @{
 		title	   = "使用方法："
-		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<言語コード>'] [-help]"
+		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<言語コード>'] [-SkipEditorExtension] [-help]"
 		PrarmsData = [ordered]@{
-			action	 = "実行するアクション。"
-			Localize = "使用する言語コード。"
-			help	 = "このヘルプ情報を表示します。"
+			action				= "実行するアクション。"
+			Localize			= "使用する言語コード。"
+			SkipEditorExtension	= "検出されたエディターへの ps12exe VS Code 拡張機能のインストールをスキップします。"
+			help				= "このヘルプ情報を表示します。"
 		}
 	}
 	WebServerHelpData		= @{

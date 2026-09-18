@@ -5,6 +5,8 @@
 	CompileTitle			= "कॉम्पाइल करें EXE में"
 	OpenInGUI				= "ps12exeGUI में खोलें"
 	GUICfgFileDesc			= "ps12exe GUI कॉन्फ़िगरेशन फ़ाइल"
+	VSCodeExtensionInstalling = "{0} के लिए ps12exe एक्सटेंशन इंस्टॉल किया जा रहा है..."
+	VSCodeExtensionInstallFailed = "{0} के लिए ps12exe एक्सटेंशन इंस्टॉल नहीं हो सका (हो सकता है यह अभी प्रकाशित न हुआ हो): {1}"
 	# Web Server
 	ErrorHead				= "त्रुटि:"
 	CompileResult			= "कॉम्पाइल परिणाम"
@@ -85,11 +87,12 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Localize 
 	}
 	SetContextMenuHelpData	= @{
 		title	   = "उपयोग:"
-		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<भाषा कोड>'] [-help]"
+		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<भाषा कोड>'] [-SkipEditorExtension] [-help]"
 		PrarmsData = [ordered]@{
-			action	 = "क्रिया का कार्यान्वयन।"
-			Localize = "उपयोग किए जाने वाले भाषा कोड।"
-			help	 = "इस मदद सूचना को दिखाएँ।"
+			action				= "क्रिया का कार्यान्वयन।"
+			Localize			= "उपयोग किए जाने वाले भाषा कोड।"
+			SkipEditorExtension	= "पहचाने गए संपादकों में ps12exe VS Code एक्सटेंशन इंस्टॉल करना छोड़ें।"
+			help				= "इस मदद सूचना को दिखाएँ।"
 		}
 	}
 	WebServerHelpData		= @{

@@ -9,6 +9,7 @@ $LocaleDir = if ($args[0]) { $args[0] } else { $PSScriptRoot }
 $RefKeyOrder = @(
 	'LangName', 'LangID',
 	'CompileTitle', 'OpenInGUI', 'GUICfgFileDesc',
+	'VSCodeExtensionInstalling', 'VSCodeExtensionInstallFailed',
 	'ErrorHead', 'CompileResult', 'DefaultResult', 'AskSaveCfg', 'AskSaveCfgTitle', 'CfgFileLabelHead',
 	'ServerStarted', 'ServerStopped', 'ServerStartFailed', 'TryRunAsRoot', 'ServerListening', 'ExitServerTip',
 	'ConsoleHelpData', 'GUIHelpData', 'SetContextMenuHelpData', 'WebServerHelpData', 'exe21spHelpData',

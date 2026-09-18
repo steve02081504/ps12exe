@@ -5,6 +5,8 @@
 	CompileTitle			= "Compiler en EXE"
 	OpenInGUI				= "Ouvrir dans ps12exeGUI"
 	GUICfgFileDesc			= "Fichier de configuration ps12exe GUI"
+	VSCodeExtensionInstalling = "Installation de l'extension ps12exe pour {0}..."
+	VSCodeExtensionInstallFailed = "Impossible d'installer l'extension ps12exe pour {0} (elle n'est peut-être pas encore publiée) : {1}"
 	# Web Server
 	ErrorHead				= "Erreur :"
 	CompileResult			= "Résultat de la compilation"
@@ -85,11 +87,12 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Localize '<code_de_langue>'] [-U
 	}
 	SetContextMenuHelpData	= @{
 		title	   = "Utilisation :"
-		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<code_de_langue>'] [-help]"
+		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<code_de_langue>'] [-SkipEditorExtension] [-help]"
 		PrarmsData = [ordered]@{
-			action	 = "Action à exécuter."
-			Localize = "Code de langue à utiliser."
-			help	 = "Affiche cette aide."
+			action				= "Action à exécuter."
+			Localize			= "Code de langue à utiliser."
+			SkipEditorExtension	= "Ignore l'installation de l'extension ps12exe VS Code dans les éditeurs détectés."
+			help				= "Affiche cette aide."
 		}
 	}
 	WebServerHelpData		= @{

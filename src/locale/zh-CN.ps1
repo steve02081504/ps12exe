@@ -7,6 +7,8 @@
 	CompileTitle			= "编译到 EXE"
 	OpenInGUI				= "在 ps12exeGUI 中打开"
 	GUICfgFileDesc			= "ps12exe GUI 配置文件"
+	VSCodeExtensionInstalling = "正在为 {0} 安装 ps12exe 扩展……"
+	VSCodeExtensionInstallFailed = "无法为 {0} 安装 ps12exe 扩展（可能尚未发布）：{1}"
 
 	# GUI 通用
 	ErrorHead				= "错误："
@@ -94,11 +96,12 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Localize '<语言代码>'] [-UIMode '
 	# 控制台帮助 - 右键菜单
 	SetContextMenuHelpData	= @{
 		title	   = "用法："
-		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<语言代码>'] [-help]"
+		Usage	   = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Localize '<语言代码>'] [-SkipEditorExtension] [-help]"
 		PrarmsData = [ordered]@{
-			action	 = "要执行的操作。"
-			Localize = "要使用的语言代码。"
-			help	 = "显示此帮助信息。"
+			action				= "要执行的操作。"
+			Localize			= "要使用的语言代码。"
+			SkipEditorExtension	= "跳过向检测到的编辑器安装 ps12exe VS Code 扩展。"
+			help				= "显示此帮助信息。"
 		}
 	}
 

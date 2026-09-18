@@ -34,6 +34,7 @@ param (
 		. "$PSScriptRoot\..\LocaleArgCompleter.ps1" @PSBoundParameters
 	})]
 	[string]$Localize,
+	[switch]$SkipEditorExtension,
 	[switch]$help
 )
 
@@ -140,6 +141,61 @@ function RemoveFileHandlerProgram($className) {
 	Remove-Item -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\$className" -Recurse
 }
 
+# VS Code based editors to probe for with Get-Command, and the extension to install into them.
+$VSCodeBasedEditorNames = @(
+	'code',				# Visual Studio Code
+	'code-insiders',	# Visual Studio Code Insiders
+	'codium',			# VSCodium
+	'vscodium',			# VSCodium
+	'cursor',			# Cursor
+	'windsurf',			# Windsurf
+	'trae',				# Trae
+	'positron',			# Positron
+	'void'				# Void
+)
+$VSCodeExtensionId = 'steve02081504.ps12exe'
+
+# Probe the editors above with Get-Command, deduplicating names that point at the same CLI.
+function Get-VSCodeBasedEditors {
+	$seen = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+	foreach ($name in $VSCodeBasedEditorNames) {
+		$command = Get-Command -Name $name -CommandType Application -ErrorAction Ignore | Select-Object -First 1
+		if (-not $command) { continue }
+		if (-not $seen.Add($command.Source)) { continue }
+		[PSCustomObject]@{
+			Name = $name
+			Path = $command.Source
+		}
+	}
+}
+
+# Install the ps12exe VS Code extension into every detected editor through its CLI.
+# The extension is not published to the marketplace yet, so failures are reported and ignored.
+function Install-ps12exeVSCodeExtension {
+	$InstallingMessage = if ($LocalizeData.VSCodeExtensionInstalling) { $LocalizeData.VSCodeExtensionInstalling }
+	else { 'Installing the ps12exe extension for {0} ...' }
+	$FailedMessage = if ($LocalizeData.VSCodeExtensionInstallFailed) { $LocalizeData.VSCodeExtensionInstallFailed }
+	else { 'Failed to install the ps12exe extension for {0} (it may not be published yet): {1}' }
+
+	$editors = try { @(Get-VSCodeBasedEditors) } catch { @() }
+	foreach ($editor in $editors) {
+		try {
+			$installed = & $editor.Path --list-extensions 2>$null
+			if ($installed | Where-Object { $_ -and ($_.Trim() -ieq $VSCodeExtensionId) }) {
+				continue
+			}
+			Write-Host ($InstallingMessage -f $editor.Name) -ForegroundColor Gray
+			$output = & $editor.Path --install-extension $VSCodeExtensionId --force 2>&1
+			if ($LASTEXITCODE) {
+				Write-Warning ($FailedMessage -f @($editor.Name, (($output | Out-String).Trim())))
+			}
+		}
+		catch {
+			Write-Warning ($FailedMessage -f @($editor.Name, $_.Exception.Message))
+		}
+	}
+}
+
 . $PSScriptRoot\..\predicate.ps1
 if ('reset' -eq $action -or (IsDisable $action)) {
 	RemoveCommandsFromContextMenu "ps12exeCompile"
@@ -152,6 +208,9 @@ if ('reset' -eq $action -or (IsEnable $action)) {
 	AddCommandToContextMenu "ps12exeGUIOpen" "ps1" $LocalizeData.OpenInGUI (PwshCodeAsCommand "ps12exeGUI -PS1File '%1'")
 	AddFileHandlerProgram "ps12exeGUI.psccfg" (PwshCodeAsCommand "ps12exeGUI '%1'") $LocalizeData.GUICfgFileDesc
 	AddFileType ".psccfg" "ps12exeGUI.psccfg"
+	if (-not $SkipEditorExtension) {
+		Install-ps12exeVSCodeExtension
+	}
 }
 [ExplorerRefresher]::RefreshSettings()
 [ExplorerRefresher]::RefreshDesktop()
