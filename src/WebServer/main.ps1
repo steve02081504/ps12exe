@@ -183,15 +183,7 @@ param (
 		}
 		$RequestUrl = $RequestUrl.Substring($HostSubUrl.Length)
 		switch ($RequestUrl) {
-			{ $_ -in ('/api/compile', '/api/compile/v1') } {
-				$Reader = New-Object System.IO.StreamReader($context.Request.InputStream)
-				$userInput = $Reader.ReadToEnd()
-				$Reader.Close()
-				$Reader.Dispose()
-				HandleWebCompileRequest $userInput $context
-				return
-			}
-			'/api/compile/v2' {
+			'/api/compile' {
 				$Reader = New-Object System.IO.StreamReader($context.Request.InputStream)
 				$userInput = $Reader.ReadToEnd()
 				$Reader.Close()
