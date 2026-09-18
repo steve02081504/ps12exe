@@ -46,5 +46,9 @@
 	"`PSScript` — the condition is false while ps12exe compiles the script, so this branch is only kept when the script runs directly as a `.ps1`.": "`PSScript` — la condición es false mientras ps12exe compila el script, por lo que esta rama solo se conserva cuando el script se ejecuta directamente como `.ps1`.",
 	"`#_DllExport <signature>` exports a PowerShell function from the compiled assembly; this macro is still experimental and undocumented.": "`#_DllExport <signature>` exporta una función de PowerShell desde el ensamblado compilado; esta macro aún es experimental y no está documentada.",
 	"Read more in the ps12exe README": "Más información en el README de ps12exe",
-	"ps12exe compilation parameter": "parámetro de compilación de ps12exe"
+	"ps12exe compilation parameter": "parámetro de compilación de ps12exe",
+	"Repository": "Repositorio",
+	"PowerShell Gallery": "Galería de PowerShell",
+	"Tags": "Etiquetas",
+	"No module named `{0}` was found on the PowerShell Gallery.": "No se encontró ningún módulo llamado `{0}` en la Galería de PowerShell."
 }

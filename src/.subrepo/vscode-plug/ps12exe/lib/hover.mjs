@@ -58,6 +58,10 @@ export const HOVER_MESSAGES = Object.freeze({
 	psexe: '`PSEXE` — the condition is true while ps12exe compiles the script, so this branch is kept in the compiled EXE.',
 	psscript: '`PSScript` — the condition is false while ps12exe compiles the script, so this branch is only kept when the script runs directly as a `.ps1`.',
 	dllExport: '`#_DllExport <signature>` exports a PowerShell function from the compiled assembly; this macro is still experimental and undocumented.',
+	requireRepository: 'Repository',
+	requireGallery: 'PowerShell Gallery',
+	requireTags: 'Tags',
+	requireNotFound: 'No module named `{0}` was found on the PowerShell Gallery.',
 	more: 'Read more in the ps12exe README'
 })
 

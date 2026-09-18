@@ -3,6 +3,7 @@ import assert from 'node:assert'
 
 import { HOVER_MESSAGES, directiveAt, conditionAt, documentationUrl } from '../lib/hover.mjs'
 import { pragmaNameAt, lookupPragma, buildPragmaCandidates } from '../lib/pragma.mjs'
+import { requireModulesAt } from '../lib/require.mjs'
 
 const README_BASE = 'https://github.com/steve02081504/ps12exe/blob/master/docs/'
 
@@ -143,5 +144,37 @@ suite('ps12exe pragma names', () => {
 
 		const exact = buildPragmaCandidates(data, 'app.sil')
 		assert.deepStrictEqual(exact.map((candidate) => candidate.name), ['App.Silence'])
+	})
+})
+
+suite('ps12exe require modules', () => {
+	test('detects every module separated by the characters the compiler accepts', () => {
+		const line = '\t#_require module1 module2,module3;module4|module5、module6　module7'
+		for (const name of ['module1', 'module2', 'module3', 'module4', 'module5', 'module6', 'module7']) {
+			const start = line.indexOf(name)
+			for (let character = start; character <= start + name.length; character++) {
+				const found = requireModulesAt(line, character)
+				assert.ok(found, `no module detected at column ${character}`)
+				assert.strictEqual(found.name, name)
+				assert.strictEqual(found.start, start)
+				assert.strictEqual(found.end, start + name.length)
+			}
+		}
+	})
+
+	test('strips surrounding quotes and ignores the trailing comment', () => {
+		const line = '#_require "Pester" \'PSReadLine\' # not-a-module'
+		const quoted = line.indexOf('"Pester"')
+		assert.deepStrictEqual(requireModulesAt(line, line.indexOf('Pester')), { name: 'Pester', start: quoted, end: quoted + 8 })
+		assert.strictEqual(requireModulesAt(line, line.indexOf('PSReadLine')).name, 'PSReadLine')
+		assert.strictEqual(requireModulesAt(line, line.indexOf('not-a-module')), null)
+	})
+
+	test('ignores the directive itself and unrelated lines', () => {
+		assert.strictEqual(requireModulesAt('#_require', 3), null)
+		assert.strictEqual(requireModulesAt('#_require   ', 12), null)
+		assert.strictEqual(requireModulesAt('#_pragma App.Windowed', 10), null)
+		assert.strictEqual(requireModulesAt('Write-Output "#_require Pester"', 20), null)
+		assert.strictEqual(requireModulesAt('', 0), null)
 	})
 })

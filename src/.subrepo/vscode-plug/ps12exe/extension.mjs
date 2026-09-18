@@ -6,8 +6,10 @@ import * as vscode from 'vscode'
 import { resolveDirectivePath } from './lib/definition.mjs'
 import { registerExeSource } from './lib/exeSource.mjs'
 import { applyPreprocessorFormatting } from './lib/format.mjs'
+import { getPackageInfo, tagSearchUrl } from './lib/gallery.mjs'
 import { HOVER_MESSAGES, directiveAt, conditionAt, documentationUrl } from './lib/hover.mjs'
 import { toPs12exeLocale } from './lib/locale.mjs'
+import { requireModulesAt } from './lib/require.mjs'
 import { POWER_SHELL_EXTENSION_ID, isPowerShellExtensionInstalled, getOfficialEdits, applyTextEdits } from './lib/officialFormatter.mjs'
 import { resolvePowerShell, compileScript, syncModule, launchGUI } from './lib/powershell.mjs'
 import { pragmaNameAt, getPragmaData, lookupPragma, buildPragmaCandidates, clearPragmaCache } from './lib/pragma.mjs'
@@ -534,9 +536,64 @@ function createDirectiveHover (line, token, locale) {
 	return new vscode.Hover(contents, new vscode.Range(line, token.start, line, token.end))
 }
 
+const MAX_HOVER_TAGS = 12
+
+/**
+ * 构造一个指向 `url` 的 markdown 链接，链接文字中的方括号会被移除（tag 名不受 markdown 影响）。
+ *
+ * @param {string} label - 链接文字
+ * @param {string} url - 链接目标
+ * @returns {string} markdown 链接
+ */
+function markdownLink (label, url) {
+	return `[${String(label).replace(/[[\]]/g, '')}](<${url}>)`
+}
+
+/**
+ * 为 `#_require` 中的模块名构造悬浮提示：从 PowerShell Gallery 读取图标、简介与 tags，并给出仓库与图库页面链接。
+ * 查询失败（离线、图库不可用）时回退到通用的 `#_require` 说明。
+ *
+ * @param {number} line - 悬浮提示所在行号
+ * @param {{ name: string, start: number, end: number }} moduleToken - 识别到的模块名及其列范围
+ * @param {string | undefined} locale - 当前区域标识，未知时为 undefined
+ * @returns {Promise<vscode.Hover>} 构造好的悬浮提示
+ */
+async function createRequireHover (line, moduleToken, locale) {
+	let info
+	try {
+		info = await getPackageInfo(moduleToken.name)
+	}
+	catch {
+		return createDirectiveHover(line, { section: 'require', start: moduleToken.start, end: moduleToken.end }, locale)
+	}
+
+	const contents = new vscode.MarkdownString()
+	if (info) {
+		if (info.iconUrl) contents.appendMarkdown(`![${info.id}](<${info.iconUrl}>)\n\n`)
+		contents.appendMarkdown(`**${info.id}**${info.version ? ` \`${info.version}\`` : ''}\n\n`)
+		if (info.description) contents.appendText(info.description)
+		if (info.tags.length) {
+			const tags = info.tags.slice(0, MAX_HOVER_TAGS).map((tag) => markdownLink(tag, tagSearchUrl(tag))).join(' ')
+			contents.appendMarkdown(`\n\n${t(HOVER_MESSAGES.requireTags)}: ${tags}`)
+		}
+		const links = []
+		if (info.projectUrl) links.push(markdownLink(t(HOVER_MESSAGES.requireRepository), info.projectUrl))
+		links.push(markdownLink(t(HOVER_MESSAGES.requireGallery), info.galleryUrl))
+		contents.appendMarkdown(`\n\n${links.join(' · ')}`)
+	}
+	else 
+		contents.appendMarkdown(t(HOVER_MESSAGES.requireNotFound, moduleToken.name))
+	
+
+	contents.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${documentationUrl(locale, 'require')})`)
+	return new vscode.Hover(contents, new vscode.Range(line, moduleToken.start, line, moduleToken.end))
+}
+
 const hoverProvider = {
 	/**
-	 * 在 preprocessor 指令、`#_if` 条件关键字（`PSEXE`/`PSScript`，以及 `#_pragma` 变量名）上显示本地化的说明，并链接到当前区域 README 中对应的小节。here-string 函数体和块注释内的 `#_…` 不是指令，因此不提示。
+	 * 在 preprocessor 指令、`#_if` 条件关键字（`PSEXE`/`PSScript`）、`#_pragma` 变量名，以及 `#_require` 的模块名上
+	 * 显示提示：指令与条件链接到当前区域 README 中对应的小节，模块名则展示 PowerShell Gallery 上的图标、简介与 tags，
+	 * 并给出仓库与图库页面链接。here-string 函数体和块注释内的 `#_…` 不是指令，因此不提示。
 	 *
 	 * @param {vscode.TextDocument} document - 当前文本文档
 	 * @param {vscode.Position} position - 光标位置
@@ -548,14 +605,13 @@ const hoverProvider = {
 		const locale = toPs12exeLocale(vscode.env.language)
 
 		const pragma = pragmaNameAt(line, position.character)
-		if (pragma) {
-			if (computeSkipMask(document.getText().split(/\r\n|\n|\r/))[position.line]) return null
-			return createPragmaHover(position.line, pragma, locale)
-		}
-
-		const token = conditionAt(line, position.character) || directiveAt(line, position.character)
-		if (!token) return null
+		const required = pragma ? null : requireModulesAt(line, position.character)
+		const token = pragma || required ? null : conditionAt(line, position.character) || directiveAt(line, position.character)
+		if (!pragma && !required && !token) return null
 		if (computeSkipMask(document.getText().split(/\r\n|\n|\r/))[position.line]) return null
+
+		if (pragma) return createPragmaHover(position.line, pragma, locale)
+		if (required) return createRequireHover(position.line, required, locale)
 		return createDirectiveHover(position.line, token, locale)
 	}
 }
