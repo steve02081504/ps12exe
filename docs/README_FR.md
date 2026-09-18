@@ -205,6 +205,8 @@ Les différentes valeurs de `$LastExitCode` représentent différents types d'er
 
 ### Prétraitement
 
+<a id="preprocessing-overview"></a>
+
 ps12exe prétraite le script avant la compilation.
 
 ```powershell
@@ -217,6 +219,8 @@ ps12exe prétraite le script avant la compilation.
 ```
 
 #### `#_if <condition>`/`#_else`/`#_endif`
+
+<a id="preprocessing-if"></a>
 
 ```powershell
 $LocalizeData =
@@ -231,6 +235,8 @@ Seules les conditions suivantes sont prises en charge pour le moment : `PSEXE` 
 `PSEXE` est vrai ; `PSScript` est faux.
 
 #### `#_include <nom_de_fichier|url>`/`#_include_as_value <nom_de_valeur> <fichier|url>`
+
+<a id="preprocessing-include"></a>
 
 ```powershell
 #_include <nom_de_fichier|url>
@@ -260,6 +266,8 @@ $result = & "$PSScriptRoot/un_autre.ps1" -args
 
 #### `#_include_as_(base64|bytes) <nom_de_valeur> <fichier|url>`
 
+<a id="preprocessing-include-as"></a>
+
 ```powershell
 #_include_as_base64 <nom_de_valeur> <fichier|url>
 #_include_as_bytes <nom_de_valeur> <fichier|url>
@@ -278,6 +286,8 @@ L'exe libérera le fichier `données.bin` qui a été incorporé dans le script 
 
 #### `#_!!`
 
+<a id="preprocessing-bang"></a>
+
 ```powershell
 $Script:eshDir =
 #_if PSScript #Il ne peut pas y avoir de $EshellUI dans PSEXE
@@ -293,6 +303,8 @@ elseif
 Toute ligne commençant par `#_!!` verra son `#_!!` initial supprimé.
 
 #### `#_require <liste_de_modules>`
+
+<a id="preprocessing-require"></a>
 
 ```powershell
 #_require ps12exe
@@ -325,6 +337,8 @@ Lorsque vous devez requérir plusieurs modules, vous pouvez utiliser des espaces
 
 #### `#_pragma`
 
+<a id="preprocessing-pragma"></a>
+
 Les directives de prétraitement pragma n'ont aucun effet sur le contenu du script, mais modifient les paramètres utilisés pour la compilation.  
 Voici un exemple :
 
@@ -354,6 +368,8 @@ La commande pragma peut définir tous les paramètres de compilation :
 Les valeurs de pragma de type chaîne peuvent également contenir des sous-expressions `$(...)`, évaluées au moment du prétraitement, par ex. `#_pragma icon $(Join-Path $env:USERPROFILE 'foo.ico')`. Seules les commandes liées aux chemins figurant sur la liste blanche (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, plus `Get-Content` hors mode invité), les variables (`$env:*`, `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) et les méthodes d’instance inoffensives courantes (par ex. `ToUpper`, `Trim`, `Split`, `ToString`) sont autorisées ; toute autre chose interrompt la compilation. Les valeurs entre guillemets simples restent entièrement littérales.
 
 #### `#_balus`
+
+<a id="preprocessing-balus"></a>
 
 ```powershell
 #_balus <code_de_sortie>

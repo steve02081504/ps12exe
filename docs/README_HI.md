@@ -205,6 +205,8 @@ finally {
 
 ### प्रीप्रोसेसिंग
 
+<a id="preprocessing-overview"></a>
+
 ps12exe संकलन से पहले स्क्रिप्ट को प्रीप्रोसेस करेगा।
 
 ```powershell
@@ -217,6 +219,8 @@ ps12exe संकलन से पहले स्क्रिप्ट को �
 ```
 
 #### `#_if <condition>`/`#_else`/`#_endif`
+
+<a id="preprocessing-if"></a>
 
 ```powershell
 $LocalizeData =
@@ -231,6 +235,8 @@ $LocalizeData =
 `PSEXE` के लिए सही; `PSScript` के लिए गलत।
 
 #### `#_include <filename|url>`/`#_include_as_value <valuename> <file|url>`
+
+<a id="preprocessing-include"></a>
 
 ```powershell
 #_include <filename|url>
@@ -260,6 +266,8 @@ $result = & "$PSScriptRoot/another.ps1" -args
 
 #### `#_include_as_(base64|bytes) <valuename> <file|url>`
 
+<a id="preprocessing-include-as"></a>
+
 ```powershell
 #_include_as_base64 <valuename> <file|url>
 #_include_as_bytes <valuename> <file|url>
@@ -278,6 +286,8 @@ $result = & "$PSScriptRoot/another.ps1" -args
 
 #### `#_!!`
 
+<a id="preprocessing-bang"></a>
+
 ```powershell
 $Script:eshDir =
 #_if PSScript #PSEXE में $EshellUI का होना असंभव है
@@ -293,6 +303,8 @@ elseif
 `#_!!` से शुरू होने वाली किसी भी पंक्ति से अग्रणी `#_!!` हटा दिया जाएगा।
 
 #### `#_require <modulesList>`
+
+<a id="preprocessing-require"></a>
 
 ```powershell
 #_require ps12exe
@@ -325,6 +337,8 @@ $modules | ForEach-Object{
 
 #### `#_pragma`
 
+<a id="preprocessing-pragma"></a>
+
 प्राग्मा प्रीप्रोसेसिंग निर्देश का स्क्रिप्ट सामग्री पर कोई प्रभाव नहीं पड़ता है, लेकिन संकलन के लिए उपयोग किए जाने वाले मापदंडों को संशोधित करेगा।  
 यहाँ एक उदाहरण है:
 
@@ -354,6 +368,8 @@ Compiled file written -> 2560 bytes
 स्ट्रिंग pragma मानों में `$(...)` उप-अभिव्यक्तियाँ भी हो सकती हैं, जिनका मूल्यांकन प्रीप्रोसेस समय पर किया जाता है, जैसे `#_pragma icon $(Join-Path $env:USERPROFILE 'foo.ico')`। केवल श्वेतसूचीबद्ध पथ-संबंधित कमांड (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, और GuestMode के बाहर `Get-Content`), चर (`$env:*`, `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) और सामान्य हानिरहित इंस्टेंस विधियाँ (जैसे `ToUpper`, `Trim`, `Split`, `ToString`) की अनुमति है; अन्य कुछ भी संकलन रोक देता है। एकल उद्धरण वाले मान पूरी तरह से शाब्दिक रहते हैं।
 
 #### `#_balus`
+
+<a id="preprocessing-balus"></a>
 
 ```powershell
 #_balus <exitcode>

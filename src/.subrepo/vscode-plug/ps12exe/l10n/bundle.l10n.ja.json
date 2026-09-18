@@ -32,5 +32,14 @@
 	"Please select an executable (.exe) file.": "実行ファイル（.exe）を選択してください。",
 	"Not a ps12exe executable: {0}": "ps12exe が生成した実行ファイルではありません：{0}",
 	"Failed to open exe source: {0}": "exe のソースを開けませんでした：{0}",
-	"Previous executable kept as {0}.": "以前の実行ファイルは {0} として保存されました。"
+	"Previous executable kept as {0}.": "以前の実行ファイルは {0} として保存されました。",
+	"`#_if <condition>` / `#_else` / `#_endif` — conditional preprocessing. `PSEXE` is true while compiling; `PSScript` is false.": "`#_if <condition>` / `#_else` / `#_endif` — 条件付き前処理。コンパイル時は `PSEXE` が true、`PSScript` が false です。",
+	"`#_include <filename|url>` inserts a file (which is preprocessed) here; `#_include_as_value <valuename> <file|url>` inserts it as a string value (not preprocessed).": "`#_include <filename|url>` はファイルを前処理してここに挿入します。`#_include_as_value <valuename> <file|url>` はファイル内容を文字列値として挿入します（前処理なし）。",
+	"`#_include_as_base64 <valuename> <file|url>` / `#_include_as_bytes <valuename> <file|url>` insert a file as a base64 string or a byte array.": "`#_include_as_base64 <valuename> <file|url>` / `#_include_as_bytes <valuename> <file|url>` はファイル内容を base64 文字列またはバイト配列として挿入します。",
+	"`#_!!` is an escape marker: it is stripped from the line, so the line is a comment when run directly and real code in the compiled EXE.": "`#_!!` はエスケープ マーカーです。行頭の `#_!!` は取り除かれるため、直接実行するとコメント、コンパイル後の EXE では実コードになります。",
+	"`#_require <modulesList>` installs the listed PowerShell modules before the script runs; it installs but does not import them.": "`#_require <modulesList>` はスクリプト実行前に指定された PowerShell モジュールをインストールします（インストールのみでインポートはしません）。",
+	"`#_pragma <name> [value]` sets a compilation parameter such as `Console`, `noConsole`, `icon` or `title` without modifying the script.": "`#_pragma <name> [value]` はスクリプト内容を変えずにコンパイル パラメーター（`Console`、`noConsole`、`icon`、`title` など）を設定します。",
+	"`#_balus <exitcode>` exits the process with the given exit code and deletes the compiled EXE.": "`#_balus <exitcode>` は指定した終了コードでプロセスを終了し、コンパイルされた EXE を削除します。",
+	"`#_DllExport <signature>` exports a PowerShell function from the compiled assembly; this macro is still experimental and undocumented.": "`#_DllExport <signature>` はコンパイル済みアセンブリから PowerShell 関数をエクスポートします。このマクロはまだ実験段階で、ドキュメントはありません。",
+	"Read more in the ps12exe README": "ps12exe README で詳細を見る"
 }

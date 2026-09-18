@@ -32,5 +32,14 @@
 	"Please select an executable (.exe) file.": "请选择一个可执行文件（.exe）。",
 	"Not a ps12exe executable: {0}": "不是 ps12exe 生成的可执行文件：{0}",
 	"Failed to open exe source: {0}": "无法打开 exe 源码：{0}",
-	"Previous executable kept as {0}.": "原可执行文件已保留为 {0}。"
+	"Previous executable kept as {0}.": "原可执行文件已保留为 {0}。",
+	"`#_if <condition>` / `#_else` / `#_endif` — conditional preprocessing. `PSEXE` is true while compiling; `PSScript` is false.": "`#_if <condition>` / `#_else` / `#_endif` —— 条件预处理。编译时 `PSEXE` 为 true；`PSScript` 为 false。",
+	"`#_include <filename|url>` inserts a file (which is preprocessed) here; `#_include_as_value <valuename> <file|url>` inserts it as a string value (not preprocessed).": "`#_include <filename|url>` 在此处插入文件（会经过预处理）；`#_include_as_value <valuename> <file|url>` 将文件内容作为字符串值插入（不预处理）。",
+	"`#_include_as_base64 <valuename> <file|url>` / `#_include_as_bytes <valuename> <file|url>` insert a file as a base64 string or a byte array.": "`#_include_as_base64 <valuename> <file|url>` / `#_include_as_bytes <valuename> <file|url>` 将文件内容作为 base64 字符串或字节数组插入。",
+	"`#_!!` is an escape marker: it is stripped from the line, so the line is a comment when run directly and real code in the compiled EXE.": "`#_!!` 是转义标记：它会被从行首去除，因此该行直接运行时是注释，在编译后的 EXE 中是真实代码。",
+	"`#_require <modulesList>` installs the listed PowerShell modules before the script runs; it installs but does not import them.": "`#_require <modulesList>` 会在脚本运行前安装列出的 PowerShell 模块；它只安装，不导入。",
+	"`#_pragma <name> [value]` sets a compilation parameter such as `Console`, `noConsole`, `icon` or `title` without modifying the script.": "`#_pragma <name> [value]` 设置编译参数（如 `Console`、`noConsole`、`icon`、`title`），但不修改脚本内容。",
+	"`#_balus <exitcode>` exits the process with the given exit code and deletes the compiled EXE.": "`#_balus <exitcode>` 以给定的退出码退出进程，并删除编译生成的 EXE。",
+	"`#_DllExport <signature>` exports a PowerShell function from the compiled assembly; this macro is still experimental and undocumented.": "`#_DllExport <signature>` 从编译后的程序集中导出 PowerShell 函数；此宏仍在实验阶段且尚无文档。",
+	"Read more in the ps12exe README": "在 ps12exe README 中了解更多"
 }

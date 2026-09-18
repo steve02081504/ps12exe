@@ -84,3 +84,10 @@ them. Record new workarounds the same way (issue URL + what to delete).
   `Write-Host` to stderr as a CLIXML blob.
 - New UI strings go through `vscode.l10n.t('…')` and must be added verbatim to
   every `l10n/bundle.l10n.<locale>.json` (guarded by `test/l10n.test.mjs`).
+  `lib/hover.mjs#HOVER_MESSAGES` is collected by that test like
+  `lib/preprocessor.mjs#MESSAGES`, so its values need bundle entries too.
+- Directive hovers (`lib/hover.mjs`) link to the main repository's
+  `docs/README_*` through the explicit `<a id="preprocessing-…">` anchors those
+  files carry (not through headings, whose auto-generated anchors differ by
+  language). Keep `SECTION_ANCHORS` in sync with the `docs/README_*.md` anchors
+  when adding or renaming a directive.
