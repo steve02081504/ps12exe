@@ -100,6 +100,57 @@ function Invoke-ExtractionInPwsh([string]$ExePath) {
 	}
 }
 
+# 源码里已有的 #_pragma 名称（小写）集合：只补回源码中没有的编译选项，避免重复。
+function Get-ExistingPragmaNames([string]$Script) {
+	$Names = @{}
+	foreach ($Line in ($Script -split '\r?\n')) {
+		if ($Line -match '^\s*#_pragma\s+(?<name>[a-zA-Z_][a-zA-Z_0-9]+)') {
+			$Names[$Matches['name'].ToLowerInvariant()] = $true
+		}
+	}
+	$Names
+}
+
+# 把值转成 #_pragma 用的单引号字面量：去掉换行，单引号双写。
+function ConvertTo-PragmaValue([string]$Value) {
+	($Value -replace '\r?\n', ' ').Replace("'", "''")
+}
+
+# 从产物的 Win32 版本资源里取回资源参数，转成源码里没有的 #_pragma 行。
+function Get-PS12ExeResourcePragmaLines {
+	param(
+		[string]$ExePath,
+		[hashtable]$ExistingPragmaNames
+	)
+	$Lines = [System.Collections.Generic.List[string]]::new()
+	try { $VersionInfo = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($ExePath) }
+	catch { return $Lines }
+	$Map = [ordered]@{
+		title       = 'FileDescription'
+		description = 'Comments'
+		company     = 'CompanyName'
+		product     = 'ProductName'
+		copyright   = 'LegalCopyright'
+		trademark   = 'LegalTrademarks'
+		version     = 'FileVersion'
+	}
+	# .NET SDK（Core 目标）会把未指定的标题/公司/产品默认成程序集名、版本默认成 1.0.0.0，
+	# 这些不是用户配置，别当成资源参数补回。
+	$ExeBaseName = [System.IO.Path]::GetFileNameWithoutExtension($ExePath)
+	$DefaultNames = @($ExeBaseName, ($ExeBaseName -replace '[^\w\.\-]', '_')) |
+		Where-Object { $_ } | ForEach-Object { $_.ToLowerInvariant() }
+	$DefaultVersions = @('1.0.0.0', '1.0.0', '0.0.0.0')
+	foreach ($Key in $Map.Keys) {
+		if ($ExistingPragmaNames.ContainsKey($Key)) { continue }
+		$Value = $VersionInfo.($Map[$Key])
+		if ([string]::IsNullOrWhiteSpace($Value)) { continue }
+		if ($Key -in @('title', 'company', 'product') -and $DefaultNames -contains $Value.ToLowerInvariant()) { continue }
+		if ($Key -eq 'version' -and $DefaultVersions -contains $Value) { continue }
+		$Lines.Add("#_pragma $Key '$(ConvertTo-PragmaValue $Value)'")
+	}
+	$Lines
+}
+
 $Refs = @(
 	'System',
 	'System.Core',
@@ -173,29 +224,65 @@ foreach ($currentInput in $inputItemsToProcess) {
 		$currentIndex++
 		continue
 	}
-	if ($resolved.IsTemp) { Remove-Item -LiteralPath $currentExe -Force -ErrorAction SilentlyContinue }
 	if ($null -eq $script) {
 		Write-I18n Error NoEmbeddedScript $currentInput
 		$global:LastExitCode = 1
 		Write-TaskbarProgressError
+		if ($resolved.IsTemp) { Remove-Item -LiteralPath $currentExe -Force -ErrorAction SilentlyContinue }
 		$currentIndex++
 		continue
 	}
-	$currentOutFile = $outputFile
-	if (-not $currentOutFile -and -not ([System.Console]::IsOutputRedirected -or [System.Console]::IsInputRedirected -or [System.Console]::IsErrorRedirected)) {
-		$baseName = if ($currentInput -match "^(https?|ftp)://") {
-			[System.IO.Path]::GetFileNameWithoutExtension([System.Uri]::new($currentInput).Segments[-1])
-		} else {
-			[System.IO.Path]::GetFileNameWithoutExtension($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($currentInput))
-		}
-		$dir = if ($currentInput -match "^(https?|ftp)://") { $PWD.Path } else { [System.IO.Path]::GetDirectoryName($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($currentInput)) }
-		$currentOutFile = [System.IO.Path]::Combine($dir, "$baseName.ps1")
+
+	# 反编译时从产物的 Win32 资源取回资源参数：源码里已有对应 #_pragma 的跳过，
+	# 缺失的在程序开头补回；图标释放到输出目录并用 #_pragma icon 引用。
+	$ExistingPragmaNames = Get-ExistingPragmaNames $script
+	$PrefixLines = [System.Collections.Generic.List[string]]::new()
+	foreach ($Line in (Get-PS12ExeResourcePragmaLines -ExePath $currentExe -ExistingPragmaNames $ExistingPragmaNames)) {
+		$PrefixLines.Add($Line)
 	}
+	$IconBytes = $null
+	if (-not $ExistingPragmaNames.ContainsKey('icon') -and -not $ExistingPragmaNames.ContainsKey('iconfile')) {
+		$IconBytes = [exe21sp.Extractor]::ExtractIconFromExe($currentExe)
+	}
+
+	$isRedirected = [System.Console]::IsOutputRedirected -or [System.Console]::IsInputRedirected -or [System.Console]::IsErrorRedirected
+	$inputBaseName = if ($currentInput -match "^(https?|ftp)://") {
+		[System.IO.Path]::GetFileNameWithoutExtension([System.Uri]::new($currentInput).Segments[-1])
+	} else {
+		[System.IO.Path]::GetFileNameWithoutExtension($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($currentInput))
+	}
+	$currentOutFile = $outputFile
+	if (-not $currentOutFile -and -not $isRedirected) {
+		$dir = if ($currentInput -match "^(https?|ftp)://") { $PWD.Path } else { [System.IO.Path]::GetDirectoryName($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($currentInput)) }
+		$currentOutFile = [System.IO.Path]::Combine($dir, "$inputBaseName.ps1")
+	}
+	$releaseDir = $PWD.Path
+	$releaseBaseName = $inputBaseName
 	if ($currentOutFile) {
 		$currentOutFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($currentOutFile)
+		$releaseDir = [System.IO.Path]::GetDirectoryName($currentOutFile)
+		$releaseBaseName = [System.IO.Path]::GetFileNameWithoutExtension($currentOutFile)
+	}
+
+	if ($null -ne $IconBytes -and $IconBytes.Length -gt 0) {
+		if (-not (Test-Path -LiteralPath $releaseDir)) { New-Item -ItemType Directory -Path $releaseDir -Force | Out-Null }
+		$iconName = "$releaseBaseName.ico"
+		$iconPath = [System.IO.Path]::Combine($releaseDir, $iconName)
+		[System.IO.File]::WriteAllBytes($iconPath, $IconBytes)
+		Write-Verbose "Released resource file to $iconPath"
+		$PrefixLines.Add("#_pragma icon `"`$PSScriptRoot/$iconName`"")
+	}
+
+	if ($PrefixLines.Count -gt 0) {
+		$script = (($PrefixLines -join "`n") + "`n`n" + $script)
+	}
+
+	if ($resolved.IsTemp) { Remove-Item -LiteralPath $currentExe -Force -ErrorAction SilentlyContinue }
+
+	if ($currentOutFile) {
 		[System.IO.File]::WriteAllText($currentOutFile, $script, [System.Text.UTF8Encoding]::new($false))
 		Write-Verbose "Written to $currentOutFile"
-		if ([System.Console]::IsOutputRedirected -or [System.Console]::IsInputRedirected -or [System.Console]::IsErrorRedirected) {
+		if ($isRedirected) {
 			Write-Output $currentOutFile
 		}
 	} else {

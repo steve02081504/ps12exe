@@ -97,6 +97,60 @@ try {
 		if ($savedContent -notmatch 'normal-embed') { throw "exe21sp no-OutFile no-redirect: expected 'normal-embed' in saved file, got: $savedContent" }
 	}
 	# Redirect case (script to stdout) is covered by Get-Exe21spContent / Get-Exe21spContentFromPipeline above.
+
+	# 8) 资源参数还原：exe21sp 把源码里没有的资源配置补成 #_pragma，并把图标释放到输出目录。
+	# 构造一个最小的 1x1 32bpp ICO。
+	$iconPath = Join-Path $buildDir 'resource.ico'
+	$ico = [System.Collections.Generic.List[byte]]::new()
+	$ico.AddRange([byte[]](0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 32, 0))
+	$img = [System.Collections.Generic.List[byte]]::new()
+	$img.AddRange([byte[]](40, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0, 1, 0, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+	1..4 | ForEach-Object { $img.AddRange([byte[]](0, 0, 0, 0)) }
+	$img.AddRange([byte[]](0, 0, 255, 255, 0, 0, 0, 0))
+	$ico.AddRange([BitConverter]::GetBytes([uint32]$img.Count))
+	$ico.AddRange([BitConverter]::GetBytes([uint32]22))
+	$ico.AddRange($img)
+	[System.IO.File]::WriteAllBytes($iconPath, $ico.ToArray())
+
+	$resourceScript = "Get-Date | Out-Null; Write-Output 'resource-roundtrip'"
+	$resourceExe = Join-Path $buildDir 'resource.exe'
+	$resourceScript | ps12exe -outputFile $resourceExe -resourceParams @{ title = 'RT Title'; description = 'RT Desc'; company = 'RT Co'; version = '2.3.4.5'; iconFile = $iconPath } | Write-Host
+	$extractOut = Join-Path $buildDir 'resource.extracted.ps1'
+	exe21sp -inputFile $resourceExe -outputFile $extractOut
+	$extractedText = Get-Content -LiteralPath $extractOut -Raw -Encoding UTF8
+	foreach ($expected in @("#_pragma title 'RT Title'", "#_pragma description 'RT Desc'", "#_pragma company 'RT Co'", "#_pragma version '2.3.4.5'", '#_pragma icon')) {
+		if ($extractedText -notlike "*$expected*") { throw "exe21sp resource: missing [$expected] in: $extractedText" }
+	}
+	$releasedIcon = Join-Path $buildDir 'resource.extracted.ico'
+	if (-not (Test-Path -LiteralPath $releasedIcon)) { throw "exe21sp resource: icon not released to $releasedIcon" }
+
+	# 还原出的源码可重新编译，并保留资源参数。
+	$recompiled = Join-Path $buildDir 'resource.recompiled.exe'
+	ps12exe -inputFile $extractOut -outputFile $recompiled | Write-Host
+	$recompiledInfo = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($recompiled)
+	if ($recompiledInfo.FileDescription -ne 'RT Title') { throw "exe21sp recompile: title lost, got '$($recompiledInfo.FileDescription)'" }
+	if ($recompiledInfo.CompanyName -ne 'RT Co') { throw "exe21sp recompile: company lost, got '$($recompiledInfo.CompanyName)'" }
+	if ($recompiledInfo.FileVersion -ne '2.3.4.5') { throw "exe21sp recompile: version lost, got '$($recompiledInfo.FileVersion)'" }
+	if ((& $recompiled) -notmatch 'resource-roundtrip') { throw 'exe21sp recompile: run output mismatch' }
+
+	# 幂等：源码里已有 pragma 时再次反编译不再重复补。
+	$extractOut2 = Join-Path $buildDir 'resource.recompiled.ps1'
+	exe21sp -inputFile $recompiled -outputFile $extractOut2
+	$text2 = Get-Content -LiteralPath $extractOut2 -Raw -Encoding UTF8
+	if (([regex]::Matches($text2, '(?m)^\s*#_pragma\s+title\b')).Count -ne 1) { throw "exe21sp idempotent: title pragma duplicated: $text2" }
+	if (([regex]::Matches($text2, '(?m)^\s*#_pragma\s+icon\b')).Count -ne 1) { throw "exe21sp idempotent: icon pragma duplicated: $text2" }
+
+	# 9) Core 目标的 SDK 默认值（标题/公司/产品=程序集名，版本=1.0.0.0）不应被当成资源参数补回。
+	if (Get-Command dotnet -ErrorAction Ignore) {
+		$corePlain = Join-Path $buildDir 'core-resource-plain.exe'
+		"Get-Date | Out-Null; Write-Output 'core-resource'" | ps12exe -targetRuntime Core -outputFile $corePlain | Write-Host
+		$coreOut = Join-Path $buildDir 'core-resource-plain.ps1'
+		exe21sp -inputFile $corePlain -outputFile $coreOut
+		$coreText = Get-Content -LiteralPath $coreOut -Raw -Encoding UTF8
+		foreach ($unexpected in @('#_pragma company', '#_pragma product', '#_pragma version', '#_pragma title')) {
+			if ($coreText -like "*$unexpected*") { throw "exe21sp Core defaults: unexpected [$unexpected] in: $coreText" }
+		}
+	}
 } catch {}
 finally {
 	Remove-Item -LiteralPath $buildDir -Recurse -Force -ErrorAction SilentlyContinue

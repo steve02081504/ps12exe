@@ -5,8 +5,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Text;
+using AsmResolver;
 using AsmResolver.DotNet;
+using AsmResolver.PE;
 using AsmResolver.PE.File;
+using AsmResolver.PE.Win32Resources;
 
 namespace exe21sp {
 	/// <summary>
@@ -149,6 +152,143 @@ namespace exe21sp {
 			if (brotliType == null)
 				throw new BrotliUnavailableException();
 			return (Stream)Activator.CreateInstance(brotliType, source, CompressionMode.Decompress);
+		}
+
+		/// <summary>
+		/// Rebuilds the Win32 icon embedded in a ps12exe-built executable into a standalone .ico file.
+		/// ps12exe 编译时通过 /win32icon（CodeDom）或 ApplicationIcon（Core）把图标写入最外层 PE，
+		/// 反编译时把它还原出来，供 exe21sp 释放在输出目录并由 #_pragma icon 重新引用。
+		/// </summary>
+		/// <param name="exePath">Full path to the .exe file.</param>
+		/// <returns>The .ico file bytes, or null when the exe has no icon resource.</returns>
+		public static byte[] ExtractIconFromExe(string exePath) {
+			if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+				return null;
+			try {
+				return ExtractIconFromImage(PEImage.FromFile(exePath));
+			}
+			catch {
+				return null;
+			}
+		}
+
+		private static byte[] ExtractIconFromImage(PEImage image) {
+			var root = image.Resources;
+			if (root == null)
+				return null;
+			ResourceDirectory groupDir;
+			ResourceDirectory iconDir;
+			if (!root.TryGetDirectory(ResourceType.GroupIcon, out groupDir) || groupDir == null)
+				return null;
+			if (!root.TryGetDirectory(ResourceType.Icon, out iconDir) || iconDir == null)
+				return null;
+
+			// 可能有多个图标组（不同语言/名称），取第一个能完整还原的。
+			foreach (var groupEntry in groupDir.Entries) {
+				if (!groupEntry.IsDirectory)
+					continue;
+				var groupBytes = ReadFirstEntryBytes((ResourceDirectory)groupEntry);
+				if (groupBytes == null)
+					continue;
+				var ico = BuildIconFile(groupBytes, iconDir);
+				if (ico != null)
+					return ico;
+			}
+			return null;
+		}
+
+		/// <summary>
+		/// 深度优先读取资源目录下第一份数据。PE 资源树是 类型 → 名称/ID → 语言 → 数据，
+		/// 这里不假设层数，直接找叶子数据。
+		/// </summary>
+		private static byte[] ReadFirstEntryBytes(ResourceDirectory directory) {
+			foreach (var entry in directory.Entries) {
+				if (entry.IsData) {
+					var data = entry as ResourceData;
+					var bytes = data == null ? null : ReadSegmentBytes(data.Contents);
+					if (bytes != null)
+						return bytes;
+				}
+				else if (entry.IsDirectory) {
+					var bytes = ReadFirstEntryBytes((ResourceDirectory)entry);
+					if (bytes != null)
+						return bytes;
+				}
+			}
+			return null;
+		}
+
+		private static byte[] ReadSegmentBytes(ISegment segment) {
+			var readable = segment as IReadableSegment;
+			return readable == null ? null : Extensions.ToArray(readable);
+		}
+
+		/// <summary>
+		/// 按资源 ID 在 RT_ICON 目录里找图标图像数据。目录项里存的 ID 是 16 位。
+		/// </summary>
+		private static byte[] FindIconImageBytes(ResourceDirectory directory, uint id) {
+			foreach (var entry in directory.Entries) {
+				if (!entry.IsDirectory)
+					continue;
+				if (entry.Id == id) {
+					var bytes = ReadFirstEntryBytes((ResourceDirectory)entry);
+					if (bytes != null)
+						return bytes;
+				}
+				var nested = FindIconImageBytes((ResourceDirectory)entry, id);
+				if (nested != null)
+					return nested;
+			}
+			return null;
+		}
+
+		/// <summary>
+		/// 把 GRPICONDIR（RT_GROUP_ICON 数据）和对应的 RT_ICON 图像拼成一个标准 .ico 文件。
+		/// 每个目录项 14 字节：宽/高/色数/保留 + 平面数 + 位深 + 数据大小 + 图标 ID。
+		/// </summary>
+		private static byte[] BuildIconFile(byte[] group, ResourceDirectory iconDir) {
+			if (group == null || group.Length < 6)
+				return null;
+			int type = BitConverter.ToUInt16(group, 2);
+			int count = BitConverter.ToUInt16(group, 4);
+			if (type != 1 || count <= 0 || group.Length < 6 + count * 14)
+				return null;
+
+			var directory = new byte[count][];
+			var images = new byte[count][];
+			for (int i = 0; i < count; i++) {
+				int offset = 6 + i * 14;
+				ushort iconId = BitConverter.ToUInt16(group, offset + 12);
+				var image = FindIconImageBytes(iconDir, iconId);
+				if (image == null)
+					return null;
+				images[i] = image;
+
+				var entry = new byte[16];
+				entry[0] = group[offset];     // width
+				entry[1] = group[offset + 1]; // height
+				entry[2] = group[offset + 2]; // color count
+				entry[3] = group[offset + 3]; // reserved
+				Buffer.BlockCopy(group, offset + 4, entry, 4, 2); // planes
+				Buffer.BlockCopy(group, offset + 6, entry, 6, 2); // bit count
+				Buffer.BlockCopy(BitConverter.GetBytes((uint)image.Length), 0, entry, 8, 4);
+				directory[i] = entry;
+			}
+
+			using (var output = new MemoryStream()) {
+				output.Write(BitConverter.GetBytes((ushort)0), 0, 2);
+				output.Write(BitConverter.GetBytes((ushort)1), 0, 2);
+				output.Write(BitConverter.GetBytes((ushort)count), 0, 2);
+				uint dataOffset = (uint)(6 + count * 16);
+				for (int i = 0; i < count; i++) {
+					Buffer.BlockCopy(BitConverter.GetBytes(dataOffset), 0, directory[i], 12, 4);
+					output.Write(directory[i], 0, directory[i].Length);
+					dataOffset += (uint)images[i].Length;
+				}
+				for (int i = 0; i < count; i++)
+					output.Write(images[i], 0, images[i].Length);
+				return output.ToArray();
+			}
 		}
 
 		private static string TryExtractFromTinySharp(string exePath) {

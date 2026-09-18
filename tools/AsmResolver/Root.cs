@@ -19,6 +19,8 @@ internal static class EntryPoint
 
 		// src/programFrames/exe21sp.cs: script recovery (exe21sp).
 		System.Console.WriteLine(exe21sp.Extractor.ExtractScriptFromExe("target.exe"));
+		// src/programFrames/exe21sp.cs: Win32 icon recovery (exe21sp releases <output>.ico for #_pragma icon).
+		_ = exe21sp.Extractor.ExtractIconFromExe("target.exe");
 
 		// src/ExeSinker.ps1 drives AsmResolver directly from PowerShell; those members are not
 		// reachable from the C# consumers above, so mirror them here.
