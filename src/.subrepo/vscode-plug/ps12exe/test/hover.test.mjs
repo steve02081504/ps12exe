@@ -1,7 +1,7 @@
 /* global suite: readonly, test: readonly */
 import assert from 'node:assert'
 
-import { HOVER_MESSAGES, directiveAt, documentationUrl } from '../lib/hover.mjs'
+import { HOVER_MESSAGES, directiveAt, conditionAt, documentationUrl } from '../lib/hover.mjs'
 import { pragmaNameAt, lookupPragma, buildPragmaCandidates } from '../lib/pragma.mjs'
 
 const README_BASE = 'https://github.com/steve02081504/ps12exe/blob/master/docs/'
@@ -38,6 +38,38 @@ suite('ps12exe directive hover', () => {
 		assert.strictEqual(directiveAt('#_iffy x', 2), null)
 		assert.strictEqual(directiveAt('#_include_other x', 2), null)
 		assert.strictEqual(directiveAt('', 0), null)
+	})
+
+	test('detects the condition keyword of an #_if line', () => {
+		const cases = [
+			['#_if PSEXE', 'PSEXE', 'psexe'],
+			['\t#_if PSScript # comment', 'PSScript', 'psscript'],
+			['#_if   PSEXE', 'PSEXE', 'psexe']
+		]
+
+		for (const [line, name, section] of cases) {
+			const start = line.indexOf(name)
+			for (let character = start; character <= start + name.length; character++) {
+				const found = conditionAt(line, character)
+				assert.ok(found, `no condition detected in ${JSON.stringify(line)} at ${character}`)
+				assert.strictEqual(found.name, name)
+				assert.strictEqual(found.section, section)
+				assert.strictEqual(found.start, start)
+				assert.strictEqual(found.end, start + name.length)
+				assert.strictEqual(line.slice(found.start, found.end), name)
+			}
+		}
+	})
+
+	test('ignores the cursor outside the condition and unknown conditions', () => {
+		assert.strictEqual(conditionAt('#_if PSEXE', 4), null)
+		assert.strictEqual(conditionAt('#_if PSEXE', 11), null)
+		assert.strictEqual(conditionAt('#_if Unknown', 5), null)
+		assert.strictEqual(conditionAt('#_if PSEXEfoo', 5), null)
+		assert.deepStrictEqual(conditionAt('#_if PSEXE # comment', 5), { name: 'PSEXE', section: 'psexe', start: 5, end: 10 })
+		assert.strictEqual(conditionAt('Write-Output "#_if PSEXE"', 13), null)
+		assert.strictEqual(conditionAt('#_endif', 5), null)
+		assert.strictEqual(conditionAt('', 0), null)
 	})
 
 	test('links to the uniform anchor in the matching localized README', () => {

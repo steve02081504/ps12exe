@@ -25,6 +25,8 @@ const SECTION_ANCHORS = Object.freeze({
 	require: 'preprocessing-require',
 	pragma: 'preprocessing-pragma',
 	balus: 'preprocessing-balus',
+	psexe: 'preprocessing-if',
+	psscript: 'preprocessing-if',
 	dllExport: 'preprocessing-overview'
 })
 
@@ -53,6 +55,8 @@ export const HOVER_MESSAGES = Object.freeze({
 	require: '`#_require <modulesList>` installs the listed PowerShell modules before the script runs; it installs but does not import them.',
 	pragma: '`#_pragma <name> [value]` sets a compilation parameter such as `App.Windowed`, `Resources.Icon` or `Resources.Title` without modifying the script.',
 	balus: '`#_balus <exitcode>` exits the process with the given exit code and deletes the compiled EXE.',
+	psexe: '`PSEXE` — the condition is true while ps12exe compiles the script, so this branch is kept in the compiled EXE.',
+	psscript: '`PSScript` — the condition is false while ps12exe compiles the script, so this branch is only kept when the script runs directly as a `.ps1`.',
 	dllExport: '`#_DllExport <signature>` exports a PowerShell function from the compiled assembly; this macro is still experimental and undocumented.',
 	more: 'Read more in the ps12exe README'
 })
@@ -61,6 +65,8 @@ export const HOVER_MESSAGES = Object.freeze({
 const WORD_DIRECTIVE_RE = /^([\t ]*)#_(if|else|endif|include_as_base64|include_as_bytes|include_as_value|include|require|pragma|DllExport|balus)\b/
 // `#_!!` 后紧跟任意代码（`#_!!if`），因此单独匹配且不加边界。
 const BANG_DIRECTIVE_RE = /^([\t ]*)#_(!!)/
+// `#_if <condition>` 的已知条件（预处理器只支持这两个）；`\b` 保证 `PSEXEfoo` 之类的未知词不会被误认。
+const IF_CONDITION_RE = /^([\t ]*)#_if[\t ]+(PSEXE|PSScript)\b/
 
 /**
  * 返回 `line` 上 `character` 列处的 preprocessor 指令。
@@ -89,6 +95,22 @@ export function directiveAt (line, character) {
 	}
 
 	return null
+}
+
+/**
+ * 返回 `#_if` 行上 `character` 列处的条件关键字（`PSEXE` 或 `PSScript`）。
+ *
+ * @param {string} line - 待检查的脚本行
+ * @param {number} character - 光标所在的列号
+ * @returns {{ name: string, section: string, start: number, end: number } | null} `start`/`end` 是条件关键字的区间（从零开始、含末尾）
+ */
+export function conditionAt (line, character) {
+	const match = IF_CONDITION_RE.exec(line)
+	if (!match) return null
+	const start = match[0].length - match[2].length
+	const end = start + match[2].length
+	if (character < start || character > end) return null
+	return { name: match[2], section: match[2] === 'PSEXE' ? 'psexe' : 'psscript', start, end }
 }
 
 /**

@@ -6,7 +6,7 @@ import * as vscode from 'vscode'
 import { resolveDirectivePath } from './lib/definition.mjs'
 import { registerExeSource } from './lib/exeSource.mjs'
 import { applyPreprocessorFormatting } from './lib/format.mjs'
-import { HOVER_MESSAGES, directiveAt, documentationUrl } from './lib/hover.mjs'
+import { HOVER_MESSAGES, directiveAt, conditionAt, documentationUrl } from './lib/hover.mjs'
 import { toPs12exeLocale } from './lib/locale.mjs'
 import { POWER_SHELL_EXTENSION_ID, isPowerShellExtensionInstalled, getOfficialEdits, applyTextEdits } from './lib/officialFormatter.mjs'
 import { resolvePowerShell, compileScript, syncModule, launchGUI } from './lib/powershell.mjs'
@@ -518,9 +518,25 @@ async function createPragmaHover (line, pragma, locale) {
 	return new vscode.Hover(contents, new vscode.Range(line, pragma.start, line, pragma.end))
 }
 
+/**
+ * 为 preprocessor 指令或 `#_if` 条件关键字构造悬浮提示：本地化说明加指向当前区域 README 对应小节的链接。
+ *
+ * @param {number} line - 悬浮提示所在行号
+ * @param {{ section: string, start: number, end: number }} token - 识别到的标记及其列范围
+ * @param {string | undefined} locale - 当前区域标识，未知时为 undefined
+ * @returns {vscode.Hover} 构造好的悬浮提示
+ */
+function createDirectiveHover (line, token, locale) {
+	const contents = new vscode.MarkdownString()
+	contents.appendMarkdown(t(HOVER_MESSAGES[token.section]))
+	const url = documentationUrl(locale, token.section)
+	contents.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${url})`)
+	return new vscode.Hover(contents, new vscode.Range(line, token.start, line, token.end))
+}
+
 const hoverProvider = {
 	/**
-	 * 在 preprocessor 指令（以及 `#_pragma` 变量名）上显示本地化的说明，并链接到当前区域 README 中对应的小节。here-string 函数体和块注释内的 `#_…` 不是指令，因此不提示。
+	 * 在 preprocessor 指令、`#_if` 条件关键字（`PSEXE`/`PSScript`，以及 `#_pragma` 变量名）上显示本地化的说明，并链接到当前区域 README 中对应的小节。here-string 函数体和块注释内的 `#_…` 不是指令，因此不提示。
 	 *
 	 * @param {vscode.TextDocument} document - 当前文本文档
 	 * @param {vscode.Position} position - 光标位置
@@ -537,15 +553,10 @@ const hoverProvider = {
 			return createPragmaHover(position.line, pragma, locale)
 		}
 
-		const directive = directiveAt(line, position.character)
-		if (!directive) return null
+		const token = conditionAt(line, position.character) || directiveAt(line, position.character)
+		if (!token) return null
 		if (computeSkipMask(document.getText().split(/\r\n|\n|\r/))[position.line]) return null
-
-		const contents = new vscode.MarkdownString()
-		contents.appendMarkdown(t(HOVER_MESSAGES[directive.section]))
-		const url = documentationUrl(locale, directive.section)
-		contents.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${url})`)
-		return new vscode.Hover(contents, new vscode.Range(position.line, directive.start, position.line, directive.end))
+		return createDirectiveHover(position.line, token, locale)
 	}
 }
 

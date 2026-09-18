@@ -40,6 +40,8 @@
 	"`#_require <modulesList>` installs the listed PowerShell modules before the script runs; it installs but does not import them.": "`#_require <modulesList>` 会在脚本运行前安装列出的 PowerShell 模块；它只安装，不导入。",
 	"`#_pragma <name> [value]` sets a compilation parameter such as `App.Windowed`, `Resources.Icon` or `Resources.Title` without modifying the script.": "`#_pragma <name> [value]` 设置编译参数（如 `App.Windowed`、`Resources.Icon`、`Resources.Title`），但不修改脚本内容。",
 	"`#_balus <exitcode>` exits the process with the given exit code and deletes the compiled EXE.": "`#_balus <exitcode>` 以给定的退出码退出进程，并删除编译生成的 EXE。",
+	"`PSEXE` — the condition is true while ps12exe compiles the script, so this branch is kept in the compiled EXE.": "`PSEXE` —— ps12exe 编译脚本时该条件为 true，因此这个分支会保留在编译后的 EXE 中。",
+	"`PSScript` — the condition is false while ps12exe compiles the script, so this branch is only kept when the script runs directly as a `.ps1`.": "`PSScript` —— ps12exe 编译脚本时该条件为 false，因此这个分支只在脚本作为 `.ps1` 直接运行时保留。",
 	"`#_DllExport <signature>` exports a PowerShell function from the compiled assembly; this macro is still experimental and undocumented.": "`#_DllExport <signature>` 从编译后的程序集中导出 PowerShell 函数；此宏仍在实验阶段且尚无文档。",
 	"Read more in the ps12exe README": "在 ps12exe README 中了解更多",
 	"ps12exe compilation parameter": "ps12exe 编译参数"

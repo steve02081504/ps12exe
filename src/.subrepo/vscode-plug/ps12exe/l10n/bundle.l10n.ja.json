@@ -40,6 +40,8 @@
 	"`#_require <modulesList>` installs the listed PowerShell modules before the script runs; it installs but does not import them.": "`#_require <modulesList>` はスクリプト実行前に指定された PowerShell モジュールをインストールします（インストールのみでインポートはしません）。",
 	"`#_pragma <name> [value]` sets a compilation parameter such as `App.Windowed`, `Resources.Icon` or `Resources.Title` without modifying the script.": "`#_pragma <name> [value]` はスクリプト内容を変えずにコンパイル パラメーター（`App.Windowed`、`Resources.Icon`、`Resources.Title` など）を設定します。",
 	"`#_balus <exitcode>` exits the process with the given exit code and deletes the compiled EXE.": "`#_balus <exitcode>` は指定した終了コードでプロセスを終了し、コンパイルされた EXE を削除します。",
+	"`PSEXE` — the condition is true while ps12exe compiles the script, so this branch is kept in the compiled EXE.": "`PSEXE` — ps12exe がスクリプトをコンパイルしている間はこの条件が true になるため、この分岐はコンパイル後の EXE に含まれます。",
+	"`PSScript` — the condition is false while ps12exe compiles the script, so this branch is only kept when the script runs directly as a `.ps1`.": "`PSScript` — ps12exe がスクリプトをコンパイルしている間はこの条件が false になるため、この分岐はスクリプトを `.ps1` として直接実行する場合にのみ使われます。",
 	"`#_DllExport <signature>` exports a PowerShell function from the compiled assembly; this macro is still experimental and undocumented.": "`#_DllExport <signature>` はコンパイル済みアセンブリから PowerShell 関数をエクスポートします。このマクロはまだ実験段階で、ドキュメントはありません。",
 	"Read more in the ps12exe README": "ps12exe README で詳細を見る",
 	"ps12exe compilation parameter": "ps12exe のコンパイルパラメーター"
