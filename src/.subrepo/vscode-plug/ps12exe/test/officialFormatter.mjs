@@ -44,7 +44,7 @@ const CODE_FORMATTING_PREFIX = 'powershell.codeFormatting.'
  * @returns {object} 设置哈希表
  */
 export function buildSettings (options = {}) {
-	const config = { ...DEFAULTS, ...options.overrides || {} }
+	const config = { ...DEFAULTS, ...options.overrides }
 	const insertSpaces = options.insertSpaces !== false
 	const tabSize = options.tabSize || 4
 
