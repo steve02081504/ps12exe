@@ -1,0 +1,11 @@
+{
+	"ps12exe.compilePs1ToExe.title": "कॉम्पाइल करें EXE में",
+	"ps12exe.ps12exeGUI.title": "ps12exeGUI में खोलें",
+	"ps12exe.formatDocument.title": "प्रीप्रोसेसर ब्लॉक फ़ॉर्मेट करें",
+	"ps12exe.autoUpdate.description": "ps12exe PowerShell मॉड्यूल न मिलने पर स्वतः इंस्टॉल करें और स्टार्टअप पर नवीनतम संस्करण में अपडेट करें।",
+	"ps12exe.autoCloseIf.description": "`#_if …` पंक्ति पूरी होने पर संबंधित `#_endif` स्वतः सम्मिलित करें।",
+	"ps12exe.editExeSource.title": "EXE स्रोत संपादित करें",
+	"ps12exe.exeSource.displayName": "ps12exe स्रोत",
+	"ps12exe.toggleBang.title": "#_!! एस्केप मार्कर टॉगल करें",
+	"ps12exe.openExeSource.description": "ps12exe से बनी EXE को संपादन योग्य PowerShell स्रोत दृश्य में खोलें; सहेजने पर EXE फिर से कंपाइल होती है। EXE को अंतर्निहित संपादक में खोलने के लिए अक्षम करें।"
+}

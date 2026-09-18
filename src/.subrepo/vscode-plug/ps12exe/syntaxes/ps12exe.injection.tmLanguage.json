@@ -1,0 +1,61 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"scopeName": "ps12exe.injection",
+	"injectionSelector": "L:source.powershell - (string, comment.block)",
+	"patterns": [
+		{ "include": "#if" },
+		{ "include": "#pragma" },
+		{ "include": "#bang" },
+		{ "include": "#directive" }
+	],
+	"repository": {
+		"if": {
+			"match": "^(\\s*)(#_)(if)\\b\\s*(PSEXE|PSScript)?",
+			"captures": {
+				"2": { "name": "punctuation.definition.directive.ps12exe" },
+				"3": { "name": "keyword.control.directive.ps12exe" },
+				"4": { "name": "constant.language.condition.ps12exe" }
+			}
+		},
+		"pragma": {
+			"begin": "^(\\s*)(#_)(pragma)\\s+([a-zA-Z_][a-zA-Z_0-9]*)",
+			"beginCaptures": {
+				"2": { "name": "punctuation.definition.directive.ps12exe" },
+				"3": { "name": "keyword.control.directive.ps12exe" },
+				"4": { "name": "entity.name.tag.pragma.ps12exe" }
+			},
+			"end": "$",
+			"patterns": [
+				{ "include": "#subexpression" }
+			]
+		},
+		"bang": {
+			"begin": "^(\\s*)(#_)(!!)",
+			"beginCaptures": {
+				"2": { "name": "punctuation.definition.directive.ps12exe" },
+				"3": { "name": "keyword.control.directive.ps12exe" }
+			},
+			"end": "$",
+			"contentName": "meta.embedded.line.ps12exe",
+			"patterns": [
+				{ "include": "source.powershell" }
+			]
+		},
+		"directive": {
+			"match": "^(\\s*)(#_)(else|endif|require|include_as_base64|include_as_bytes|include_as_value|include|DllExport|balus)\\b",
+			"captures": {
+				"2": { "name": "punctuation.definition.directive.ps12exe" },
+				"3": { "name": "keyword.control.directive.ps12exe" }
+			}
+		},
+		"subexpression": {
+			"begin": "\\$\\(",
+			"end": "\\)",
+			"contentName": "meta.embedded.expression.ps12exe",
+			"patterns": [
+				{ "include": "source.powershell" },
+				{ "include": "#subexpression" }
+			]
+		}
+	}
+}

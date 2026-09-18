@@ -1,0 +1,11 @@
+{
+	"ps12exe.compilePs1ToExe.title": "Compilar a EXE",
+	"ps12exe.ps12exeGUI.title": "Abrir en ps12exeGUI",
+	"ps12exe.formatDocument.title": "Formatear bloques del preprocesador",
+	"ps12exe.autoUpdate.description": "Instalar automáticamente el módulo de PowerShell ps12exe si falta y actualizarlo a la última versión al iniciar.",
+	"ps12exe.autoCloseIf.description": "Insertar automáticamente el `#_endif` correspondiente al completar una línea `#_if …`.",
+	"ps12exe.editExeSource.title": "Editar código fuente del EXE",
+	"ps12exe.exeSource.displayName": "Código fuente de ps12exe",
+	"ps12exe.toggleBang.title": "Alternar los marcadores #_!!",
+	"ps12exe.openExeSource.description": "Abrir los ejecutables creados con ps12exe en una vista editable del código PowerShell; al guardar se recompila el ejecutable. Desactívelo para abrir los ejecutables con el editor integrado."
+}

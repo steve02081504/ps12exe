@@ -1,0 +1,11 @@
+{
+	"ps12exe.compilePs1ToExe.title": "编译到 EXE",
+	"ps12exe.ps12exeGUI.title": "在 ps12exeGUI 中打开",
+	"ps12exe.formatDocument.title": "格式化预处理器块",
+	"ps12exe.autoUpdate.description": "缺少 ps12exe PowerShell 模块时自动安装，并在启动时自动更新到最新版本。",
+	"ps12exe.autoCloseIf.description": "完成 `#_if …` 行时自动补上对应的 `#_endif`。",
+	"ps12exe.editExeSource.title": "编辑 EXE 源码",
+	"ps12exe.exeSource.displayName": "ps12exe 源码",
+	"ps12exe.toggleBang.title": "切换 #_!! 转义标记",
+	"ps12exe.openExeSource.description": "用可编辑的 PowerShell 源码视图打开 ps12exe 生成的 exe；保存时重新编译该 exe。禁用后用内置编辑器打开 exe。"
+}

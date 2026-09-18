@@ -1,0 +1,11 @@
+{
+	"ps12exe.compilePs1ToExe.title": "EXE にコンパイル",
+	"ps12exe.ps12exeGUI.title": "ps12exeGUI で開く",
+	"ps12exe.formatDocument.title": "プリプロセッサブロックを整形",
+	"ps12exe.autoUpdate.description": "ps12exe PowerShell モジュールが見つからない場合は自動的にインストールし、起動時に最新バージョンへ更新します。",
+	"ps12exe.autoCloseIf.description": "`#_if …` 行を入力し終えると、対応する `#_endif` を自動的に挿入します。",
+	"ps12exe.editExeSource.title": "EXE のソースを編集",
+	"ps12exe.exeSource.displayName": "ps12exe ソース",
+	"ps12exe.toggleBang.title": "#_!! エスケープマーカーを切り替え",
+	"ps12exe.openExeSource.description": "ps12exe が生成した exe を編集可能な PowerShell ソースビューで開きます。保存すると exe が再コンパイルされます。無効にすると組み込みエディターで開きます。"
+}

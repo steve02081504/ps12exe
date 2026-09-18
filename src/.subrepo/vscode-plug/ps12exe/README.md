@@ -1,76 +1,110 @@
 # ps12exe VS Code Extension
 
-This extension provides a convenient way to compile your PowerShell (`.ps1`) scripts into executable files (`.exe`) directly within Visual Studio Code, leveraging the power of the `ps12exe` PowerShell module. It adds context menu items and an editor title button for quick access to the compilation feature and the `ps12exe` GUI.
+Compile PowerShell scripts (`.ps1`) into standalone executables and open **ps12exeGUI**, directly from Visual Studio Code. The extension is a thin, native front-end for the [ps12exe](https://github.com/steve02081504/ps12exe) PowerShell module: compiling from VS Code behaves exactly like running `ps12exe <your-script.ps1>` in a terminal.
 
 ## Features
 
-This extension integrates with VS Code to offer the following features for `.ps1` files:
+- **Compile to EXE** — right-click a `.ps1` file in the Explorer, right-click inside the editor, or use the editor title button. The script is passed to `ps12exe` unchanged, so it produces the same output as the command line.
+- **Open in ps12exeGUI** — right-click a `.ps1` file to launch the graphical front-end for advanced options (icon, version info, architecture, code signing, …).
+- **Output channel** — the full ps12exe console output is streamed to the `ps12exe` output channel.
+- **Progress & cancellation** — long compilations show a progress notification and can be cancelled; the whole process tree is terminated cleanly.
+- **Reveal output** — on success, jump straight to the generated `.exe`.
+- **Automatic language selection** — the extension follows the VS Code display language and forwards it to ps12exe/ps12exeGUI via `-Localize`.
+- **Robust process handling** — script paths are passed through PowerShell's `-EncodedCommand`, so quotes, spaces and non-ASCII characters never break the invocation.
 
-- **Compile via Editor Title Button:** A dedicated button appears in the top-right corner of the editor window when a `.ps1` file is active, allowing you to trigger compilation with a single click.
-  ![Editor Title Button - Placeholder](images/editor-button-placeholder.png)
-  _(Note: Replace `images/editor-button-placeholder.png` with an actual screenshot of the button in VS Code.)_
+## Preprocessor support
 
-- **Compile via Editor Context Menu:** Right-click anywhere within an open `.ps1` file's editor, and you'll find a "Compile To Exe" option in the context menu.
-  ![Editor Context Menu - Placeholder](images/editor-context-placeholder.png)
-  _(Note: Replace `images/editor-context-placeholder.png` with an actual screenshot of the context menu.)_
+The ps12exe preprocessor directives (`#_if` / `#_else` / `#_endif`, `#_include*`, `#_pragma`, `#_require`, `#_!!`, …) get first-class editor support:
 
-- **Compile via Explorer Context Menu:** Right-click on a `.ps1` file in the VS Code File Explorer, and you'll find a "Compile To Exe" option.
-  ![Explorer Context Menu - Placeholder](images/explorer-compile-context-placeholder.png)
-  _(Note: Replace `images/explorer-compile-context-placeholder.png` with an actual screenshot of the explorer context menu for compilation.)_
+- **Syntax highlighting** — an injected TextMate grammar colors the directives, their conditions (`PSEXE` / `PSScript`) and pragma names. The `#_!!` payload and `$( … )` sub-expressions inside `#_pragma` are highlighted as embedded PowerShell.
+- **Diagnostics** — unclosed `#_if`, nested (dead-code) `#_if`, unknown conditions, stray or duplicate `#_else` / `#_endif` are reported as you type. Directives followed by a trailing comment (e.g. `#_if PSEXE #why`) are handled exactly like ps12exe does.
+- **Auto-close** — finishing a `#_if …` line with Enter inserts the matching `#_endif` on the next line, with the cursor left on the block body. Disable with `ps12exe.autoCloseIf`.
+- **Folding** — every `#_if … #_endif` block folds, nested blocks included, and the `#_endif` stays visible (like the `}` of an `if`). These ranges are additive: VS Code merges them with the PowerShell extension's own AST-based folding, so no provider is disabled. In the `#_if PSScript` + `if (!$nested) {` idiom the real `if` opens on the block's only body line, so both fold markers appear; that is a display overlap, not a broken fold.
+- **`#_!!` toggle** — the **ps12exe: Toggle `#_!!` Escape Markers** editor context-menu command adds `#_!!` to every plain line of the selection (or of the whole file when nothing is selected) and removes it from the lines that already carry it. Other preprocessor directives, here-string bodies and block comments are left untouched, so no directive is ever turned into a comment.
+- **Go to definition** — Ctrl+click / F12 on the path of an `#_include*` directive or of `#_pragma iconFile` jumps to the referenced file (`$PSScriptRoot` and relative paths are resolved).
+- **Formatting** — the extension registers a `powershell` formatter that runs the official PowerShell formatter first (via the PowerShell extension) and then indents the preprocessor blocks. A block covering at least 90% of the file is left un-indented (only the largest such block). A block whose body is not a complete PowerShell unit — for example an `if` opened inside the block and closed after its `#_endif` — is left un-indented too, using the real PowerShell parser. If the PowerShell extension is missing, you are offered to install it. The formatter is available through *Format Document*, format-on-save and the **ps12exe: Format Preprocessor Blocks** code action.
 
-- **Launch ps12exe GUI:** Right-click on a `.ps1` file in the VS Code File Explorer, and you can select "ps12exeGUI" to launch the graphical interface of the `ps12exe` module for more advanced compilation options.
-  ![Explorer GUI Context Menu - Placeholder](images/explorer-gui-context-placeholder.png)
-  _(Note: Replace `images/explorer-gui-context-placeholder.png` with an actual screenshot of the explorer context menu for the GUI.)_
+## Localization
 
-- **Integrated Notifications:** Get feedback on compilation success or failure directly through VS Code notifications.
+The extension UI is localized into every language ps12exe ships. It activates automatically when VS Code runs in one of these languages:
+
+| Language | Locale |
+| --- | --- |
+| English (United States) | `en`, `en-US` |
+| English (United Kingdom) | `en-gb` |
+| 简体中文 | `zh-cn` |
+| 日本語 | `ja` |
+| Français | `fr` |
+| Español | `es` |
+| हिंदी | `hi` |
+
+Command titles, notifications and the `-Localize` value passed to ps12exe are all derived from the VS Code language.
 
 ## Requirements
 
-To use this extension, you need:
-
-- **Visual Studio Code** (version 1.99.0 or higher).
-- **PowerShell:** You need either Windows PowerShell 5.1+ or PowerShell Core (pwsh) installed. The extension primarily targets Windows due to the nature of compiling to `.exe` files, and the current implementation explicitly calls `powershell.exe`.
-- The **`ps12exe` PowerShell Module:** This extension is just an interface; the actual compilation is done by the `ps12exe` module. You must install it in your PowerShell environment. Open PowerShell and run:
+- **Visual Studio Code** 1.100.0 or newer (the extension is a native ES module extension).
+- **PowerShell** — Windows PowerShell 5.1+ or PowerShell 7+ (`pwsh`). The extension probes `pwsh` first and falls back to `powershell`.
+- **ps12exe PowerShell module** — you normally don't have to do anything: the extension installs the latest version automatically when the module is missing and keeps it updated on startup. You can also install it manually at any time:
 
   ```powershell
-  Install-Module -Name ps12exe -Scope CurrentUser # Or -Scope AllUsers
+  Install-Module ps12exe -Scope CurrentUser
   ```
 
-  For more details on `ps12exe` itself, its features, and advanced usage, please refer to the [official ps12exe GitHub repository](https://github.com/steve02081504/ps12exe).
+  Set `ps12exe.autoUpdate` to `false` to opt out of the automatic install/update.
 
-## Extension Settings
+## Settings
 
-This extension currently does not contribute any user-configurable settings through VS Code's settings interface. Compilation uses the default `ps12exe` parameters (`-file <input> -output <output>`). For advanced options, please use the integrated `ps12exeGUI` command or run `ps12exe` manually in a terminal.
+| Setting | Default | Description |
+| --- | --- | --- |
+| `ps12exe.autoUpdate` | `true` | Automatically install the ps12exe module when missing and update it to the latest PSGallery version on startup. |
+| `ps12exe.autoCloseIf` | `true` | Insert the matching `#_endif` when a `#_if …` line is completed with Enter. |
 
-## Known Issues
+The old, manually maintained development build (`0.0.0`) is never overwritten by the auto-update.
 
-- The extension relies on the `ps12exe` PowerShell module being correctly installed and discoverable in your PowerShell environment. If compilation fails, verify the `ps12exe` module is installed and accessible by running `Get-Command ps12exe` in PowerShell.
-- The default compilation command is basic. For features like adding icons, including extra files, selecting platform/architecture, etc., you must use the `ps12exeGUI` or run the `ps12exe` command manually with parameters.
-- Detailed error messages from `ps12exe` itself might only appear in the VS Code output console or notifications, and may require referring to the `ps12exe` documentation for interpretation.
-- Primarily tested on Windows environments. Compatibility with PowerShell Core on other operating systems might vary based on `ps12exe`'s capabilities there.
+## Usage
 
-## Release Notes
+1. Install the `ps12exe` module (see above).
+2. Open a `.ps1` file.
+3. Compile it with any of:
+   - Explorer: right-click the file → **Compile to EXE**
+   - Editor: right-click → **Compile to EXE**
+   - Editor title bar: click the package icon
+   - Command palette: **ps12exe: Compile to EXE**
+4. The executable is written next to the script (`<name>.exe`) unless the script uses a configuration file.
+5. To tweak options such as the icon or version, choose **Open in ps12exeGUI** instead.
 
-### 0.0.1
+For advanced command-line options, see the [ps12exe documentation](https://github.com/steve02081504/ps12exe#usage).
 
-- Initial release of the ps12exe VS Code Extension.
-- Adds "Compile To Exe" command accessible via editor title button, editor context menu, and explorer context menu for `.ps1` files.
-- Adds "ps12exeGUI" command accessible via explorer context menu for `.ps1` files.
-- Provides basic success/failure notifications for compilation.
+## Troubleshooting
 
----
+- **ps12exe could not be installed automatically** — the extension offers to open a terminal and run `Install-Module ps12exe -Scope CurrentUser`; you can also run it yourself. Note that Windows PowerShell and PowerShell 7 use different per-user module paths; the extension prefers a host that already has the module.
+- **"No PowerShell host was found"** — install [PowerShell 7](https://aka.ms/powershell) or make sure `powershell.exe` is on `PATH`.
+- **Compilation errors** — open the `ps12exe` output channel (the notification also links to it) for the full log.
 
-## Working with Markdown
+## Related
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+- [ps12exe repository](https://github.com/steve02081504/ps12exe)
+- [Localized readme](https://steve02081504.github.io/ps12exe/readme)
+- [PS2EXE2ps12exe](https://github.com/steve02081504/ps12exe/tree/master/src/.subrepo/PS2EXE2ps12exe)
 
-- Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-- Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-- Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets
+## Development
 
-For more information:
+```powershell
+npm install
+npm test
+```
 
-- [Visual Studio Code's Markdown Support](https://code.visualstudio.com/docs/languages/markdown)
-- [Markdown Syntax Reference](https://docs.github.com/en/get-started/writing-on-github/getting-startedwith-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)
+The extension is written as native ES modules (`"type": "module"`, `.mjs` entry and modules), which requires VS Code 1.100+. `npm test` reuses the VS Code installed on this machine; it is located through `@steve02081504/exec`'s `where_command`, and `PS12EXE_VSCODE_EXECUTABLE_PATH` can point it at a specific executable. When the install lives on another Windows drive, a junction is created under `.vscode-test/` because `@vscode/test-electron` silently skips tests for cross-drive installs. Without a local install a VS Code copy is downloaded once into `.vscode-test/` and cached.
 
-**Enjoy simplifying your PowerShell script compilation!**
+Notes for maintainers (all localized through `l10n/` and `package.nls.*.json`):
+
+- PowerShell is always invoked with `-EncodedCommand` (Base64 UTF-16LE). This sidesteps every Windows command line quoting pitfall for paths with spaces, quotes or non-ASCII characters.
+- Formatter completeness check: each preprocessor block's branch bodies are parsed in one batched call with `[System.Management.Automation.Language.Parser]::ParseInput`; bodies that produce parse errors are never pushed one level deeper. A bare attribute body (`[ArgumentCompleter({…})]`) is retried with a trailing dummy statement so it is not mistaken for an incomplete block. Results are cached per document text.
+- The formatter must leave `ps12exe.ps1` byte-for-byte unchanged. `test/officialFormatter.mjs` emulates the official PowerShell formatter by mirroring PowerShell Editor Services' `powershell.codeFormatting.*` → PSScriptAnalyzer mapping, and `test/formatting.test.mjs` asserts the whole pipeline is a no-op (and idempotent) on the repository's script. The repository `.vscode/settings.json` pins tab indentation and `powershell.codeFormatting.newLineAfterOpenBrace: false`; `restoreAttributeIndentation` (in `lib/preprocessor.mjs`) undoes PSScriptAnalyzer's extra indent around `[Attr({` scriptblocks.
+- `-OutputFormat Text` is mandatory; without it a redirected `pwsh`/`powershell` serializes every `Write-Host` call to stderr as a CLIXML blob (`#< CLIXML …`).
+- The wrapper script sets `$global:LASTEXITCODE = 0` before calling `ps12exe` and ends with `exit $LASTEXITCODE`, because ps12exe reports failures through `$LASTEXITCODE` rather than a terminating error.
+- Add a new UI string by calling `vscode.l10n.t('…')` and adding the exact same English string as a key to every `l10n/bundle.l10n.<locale>.json`.
+
+## License
+
+[LGPL-3.0-only](https://github.com/steve02081504/ps12exe/blob/master/LICENSE.md)

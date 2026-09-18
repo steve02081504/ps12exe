@@ -1,58 +1,187 @@
 {
 	"name": "ps12exe",
 	"displayName": "ps12exe",
-	"description": "",
+	"description": "Compile PowerShell scripts (.ps1) into executables and open ps12exeGUI, directly from Visual Studio Code.",
 	"version": "0.0.1",
+	"publisher": "steve02081504",
+	"license": "LGPL-3.0-only",
+	"icon": "images/icon.png",
+	"type": "module",
 	"engines": {
-		"vscode": "^1.99.0"
+		"vscode": "^1.100.0"
 	},
 	"categories": [
 		"Other"
 	],
-	"activationEvents": [
-		"onLanguage:powershell"
+	"keywords": [
+		"powershell",
+		"ps1",
+		"ps12exe",
+		"ps2exe",
+		"exe",
+		"compile",
+		"compiler"
 	],
-	"main": "./extension.js",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/steve02081504/ps12exe.git"
+	},
+	"bugs": {
+		"url": "https://github.com/steve02081504/ps12exe/issues"
+	},
+	"homepage": "https://github.com/steve02081504/ps12exe",
+	"galleryBanner": {
+		"color": "#012456",
+		"theme": "dark"
+	},
+	"l10n": "./l10n",
+	"main": "./extension.mjs",
+	"activationEvents": [
+		"onLanguage:powershell",
+		"onFileSystem:ps12exe-exe",
+		"onCustomEditor:ps12exe.exeSource"
+	],
+	"configurationDefaults": {
+		"[powershell]": {
+			"editor.defaultFormatter": "steve02081504.ps12exe"
+		}
+	},
 	"contributes": {
 		"commands": [
 			{
 				"command": "ps12exe.compilePs1ToExe",
-				"title": "Compile To Exe",
+				"title": "%ps12exe.compilePs1ToExe.title%",
+				"category": "ps12exe",
 				"icon": "$(package)"
 			},
 			{
 				"command": "ps12exe.ps12exeGUI",
-				"title": "ps12exeGUI",
-				"icon": "$(notebook-render-output)"
+				"title": "%ps12exe.ps12exeGUI.title%",
+				"category": "ps12exe",
+				"icon": "$(window)"
+			},
+			{
+				"command": "ps12exe.toggleBang",
+				"title": "%ps12exe.toggleBang.title%",
+				"category": "ps12exe"
+			},
+			{
+				"command": "ps12exe.formatDocument",
+				"title": "%ps12exe.formatDocument.title%",
+				"category": "ps12exe"
+			},
+			{
+				"command": "ps12exe.editExeSource",
+				"title": "%ps12exe.editExeSource.title%",
+				"category": "ps12exe",
+				"icon": "$(edit)"
 			}
 		],
+		"customEditors": [
+			{
+				"viewType": "ps12exe.exeSource",
+				"displayName": "%ps12exe.exeSource.displayName%",
+				"selector": [
+					{
+						"filenamePattern": "*.exe"
+					}
+				],
+				"priority": "default"
+			}
+		],
+		"grammars": [
+			{
+				"scopeName": "ps12exe.injection",
+				"path": "./syntaxes/ps12exe.injection.tmLanguage.json",
+				"injectTo": [
+					"source.powershell"
+				],
+				"embeddedLanguages": {
+					"meta.embedded.expression.ps12exe": "powershell",
+					"meta.embedded.line.ps12exe": "powershell"
+				}
+			}
+		],
+		"configuration": {
+			"title": "ps12exe",
+			"properties": {
+				"ps12exe.autoUpdate": {
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "%ps12exe.autoUpdate.description%"
+				},
+				"ps12exe.autoCloseIf": {
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "%ps12exe.autoCloseIf.description%"
+				},
+				"ps12exe.openExeSource": {
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "%ps12exe.openExeSource.description%"
+				}
+			}
+		},
 		"menus": {
-			"editor/context": [
+			"editor/title": [
 				{
 					"command": "ps12exe.compilePs1ToExe",
-					"when": "editorLangId == 'powershell'",
-					"group": "build"
+					"when": "editorLangId == powershell || resourceExtname == .ps1",
+					"group": "navigation@1"
+				},
+				{
+					"command": "ps12exe.ps12exeGUI",
+					"when": "editorLangId == powershell || resourceExtname == .ps1",
+					"group": "navigation@2"
+				}
+			],
+			"editor/context": [
+				{
+					"command": "ps12exe.toggleBang",
+					"when": "editorLangId == powershell || resourceExtname == .ps1",
+					"group": "1_modification@1"
+				},
+				{
+					"command": "ps12exe.compilePs1ToExe",
+					"when": "editorLangId == powershell || resourceExtname == .ps1",
+					"group": "build@1"
+				},
+				{
+					"command": "ps12exe.ps12exeGUI",
+					"when": "editorLangId == powershell || resourceExtname == .ps1",
+					"group": "build@2"
 				}
 			],
 			"explorer/context": [
 				{
 					"command": "ps12exe.compilePs1ToExe",
 					"when": "resourceExtname == .ps1",
-					"group": "build"
+					"group": "build@1"
 				},
 				{
 					"command": "ps12exe.ps12exeGUI",
 					"when": "resourceExtname == .ps1",
-					"group": "build"
+					"group": "build@2"
+				},
+				{
+					"command": "ps12exe.editExeSource",
+					"when": "resourceExtname == .exe",
+					"group": "build@3"
 				}
 			]
 		}
 	},
 	"scripts": {
-		"test": "vscode-test"
+		"test": "vscode-test",
+		"build": "node scripts/build.mjs",
+		"package": "node scripts/build.mjs --no-install"
+	},
+	"dependencies": {
+		"@steve02081504/exec": "^0.0.8"
 	},
 	"devDependencies": {
 		"@vscode/test-cli": "^0.0.10",
-		"@vscode/test-electron": "^2.4.1"
+		"@vscode/test-electron": "^2.4.1",
+		"@vscode/vsce": "^4.0.0"
 	}
 }
