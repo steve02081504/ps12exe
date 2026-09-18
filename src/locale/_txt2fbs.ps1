@@ -15,7 +15,7 @@ param (
 )
 
 # 以xml格式读取目标fbs文件
-$Xml = [xml](Get-Content "$PSScriptRoot\$TemplateLocalize.fbs")
+$Xml = [xml](Get-Content "$PSScriptRoot\$TemplateLocalize.fbs" -Encoding utf8)
 $LocalizeData = [System.Collections.ArrayList](Get-Content -LiteralPath "$PSScriptRoot\$Localize.txt" -Encoding utf8)
 # 添加Pop到LocalizeData
 Add-Member -InputObject $LocalizeData -MemberType ScriptMethod -Name Pop -Value {
@@ -36,6 +36,7 @@ XmlMapper $Xml
 
 # 保存
 $XmlWriterSettings = New-Object System.Xml.XmlWriterSettings
+$XmlWriterSettings.Encoding = New-Object System.Text.UTF8Encoding $false
 $XmlWriterSettings.Indent = $true
 $XmlWriterSettings.IndentChars = "`t"
 $XmlWriterSettings.NewLineChars = "`n"

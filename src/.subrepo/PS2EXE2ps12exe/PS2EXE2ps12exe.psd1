@@ -1,4 +1,4 @@
-@{
+﻿@{
 	Copyright         = '(c) steve02081504.'
 	GUID              = '947fa788-47be-4aca-a7dc-dd7f26efd5fb'
 	PrivateData       = @{

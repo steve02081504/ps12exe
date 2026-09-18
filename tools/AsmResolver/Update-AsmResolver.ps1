@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+﻿#Requires -Version 7.0
 <#
 .SYNOPSIS
 	下载最新的 AsmResolver，并把经过体积裁剪的副本写入 ps12exe 的 bin。

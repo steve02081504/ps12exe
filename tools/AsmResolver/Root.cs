@@ -1,4 +1,4 @@
-// IL Linker 的根程序集。它针对完整的 AsmResolver 编译，但从不运行；illink 把可达成员作为 ps12exe 所需的 AsmResolver API 集合。
+﻿// IL Linker 的根程序集。它针对完整的 AsmResolver 编译，但从不运行；illink 把可达成员作为 ps12exe 所需的 AsmResolver API 集合。
 using AsmResolver.PE;
 using AsmResolver.PE.Builder;
 using AsmResolver.PE.File;

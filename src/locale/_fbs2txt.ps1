@@ -9,7 +9,7 @@ param (
 )
 
 # 以xml格式读取目标fbs文件
-$Xml = [xml](Get-Content "$PSScriptRoot\$Localize.fbs")
+$Xml = [xml](Get-Content "$PSScriptRoot\$Localize.fbs" -Encoding utf8)
 # 遍历xml节点
 function XmlMapper($Node) {
 	# 若节点有Text、Filter、Title属性，则加入到resultContent

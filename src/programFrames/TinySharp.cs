@@ -1,4 +1,4 @@
-//代码来自 https://blog.washi.dev/posts/tinysharp/
+﻿//代码来自 https://blog.washi.dev/posts/tinysharp/
 using System;
 using System.Collections.Generic;
 using System.IO;

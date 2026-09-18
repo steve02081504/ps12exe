@@ -1,4 +1,4 @@
-﻿# AGENTS.md
+# AGENTS.md
 
 ## 项目结构
 
@@ -25,8 +25,9 @@
 
 ## 编码
 
-- `.ps1/.psm1/.psd1/.cs/.md/.json/.yaml` 一律 **UTF-8 with BOM**。写入用 `[System.IO.File]::WriteAllText($f,$t,[System.Text.UTF8Encoding]::new($true))`；不要用会剥掉 BOM 的 `Set-Content -Encoding utf8`。
-- 验证：`[System.IO.File]::ReadAllBytes($f)[0..2]` 应为 `EF BB BF`（Windows PowerShell 5.1 对无 BOM 的 UTF-8 中文会乱码/解析失败）。
+- `.ps1/.psd1/.psm1/.cs` 用 **UTF-8 with BOM**（Windows PowerShell 5.1 对无 BOM 的 UTF-8 中文会乱码/解析失败；C# 源码含中文同理）。写入用 `[System.IO.File]::WriteAllText($f,$t,[System.Text.UTF8Encoding]::new($true))`；不要用会剥掉 BOM 的 `Set-Content -Encoding utf8`。
+- 其它文件（`.md/.json/.yaml/...`）一律 **UTF-8 无 BOM**。
+- 验证：`[System.IO.File]::ReadAllBytes($f)[0..2]`——脚本与 `.cs` 应为 `EF BB BF`；其余文件不应以 `EF BB BF` 开头。
 
 ## 测试与校验
 
