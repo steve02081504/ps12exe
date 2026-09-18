@@ -43,7 +43,7 @@ const CODE_FORMATTING_PREFIX = 'powershell.codeFormatting.'
  * @returns {object}
  */
 function buildSettings (options = {}) {
-	const config = { ...DEFAULTS, ...(options.overrides || {}) }
+	const config = { ...DEFAULTS, ...options.overrides }
 	const insertSpaces = options.insertSpaces !== false
 	const tabSize = options.tabSize || 4
 
