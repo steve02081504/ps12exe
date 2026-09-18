@@ -10,6 +10,10 @@ Converts powershell scripts to standalone executables.
 Converts powershell scripts to standalone executables. GUI output and input is activated with one switch,
 real windows executables are generated. You may use the graphical front end Win-PS2EXE for convenience.
 
+PS2EXE2ps12exe is a compatibility layer: it forwards and rewrites every PS2EXE call into ps12exe.
+Features that ps12exe does not provide natively (conHost, embedFiles) are emulated by rewriting the
+script at compile time, so PS2EXE scripts keep working unchanged.
+
 Please see Remarks on project page for topics "GUI mode output formatting", "Config files", "Password security",
 "Script variables" and "Window in background in -noConsole mode".
 
@@ -20,11 +24,9 @@ destination executable file name or folder, defaults to inputFile with extension
 .PARAMETER prepareDebug
 create helpful information for debugging of generated executable. See parameter -debug there
 .PARAMETER runtime20
-this switch forces PS2EXE to create a config file for the generated executable that contains the
-"supported .NET Framework versions" setting for .NET Framework 2.0/3.x for PowerShell 2.0
+legacy: this switch forces the generated executable to target .NET Framework 2.0/3.x for PowerShell 2.0
 .PARAMETER runtime40
-this switch forces PS2EXE to create a config file for the generated executable that contains the
-"supported .NET Framework versions" setting for .NET Framework 4.x for PowerShell 3.0 or higher
+legacy: this switch forces the generated executable to target .NET Framework 4.x for PowerShell 3.0 or higher
 .PARAMETER x86
 compile for 32-bit runtime only
 .PARAMETER x64
@@ -41,12 +43,23 @@ internal use
 the resulting executable will be a Windows Forms app without a console window.
 You might want to pipe your output to Out-String to prevent a message box for every line of output
 (example: dir C:\ | Out-String)
+.PARAMETER conHost
+force start with conhost as console instead of Windows Terminal. If necessary a new console window
+will appear. ps12exe has no native equivalent, so PS2EXE2ps12exe restarts the executable inside conhost.
 .PARAMETER UNICODEEncoding
 encode output as UNICODE in console mode, useful to display special encoded chars
 .PARAMETER credentialGUI
 use GUI for prompting credentials in console mode instead of console input
 .PARAMETER iconFile
 icon file name for the compiled executable
+.PARAMETER embedFiles
+paths to files to embed given as hash table, will be extracted at runtime to the keys of the hashes, source
+file names must be unique, e.g. -embedFiles @{'Targetfilepath'='Sourcefilepath'}.
+Absolute and relative paths are allowed. For target paths a relative path beginning with '.\' is interpreted
+as relative to the executable, without the leading '.\' as relative to the current path at runtime.
+Directories are created automatically on startup if necessary.
+In the target path environment variables in cmd.exe notation like %TEMP% or %APPDATA% are expanded at runtime.
+ps12exe has no native equivalent, so PS2EXE2ps12exe embeds the files at compile time and extracts them at startup.
 .PARAMETER title
 title information (displayed in details tab of Windows Explorer's properties dialog)
 .PARAMETER description
@@ -98,15 +111,113 @@ Start graphical front end to Invoke-ps2exe
 function Invoke-ps2exe {
 	[CmdletBinding()]
 	Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [SWITCH]$prepareDebug, [SWITCH]$runtime20, [SWITCH]$runtime40, [SWITCH]$x86, [SWITCH]$x64, [int]$lcid,
-		[SWITCH]$STA, [SWITCH]$MTA, [SWITCH]$nested, [SWITCH]$noConsole, [SWITCH]$UNICODEEncoding, [SWITCH]$credentialGUI, [STRING]$iconFile = $NULL,
-		[STRING]$title, [STRING]$description, [STRING]$company, [STRING]$product, [STRING]$copyright, [STRING]$trademark, [STRING]$version,
+		[SWITCH]$STA, [SWITCH]$MTA, [SWITCH]$nested, [SWITCH]$noConsole, [SWITCH]$conHost, [SWITCH]$UNICODEEncoding, [SWITCH]$credentialGUI, [STRING]$iconFile = $NULL,
+		[Hashtable]$embedFiles = @{}, [STRING]$title, [STRING]$description, [STRING]$company, [STRING]$product, [STRING]$copyright, [STRING]$trademark, [STRING]$version,
 		[SWITCH]$configFile, [SWITCH]$noConfigFile, [SWITCH]$noOutput, [SWITCH]$noError, [SWITCH]$noVisualStyles, [SWITCH]$exitOnCancel,
 		[SWITCH]$DPIAware, [SWITCH]$winFormsDPIAware, [SWITCH]$requireAdmin, [SWITCH]$supportOS, [SWITCH]$virtualize, [SWITCH]$longPaths)
+
+	# 复刻 PS2EXE 的参数校验
+	if ($x86 -and $x64) { throw "-x86 can't be combined with -x64." }
+	if ($STA -and $MTA) { throw "-STA can't be combined with -MTA." }
+	if ($noConsole -and $conHost) { throw "-noConsole cannot be combined with -conHost" }
+	if ($configFile -and $noConfigFile) { throw "-configFile cannot be combined with -noConfigFile" }
+	if ($runtime20 -and $runtime40) { throw "-runtime20 can't be combined with -runtime40." }
+	if ($runtime20 -and $longPaths) { throw "Long paths are only available with .NET 4 or above." }
+	if ($runtime20 -and $winFormsDPIAware) { throw "DPI awareness is only available with .NET 4 or above." }
+
 	if (!(Get-Module -Name ps12exe -ListAvailable)) {
 		Install-Module -Name ps12exe -Scope CurrentUser -Force
 	}
 	Import-Module -Name ps12exe
-	ps12exe @PSBoundParameters
+
+	# 转发到 ps12exe 的新版参数
+	$psParams = @{}
+	foreach ($name in @('inputFile', 'outputFile', 'prepareDebug', 'lcid', 'nested', 'noConsole', 'UNICODEEncoding', 'credentialGUI',
+			'configFile', 'noOutput', 'noError', 'noVisualStyles', 'exitOnCancel', 'DPIAware', 'winFormsDPIAware',
+			'requireAdmin', 'supportOS', 'virtualize', 'longPaths')) {
+		if ($PSBoundParameters.ContainsKey($name)) { $psParams[$name] = $PSBoundParameters[$name] }
+	}
+	if ($x86) { $psParams.architecture = 'x86' }
+	elseif ($x64) { $psParams.architecture = 'x64' }
+	if ($STA) { $psParams.threadingModel = 'STA' }
+	elseif ($MTA) { $psParams.threadingModel = 'MTA' }
+	if ($runtime20) { $psParams.targetRuntime = 'Framework2.0' }
+	elseif ($runtime40) { $psParams.targetRuntime = 'Framework4.0' }
+	# noConfigFile 是 PS2EXE 的兼容占位参数，直接忽略
+
+	# 资源参数合并为 resourceParams 哈希表
+	$resources = @{}
+	foreach ($name in @('iconFile', 'title', 'description', 'company', 'product', 'copyright', 'trademark', 'version')) {
+		if ($PSBoundParameters.ContainsKey($name) -and $PSBoundParameters[$name]) { $resources[$name] = $PSBoundParameters[$name] }
+	}
+	if ($resources.Count) { $psParams.resourceParams = $resources }
+
+	# 收集 embedFiles 的二进制内容，供编译期注入
+	$embedEntries = @()
+	if ($embedFiles) {
+		foreach ($target in $embedFiles.Keys) {
+			$source = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath([string]$embedFiles[$target])
+			if (-not (Test-Path -LiteralPath $source -PathType Leaf)) { throw "Embed file not found: $($embedFiles[$target])" }
+			$embedEntries += @{
+				Target = [string]$target
+				Base64 = [System.Convert]::ToBase64String([System.IO.File]::ReadAllBytes($source))
+			}
+		}
+	}
+
+	# ps12exe 缺少 conHost / embedFiles，且不提供 PS2EXE 的 $ScriptRoot；用 minifyer 在预处理后注入。
+	# 需要转写时总会走这里，未命中任何注入点时原样返回。
+	$rewriteState = @{
+		ConHost = [bool]$conHost
+		Embeds  = $embedEntries
+	}
+	$psParams.minifyer = {
+		$text = $_
+		if (-not $text) { return $text }
+		$ast = $null
+		try { $ast = [System.Management.Automation.Language.Parser]::ParseInput($text, [ref]$null, [ref]$null) }
+		catch { $ast = $null }
+		if (-not $ast) { return $text }
+
+		$inject = [System.Collections.Generic.List[string]]::new()
+		if ($rewriteState.ConHost) {
+			$inject.Add(@'
+& {
+	if (-not $env:__PSEXE_CONHOST__) {
+		$env:__PSEXE_CONHOST__ = '1'
+		$PSEXEProcess = Start-Process conhost.exe -ArgumentList @('cmd', '/c', [System.Environment]::CommandLine) -PassThru -Wait
+		exit $PSEXEProcess.ExitCode
+	}
+}
+'@)
+		}
+		foreach ($embed in $rewriteState.Embeds) {
+			$targetLiteral = $embed.Target.Replace("'", "''")
+			$inject.Add(@"
+& {
+	`$__PSEXE_Target = [System.Environment]::ExpandEnvironmentVariables('$targetLiteral')
+	if (`$__PSEXE_Target.StartsWith('.\')) { `$__PSEXE_Target = [System.IO.Path]::Combine(`$PSScriptRoot, `$__PSEXE_Target.Substring(2)) }
+	`$__PSEXE_Dir = [System.IO.Path]::GetDirectoryName(`$__PSEXE_Target)
+	if (`$__PSEXE_Dir) { [System.IO.Directory]::CreateDirectory(`$__PSEXE_Dir) | Out-Null }
+	[System.IO.File]::WriteAllBytes(`$__PSEXE_Target, [System.Convert]::FromBase64String('$($embed.Base64)'))
+}
+"@)
+		}
+		# PS2EXE 会在运行空间里设置 $ScriptRoot；脚本用到时才补上
+		$scriptRootUsed = $ast.FindAll({
+				param($node)
+				$node -is [System.Management.Automation.Language.VariableExpressionAst] -and $node.VariablePath.UserPath -eq 'ScriptRoot'
+			}, $true)
+		if ($scriptRootUsed.Count -gt 0) {
+			$inject.Add('$global:ScriptRoot = $PSScriptRoot')
+		}
+
+		if ($inject.Count -eq 0) { return $text }
+		$insertAt = if ($ast.ParamBlock) { $ast.ParamBlock.Extent.EndOffset } else { 0 }
+		$text.Substring(0, $insertAt) + "`n" + ($inject -join "`n") + "`n" + $text.Substring($insertAt)
+	}.GetNewClosure()
+
+	ps12exe @psParams
 }
 
 function Invoke-WinPS2EXE {

@@ -26,6 +26,11 @@ on:
         required: false
         default: true
         type: boolean
+      run_ps2exe2ps12exe:
+        description: 'Run PS2EXE2ps12exe compatibility layer tests'
+        required: false
+        default: true
+        type: boolean
 
 jobs:
   detect:
@@ -35,6 +40,7 @@ jobs:
       run_ps12exe: ${{ steps.set.outputs.run_ps12exe }}
       run_exe21sp: ${{ steps.set.outputs.run_exe21sp }}
       run_tinysharp: ${{ steps.set.outputs.run_tinysharp }}
+      run_ps2exe2ps12exe: ${{ steps.set.outputs.run_ps2exe2ps12exe }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -66,14 +72,17 @@ jobs:
           INPUT_RUN_PS12EXE: ${{ github.event.inputs.run_ps12exe }}
           INPUT_RUN_EXE21SP: ${{ github.event.inputs.run_exe21sp }}
           INPUT_RUN_TINYSHARP: ${{ github.event.inputs.run_tinysharp }}
+          INPUT_RUN_PS2EXE2PS12EXE: ${{ github.event.inputs.run_ps2exe2ps12exe }}
         run: |
           if ("$env:EVENT_NAME" -eq "workflow_dispatch") {
             $p = if ("$env:INPUT_RUN_PS12EXE" -eq "" -or "$env:INPUT_RUN_PS12EXE" -eq "true") { "true" } else { "false" }
             $e = if ("$env:INPUT_RUN_EXE21SP"  -eq "" -or "$env:INPUT_RUN_EXE21SP"  -eq "true") { "true" } else { "false" }
             $t = if ("$env:INPUT_RUN_TINYSHARP" -eq "" -or "$env:INPUT_RUN_TINYSHARP" -eq "true") { "true" } else { "false" }
+            $c = if ("$env:INPUT_RUN_PS2EXE2PS12EXE" -eq "" -or "$env:INPUT_RUN_PS2EXE2PS12EXE" -eq "true") { "true" } else { "false" }
             echo "run_ps12exe=$p" >> $env:GITHUB_OUTPUT
             echo "run_exe21sp=$e" >> $env:GITHUB_OUTPUT
             echo "run_tinysharp=$t" >> $env:GITHUB_OUTPUT
+            echo "run_ps2exe2ps12exe=$c" >> $env:GITHUB_OUTPUT
             exit 0
           }
           $paths = Get-Content changed.txt | Where-Object { $_.Trim() }
@@ -83,9 +92,11 @@ jobs:
           $run_ps12exe = ($arr -contains 'ps12exe').ToString().ToLower()
           $run_exe21sp  = ($arr -contains 'exe21sp').ToString().ToLower()
           $run_tinysharp= ($arr -contains 'tinysharp').ToString().ToLower()
+          $run_ps2exe2ps12exe = ($arr -contains 'ps2exe2ps12exe').ToString().ToLower()
           echo "run_ps12exe=$run_ps12exe" >> $env:GITHUB_OUTPUT
           echo "run_exe21sp=$run_exe21sp" >> $env:GITHUB_OUTPUT
           echo "run_tinysharp=$run_tinysharp" >> $env:GITHUB_OUTPUT
+          echo "run_ps2exe2ps12exe=$run_ps2exe2ps12exe" >> $env:GITHUB_OUTPUT
 
   test-ps12exe:
     needs: detect
@@ -123,3 +134,14 @@ jobs:
         env:
           REPO_ROOT: ${{ github.workspace }}
         run: pwsh -NoProfile -File .github/workflows/CI/run-tinysharp-tests.ps1
+
+  test-ps2exe2ps12exe:
+    needs: detect
+    if: ${{ needs.detect.outputs.run_ps2exe2ps12exe == 'true' }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run PS2EXE2ps12exe tests
+        env:
+          REPO_ROOT: ${{ github.workspace }}
+        run: pwsh -NoProfile -File .github/workflows/CI/run-ps2exe2ps12exe-tests.ps1

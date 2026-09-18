@@ -25,6 +25,9 @@ $groupPatterns = @{
 		'src/programFrames/TinySharp.cs', 'src/TinySharpCompiler.ps1', 'src/ConstProgramCheck.ps1',
 		'.github/workflows/CI/run-tinysharp-tests.ps1'
 	)
+	ps2exe2ps12exe = @(
+		'src/.subrepo/PS2EXE2ps12exe/', '.github/workflows/CI/run-ps2exe2ps12exe-tests.ps1'
+	)
 }
 
 function PathMatchesGroup($relPath, $group) {
@@ -54,7 +57,7 @@ if ($ChangedPaths.Count -eq 0) {
 $groupsToRun = [System.Collections.Generic.HashSet[string]]::new()
 if ($ChangedPaths.Count -eq 0) {
 	# 无变更列表则全量
-	@('ps12exe', 'exe21sp', 'tinysharp') | ForEach-Object { [void]$groupsToRun.Add($_) }
+	@('ps12exe', 'exe21sp', 'tinysharp', 'ps2exe2ps12exe') | ForEach-Object { [void]$groupsToRun.Add($_) }
 }
 else {
 	foreach ($path in $ChangedPaths) {
@@ -64,7 +67,7 @@ else {
 		}
 	}
 	# 若未匹配任何组则默认跑全量，避免漏测
-	if ($groupsToRun.Count -eq 0) { @('ps12exe', 'exe21sp', 'tinysharp') | ForEach-Object { [void]$groupsToRun.Add($_) } }
+	if ($groupsToRun.Count -eq 0) { @('ps12exe', 'exe21sp', 'tinysharp', 'ps2exe2ps12exe') | ForEach-Object { [void]$groupsToRun.Add($_) } }
 }
 
 $arr = @($groupsToRun | Sort-Object)
