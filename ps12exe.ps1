@@ -531,50 +531,51 @@ else {
 	}
 }
 #_if PSScript #在PSEXE中主机永远是winpwsh，可省略该部分
-. $PSScriptRoot/src/PSObjectToString.ps1
-function UsingHost($Boundparameters, $HostExe) {
-	# 写临时脚本，把参数串成命令行交给另一个 PowerShell 宿主编译，再等它退出。
-	$Params = ([hashtable]$Boundparameters).Clone()
-	$Params.Remove("minifyer")
-	$Params.Remove("Content")
-	$Params.Remove("inputFile")
-	$Params.Remove("outputFile")
-	$Params.Remove("resourceParams") #使用旧版参数列表传递hashtable参数更为保险
-	$TempFile = if ($TempDir) {
-		New-Item -ItemType Directory -Path $TempDir -ErrorAction SilentlyContinue | Out-Null
-		[System.IO.Path]::Combine($TempDir, 'main.ps1')
-	} else { [System.IO.Path]::GetTempFileName() }
-	$Content | Set-Content $TempFile -Encoding UTF8 -NoNewline
-	$Params.Add("outputFile", $outputFile)
-	$Params.Add("inputFile", $TempFile)
-	if ($TempDir) { $Params.TempDir = $TempDir }
-	$resourceParamKeys | ForEach-Object {
-		if ($resourceParams.ContainsKey($_) -and $resourceParams[$_]) {
-			$Params[$_] = $resourceParams[$_]
+	. $PSScriptRoot/src/PSObjectToString.ps1
+	function UsingHost($Boundparameters, $HostExe) {
+		# 写临时脚本，把参数串成命令行交给另一个 PowerShell 宿主编译，再等它退出。
+		$Params = ([hashtable]$Boundparameters).Clone()
+		$Params.Remove("minifyer")
+		$Params.Remove("Content")
+		$Params.Remove("inputFile")
+		$Params.Remove("outputFile")
+		$Params.Remove("resourceParams") #使用旧版参数列表传递hashtable参数更为保险
+		$TempFile = if ($TempDir) {
+			New-Item -ItemType Directory -Path $TempDir -ErrorAction SilentlyContinue | Out-Null
+			[System.IO.Path]::Combine($TempDir, 'main.ps1')
 		}
+		else { [System.IO.Path]::GetTempFileName() }
+		$Content | Set-Content $TempFile -Encoding UTF8 -NoNewline
+		$Params.Add("outputFile", $outputFile)
+		$Params.Add("inputFile", $TempFile)
+		if ($TempDir) { $Params.TempDir = $TempDir }
+		$resourceParamKeys | ForEach-Object {
+			if ($resourceParams.ContainsKey($_) -and $resourceParams[$_]) {
+				$Params[$_] = $resourceParams[$_]
+			}
+		}
+		if ($iconFile) { $Params.iconFile = $iconFile }
+		if ($DllExportList.Length) { $Params.DllExportList = ConvertTo-Json -depth 7 -Compress -InputObject $DllExportList }
+		$CallParam = Get-ArgsString $Params
+
+		Write-Debug "Starting $HostExe ps12exe with parameters: $CallParam"
+
+		& $HostExe -NoProfile -Command "&'$PSScriptRoot\ps12exe.ps1' $CallParam -nested; exit `$LastExitCode" | Write-Host
+		$global:LastExitCode = $LASTEXITCODE
 	}
-	if ($iconFile) { $Params.iconFile = $iconFile }
-	if ($DllExportList.Length) { $Params.DllExportList = ConvertTo-Json -depth 7 -Compress -InputObject $DllExportList }
-	$CallParam = Get-ArgsString $Params
-
-	Write-Debug "Starting $HostExe ps12exe with parameters: $CallParam"
-
-	& $HostExe -NoProfile -Command "&'$PSScriptRoot\ps12exe.ps1' $CallParam -nested; exit `$LastExitCode" | Write-Host
-	$global:LastExitCode = $LASTEXITCODE
-}
-# Windows PowerShell 解析不了 Core 语法，因此 Core 目标必须在解析前交接给 pwsh。
-if (!$nested -and $isCoreTarget -and ($PSVersionTable.PSEdition -ne "Core")) {
-	if (Get-Command pwsh -ErrorAction Ignore) {
-		UsingHost $Params 'pwsh'
-		if ((Test-Path -LiteralPath $outputFile) -and (Test-StdoutRedirected)) {
-			Write-Output $outputFile
+	# Windows PowerShell 解析不了 Core 语法，因此 Core 目标必须在解析前交接给 pwsh。
+	if (!$nested -and $isCoreTarget -and ($PSVersionTable.PSEdition -ne "Core")) {
+		if (Get-Command pwsh -ErrorAction Ignore) {
+			UsingHost $Params 'pwsh'
+			if ((Test-Path -LiteralPath $outputFile) -and (Test-StdoutRedirected)) {
+				Write-Output $outputFile
+			}
+			return
 		}
+		Write-I18n Error CoreCompileNeedPwsh -Category NotInstalled
+		$global:LastExitCode = 2 # 调用格式错误
 		return
 	}
-	Write-I18n Error CoreCompileNeedPwsh -Category NotInstalled
-	$global:LastExitCode = 2 # 调用格式错误
-	return
-}
 #_endif
 
 # 语法检查
@@ -638,19 +639,19 @@ elseif (!$AST) {
 }
 
 #_if PSScript #在PSEXE中主机永远是winpwsh，可省略该部分
-# pwsh 下默认交给 Windows PowerShell + CodeDom；若没有 WinPS，只能报错让用户显式选 Core。
-if (!$nested -and -not $isCoreTarget -and ($PSVersionTable.PSEdition -eq "Core")) {
-	if (Get-Command powershell -ErrorAction Ignore) {
-		UsingHost $Params 'powershell'
-		if ((Test-Path -LiteralPath $outputFile) -and (Test-StdoutRedirected)) {
-			Write-Output $outputFile
+	# pwsh 下默认交给 Windows PowerShell + CodeDom；若没有 WinPS，只能报错让用户显式选 Core。
+	if (!$nested -and -not $isCoreTarget -and ($PSVersionTable.PSEdition -eq "Core")) {
+		if (Get-Command powershell -ErrorAction Ignore) {
+			UsingHost $Params 'powershell'
+			if ((Test-Path -LiteralPath $outputFile) -and (Test-StdoutRedirected)) {
+				Write-Output $outputFile
+			}
+			return
 		}
+		Write-I18n Error CoreCompileNeedWindowsPowerShell -Category NotInstalled
+		$global:LastExitCode = 2 # 调用格式错误
 		return
 	}
-	Write-I18n Error CoreCompileNeedWindowsPowerShell -Category NotInstalled
-	$global:LastExitCode = 2 # 调用格式错误
-	return
-}
 #_endif
 
 if ($inputFile -eq $outputFile) {
@@ -733,22 +734,22 @@ try {
 	. $PSScriptRoot\src\InitCompileThings.ps1
 	Write-TaskbarProgress -Percent 10
 	#_if PSScript
-	# 常量脚本优先生成 TinySharp 壳（体积 ~1KB）；产物是 .NET Framework 托管 PE，Core 目标跳过它改走 CoreCompiler。
-	if ($AstAnalyzeResult.IsConst -and -not $requireAdmin -and -not $isCoreTarget) {
-		Write-I18n Verbose TryingTinySharpCompile
-		Write-I18n Host CompilingFile
-		Write-TaskbarProgress -Percent 20
+		# 常量脚本优先生成 TinySharp 壳（体积 ~1KB）；产物是 .NET Framework 托管 PE，Core 目标跳过它改走 CoreCompiler。
+		if ($AstAnalyzeResult.IsConst -and -not $requireAdmin -and -not $isCoreTarget) {
+			Write-I18n Verbose TryingTinySharpCompile
+			Write-I18n Host CompilingFile
+			Write-TaskbarProgress -Percent 20
 
-		try {
-			. $PSScriptRoot\src\TinySharpCompiler.ps1
-			$TinySharpSuccess = $TRUE
+			try {
+				. $PSScriptRoot\src\TinySharpCompiler.ps1
+				$TinySharpSuccess = $TRUE
+			}
+			catch {
+				RollUp
+				Write-I18n Verbose TinySharpFailedFallback
+				Write-Error $_
+			}
 		}
-		catch {
-			RollUp
-			Write-I18n Verbose TinySharpFailedFallback
-			Write-Error $_
-		}
-	}
 	#_endif
 	try {
 		if (!$TinySharpSuccess) {
@@ -778,12 +779,12 @@ try {
 	}
 	else {
 		#_if PSScript
-		if (-not $TinySharpSuccess -and -not $isCoreTarget) {
-			Write-TaskbarProgress -Percent 75
-			& $PSScriptRoot\src\ExeSinker.ps1 $outputFile -removeResources:$(
-				$NoResource -and $AstAnalyzeResult.IsConst -and -not $requireAdmin
-			) -removeVersionInfo:$($resourceParams.Count -eq 0)
-		}
+			if (-not $TinySharpSuccess -and -not $isCoreTarget) {
+				Write-TaskbarProgress -Percent 75
+				& $PSScriptRoot\src\ExeSinker.ps1 $outputFile -removeResources:$(
+					$NoResource -and $AstAnalyzeResult.IsConst -and -not $requireAdmin
+				) -removeVersionInfo:$($resourceParams.Count -eq 0)
+			}
 		#_endif
 		Write-TaskbarProgressClear
 		Write-I18n Host CompiledFileSize $((Get-Item $outputFile).Length)
@@ -857,15 +858,15 @@ catch {
 		return
 	}
 	#_if PSScript
-	if (!$GuestMode) {
-		$global:LastExitCode = 3 # 内部未知错误
-		$githubfeedback = "https://github.com/steve02081504/ps12exe/issues/new?assignees=steve02081504&labels=bug&projects=&template=bug-report.yaml"
-		$urlParams = @{
-			title                = "$_"
-			"latest-release"     = if (Get-Module -ListAvailable ps12exe) { "true" } else { "false" }
-			"bug-description"    = 'Compilation failed'
-			"expected-behavior"  = 'Compilation should succeed'
-			"additional-context" = @"
+		if (!$GuestMode) {
+			$global:LastExitCode = 3 # 内部未知错误
+			$githubfeedback = "https://github.com/steve02081504/ps12exe/issues/new?assignees=steve02081504&labels=bug&projects=&template=bug-report.yaml"
+			$urlParams = @{
+				title                = "$_"
+				"latest-release"     = if (Get-Module -ListAvailable ps12exe) { "true" } else { "false" }
+				"bug-description"    = 'Compilation failed'
+				"expected-behavior"  = 'Compilation should succeed'
+				"additional-context" = @"
 Version infos:
 ``````
 $($PSVersionTable | Format-List | Out-String)
@@ -875,21 +876,21 @@ Error message:
 $($_ | Format-List | Out-String)
 ``````
 "@
+			}
+			foreach ($key in $urlParams.Keys) {
+				$githubfeedback += "&$key=$([system.uri]::EscapeDataString($urlParams[$key]))"
+			}
+			Write-I18n Host OppsSomethingWentWrong -ForegroundColor Yellow
+			if ($versionNow -eq '0.0.0') {} # dev version, do noting
+			elseif ($versionNow -ne $versionOnline) {
+				Write-I18n Host TryUpgrade $versionOnline -ForegroundColor Yellow
+			}
+			elseif (-not (Test-StdoutRedirected)) {
+				Write-I18n Host EnterToSubmitIssue -ForegroundColor Yellow
+				Read-Host | Out-Null
+				Start-Process $githubfeedback
+			}
 		}
-		foreach ($key in $urlParams.Keys) {
-			$githubfeedback += "&$key=$([system.uri]::EscapeDataString($urlParams[$key]))"
-		}
-		Write-I18n Host OppsSomethingWentWrong -ForegroundColor Yellow
-		if ($versionNow -eq '0.0.0') {} # dev version, do noting
-		elseif ($versionNow -ne $versionOnline) {
-			Write-I18n Host TryUpgrade $versionOnline -ForegroundColor Yellow
-		}
-		elseif (-not (Test-StdoutRedirected)) {
-			Write-I18n Host EnterToSubmitIssue -ForegroundColor Yellow
-			Read-Host | Out-Null
-			Start-Process $githubfeedback
-		}
-	}
 	#_endif
 }
 finally {
