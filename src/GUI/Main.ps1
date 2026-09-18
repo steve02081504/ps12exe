@@ -100,9 +100,9 @@ param(
 #_else
 	#_require ps12exe
 	#_pragma Console 0
-	#_pragma iconFile $PSScriptRoot/../../img/icon.ico
-	#_pragma title ps12exeGUI
-	#_pragma description 'A super cool GUI for compile powershell scripts'
+	#_pragma resourceParams.iconFile $PSScriptRoot/../../img/icon.ico
+	#_pragma resourceParams.title ps12exeGUI
+	#_pragma resourceParams.description 'A super cool GUI for compile powershell scripts'
 	#_!!if (!(Test-Path -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\ps12exeGUI.psccfg")){
 	#_!!	Set-ps12exeContextMenu 1
 	#_!!}

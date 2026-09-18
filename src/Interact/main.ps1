@@ -322,8 +322,8 @@ finally {
 }
 #_else
 #_require ps12exe
-#_pragma iconFile $PSScriptRoot/../../img/icon.ico
-#_pragma title ps12exe - Interact
-#_pragma description 'A super cool tool for compile powershell scripts'
+#_pragma resourceParams.iconFile $PSScriptRoot/../../img/icon.ico
+#_pragma resourceParams.title ps12exe - Interact
+#_pragma resourceParams.description 'A super cool tool for compile powershell scripts'
 #_!!Enter-ps12exeInteract @PSBoundParameters
 #_endif

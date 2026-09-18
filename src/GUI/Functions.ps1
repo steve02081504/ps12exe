@@ -116,14 +116,15 @@ function Get-ps12exeArgs {
 	$result = $UIData.Clone()
 	$result.minifyer = [System.Management.Automation.Language.Parser]::ParseInput($UIData.minifyer, [ref]$null, [ref]$null).GetScriptBlock()
 	if ($ConfigFile) {
-		# 若icon、inputFile、outputFile、TempDir为相对路径，转换为绝对路径
-		@('iconFile', 'inputFile', 'outputFile', 'TempDir') | ForEach-Object {
+		# 若inputFile、outputFile、TempDir为相对路径，转换为绝对路径
+		@('inputFile', 'outputFile', 'TempDir') | ForEach-Object {
 			if ($UIData.$_ -and -not [System.IO.Path]::IsPathRooted($UIData.$_)) {
 				$UIData.$_ = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfigFile -ChildPath $UIData.$_))
 			}
-			elseif ($UIData.resourceParams.$_ -and -not [System.IO.Path]::IsPathRooted($UIData.resourceParams.$_)) {
-				$UIData.resourceParams.$_ = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfigFile -ChildPath $UIData.resourceParams.$_))
-			}
+		}
+		# 若资源图标为相对路径，转换为绝对路径
+		if ($UIData.resourceParams.iconFile -and -not [System.IO.Path]::IsPathRooted($UIData.resourceParams.iconFile)) {
+			$UIData.resourceParams.iconFile = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfigFile -ChildPath $UIData.resourceParams.iconFile))
 		}
 		# 处理 CodeSigning 中的 Path 相对路径
 		if ($UIData.CodeSigning -and $UIData.CodeSigning.Path -and -not [System.IO.Path]::IsPathRooted($UIData.CodeSigning.Path)) {

@@ -290,8 +290,8 @@ param (
 	}
 #_else
 	#_require ps12exe
-	#_pragma iconFile $PSScriptRoot/../../img/icon.ico
-	#_pragma title ps12exeWebServer
-	#_pragma description 'A webserver runner for compile powershell scripts online'
+	#_pragma resourceParams.iconFile $PSScriptRoot/../../img/icon.ico
+	#_pragma resourceParams.title ps12exeWebServer
+	#_pragma resourceParams.description 'A webserver runner for compile powershell scripts online'
 	#_!!Start-ps12exeWebServer @PSBoundParameters
 #_endif
