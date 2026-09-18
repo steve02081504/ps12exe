@@ -9,10 +9,16 @@ on:
       - '**/*.psd1'
       - '**/*.cs'
       - '.github/workflows/**'
+      - '.github/actions/**'
       - 'tests/**'
   pull_request:
     branches: ['master']
   workflow_dispatch:
+
+# 同一 ref 只保留最新运行，旧的直接取消：避免排队占 runner，也避免手动取消把缓存带没。
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -23,6 +29,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Windows speedup
+        uses: ./.github/actions/defender-exclusions
       - name: Compute changed paths
         if: github.event_name != 'workflow_dispatch'
         shell: pwsh
@@ -37,15 +45,52 @@ jobs:
             if (-not $paths) { $paths = @(git diff --name-only HEAD~1 2>$null) }
           }
           $paths | Where-Object { $_ } | Set-Content -LiteralPath changed.txt -Encoding utf8
+      - name: Compute source fingerprint
+        id: fingerprint
+        shell: pwsh
+        run: |
+          # 用测试框架自身的源指纹做缓存键，保证与构建缓存键同源，避免手写 hashFiles 列表漂移。
+          $fp = pwsh -NoProfile -File tests/run.ps1 -PrintFingerprint | Select-Object -Last 1
+          if (-not $fp) { throw '无法计算源码指纹' }
+          "value=$("$fp".Trim())" >> $env:GITHUB_OUTPUT
       - name: Restore build cache
-        uses: actions/cache@v4
+        id: build-cache
+        uses: actions/cache/restore@v4
         with:
           path: tests/.cache/builds
-          key: ps12exe-builds-${{ hashFiles('ps12exe.ps1','ps12exe.psm1','ps12exe.psd1','exe21sp.ps1','src/*.ps1','src/*.psd1','src/GUI/**','src/Interact/**','src/WebServer/**','src/RuntimePwsh2.0/**','src/locale/**','src/programFrames/**','src/.subrepo/PS2EXE2ps12exe/**') }}
+          key: ps12exe-builds-${{ steps.fingerprint.outputs.value }}
           restore-keys: |
             ps12exe-builds-
+      - name: Restore NuGet cache
+        id: nuget-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.nuget/packages
+          key: ps12exe-nuget-${{ runner.os }}-${{ hashFiles('src/CoreCompiler.ps1','src/programFrames/**') }}
+          restore-keys: |
+            ps12exe-nuget-${{ runner.os }}-
       - name: Run tests
         shell: pwsh
         run: |
           if (Test-Path changed.txt) { pwsh -NoProfile -File tests/run.ps1 -ChangedPathsFile changed.txt }
           else { pwsh -NoProfile -File tests/run.ps1 -All }
+      - name: Ensure cache dirs
+        if: always()
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path tests/.cache/builds | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $env:USERPROFILE '.nuget/packages') | Out-Null
+      # 用 restore/save 拆分 + always()：失败的 run 也要落缓存（旧的 actions/cache 只在成功时保存，
+      # 一旦有一个用例红，缓存就永远存不下来，导致每次全量冷构建）。
+      - name: Save build cache
+        if: always() && steps.build-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: tests/.cache/builds
+          key: ps12exe-builds-${{ steps.fingerprint.outputs.value }}
+      - name: Save NuGet cache
+        if: always() && steps.nuget-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.nuget/packages
+          key: ps12exe-nuget-${{ runner.os }}-${{ hashFiles('src/CoreCompiler.ps1','src/programFrames/**') }}

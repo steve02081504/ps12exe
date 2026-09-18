@@ -8,6 +8,9 @@ jobs:
   test:
     runs-on: windows-latest
     steps:
+      - uses: actions/checkout@v4
+      - name: Windows speedup
+        uses: ./.github/actions/defender-exclusions
       - name: compile exe for VT submission
         shell: pwsh
         run: |

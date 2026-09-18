@@ -4,6 +4,7 @@
 #   pwsh tests/run.ps1 -ChangedPathsFile changed.txt
 #   pwsh tests/run.ps1 -Filter '*exe21sp*' -List
 #   pwsh tests/run.ps1 -Group ps12exe -NoCache
+#   pwsh tests/run.ps1 -PrintFingerprint    # 仅输出源码指纹（CI 缓存键用）
 param(
 	[string[]]$ChangedPaths = @(),
 	[string]$ChangedPathsFile,
@@ -14,7 +15,8 @@ param(
 	[switch]$NoCache,
 	[int]$ThrottleLimit = 0,
 	[int]$TimeoutSeconds = 0,
-	[switch]$KeepWorkDir
+	[switch]$KeepWorkDir,
+	[switch]$PrintFingerprint
 )
 $ErrorActionPreference = 'Stop'
 $script:AnyFailed = $false
@@ -23,12 +25,21 @@ $Group = @($Group | ForEach-Object { $_ -split ',' } | Where-Object { $_.Trim() 
 
 $libDir = Join-Path $PSScriptRoot 'lib'
 . (Join-Path $libDir 'common.ps1')
+
+# CI 用：输出编译输入指纹，供 actions/cache 键与构建缓存键同源（避免手写 hashFiles 列表漂移）。
+# 只依赖 common.ps1，尽早退出以省去 exec/assert/framework 的加载开销。
+if ($PrintFingerprint) {
+	Write-Output (Get-SourceFingerprint -RepoRoot (Get-RepoRoot))
+	exit 0
+}
+
 . (Join-Path $libDir 'exec.ps1')
 . (Join-Path $libDir 'assert.ps1')
 . (Join-Path $libDir 'framework.ps1')
 
 $repoRoot = Get-TestRepoRoot
 $env:REPO_ROOT = $repoRoot
+
 $cases = @(Get-AllTestCases)
 
 # ---- 变更解析与选择 ----

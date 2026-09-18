@@ -1,0 +1,39 @@
+# GitHub 托管 Windows runner 默认开启 Defender 实时防护。本流水线会拉起大量
+# pwsh/csc/dotnet 进程并频繁生成 exe/临时文件，正好是实时扫描最慢的场景。
+# 本动作给工作目录、临时目录与编译器进程加排除，显著缩短构建阶段。
+# 需要先 checkout（复合动作从仓库内加载），且 runner 用户为管理员。
+# 全部为 best-effort：Defender 不可用时跳过，绝不因此让作业失败。
+name: Windows Defender exclusions
+description: Add build/test paths and compiler processes to Windows Defender exclusions to speed up CI.
+
+runs:
+  using: composite
+  steps:
+    - name: Add Windows Defender exclusions
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $ErrorActionPreference = 'SilentlyContinue'
+        if (-not (Get-Command Add-MpPreference -ErrorAction SilentlyContinue)) {
+          Write-Host 'Windows Defender cmdlets unavailable; skipping exclusions.'
+          exit 0
+        }
+        $pathCandidates = @(
+          $env:GITHUB_WORKSPACE
+          $env:RUNNER_TEMP
+          $env:TEMP
+          $env:RUNNER_TOOL_CACHE
+          $PSHOME
+          (Join-Path $env:USERPROFILE '.nuget')
+          (Join-Path $env:USERPROFILE '.dotnet')
+          (Join-Path $env:ProgramFiles 'dotnet')
+        ) | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -Unique
+        $processCandidates = @('pwsh.exe', 'powershell.exe', 'csc.exe', 'dotnet.exe', 'MSBuild.exe', 'VBCSCompiler.exe', 'conhost.exe')
+        try {
+          foreach ($p in $pathCandidates) { Add-MpPreference -ExclusionPath $p -ErrorAction SilentlyContinue }
+          foreach ($p in $processCandidates) { Add-MpPreference -ExclusionProcess $p -ErrorAction SilentlyContinue }
+          # 实时监控是这套流水线最大的额外开销；tamper protection 可能拒绝，失败也无妨。
+          Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction SilentlyContinue
+        }
+        catch { Write-Warning "Windows Defender exclusion failed (ignored): $_" }
+        Write-Host "Windows Defender exclusions applied: $($pathCandidates -join '; ')"
