@@ -11,16 +11,27 @@
 		"vscode": "^1.100.0"
 	},
 	"categories": [
+		"Programming Languages",
+		"Formatters",
 		"Other"
 	],
 	"keywords": [
 		"powershell",
+		"powershell to exe",
 		"ps1",
+		"ps1 to exe",
 		"ps12exe",
+		"ps12exegui",
+		"ps12exe gui",
 		"ps2exe",
+		"ps2exegui",
+		"ps2exe gui",
+		"gui",
 		"exe",
 		"compile",
-		"compiler"
+		"compiler",
+		"compiler gui",
+		"windows"
 	],
 	"repository": {
 		"type": "git",
