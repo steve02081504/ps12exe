@@ -73,6 +73,19 @@ GitHub 托管 Windows runner 默认开实时防护。本流水线会拉起 ~百�
 改完后可靠验证：`git archive HEAD | tar -x -C <tmp>` 复制一份，跑一遍同样的删除逻辑，
 `Import-Module` 该副本并执行 `ps12exe -help`、`exe21sp -help`。
 
+### 7. 发布作业的健壮性与补发
+
+- `Publish.yml` 由 tag push 触发，也保留 `workflow_dispatch`（`version` 输入）。tag 那次失败后
+  **不必 force-push 重打 tag**：`gh workflow run Publish.yml --ref master -f version=v0.6.2` 会用
+  master 上的脚本发布指定版本号；发布包会删掉 `.github`（含 `Publish.ps1`），所以只要代码本体一致，
+  用哪个 commit 跑不影响产物内容，版本号由 `-version` 参数写进 psd1。
+- `Install-Module PowerShellGet` 会因 PSGallery 偶发超时/限流报
+  `No match was found ... 'PowerShellGet'`。`Publish.ps1` 现在先用 `Get-PSRepository` 补注册默认源，
+  再带退避重试 5 次。注意 `-ErrorAction SilentlyContinue` 仍会把错误计入 `$Error`，可选探测要用
+  `Ignore` 并在成功安装后 `$Error.Clear()`，否则末尾的 `if ($error)` 会把已处理的异常误判为失败。
+- GitHub Release **不是 workflow 建的**（对比时间戳：v0.6.1 的 release 早于其 workflow 启动），
+  是本地发布脚本/手动先建 release 再推 tag。补发版本时记得 `gh release create <tag>` 补上。
+
 ## 为什么有时会全量跑（不是 bug）
 
 - 改 `tests/**` 或 `.github/workflows/**`：`Get-AffectedCases` 的安全网会选**全部用例**

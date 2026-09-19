@@ -47,7 +47,23 @@ try {
 	)
 	$devOnlyPaths | Where-Object { Test-Path -LiteralPath $_ } | ForEach-Object { Remove-Item -LiteralPath $_ -Recurse -Force }
 	# 打包发布
-	Install-Module -Name 'PowerShellGet' -Force -Scope CurrentUser | Out-Null
+	# 部分 runner 上 PSGallery 未预注册，或 PSGallery 偶发超时/限流，会让 Install-Module 报
+	# “No match was found ... 'PowerShellGet'”；先补齐默认源再带退避重试。
+	if (-not (Get-PSRepository -Name PSGallery -ErrorAction Ignore)) {
+		Register-PSRepository -Default -ErrorAction Ignore
+	}
+	for ($installTry = 1; ; $installTry++) {
+		try {
+			Install-Module -Name 'PowerShellGet' -Force -Scope CurrentUser -ErrorAction Stop | Out-Null
+			break
+		}
+		catch {
+			if ($installTry -ge 5) { throw }
+			Write-Output "Install-Module PowerShellGet failed (attempt $installTry/5): $_"
+			Start-Sleep -Seconds (5 * $installTry)
+		}
+	}
+	$Error.Clear()
 	$errnum = $Error.Count
 	Publish-Module -Path $repoPath -NuGetApiKey $ApiKey -ErrorAction Stop
 	while ($Error.Count -gt $errnum) {
