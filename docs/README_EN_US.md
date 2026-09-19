@@ -497,7 +497,7 @@ Both are parsed as ordinary nested pragmas during preprocessing, so they can go 
 | Constant hello world executable 💾                | 🥰1024 bytes (constant-evaluated at compile time)                                      | ❌ Not supported; 25088 bytes                                                                      |
 | Non-constant hello world executable 💾            | 🥰14848 bytes                                                                          | 😨25088 bytes                                                                                      |
 | Compile-time constant evaluation ⚡               | ✔️                                                                                     | ❌                                                                                                 |
-| PowerShell Core (7+) / cross-platform target 🧬   | ✔️ `Build.Target Core` (Windows / Linux / macOS)                                      | ❌ Windows PowerShell 5.1 only                                                                     |
+| PowerShell Core (7+) / cross-platform target 🧬   | ✔️ `Build.Target Core` (Windows / Linux / macOS)                                       | ❌ Windows PowerShell 5.1 only                                                                     |
 | GUI multilingual support 🌐                       | ✔️ (7 languages, dark mode)                                                            | ❌                                                                                                 |
 | Syntax check during compilation ✔️                | ✔️                                                                                     | ❌                                                                                                 |
 | Preprocessing feature 🔄                          | ✔️                                                                                     | ❌                                                                                                 |
@@ -538,12 +538,12 @@ ps12exe's module is larger because it is a dependency-free, pure-script compiler
 
 Whether native child processes started by the EXE see a real console TTY ([#59](https://github.com/steve02081504/ps12exe/issues/59)), whether the script can read raw stdin ([#62](https://github.com/steve02081504/ps12exe/issues/62)), and whether the special path variables resolve — all verified from a real console window on Windows 11:
 
-| Capability                                        | ps12exe                              | [`MScholtes/PS2EXE@1.0.18`](https://github.com/MScholtes/PS2EXE/tree/05c62615) |
-| ------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------ |
-| Native child process sees a console TTY (`isTTY`) | ✔️                                   | ❌                                                                             |
-| Raw stdin (`[Console]::In`) readable              | ✔️ (unless the script uses `$input`) | ❌                                                                             |
-| `$PSCommandPath` / `$PSScriptRoot` resolve        | ✔️ (exe path / exe directory)        | ❌                                                                             |
-| Command-line arguments parsed as PSD data (tables/objects) | ✔️ (`-Config "@{...}"`) | ❌ (strings only) |
+| Capability                                                 | ps12exe                              | [`MScholtes/PS2EXE@1.0.18`](https://github.com/MScholtes/PS2EXE/tree/05c62615) |
+| ---------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------ |
+| Native child process sees a console TTY (`isTTY`)          | ✔️                                   | ❌                                                                             |
+| Raw stdin (`[Console]::In`) readable                       | ✔️ (unless the script uses `$input`) | ❌                                                                             |
+| `$PSCommandPath` / `$PSScriptRoot` resolve                 | ✔️ (exe path / exe directory)        | ❌                                                                             |
+| Command-line arguments parsed as PSD data (tables/objects) | ✔️ (`-Config "@{...}"`)              | ❌ (strings only)                                                              |
 
 PS2EXE 1.0.18 always pipes script output through `Out-String` and eagerly drains redirected stdin before the script runs, so native children lose the console handle and stdin reaches EOF; ps12exe runs the script through the host (`Out-Default`) and only drains stdin when the script actually uses `$input`. PS2EXE also leaves `$PSCommandPath`/`$PSScriptRoot` empty inside the compiled program (it offers its own `$ScriptRoot` instead), while ps12exe maps both to the generated exe.
 
@@ -555,10 +555,10 @@ Compared to [`MScholtes/PS2EXE@1.0.18`](https://github.com/MScholtes/PS2EXE/tree
 | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | ✔️ Syntax check during compilation                            | Syntax checking at compile time for better code quality                                            |
 | ⚡ Compile-time constant evaluation                           | Side-effect-free scripts are evaluated at build time and emitted as ~1 KB exes                     |
-| 🧬 PowerShell Core / cross-platform target                    | `Build.Target Core` targets PowerShell 7+ on Windows, Linux and macOS                             |
+| 🧬 PowerShell Core / cross-platform target                    | `Build.Target Core` targets PowerShell 7+ on Windows, Linux and macOS                              |
 | 🔄 Powerful preprocessing                                     | Preprocess the script before compilation, no need to copy and paste everything into the script     |
-| 🛠️ `Build.Options` parameter                                 | New parameter to let you further customize the generated executable                                |
-| 📦️ `Build.Minify` parameter                                  | Preprocess the script before compilation to generate a smaller executable                          |
+| 🛠️ `Build.Options` parameter                                  | New parameter to let you further customize the generated executable                                |
+| 📦️ `Build.Minify` parameter                                   | Preprocess the script before compilation to generate a smaller executable                          |
 | 🌐 Support for compiling scripts and included files from URLs | Support for downloading icons from URLs                                                            |
 | 🖥️ Optimization of `App.Windowed` parameter                   | Optimized option handling and window title display; you can now set the title of the custom pop-up |
 | ✍️ Code signing and icon auto-conversion                      | Sign output with a PFX certificate or a store thumbprint, and convert icons automatically          |

@@ -26,21 +26,21 @@ The ps12exe preprocessor directives (`#_if` / `#_else` / `#_endif`, `#_include*`
 - **Go to definition** — open the file referenced by an `#_include*` path or `#_pragma Resources.Icon`.
 - **Hover** — shows a localized summary and a README link for a directive; a module name in `#_require` shows its PowerShell Gallery info.
 - **Completion** — suggests directives, conditions and `#_pragma` parameters, each with a localized hint.
-- **Formatting** — formats preprocessor blocks through *Format Document*, format-on-save or the **ps12exe: Format Preprocessor Blocks** action. Requires the PowerShell extension (see [Requirements](#requirements)).
+- **Formatting** — formats preprocessor blocks through _Format Document_, format-on-save or the **ps12exe: Format Preprocessor Blocks** action. Requires the PowerShell extension (see [Requirements](#requirements)).
 
 ## Localization
 
 The extension UI is localized into every language ps12exe ships. It activates automatically when VS Code runs in one of these languages:
 
-| Language | Locale |
-| --- | --- |
-| English (United States) | `en`, `en-US` |
-| English (United Kingdom) | `en-gb` |
-| 简体中文 | `zh-cn` |
-| 日本語 | `ja` |
-| Français | `fr` |
-| Español | `es` |
-| हिंदी | `hi` |
+| Language                 | Locale        |
+| ------------------------ | ------------- |
+| English (United States)  | `en`, `en-US` |
+| English (United Kingdom) | `en-gb`       |
+| 简体中文                 | `zh-cn`       |
+| 日本語                   | `ja`          |
+| Français                 | `fr`          |
+| Español                  | `es`          |
+| हिंदी                    | `hi`          |
 
 Command titles and notifications follow the VS Code display language.
 
@@ -58,10 +58,10 @@ Command titles and notifications follow the VS Code display language.
 
 ## Settings
 
-| Setting | Default | Description |
-| --- | --- | --- |
-| `ps12exe.autoUpdate` | `true` | Automatically install the ps12exe module when missing and update it to the latest PSGallery version on startup. |
-| `ps12exe.autoCloseIf` | `true` | Insert the matching `#_endif` when a `#_if …` line is completed with Enter. |
+| Setting               | Default | Description                                                                                                     |
+| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------- |
+| `ps12exe.autoUpdate`  | `true`  | Automatically install the ps12exe module when missing and update it to the latest PSGallery version on startup. |
+| `ps12exe.autoCloseIf` | `true`  | Insert the matching `#_endif` when a `#_if …` line is completed with Enter.                                     |
 
 ## Usage
 

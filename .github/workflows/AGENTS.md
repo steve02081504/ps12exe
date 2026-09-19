@@ -43,7 +43,7 @@ GitHub 托管 Windows runner 默认开实时防护。本流水线会拉起 ~百�
 统一用复合动作：
 
 ```yaml
-- uses: actions/checkout@v4   # 复合动作从仓库内加载，必须先 checkout
+- uses: actions/checkout@v4 # 复合动作从仓库内加载，必须先 checkout
 - name: Windows speedup
   uses: ./.github/actions/defender-exclusions
 ```
