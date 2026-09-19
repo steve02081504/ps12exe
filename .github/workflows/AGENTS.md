@@ -63,6 +63,16 @@ GitHub 托管 Windows runner 默认开实时防护。本流水线会拉起 ~百�
 因此每片用固定前缀缓存键就能各自复用历史产物。纯测试用例按权重 1 参与均衡。
 测试用例并发仍保持保守（GUI/私有控制台敏感），`contextmenu.toggle` 这类 `Serial` 用例只落在其中一片。
 
+### 6. 发布包只保留运行时文件
+
+`Publish.ps1` 先递归删掉所有 `.` 开头的文件/目录（`.git`/`.github`/`.esh`/`.vscode`/`src/.subrepo` 等）、
+`docs/`，再按 `$devOnlyPaths` 删开发期文件。判断某文件是否该删：模块运行时入口只有 `ps12exe.psm1`，
+它点源的 `ps12exe.ps1`/`exe21sp.ps1` 及其 `src/**` 依赖链是唯一真源；只要不被这条链读取（`tests/`、
+`AGENTS.md`、`eslint.config.mjs`、`src/csdn_get_away.txt`、locale 维护脚本等）就该删。
+`src/locale/*.fbs` 要保留——`LocaleLoader`/`LocaleArgCompleter` 运行时会枚举它。
+改完后可靠验证：`git archive HEAD | tar -x -C <tmp>` 复制一份，跑一遍同样的删除逻辑，
+`Import-Module` 该副本并执行 `ps12exe -help`、`exe21sp -help`。
+
 ## 为什么有时会全量跑（不是 bug）
 
 - 改 `tests/**` 或 `.github/workflows/**`：`Get-AffectedCases` 的安全网会选**全部用例**

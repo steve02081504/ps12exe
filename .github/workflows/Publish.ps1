@@ -31,9 +31,15 @@ try {
 	Get-ChildItem -Path $repoPath -Recurse | Where-Object { $_.Name -match '^\.' } | ForEach-Object { Remove-Item -Path $_.FullName -Force -Recurse }
 	# 移除docs
 	Remove-Item -Path "$repoPath/docs" -Recurse -Force
-	# 移除仅开发期使用、运行时与文档都用不到的文件
+	# 移除仅开发期使用、运行时完全用不到的文件
+	# 模块运行时入口为 ps12exe.psm1：它及其点源链只依赖 ps12exe.ps1、exe21sp.ps1、
+	# src/**（GUI/WebServer/Interact/编译器/locale/bin/programFrames/img）。
+	# 下面的测试、开发说明、lint 配置、仓库保护文件与 locale 维护脚本都不在运行时依赖内。
 	$devOnlyPaths = @(
 		"$repoPath/tools"
+		"$repoPath/tests"
+		"$repoPath/AGENTS.md"
+		"$repoPath/eslint.config.mjs"
 		"$repoPath/typos.toml"
 		"$repoPath/src/locale/_fbs2txt.ps1"
 		"$repoPath/src/locale/_txt2fbs.ps1"
