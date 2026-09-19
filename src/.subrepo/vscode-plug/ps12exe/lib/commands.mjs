@@ -9,8 +9,8 @@
 // `aliasMap` 传入，未确认的别名不会被误报。here-string 函数体与块注释内的命令不是调用，因此复用
 // `lib/preprocessor.mjs#computeSkipMask` 跳过；`#_!!` 行会被 ps12exe 去掉标记变成真实代码，所以照常检查。
 
-import { convertPs2exeInvocation } from './ps2exe.mjs'
 import { computeSkipMask } from './preprocessor.mjs'
+import { convertPs2exeInvocation } from './ps2exe.mjs'
 
 /** 英文源字符串；它们同时也是 l10n bundle 的键。 */
 export const COMMAND_MESSAGES = Object.freeze({
@@ -75,10 +75,9 @@ function codeMask (line) {
 		const char = line[i]
 		if (state === 'single') {
 			mask[i] = false
-			if (char === '\'') {
+			if (char === '\'')
 				if (line[i + 1] === '\'') { mask[i + 1] = false; i++ }
 				else state = 'code'
-			}
 			continue
 		}
 		if (state === 'double') {
@@ -274,7 +273,7 @@ export function analyzeCommandUsage (text, aliasMap = MODULE_ALIASES) {
 
 			const diagnostic = {
 				line,
-				severity: /** @type {'warning'} */ ('warning'),
+				severity: /** @type {'warning'} */ 'warning',
 				message: info.message,
 				args: [token.name],
 				code: info.code,

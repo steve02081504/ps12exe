@@ -12,11 +12,11 @@ import { applyPreprocessorFormatting } from './lib/format.mjs'
 import { getPackageInfo, tagSearchUrl } from './lib/gallery.mjs'
 import { HOVER_MESSAGES, directiveAt, conditionAt, documentationUrl, preserveLineBreaks, escapeHtmlAttribute } from './lib/hover.mjs'
 import { toPs12exeLocale } from './lib/locale.mjs'
-import { requireModulesAt } from './lib/require.mjs'
 import { POWER_SHELL_EXTENSION_ID, isPowerShellExtensionInstalled, getOfficialEdits, applyTextEdits } from './lib/officialFormatter.mjs'
 import { resolvePowerShell, compileScript, syncModule, launchGUI } from './lib/powershell.mjs'
 import { pragmaNameAt, getPragmaData, lookupPragma, buildPragmaCandidates, clearPragmaCache } from './lib/pragma.mjs'
 import { analyze, endifAutoClose, isBalanced, foldingRanges, toggleBangLines, computeSkipMask } from './lib/preprocessor.mjs'
+import { requireModulesAt } from './lib/require.mjs'
 
 const OUTPUT_CHANNEL_NAME = 'ps12exe'
 const POWER_SHELL_SELECTOR = { language: 'powershell' }

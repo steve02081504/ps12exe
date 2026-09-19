@@ -194,7 +194,7 @@ suite('ps12exe extension', () => {
 				const document = await vscode.workspace.openTextDocument(file)
 				assert.strictEqual(document.languageId, 'powershell')
 				const list = await vscode.commands.executeCommand('vscode.executeCompletionItemProvider', document.uri, position, '_')
-				return list.items.map((item) => (typeof item.label === 'string' ? item.label : item.label.label))
+				return list.items.map((item) => typeof item.label === 'string' ? item.label : item.label.label)
 			}
 
 			// 顶层、块已闭合：列出指令，但不能补 #_else / #_endif。
@@ -304,6 +304,13 @@ suite('ps12exe extension', () => {
 			await vscode.window.showTextDocument(document)
 			await waitFor(() => vscode.languages.getDiagnostics(document.uri).some((d) => d.source === 'ps12exe'))
 
+			/**
+			 * 取指定行上带某诊断代码的 ps12exe 诊断。
+			 *
+			 * @param {string} code - 诊断代码
+			 * @param {number} line - 行号（从零开始）
+			 * @returns {import('vscode').Diagnostic | undefined} 匹配的诊断
+			 */
 			const atLine = (code, line) => vscode.languages.getDiagnostics(document.uri)
 				.find((d) => d.source === 'ps12exe' && d.code === code && d.range.start.line === line)
 			const ps2exeDiagnostic = atLine('ps2exe-call', 1)

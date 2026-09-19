@@ -65,7 +65,7 @@ function decodeXml (text) {
 		.replace(/&lt;/g, '<')
 		.replace(/&gt;/g, '>')
 		.replace(/&quot;/g, '"')
-		.replace(/&apos;/g, "'")
+		.replace(/&apos;/g, '\'')
 		.replace(/&amp;/g, '&')
 }
 
@@ -146,7 +146,7 @@ export function parseGalleryEntry (xml) {
  */
 async function fetchPackageInfo (id) {
 	// OData 字符串字面量中的单引号需要写成两个。
-	const filter = `Id eq '${String(id).replace(/'/g, "''")}' and IsLatestVersion`
+	const filter = `Id eq '${String(id).replace(/'/g, '\'\'')}' and IsLatestVersion`
 	const url = `${API_URL}?$filter=${encodeURIComponent(filter)}&$top=1`
 	const controller = new AbortController()
 	const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)

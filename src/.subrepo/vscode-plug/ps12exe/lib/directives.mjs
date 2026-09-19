@@ -53,7 +53,7 @@ export function directivePrefixAt (textBeforeCursor) {
  */
 export function directiveAvailability (blocks, line) {
 	const open = blocks.filter((block) => line > block.startLine && (!block.closed || line < block.endLine))
-	const innermost = open.reduce((best, block) => (best && best.depth >= block.depth ? best : block), null)
+	const innermost = open.reduce((best, block) => best && best.depth >= block.depth ? best : block, null)
 	return {
 		allowElse: Boolean(innermost && innermost.elseLine === null),
 		allowEndIf: open.length > 0

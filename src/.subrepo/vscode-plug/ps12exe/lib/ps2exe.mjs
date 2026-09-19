@@ -71,13 +71,11 @@ function readArgumentToken (text, start) {
 		if (char === '`') { i += 2; continue }
 		if (char === '\'') {
 			i++
-			while (i < text.length) {
-				if (text[i] === '\'') 
+			while (i < text.length)
+				if (text[i] === '\'')
 					if (text[i + 1] === '\'') i += 2
 					else { i++; break }
-				
 				else i++
-			}
 			continue
 		}
 		if (char === '"') {
@@ -137,7 +135,7 @@ function switchValue (value) {
  */
 function toLiteral (raw) {
 	if (raw.startsWith('\'') || raw.startsWith('"')) return raw
-	if (/^[$(@\[`]/.test(raw)) return raw
+	if (/^[$(@[`]/.test(raw)) return raw
 	return `'${raw.replace(/'/g, '\'\'')}'`
 }
 
@@ -238,9 +236,27 @@ export function convertPs2exeInvocation (line, token) {
 		if (positionals.length > slots.length) return null
 		positionals.forEach((value, index) => params.set(slots[index], value))
 
+		/**
+		 * 参数是否被显式给出。
+		 *
+		 * @param {string} name - 参数名（小写）
+		 * @returns {boolean} 已给出时为 true
+		 */
 		const has = (name) => params.has(name)
+		/**
+		 * 读取开关参数的真假；取值不是可静态确定的字面量时抛出，由外层转成「不可改写」。
+		 *
+		 * @param {string} name - 参数名（小写）
+		 * @returns {boolean} 开关的真假
+		 */
 		const bool = (name) => switchValue(params.get(name))
-		const value = (name) => /** @type {string} */ (params.get(name))
+		/**
+		 * 读取取值参数的原文本。
+		 *
+		 * @param {string} name - 参数名（小写）
+		 * @returns {string} 取值文本
+		 */
+		const value = (name) => /** @type {string} */ params.get(name)
 
 		const app = []
 		if (has('noconsole')) app.push(['Windowed', boolLiteral(bool('noconsole'))])

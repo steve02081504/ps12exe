@@ -39,4 +39,5 @@
 - 语法自检：`[System.Management.Automation.Language.Parser]::ParseFile($f,[ref]$null,[ref]$e)`，`$e.Count` 应为 0（`static.powershell-parses` 用例已覆盖）。
 - 帮助渲染：`. .\src\HelpShower.ps1 -HelpData (& .\src\locale\zh-CN.ps1).ConsoleHelpData | Write-Host`。
 - 新增/修改用例后记得本地跑一次相关 `-Filter`，并在提交前 `pwsh tests/run.ps1 -All` 过一遍。
+- JS/TS/HTML 静态检查用仓库根的 `eslint.config.mjs`，它 `import` 的是 https 远程配置；Node 默认 ESM loader 不支持 `https:`，所以**直接运行全局 `eslint .`**（deno 安装，支持 https import），不要用 `npx eslint`（会拉一份纯 Node 的 eslint 并以 `ERR_UNSUPPORTED_ESM_URL_SCHEME` 失败）。只看错误时加 `-quiet`。
 - VS Code 扩展：在 `src/.subrepo/vscode-plug/ps12exe` 下运行 `npm test`。
