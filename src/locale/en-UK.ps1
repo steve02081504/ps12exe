@@ -68,7 +68,7 @@
 				TempDir    = "Directory for storing temporary files (default is a randomly generated temp directory in ``%temp%``)."
 			}
 			Resources        = [ordered]@{
-				Icon        = "Icon of the executable; can be a file path or URL."
+				Icon        = "Icon of the executable; can be a file path or URL. For .exe/.dll, append ,<index> to pick a resource icon (default 0), e.g. shell32.dll,3."
 				Title       = "Title (file description) of the executable."
 				Description = "Short description of the executable."
 				Company     = "Company name of the executable."
@@ -178,6 +178,10 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Locale '<language code>'] [-UIMode 'Dark'
 		GuestModeFileTooLarge                     = "The file {0} is too large to read."
 		GuestModeIconFileTooLarge                 = "The icon {0} is too large to read."
 		GuestModeFtpNotSupported                  = "FTP is not supported in Sandbox mode."
+		GuestModeLocalFileForbidden               = "Local file {0} is not allowed in Sandbox mode."
+		GuestModeUrlForbidden                     = "The URL {0} is not allowed in Sandbox mode."
+		ExtractingIconFromFile                    = "Extracting icon from {0}..."
+		IconExtractionFailed                      = "Failed to extract icon from {0}: {1}"
 		IconFileNotFound                          = "Icon file not found: {0}"
 		ConvertingImageToIcon                     = "Converting image to icon format..."
 		ImageConvertedToIcon                      = "Image converted to icon: {0}"
@@ -218,6 +222,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Locale '<language code>'] [-UIMode 'Dark'
 		ConstEvalNotConstFallback                 = "Script declared itself non-const, falling back to the normal program frame."
 		InvalidArchitecture                       = "Invalid platform {0}, using AnyCpu."
 		UnknownPragma                             = "Unknown pragma: {0}"
+		PragmaForbiddenInGuestMode                = "Ignoring pragma {0}: not allowed in Sandbox mode."
 		UnknownPragmaBadParameterType             = "Unknown pragma: {0}, as type {1} can't analyse."
 		UnknownPragmaBoolValue                    = "Unknown pragma value: {0}, can't take it as a boolean."
 		PragmaUnsafeExpression                    = "Unsafe expression in pragma {0}: {1}"

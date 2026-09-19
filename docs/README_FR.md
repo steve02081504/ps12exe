@@ -175,7 +175,7 @@ Build            : Table de hachage des options de compilation/chaîne d'outils.
                    KeepSource       : Crée des informations utiles pour le débogage.
                    Minify           : Bloc de script pour réduire la taille du script avant la compilation.
                    TempDir          : Répertoire pour stocker les fichiers temporaires (par défaut un répertoire temporaire aléatoire généré dans %temp%).
-Resources        : Table de hachage des ressources de version intégrées à l'exécutable (Icon, Title, Description, Company, Product, Copyright, Trademark, Version). Icon peut être un chemin de fichier ou une URL.
+Resources        : Table de hachage des ressources de version intégrées à l'exécutable (Icon, Title, Description, Company, Product, Copyright, Trademark, Version). Icon peut être un chemin de fichier ou une URL. Pour un .exe/.dll, ajoutez ,<index> pour choisir une icône de ressource (0 par défaut), par ex. shell32.dll,3.
 Signing          : Table de hachage des options de signature de code (Certificate, Password, Thumbprint, Timestamp). Vous devez spécifier Certificate ou Thumbprint.
 PreprocessOnly   : Prétraite le script d'entrée et le retourne sans compilation.
 Golf             : Activer le mode golf, ajoute des abreviations et des fonctions courantes au script.
@@ -376,7 +376,7 @@ La commande pragma peut définir tous les paramètres de compilation ; utilisez 
 #_pragma Signing.Certificate "C:\Cert\mycert.pfx" # Définit le certificat de signature de code
 ```
 
-Les valeurs de pragma de type chaîne peuvent également contenir des sous-expressions `$(...)`, évaluées au moment du prétraitement, par ex. `#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`. Seules les commandes liées aux chemins figurant sur la liste blanche (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, plus `Get-Content` hors Sandbox), les variables (`$env:*`, `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) et les méthodes d’instance inoffensives courantes (par ex. `ToUpper`, `Trim`, `Split`, `ToString`) sont autorisées ; toute autre chose interrompt la compilation. Les valeurs entre guillemets simples restent entièrement littérales.
+Les valeurs de pragma de type chaîne peuvent également contenir des sous-expressions `$(...)`, évaluées au moment du prétraitement, par ex. `#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`. Seules les commandes liées aux chemins figurant sur la liste blanche (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, plus `Get-Content` hors Sandbox), les variables (`$env:*` (dans Sandbox uniquement `$env:windir`/`$env:SystemRoot`), `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) et les méthodes d’instance inoffensives courantes (par ex. `ToUpper`, `Trim`, `Split`, `ToString`) sont autorisées ; toute autre chose interrompt la compilation. Les valeurs entre guillemets simples restent entièrement littérales. Le mode Sandbox ignore aussi `#_pragma outputFile`, `Build.TempDir`, `Build.Minify` et `Signing.Certificate`, et ne récupère que les URL http(s) résolues vers des adresses publiques (les cibles de redirection sont restreintes de la même façon). Les chemins locaux de `Resources.Icon` ne sont autorisés que sous le répertoire Windows.
 
 #### `#_balus`
 

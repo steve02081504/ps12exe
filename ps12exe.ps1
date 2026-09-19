@@ -320,6 +320,11 @@ if (!$nested) {
 		if ($_.Exception.Message -ne 'ScriptHalted') { Write-Error $_.Exception }
 		return
 	}
+	# pragma（如 #_pragma Build.Minify）会在预处理时改写 Build；此时 $Build 变量尚未与 $Params 同步
+	# （未显式传 -Build 时两者甚至是不同对象），因此直接从 $Params 取回，保证它在本次 minify 生效。
+	if ($Params['Build'] -is [hashtable] -and $Params['Build'].ContainsKey('Minify') -and $null -ne $Params['Build']['Minify']) {
+		$minifyer = $Params['Build']['Minify']
+	}
 	if ($minifyer -is [string]) {
 		if (Get-Command $minifyer -ErrorAction Ignore) {
 			$minifyer = "$minifyer `$_"
@@ -416,7 +421,6 @@ $threadingModel = "$(Get-Opt $Build 'Apartment' 'STA')"
 $lcid = "$(Get-Opt $Build 'Culture' '')"
 $CompilerOptions = "$(Get-Opt $Build 'Options' '/o+ /debug-')"
 $prepareDebug = ConvertTo-OptBool (Get-Opt $Build 'KeepSource' $false) $false
-if (Get-Opt $Build 'Minify' $null) { $minifyer = Get-Opt $Build 'Minify' $null }
 $TempDir = "$(Get-Opt $Build 'TempDir' '')"
 if (-not $TempDir) { $TempDir = $NULL }
 # 常量求值控制：ConstEval.Enabled 为 $false 时跳过常量求值；ConstEval.Timeout 为 $true 时按已超时回退
@@ -483,11 +487,17 @@ $resourceParams.Remove('iconFile')
 # Signing → 内部 CodeSigning
 $CodeSigning = $null
 if ($Signing -and $Signing.Count) {
-	$CodeSigning = @{}
-	if (Get-Opt $Signing 'Certificate' '') { $CodeSigning.Path = Get-Opt $Signing 'Certificate' '' }
-	if (Get-Opt $Signing 'Password' '') { $CodeSigning.Password = Get-Opt $Signing 'Password' '' }
-	if (Get-Opt $Signing 'Thumbprint' '') { $CodeSigning.Thumbprint = Get-Opt $Signing 'Thumbprint' '' }
-	if (Get-Opt $Signing 'Timestamp' '') { $CodeSigning.TimestampServer = Get-Opt $Signing 'Timestamp' '' }
+	if ($GuestMode) {
+		# 访客模式不得签名：读取本地 PFX（任意文件读取）并向时间戳服务器外连（SSRF）。
+		Write-I18n Warning PragmaForbiddenInGuestMode 'Signing'
+	}
+	else {
+		$CodeSigning = @{}
+		if (Get-Opt $Signing 'Certificate' '') { $CodeSigning.Path = Get-Opt $Signing 'Certificate' '' }
+		if (Get-Opt $Signing 'Password' '') { $CodeSigning.Password = Get-Opt $Signing 'Password' '' }
+		if (Get-Opt $Signing 'Thumbprint' '') { $CodeSigning.Thumbprint = Get-Opt $Signing 'Thumbprint' '' }
+		if (Get-Opt $Signing 'Timestamp' '') { $CodeSigning.TimestampServer = Get-Opt $Signing 'Timestamp' '' }
+	}
 }
 
 # 无论给定的是相对路径还是绝对路径，都获取绝对路径

@@ -6,16 +6,25 @@ function BaseReadFile($File, $Encoding = 'UTF8') {
 	$Content = try {
 		if ($File -match "^(https?|ftp)://") {
 			if ($GuestMode) {
-				if ((Invoke-WebRequest $File -Method Head -ErrorAction SilentlyContinue).Headers.'Content-Length' -gt 1mb) {
-					Write-I18n Error GuestModeFileTooLarge $File -Category LimitsExceeded
-					throw
-				}
 				if ($File -match "^ftp://") {
 					Write-I18n Error GuestModeFtpNotSupported -Category ReadError
 					throw
 				}
+				if (-not (Test-GuestUrlAllowed $File)) {
+					Write-I18n Error GuestModeUrlForbidden $File -Category ReadError
+					throw
+				}
+				# 禁用自动重定向并逐跳校验目标（见 GuestUrlGuard），同时按实际下载字节数限流。
+				$Response = Invoke-GuestHttpRequest -Url $File -MaxBytes 1mb
+				if ($Response.Bytes.Length -gt 1mb) {
+					Write-I18n Error GuestModeFileTooLarge $File -Category LimitsExceeded
+					throw
+				}
+				$result = $Response.Text
 			}
-			$result = (Invoke-WebRequest -Uri $File).Content
+			else {
+				$result = (Invoke-WebRequest -Uri $File).Content
+			}
 			if ($Encoding -ne 'byte') { $result = $result -replace '^[^\u0000-\u007F]+', '' }
 			$result
 		}
@@ -50,10 +59,14 @@ function ReadScriptFile($File) {
 . $PSScriptRoot\predicate.ps1
 . $PSScriptRoot\PSObjectToString.ps1
 . $PSScriptRoot\AstAnalyze.ps1
+. $PSScriptRoot\GuestUrlGuard.ps1
 function Preprocessor($Content, $FilePath) {
 	$Result = @()
 	$requiredModules = @()
 	$requireFlag = $False
+	# 访客模式下禁止脚本经 pragma 改写输出路径 / 临时目录 / minify 脚本块：沙箱内不得写入任意位置或注入编译期代码；
+	# 同时禁止代码签名证书：读取本地 PFX（任意文件读取）并向时间戳服务器外连（SSRF）。
+	$GuestForbiddenPragmas = @('outputFile', 'Build.TempDir', 'Build.Minify', 'Signing.Certificate')
 	# here-string 函数体与完全处于块注释内的行不参与 `#_!!` 使用检查（与 VS Code 插件的 computeSkipMask 一致）。
 	$OpaqueLines = [bool[]]::new($Content.Count)
 	$HereTerminator = $null
@@ -178,6 +191,9 @@ function Preprocessor($Content, $FilePath) {
 		$PragmaSafeCommands = @('gcm', 'get-command', 'join-path', 'split-path', 'resolve-path', 'convert-path', 'get-item', 'test-path', 'get-childitem')
 		if (-not $GuestMode) { $PragmaSafeCommands += 'get-content' }
 		$PragmaSafeVariables = @('PSScriptRoot', 'ScriptRoot', 'HOME', 'PWD', 'PSCommandPath')
+		# 预处理求值与 const 求值是两套安全等级：读 env 一定使脚本失去 const 资格，但非访客预处理允许读 env；
+		# 访客只允许下面这些仅用于拼接系统路径的环境变量。
+		$PragmaSafeEnvVariables = @('windir', 'SystemRoot')
 		$Errors = [System.Collections.Generic.List[string]]::new()
 		$Tokens = $null
 		$ParseErrors = $null
@@ -194,6 +210,11 @@ function Preprocessor($Content, $FilePath) {
 			if ($PragmaSafeCommands -notcontains $f.ToLowerInvariant()) { $Errors.Add("command: $f") }
 		}
 		foreach ($v in $Result.UsedNonConstVariables) {
+			if ($v -like 'env:*') {
+				$EnvName = $v.Substring(4)
+				if ($GuestMode -and ($PragmaSafeEnvVariables -notcontains $EnvName)) { $Errors.Add("env: $EnvName") }
+				continue
+			}
 			if ($PragmaSafeVariables -notcontains $v) { $Errors.Add("variable: `$$v") }
 		}
 		return $Errors.ToArray()
@@ -240,6 +261,10 @@ function Preprocessor($Content, $FilePath) {
 	}
 	# 嵌套设置：a.b 或 a.b.c...，根参数必须是哈希表。字符串值会做同样的 pragma 值转换。
 	function Set-NestedPragma([string]$PragmaName, $Value) {
+		if ($GuestMode -and ($GuestForbiddenPragmas -contains $PragmaName)) {
+			Write-I18n Warning PragmaForbiddenInGuestMode $PragmaName
+			return $false
+		}
 		$segments = $PragmaName -split '\.'
 		$root = $segments[0]
 		$rootType = $ParamList[$root].ParameterType
@@ -324,6 +349,10 @@ function Preprocessor($Content, $FilePath) {
 				}
 			}
 			elseif ($ParamList[$pragmaname].ParameterType -eq [string] -or $ParamList[$pragmaname + "File"].ParameterType -eq [string]) {
+				if ($GuestMode -and ($GuestForbiddenPragmas -contains $pragmaname)) {
+					Write-I18n Warning PragmaForbiddenInGuestMode $pragmaname
+					return
+				}
 				$value = ConvertFrom-PragmaStringValue $value $pragmaname
 				if ($ParamList[$pragmaname].ParameterType -eq [string]) {
 					$Params[$pragmaname] = $value

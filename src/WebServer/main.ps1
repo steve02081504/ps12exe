@@ -184,21 +184,49 @@ param (
 		$RequestUrl = $RequestUrl.Substring($HostSubUrl.Length)
 		switch ($RequestUrl) {
 			'/api/compile' {
-				$Reader = New-Object System.IO.StreamReader($context.Request.InputStream)
-				$userInput = $Reader.ReadToEnd()
-				$Reader.Close()
-				$Reader.Dispose()
-				try {
-					$userInput = $userInput | ConvertFrom-Json
+				# 先按 Content-Length 快速拒绝，再按实际读取的字符数设硬上限：避免超大请求体先被 ReadToEnd 全量读进内存。
+				$MaxBody = [int64]($MaxScriptFileSize * 4 + 64kb)
+				$TooLarge = $false
+				$RawBody = $null
+				if ($context.Request.ContentLength64 -gt $MaxBody) {
+					$TooLarge = $true
 				}
-				catch {
-					$context.Response.StatusCode = 400
+				else {
+					$Reader = New-Object System.IO.StreamReader($context.Request.InputStream, [System.Text.Encoding]::UTF8)
+					$Builder = New-Object System.Text.StringBuilder
+					$Chars = New-Object char[] 8192
+					$Total = 0
+					try {
+						while (($n = $Reader.Read($Chars, 0, $Chars.Length)) -gt 0) {
+							$Total += $n
+							if ($Total -gt $MaxBody) { $TooLarge = $true; break }
+							[void]$Builder.Append($Chars, 0, $n)
+						}
+					}
+					finally { $Reader.Dispose() }
+					if (-not $TooLarge) { $RawBody = $Builder.ToString() }
+				}
+				if ($TooLarge) {
+					# 未读完请求体，关闭连接避免残留 body 影响 keep-alive 上的后续请求。
+					$context.Response.KeepAlive = $false
+					$context.Response.StatusCode = 413
 					$context.Response.ContentType = "text/plain"
-					$buffer = [System.Text.Encoding]::UTF8.GetBytes('Invalid JSON')
-					return
+					$buffer = [System.Text.Encoding]::UTF8.GetBytes('Request too large')
 				}
-				HandleWebCompileRequest $userInput.content $context $userInput.locale
-				return
+				else {
+					try {
+						$userInput = $RawBody | ConvertFrom-Json
+					}
+					catch {
+						$context.Response.StatusCode = 400
+						$context.Response.ContentType = "text/plain"
+						$buffer = [System.Text.Encoding]::UTF8.GetBytes('Invalid JSON')
+					}
+					if (-not $buffer) {
+						HandleWebCompileRequest $userInput.content $context $userInput.locale
+						return
+					}
+				}
 			}
 			'/bgm.mid' {
 				# midi 文件

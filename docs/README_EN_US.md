@@ -175,7 +175,7 @@ Build            : A hashtable of build/toolchain options. Supported keys:
                    KeepSource       : Creates info to help with debugging.
                    Minify           : Scriptblock to minify the script before compiling.
                    TempDir          : Directory for temporary files (default: a random folder under %temp%).
-Resources        : A hashtable of version resources embedded into the executable (Icon, Title, Description, Company, Product, Copyright, Trademark, Version). Icon can be a file path or URL.
+Resources        : A hashtable of version resources embedded into the executable (Icon, Title, Description, Company, Product, Copyright, Trademark, Version). Icon can be a file path or URL; for .exe/.dll append ,<index> to pick a resource icon (default 0), e.g. shell32.dll,3.
 Signing          : A hashtable of code signing options (Certificate, Password, Thumbprint, Timestamp). Either Certificate or Thumbprint must be specified.
 PreprocessOnly   : Preprocess the input script and return it without compiling.
 Golf             : Enable golf mode, adding abbreviations and common functions.
@@ -376,7 +376,7 @@ The pragma command can set any compilation parameter; use `.` in the name to set
 #_pragma Signing.Certificate "C:\Cert\mycert.pfx" # set the code signing certificate
 ```
 
-String pragma values can also contain `$(...)` subexpressions, which are evaluated at preprocess time, e.g. `#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`. Only whitelisted path-related commands (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, plus `Get-Content` outside Sandbox), variables (`$env:*`, `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) and common harmless instance methods (e.g. `ToUpper`, `Trim`, `Split`, `ToString`) are allowed; anything else aborts the compile. Single-quoted values stay fully literal.
+String pragma values can also contain `$(...)` subexpressions, which are evaluated at preprocess time, e.g. `#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`. Only whitelisted path-related commands (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, plus `Get-Content` outside Sandbox), variables (`$env:*` (inside Sandbox only `$env:windir`/`$env:SystemRoot`), `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) and common harmless instance methods (e.g. `ToUpper`, `Trim`, `Split`, `ToString`) are allowed; anything else aborts the compile. Single-quoted values stay fully literal. Sandbox mode also ignores `#_pragma outputFile`, `Build.TempDir`, `Build.Minify`, and `Signing.Certificate`, and only fetches http(s) URLs that resolve to public addresses (redirect targets are restricted the same way). Local `Resources.Icon` paths are only allowed under the Windows directory.
 
 #### `#_balus`
 

@@ -175,7 +175,7 @@ Build            : ビルド/ツールチェーンオプションのハッシュ
                    KeepSource       : デバッグに役立つ情報を作成します。
                    Minify           : コンパイル前にスクリプトを縮小するスクリプトブロック。
                    TempDir          : 一時ファイルを保存するディレクトリ（デフォルトは %temp% にランダムに生成される一時ディレクトリ）。
-Resources        : 実行可能ファイルに埋め込むバージョンリソースのハッシュテーブル（Icon、Title、Description、Company、Product、Copyright、Trademark、Version）。Icon はアイコンファイルのパスまたは URL にできます。
+Resources        : 実行可能ファイルに埋め込むバージョンリソースのハッシュテーブル（Icon、Title、Description、Company、Product、Copyright、Trademark、Version）。Icon はアイコンファイルのパスまたは URL にできます。.exe/.dll は ,<index> でリソースアイコンを指定できます（既定 0、例：shell32.dll,3）。
 Signing          : コード署名オプションのハッシュテーブル（Certificate、Password、Thumbprint、Timestamp）。Certificate または Thumbprint のいずれかを指定する必要があります。
 PreprocessOnly   : 入力スクリプトをプリプロセス処理し、コンパイルせずに返します。
 Golf             : コードを短縮化し、一般的な関数を追加します。
@@ -374,7 +374,7 @@ pragma コマンドは任意のコンパイルパラメータを設定できま�
 #_pragma Signing.Certificate "C:\Cert\mycert.pfx" # コード署名証明書を設定する
 ```
 
-文字列型の pragma 値には `$(...)` 部分式を記述でき、プリプロセス時に評価されます（例：`#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`）。許可されるのはホワイトリストに含まれる path 関連コマンド（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`、および Sandbox 以外での `Get-Content`）、変数（`$env:*`、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）、および一般的な無害なインスタンスメソッド（例：`ToUpper`、`Trim`、`Split`、`ToString`）のみです。それ以外はコンパイルを中断します。単引用符で囲んだ値は完全にリテラルとして扱われます。
+文字列型の pragma 値には `$(...)` 部分式を記述でき、プリプロセス時に評価されます（例：`#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`）。許可されるのはホワイトリストに含まれる path 関連コマンド（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`、および Sandbox 以外での `Get-Content`）、変数（`$env:*`（Sandbox 内は `$env:windir`/`$env:SystemRoot` のみ）、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）、および一般的な無害なインスタンスメソッド（例：`ToUpper`、`Trim`、`Split`、`ToString`）のみです。それ以外はコンパイルを中断します。単引用符で囲んだ値は完全にリテラルとして扱われます。Sandbox モードでは `#_pragma outputFile`、`Build.TempDir`、`Build.Minify`、`Signing.Certificate` も無視し、解決先が公網アドレスである http(s) URL のみ取得を許可します（リダイレクト先も同様に制限されます）。ローカルの `Resources.Icon` パスは Windows ディレクトリ配下のみ許可されます。
 
 #### `#_balus`
 

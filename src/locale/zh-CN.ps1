@@ -73,7 +73,7 @@
 				TempDir    = "存储临时文件的目录（默认为 ``%temp%`` 中随机生成的临时目录）。"
 			}
 			Resources        = [ordered]@{
-				Icon        = "可执行文件的图标；可以是图标文件路径或 URL。"
+				Icon        = "可执行文件的图标；可以是图标文件路径或 URL。对 .exe/.dll 可用 ,<索引> 选择资源图标（默认 0），如 shell32.dll,3。"
 				Title       = "可执行文件的标题（文件说明）。"
 				Description = "可执行文件的简要描述。"
 				Company     = "可执行文件的公司名称。"
@@ -216,6 +216,8 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Locale '<语言代码>'] [-UIMode 'Da
 		TinySharpFailedFallback                   = "TinySharp 编译器错误，退回正常程序框架"
 		ForceX86byVirtualization                  = "已激活应用程序虚拟化，强制使用x86平台。"
 		# 图标与资源
+		ExtractingIconFromFile                    = "正在从 {0} 提取图标..."
+		IconExtractionFailed                      = "从 {0} 提取图标失败：{1}"
 		IconFileNotFound                          = "找不到图标文件：{0}"
 		ConvertingImageToIcon                     = "正在将图片转换为图标格式..."
 		ImageConvertedToIcon                      = "图片已转换为图标：{0}"
@@ -243,7 +245,10 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Locale '<语言代码>'] [-UIMode 'Da
 		GuestModeFileTooLarge                     = "文件{0}太大，无法读取。"
 		GuestModeIconFileTooLarge                 = "图标{0}太大，无法读取。"
 		GuestModeFtpNotSupported                  = "沙箱模式不支持FTP。"
+		GuestModeLocalFileForbidden               = "沙箱模式不允许访问本地文件 {0}。"
+		GuestModeUrlForbidden                     = "沙箱模式不允许访问 URL {0}。"
 		UnknownPragma                             = "未知的 pragma：{0}"
+		PragmaForbiddenInGuestMode                = "已忽略 pragma {0}：沙箱模式下不允许。"
 		UnknownPragmaBadParameterType             = "未知的pragma：{0}，无法分析类型{1}。"
 		UnknownPragmaBoolValue                    = "未知的pragma值：{0}，无法将其视为bool。"
 		PragmaUnsafeExpression                    = "pragma {0} 中的表达式不安全：{1}"

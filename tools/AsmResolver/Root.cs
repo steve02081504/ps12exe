@@ -20,6 +20,10 @@ internal static class EntryPoint
 		System.Console.WriteLine(exe21sp.Extractor.ExtractScriptFromExe("target.exe"));
 		// src/programFrames/exe21sp.cs：Win32 图标恢复（exe21sp 为 #_pragma icon 释放 <output>.ico）。
 		_ = exe21sp.Extractor.ExtractIconFromExe("target.exe");
+		// src/programFrames/exe21sp.cs：从产物推导 Build.Target / Build.Platform / Os.Admin。
+		_ = exe21sp.Extractor.GetTarget("target.exe");
+		_ = exe21sp.Extractor.GetPlatform("target.exe");
+		_ = exe21sp.Extractor.IsAdminExe("target.exe");
 
 		// src/ExeSinker.ps1 直接从 PowerShell 驱动 AsmResolver；这些成员无法从上方 C# 使用方到达，故在此镜像。
 		RootExeSinkerUsage();

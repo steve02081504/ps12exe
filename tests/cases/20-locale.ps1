@@ -39,6 +39,31 @@ Add-Test @{
 }
 
 Add-Test @{
+	Name  = 'locale.path-traversal-blocked'
+	Group = 'locale'
+	Deps  = @('src/LocaleLoader.ps1')
+	Run   = {
+		param($ctx)
+		$loader = Join-Path $ctx.RepoRoot 'src/LocaleLoader.ps1'
+		# 正常名字仍可加载
+		$en = & $loader -Locale 'en-US' 3>$null
+		Assert-Equal 'en-US' $en.LangID '合法 locale 未被加载'
+
+		# locale 目录外的 .ps1 不得被执行
+		$marker = Join-Path $ctx.WorkDir 'locale-pwned.txt'
+		Remove-Item -LiteralPath $marker -ErrorAction Ignore
+		$payloadDir = Join-Path $ctx.WorkDir 'locale-payload'
+		New-Item -ItemType Directory -Path $payloadDir -Force | Out-Null
+		[System.IO.File]::WriteAllText((Join-Path $payloadDir 'pwn.ps1'), "Set-Content -LiteralPath '$marker' -Value pwned", [System.Text.UTF8Encoding]::new($true))
+		$localeDir = Join-Path $ctx.RepoRoot 'src/locale'
+		$rel = [System.IO.Path]::GetRelativePath($localeDir, $payloadDir) + [System.IO.Path]::DirectorySeparatorChar + 'pwn'
+		$data = & $loader -Locale $rel 3>$null
+		Assert-False (Test-Path -LiteralPath $marker) "LocaleLoader 执行了 locale 目录外的脚本：$rel"
+		Assert-True ([bool]$data.LangID) 'locale 穿越未回退到有效语言'
+	}
+}
+
+Add-Test @{
 	Name  = 'locale.help-renders'
 	Group = 'locale'
 	Deps  = @('src/locale/', 'src/HelpShower.ps1', 'src/VirtualTerminal.ps1')

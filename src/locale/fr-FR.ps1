@@ -68,7 +68,7 @@
 				TempDir    = "Répertoire pour stocker les fichiers temporaires (par défaut un répertoire temporaire aléatoire généré dans ``%temp%``)."
 			}
 			Resources        = [ordered]@{
-				Icon        = "Icône de l'exécutable ; peut être un chemin de fichier ou une URL."
+				Icon        = "Icône de l'exécutable ; peut être un chemin de fichier ou une URL. Pour un .exe/.dll, ajoutez ,<index> pour choisir une icône de ressource (0 par défaut), par ex. shell32.dll,3."
 				Title       = "Titre (description du fichier) de l'exécutable."
 				Description = "Brève description de l'exécutable."
 				Company     = "Nom de la société de l'exécutable."
@@ -178,6 +178,10 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Locale '<code_de_langue>'] [-UIM
 		GuestModeFileTooLarge                     = "Le fichier {0} est trop grand pour être lu."
 		GuestModeIconFileTooLarge                 = "L’icône {0} est trop grande pour être lue."
 		GuestModeFtpNotSupported                  = "FTP n’est pas pris en charge en mode Sandbox."
+		GuestModeLocalFileForbidden               = "Le fichier local {0} n’est pas autorisé en mode Sandbox."
+		GuestModeUrlForbidden                     = "L’URL {0} n’est pas autorisée en mode Sandbox."
+		ExtractingIconFromFile                    = "Extraction de l’icône depuis {0}..."
+		IconExtractionFailed                      = "Échec de l’extraction de l’icône depuis {0} : {1}"
 		IconFileNotFound                          = "Fichier d’icône introuvable : {0}"
 		ReadFileFailed                            = "Échec de la lecture du fichier : {0}"
 		PreprocessUnknownIfCondition              = "Condition inconnue : {0}\nSupposé être faux."
@@ -209,6 +213,7 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Locale '<code_de_langue>'] [-UIM
 		ConstEvalNotConstFallback                 = "Le script s'est déclaré non constant, retour au framework de programme normal."
 		InvalidArchitecture                       = "Plateforme {0} non valide, utilisation de AnyCpu."
 		UnknownPragma                             = "Pragma inconnu : {0}."
+		PragmaForbiddenInGuestMode                = "Pragma {0} ignoré : non autorisé en mode Sandbox."
 		UnknownPragmaBadParameterType             = "Pragma inconnu : {0}, impossible d’analyser le type {1}."
 		UnknownPragmaBoolValue                    = "Valeur pragma inconnue : {0}, impossible de la traiter comme un booléen."
 		PragmaUnsafeExpression                    = "Expression non sécurisée dans le pragma {0} : {1}"

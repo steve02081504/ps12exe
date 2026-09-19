@@ -175,7 +175,7 @@ Build            : 构建/工具链选项的哈希表。支持的键：
                    KeepSource       : 创建有助于调试的信息。
                    Minify           : 在编译之前缩小脚本的脚本块。
                    TempDir          : 存储临时文件的目录（默认为%temp%中随机生成的临时目录）。
-Resources        : 编译的可执行文件的版本资源哈希表（Icon、Title、Description、Company、Product、Copyright、Trademark、Version）。Icon 可以是图标文件路径或URL。
+Resources        : 编译的可执行文件的版本资源哈希表（Icon、Title、Description、Company、Product、Copyright、Trademark、Version）。Icon 可以是图标文件路径或URL；对 .exe/.dll 可用 ,<索引> 指定资源图标（默认 0），如 shell32.dll,3。
 Signing          : 编译的可执行文件的代码签名选项哈希表（Certificate、Password、Thumbprint、Timestamp）。必须指定 Certificate 或 Thumbprint 之一。
 PreprocessOnly   : 预处理输入脚本并在不编译的情况下返回它。
 Golf             : 启用golf模式，添加缩写和常用函数。
@@ -376,7 +376,7 @@ pragma命令可以设置任何编译参数；参数名用 `.` 可以设置嵌套
 #_pragma Signing.Certificate "C:\Cert\mycert.pfx" #设置代码签名证书
 ```
 
-字符串类型的 pragma 值也可以包含 `$(...)` 子表达式，并在预处理时求值，例如 `#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`。仅允许白名单内的 path 相关命令（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`，以及非沙箱模式下的 `Get-Content`）、变量（`$env:*`、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）和常见无害实例方法（如 `ToUpper`、`Trim`、`Split`、`ToString`）；其他内容将中止编译。单引号值保持完全字面。
+字符串类型的 pragma 值也可以包含 `$(...)` 子表达式，并在预处理时求值，例如 `#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`。仅允许白名单内的 path 相关命令（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`，以及非沙箱模式下的 `Get-Content`）、变量（`$env:*`（沙箱内仅 `$env:windir`/`$env:SystemRoot`）、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）和常见无害实例方法（如 `ToUpper`、`Trim`、`Split`、`ToString`）；其他内容将中止编译。单引号值保持完全字面。沙箱模式还会忽略 `#_pragma outputFile`、`Build.TempDir`、`Build.Minify`、`Signing.Certificate`，且只抓取解析到公网地址的 http(s) URL（重定向目标同样受此限制）。本地 `Resources.Icon` 仅放行 Windows 目录下的文件。
 
 #### `#_balus`
 

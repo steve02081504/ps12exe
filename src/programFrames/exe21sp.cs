@@ -7,6 +7,7 @@ using System.Text;
 using AsmResolver;
 using AsmResolver.DotNet;
 using AsmResolver.PE;
+using AsmResolver.PE.DotNet;
 using AsmResolver.PE.File;
 using AsmResolver.PE.Win32Resources;
 
@@ -60,6 +61,77 @@ namespace exe21sp {
 				if (HasEmbeddedScriptResource(exePath))
 					return false;
 				return TinySharpUsesMessageBox(exePath);
+			}
+			catch {
+				return false;
+			}
+		}
+
+		/// <summary>
+		/// 从产物推导 <c>Build.Target</c> 的规范值，供反编译时补回：<c>Core</c> / <c>Framework2.0</c>，默认的 Framework4.0 返回 null（无需补行）。
+		/// Core 是 .NET 单文件发布的原生 apphost，最外层 PE 没有 CLR 头；托管程序集用元数据版本串区分 CLR 2.0 与 4.0。
+		/// </summary>
+		/// <param name="exePath">.exe 文件的完整路径。</param>
+		public static string GetTarget(string exePath) {
+			if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+				return null;
+			try {
+				var image = PEImage.FromFile(exePath);
+				if (image.DotNetDirectory == null)
+					return "Core";
+				var metadata = image.DotNetDirectory.Metadata;
+				var version = metadata != null ? metadata.VersionString : null;
+				if (version != null && version.StartsWith("v2.", StringComparison.OrdinalIgnoreCase))
+					return "Framework2.0";
+				return null;
+			}
+			catch {
+				return null;
+			}
+		}
+
+		/// <summary>
+		/// 从产物推导 <c>Build.Platform</c> 的规范值：<c>x64</c> / <c>x86</c> / <c>anycpu</c>，供反编译时补回。
+		/// x64 用 PE32+；托管 PE32 看 CorFlags 的 32BITREQUIRED 区分 x86 与 anycpu；Core x86 apphost 是原生 PE32。
+		/// 无法判断或无法用 ps12exe 表达的架构（如 arm64）返回 null。
+		/// </summary>
+		/// <param name="exePath">.exe 文件的完整路径。</param>
+		public static string GetPlatform(string exePath) {
+			if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+				return null;
+			try {
+				var image = PEImage.FromFile(exePath);
+				if (image.PEKind == OptionalHeaderMagic.PE32Plus || image.PEKind == OptionalHeaderMagic.PE64)
+					return image.MachineType == MachineType.Amd64 ? "x64" : null;
+				if (image.DotNetDirectory != null)
+					return (image.DotNetDirectory.Flags & DotNetDirectoryFlags.Bit32Required) != 0 ? "x86" : "anycpu";
+				return image.MachineType == MachineType.I386 ? "x86" : null;
+			}
+			catch {
+				return null;
+			}
+		}
+
+		/// <summary>
+		/// 判断产物是否要求管理员权限，供反编译时补回 <c>#_pragma Os.Admin</c>。
+		/// 只解析嵌入的 RT_MANIFEST 资源，避免被脚本文本里的同名字符串误判。
+		/// </summary>
+		/// <param name="exePath">.exe 文件的完整路径。</param>
+		public static bool IsAdminExe(string exePath) {
+			if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+				return false;
+			try {
+				var root = PEImage.FromFile(exePath).Resources;
+				if (root == null)
+					return false;
+				ResourceDirectory manifestDir;
+				if (!root.TryGetDirectory(ResourceType.Manifest, out manifestDir) || manifestDir == null)
+					return false;
+				var bytes = ReadFirstEntryBytes(manifestDir);
+				if (bytes == null)
+					return false;
+				var text = Encoding.UTF8.GetString(bytes);
+				return text.IndexOf("requireAdministrator", StringComparison.OrdinalIgnoreCase) >= 0;
 			}
 			catch {
 				return false;

@@ -84,6 +84,43 @@ Add-Test @{
 }
 
 Add-Test @{
+	Name  = 'sandbox.local-icon-blocked'
+	Group = 'coverage'
+	Deps  = $deps
+	Run   = {
+		param($ctx)
+		# 访客模式不得经 #_pragma Resources.Icon 读取本地文件（GDI+ 任意文件读取 / UNC 的 SMB 外连）。
+		# 本地输入被禁，故经管道传入内容，模拟 WebServer 的访客编译路径。
+		$iconSrc = Join-Path $ctx.RepoRoot 'img/icon.ico'
+		Assert-True (Test-Path -LiteralPath $iconSrc) "测试用本地图标不存在：$iconSrc"
+		$out = Join-Path $ctx.WorkDir 'guest-icon.exe'
+		$content = "#_pragma Resources.Icon '$iconSrc'`nGet-Date | Out-Null`nWrite-Output 'guest-icon'"
+		$content | ps12exe -outputFile $out -Sandbox -NoUpdateCheck 2>&1 | Out-Null
+		Assert-False (Test-Path -LiteralPath $out) '沙箱模式仍读取并嵌入了本地图标'
+	}
+}
+
+Add-Test @{
+	Name  = 'sandbox.icon.windir-allowed'
+	Group = 'coverage'
+	Deps  = $deps
+	Run   = {
+		param($ctx)
+		# 无害的系统图标应放行：desktop.ini 风格从 %windir%\System32\shell32.dll 抽图标（缺省 index=0）。
+		$out = Join-Path $ctx.WorkDir 'guest-windir-icon.exe'
+		$content = "Get-Date | Out-Null`nWrite-Output 'guest-windir-icon'"
+		$content | ps12exe -outputFile $out -Sandbox -NoUpdateCheck -Resources @{ Icon = "$env:windir\System32\shell32.dll" } 2>&1 | Out-Null
+		Assert-True (Test-Path -LiteralPath $out) '沙箱模式应允许使用 Windows 目录下的系统 PE 图标'
+		if (Test-Path -LiteralPath $out) {
+			Add-Type -AssemblyName System.Drawing
+			$ico = [System.Drawing.Icon]::ExtractAssociatedIcon($out)
+			Assert-True ($null -ne $ico) '系统 PE 图标未嵌入产物'
+			if ($ico) { $ico.Dispose() }
+		}
+	}
+}
+
+Add-Test @{
 	Name  = 'units.predicate-psobject'
 	Group = 'coverage'
 	Deps  = @('src/predicate.ps1', 'src/PSObjectToString.ps1')
@@ -223,6 +260,50 @@ Add-Test @{
 			}
 			$diag = (Get-Content -LiteralPath $log -Raw -ErrorAction Ignore) + "`n" + (Get-Content -LiteralPath $err -Raw -ErrorAction Ignore)
 			Assert-True $ok "WebServer 未在预期时间内响应 $url；日志：$diag"
+		}
+		finally {
+			if (-not $proc.HasExited) { Stop-ProcessTree -ProcessId $proc.Id }
+		}
+	}
+}
+
+Add-Test @{
+	Name    = 'webserver.body-limit'
+	Group   = 'coverage'
+	Deps    = @('src/WebServer/')
+	Timeout = 180
+	Run     = {
+		param($ctx)
+		$port = Get-Random -Minimum 41000 -Maximum 49000
+		$url = "http://localhost:$port/"
+		$serverPs1 = Join-Path $ctx.WorkDir 'serve-limit.ps1'
+		[System.IO.File]::WriteAllText($serverPs1, "Import-Module '$($ctx.RepoRoot)' -Force`nStart-ps12exeWebServer -HostUrl '$url' -MaxScriptFileSize 1kb", [System.Text.UTF8Encoding]::new($true))
+		$pwsh = (Get-Process -Id $PID).Path
+		$log = Join-Path $ctx.WorkDir 'server-limit.log'
+		$err = Join-Path $ctx.WorkDir 'server-limit.err'
+		$proc = Start-Process -FilePath $pwsh -ArgumentList @('-NoProfile', '-NonInteractive', '-File', $serverPs1) -PassThru -NoNewWindow -RedirectStandardOutput $log -RedirectStandardError $err
+		try {
+			$ok = $false
+			for ($i = 0; $i -lt 40; $i++) {
+				Start-Sleep -Milliseconds 500
+				if ($proc.HasExited) { break }
+				try {
+					$resp = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 3
+					if ($resp.StatusCode -ge 200 -and $resp.StatusCode -lt 300) { $ok = $true; break }
+				}
+				catch {}
+			}
+			$diag = (Get-Content -LiteralPath $log -Raw -ErrorAction Ignore) + "`n" + (Get-Content -LiteralPath $err -Raw -ErrorAction Ignore)
+			Assert-True $ok "WebServer 未在预期时间内响应 $url；日志：$diag"
+
+			# 超过上限的请求体应直接 413，而不是被全量读进内存
+			$body = @{ content = ('a' * 200000); locale = 'en-UK' } | ConvertTo-Json -Compress
+			$status = 0
+			try {
+				$status = (Invoke-WebRequest -Uri ($url + 'api/compile') -Method Post -Body $body -ContentType 'application/json' -UseBasicParsing -TimeoutSec 30).StatusCode
+			}
+			catch { $status = [int]$_.Exception.Response.StatusCode }
+			Assert-Equal 413 ([int]$status) "超大请求体未返回 413：$status"
 		}
 		finally {
 			if (-not $proc.HasExited) { Stop-ProcessTree -ProcessId $proc.Id }

@@ -11,7 +11,7 @@ $script:CoreCompileDeps = @(
 	'src/CodeDomCompiler.ps1', 'src/CoreCompiler.ps1', 'src/TinySharpCompiler.ps1', 'src/BuildFrame.ps1',
 	'src/InitCompileThings.ps1', 'src/ConstProgramCheck.ps1', 'src/ReadScriptFile.ps1', 'src/AstAnalyze.ps1',
 	'src/ExeSinker.ps1', 'src/GolfModeHeader.ps1', 'src/predicate.ps1', 'src/PSObjectToString.ps1',
-	'src/WriteI18n.ps1', 'src/LocaleLoader.ps1',
+	'src/WriteI18n.ps1', 'src/LocaleLoader.ps1', 'src/GuestUrlGuard.ps1',
 	'src/programFrames/', 'src/RuntimePwsh2.0/', 'src/bin/'
 )
 

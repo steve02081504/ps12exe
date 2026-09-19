@@ -34,11 +34,12 @@ Add-Test @{
 		$script:GuestMode = $false
 		$script:Params = @{}
 		$script:ParamList = @{
-			App       = @{ ParameterType = [hashtable] }
-			Os        = @{ ParameterType = [hashtable] }
-			Build     = @{ ParameterType = [hashtable] }
-			Resources = @{ ParameterType = [hashtable] }
-			Signing   = @{ ParameterType = [hashtable] }
+			App        = @{ ParameterType = [hashtable] }
+			Os         = @{ ParameterType = [hashtable] }
+			Build      = @{ ParameterType = [hashtable] }
+			Resources  = @{ ParameterType = [hashtable] }
+			Signing    = @{ ParameterType = [hashtable] }
+			outputFile = @{ ParameterType = [string] }
 		}
 		$script:i18nWarnings = [System.Collections.Generic.List[string]]::new()
 		function Write-I18n {
@@ -67,22 +68,51 @@ Add-Test @{
 			}
 		}
 		$userProfileFoo = Join-Path $env:USERPROFILE 'foo.ico'
+		$windirFoo = Join-Path $env:windir 'foo.ico'
 		$pwshSource = (Get-Command pwsh).Source
 		$secretFile = Join-Path $ctx.WorkDir 'pragma-secret.txt'
 		[System.IO.File]::WriteAllText($secretFile, 'secret-value', [System.Text.UTF8Encoding]::new($false))
 		$env:PRAGMA_SECRET = $secretFile
+		# 非访客预处理求值允许读 env；访客只允许白名单 env（windir/SystemRoot），其余拒绝。
 		Invoke-PragmaTest '#_pragma Resources.Icon $(Join-Path $env:USERPROFILE "foo.ico")' $false $userProfileFoo
-		Invoke-PragmaTest '#_pragma Resources.Icon $(Join-Path $env:USERPROFILE "foo.ico")' $true $userProfileFoo
+		Invoke-PragmaTest '#_pragma Resources.Icon $(Join-Path $env:USERPROFILE "foo.ico")' $true 'REJECTED'
+		Invoke-PragmaTest '#_pragma Resources.Icon $(Join-Path $env:windir "foo.ico")' $true $windirFoo
 		Invoke-PragmaTest '#_pragma Resources.Icon $((Get-Command pwsh).Source)' $false $pwshSource
 		Invoke-PragmaTest '#_pragma Resources.Icon $((Join-Path $env:USERPROFILE "Foo.ico").ToLower())' $false (Join-Path $env:USERPROFILE 'foo.ico')
 		Invoke-PragmaTest '#_pragma Resources.Icon $((Get-Item C:\Windows).Delete())' $false 'REJECTED'
 		Invoke-PragmaTest '#_pragma Resources.Icon $(Remove-Item C:\x -Recurse)' $false 'REJECTED'
+		Invoke-PragmaTest '#_pragma Resources.Icon "$($global:PSVersionTable.PSVersion)"' $false 'REJECTED'
 		Invoke-PragmaTest '#_pragma Resources.Icon $(Get-Content $env:PRAGMA_SECRET)' $false 'secret-value'
 		Invoke-PragmaTest '#_pragma Resources.Icon $(Get-Content $env:PRAGMA_SECRET)' $true 'REJECTED'
 		Invoke-PragmaTest '#_pragma Resources.Icon $PSScriptRoot/foo.ico' $false 'C:\compiled/foo.ico'
 		Invoke-PragmaTest '#_pragma Resources.Title "prefix$(Split-Path $PSScriptRoot -Leaf)suffix"' $false 'prefixcompiledsuffix' 'Resources.Title'
 		Invoke-PragmaTest '#_pragma Signing.Certificate C:\cert.pfx' $false 'C:\cert.pfx' 'Signing.Certificate'
 		Invoke-PragmaTest '#_pragma Resources.meta.deep C:\deep\v' $false 'C:\deep\v' 'Resources.meta.deep'
+
+		# 访客模式：禁止 pragma 改写 outputFile / Build.TempDir / Build.Minify（写入任意路径 / 注入编译期脚本）与 Signing.Certificate（读本地 PFX / 时间戳 SSRF）。
+		$script:i18nWarnings.Clear()
+		foreach ($case in @(
+				@{ Pragma = '#_pragma outputFile C:\evil.exe'; Name = 'outputFile' },
+				@{ Pragma = '#_pragma Build.TempDir C:\evil-temp'; Name = 'Build.TempDir' },
+				@{ Pragma = "#_pragma Build.Minify Get-ChildItem"; Name = 'Build.Minify' },
+				@{ Pragma = '#_pragma Signing.Certificate C:\evil.pfx'; Name = 'Signing.Certificate' }
+			)) {
+			$script:GuestMode = $true
+			$script:Params = @{}
+			[void](Preprocessor @($case.Pragma) "C:\compiled\main.ps1")
+			$set = $null
+			if ($script:Params.ContainsKey('outputFile')) { $set = $script:Params.outputFile }
+			elseif ($script:Params.Build -and $script:Params.Build.ContainsKey('TempDir')) { $set = $script:Params.Build.TempDir }
+			elseif ($script:Params.Build -and $script:Params.Build.ContainsKey('Minify')) { $set = $script:Params.Build.Minify }
+			elseif ($script:Params.Signing -and $script:Params.Signing.ContainsKey('Certificate')) { $set = $script:Params.Signing.Certificate }
+			Assert-True ($null -eq $set) "访客模式下受限 pragma 仍被设置：$($case.Pragma) -> $set"
+			Assert-True ($script:i18nWarnings -contains 'PragmaForbiddenInGuestMode') "访客模式下受限 pragma 未告警：$($case.Pragma)"
+		}
+		# 非访客仍可正常设置（确认没有误伤）
+		$script:GuestMode = $false
+		$script:Params = @{}
+		[void](Preprocessor @('#_pragma Build.TempDir C:\ok-temp') "C:\compiled\main.ps1")
+		Assert-Equal 'C:\ok-temp' $script:Params.Build.TempDir '非访客 Build.TempDir 被误伤'
 
 		$script:i18nWarnings.Clear()
 		$script:GuestMode = $false
@@ -201,6 +231,182 @@ Add-Test @{
 }
 
 Add-Test @{
+	Name  = 'ps12exe.guest-url-guard'
+	Group = 'ps12exe'
+	Deps  = @('src/GuestUrlGuard.ps1')
+	Run   = {
+		param($ctx)
+		. (Join-Path $ctx.RepoRoot 'src/GuestUrlGuard.ps1')
+		$blocked = @(
+			'http://127.0.0.1/x',
+			'http://127.1.2.3/x',
+			'http://localhost/x',
+			'http://foo.localhost/x',
+			'http://[::1]/x',
+			'http://[::ffff:127.0.0.1]/x',
+			'http://0.0.0.0/x',
+			'http://10.0.0.1/x',
+			'http://172.16.0.1/x',
+			'http://172.31.255.255/x',
+			'http://192.168.1.1/x',
+			'http://169.254.169.254/latest/meta-data/',
+			'http://100.64.0.1/x',
+			'http://192.0.0.5/x',
+			'http://192.0.2.1/x',
+			'http://198.18.0.1/x',
+			'http://198.51.100.1/x',
+			'http://203.0.113.1/x',
+			'http://[fe80::1]/x',
+			'http://[fc00::1]/x',
+			'http://[fd12:3456::1]/x',
+			'http://[::192.168.1.1]/x',
+			'http://[2002:7f00:1::]/x',
+			'http://[2001:0:0:0:0:0:0:1]/x',
+			'http://[64:ff9b::c0a8:101]/x',
+			'ftp://example.com/x',
+			'file:///C:/Windows/win.ini',
+			'gopher://example.com/x'
+		)
+		foreach ($u in $blocked) { Assert-False (Test-GuestUrlAllowed $u) "访客模式应拦截：$u" }
+		# 公网字面量 IP 不触发 DNS，避免测试机离线时抖动。
+		Assert-True (Test-GuestUrlAllowed 'http://8.8.8.8/x') '公网 IP 应放行：http://8.8.8.8/x'
+		Assert-True (Test-GuestUrlAllowed 'https://93.184.216.34/x') '公网 HTTPS IP 应放行'
+	}
+}
+
+Add-Test @{
+	Name  = 'ps12exe.guest-local-path-guard'
+	Group = 'ps12exe'
+	Deps  = @('src/GuestUrlGuard.ps1')
+	Run   = {
+		param($ctx)
+		. (Join-Path $ctx.RepoRoot 'src/GuestUrlGuard.ps1')
+		# 无害的系统图片放行（用系统 ico 的正常需求），其余本地/UNC 一律拒绝。
+		Assert-True (Test-GuestLocalFilePathAllowed (Join-Path $env:windir 'System32\foo.ico')) 'Windows 目录下应放行'
+		Assert-True (Test-GuestLocalFilePathAllowed (Join-Path $env:SystemRoot 'foo.ico')) 'SystemRoot 下应放行'
+		Assert-False (Test-GuestLocalFilePathAllowed (Join-Path $ctx.WorkDir 'foo.ico')) '工作目录应拒绝'
+		Assert-False (Test-GuestLocalFilePathAllowed (Join-Path $env:USERPROFILE 'foo.ico')) '用户目录应拒绝'
+		Assert-False (Test-GuestLocalFilePathAllowed '\\server\share\foo.ico') 'UNC 应拒绝'
+		Assert-False (Test-GuestLocalFilePathAllowed 'C:\WindowsExtra\foo.ico') '与 Windows 同前缀的兄弟目录应拒绝'
+		Assert-False (Test-GuestLocalFilePathAllowed '') '空路径应拒绝'
+	}
+}
+
+Add-Test @{
+	Name  = 'ps12exe.icon.from-pe'
+	Group = 'ps12exe'
+	Deps  = $deps
+	Build = @{
+		Name      = 'icoext'
+		InputText = "Write-Output 'icoext-ok'"
+		Params    = @{ Resources = @{ Icon = "$env:windir\System32\shell32.dll,3" } }
+		Output    = 'icoext.exe'
+	}
+	Run   = {
+		param($ctx)
+		# desktop.ini 风格 "shell32.dll,3"：从 PE 资源抽第 3 个图标并嵌入。
+		$r = Invoke-ExeCaptureMergedOutput -ExePath $ctx.Builds['icoext']
+		Assert-Match $r.Output 'icoext-ok' "带 PE 图标编译的 exe 运行异常：$($r.Output)"
+		Add-Type -AssemblyName System.Drawing
+		$ico = [System.Drawing.Icon]::ExtractAssociatedIcon($ctx.Builds['icoext'])
+		Assert-True ($null -ne $ico) 'PE 图标未嵌入产物'
+		if ($ico) { $ico.Dispose() }
+	}
+}
+
+Add-Test @{
+	Name    = 'ps12exe.guest-url-redirect-blocked'
+	Group   = 'ps12exe'
+	Deps    = @('src/GuestUrlGuard.ps1')
+	Timeout = 120
+	Run     = {
+		param($ctx)
+		. (Join-Path $ctx.RepoRoot 'src/GuestUrlGuard.ps1')
+		# 重定向目标解析必须拒绝私网/非 http，避免公网主机 302 到内网/云元数据。
+		# 全部用公网字面量 IP 作基准，不触发 DNS，避免测试机离线时抖动。
+		Assert-Equal '' (Resolve-GuestRedirectLocation 'http://8.8.8.8/a' 'http://127.0.0.1/x') '重定向到 loopback 应被拒绝'
+		Assert-Equal '' (Resolve-GuestRedirectLocation 'http://8.8.8.8/a' '//169.254.169.254/latest/meta-data/') '协议相对重定向到云元数据应被拒绝'
+		Assert-Equal '' (Resolve-GuestRedirectLocation 'http://8.8.8.8/a' 'ftp://8.8.8.8/x') '重定向到 ftp 应被拒绝'
+		Assert-Equal 'http://8.8.8.8/b' (Resolve-GuestRedirectLocation 'http://8.8.8.8/a' 'b') '相对重定向应归一化并放行'
+		Assert-Equal 'http://1.1.1.1/x' (Resolve-GuestRedirectLocation 'http://8.8.8.8/a' 'http://1.1.1.1/x') '公网重定向应放行'
+
+		# 端到端：本地服务器 302 到云元数据地址，Invoke-GuestHttpRequest 必须在跟随前拦截。
+		$port = Get-Random -Minimum 39000 -Maximum 40000
+		$prefix = "http://127.0.0.1:$port/"
+		$serverPs1 = Join-Path $ctx.WorkDir 'redirect-server.ps1'
+		$serverCode = @'
+param($Prefix)
+$listener = [System.Net.HttpListener]::new()
+$listener.Prefixes.Add($Prefix)
+$listener.Start()
+try {
+	while ($true) {
+		$context = $listener.GetContext()
+		$context.Response.StatusCode = 302
+		$context.Response.RedirectLocation = 'http://169.254.169.254/latest/meta-data/'
+		$context.Response.Close()
+	}
+}
+finally { $listener.Stop() }
+'@
+		[System.IO.File]::WriteAllText($serverPs1, $serverCode, [System.Text.UTF8Encoding]::new($true))
+		$pwsh = (Get-Process -Id $PID).Path
+		$log = Join-Path $ctx.WorkDir 'redirect-server.log'
+		$err = Join-Path $ctx.WorkDir 'redirect-server.err'
+		$proc = Start-Process -FilePath $pwsh -ArgumentList @('-NoProfile', '-NonInteractive', '-File', $serverPs1, $prefix) -PassThru -NoNewWindow -RedirectStandardOutput $log -RedirectStandardError $err
+		try {
+			$ready = $false
+			for ($i = 0; $i -lt 40; $i++) {
+				Start-Sleep -Milliseconds 250
+				if ($proc.HasExited) { break }
+				try { $client = [System.Net.Sockets.TcpClient]::new('127.0.0.1', $port); $client.Close(); $ready = $true; break }
+				catch {}
+			}
+			$diag = (Get-Content -LiteralPath $log -Raw -ErrorAction Ignore) + "`n" + (Get-Content -LiteralPath $err -Raw -ErrorAction Ignore)
+			Assert-True $ready "重定向测试服务器未启动：$diag"
+			$threw = $false
+			$msg = ''
+			try {
+				# Validator 只放行本地起点；重定向目标由真实的 Test-GuestUrlAllowed 校验。
+				Invoke-GuestHttpRequest -Url $prefix -Validator { param($u) $u -like 'http://127.0.0.1:*' }
+			}
+			catch { $threw = $true; $msg = $_.Exception.Message }
+			Assert-True $threw 'Invoke-GuestHttpRequest 未拦截重定向'
+			Assert-Match $msg 'Blocked redirect' "拦截信息不符：$msg"
+		}
+		finally {
+			if (-not $proc.HasExited) { Stop-ProcessTree -ProcessId $proc.Id }
+		}
+	}
+}
+
+Add-Test @{
+	Name  = 'ps12exe.const-classify.env-scope'
+	Group = 'ps12exe'
+	Deps  = @('src/AstAnalyze.ps1')
+	Run   = {
+		param($ctx)
+		. (Join-Path $ctx.RepoRoot 'src/AstAnalyze.ps1')
+		# 读 env 一律不算常量；作用域限定（$global:/$script:）不能绕过 EffectVariables 名单。
+		$cases = [ordered]@{
+			'Write-Output $env:USERNAME' = $false
+			'Write-Output $ENV:windir'   = $false
+			'Write-Output $global:PWD'   = $false
+			'Write-Output $script:HOME'  = $false
+			'Write-Output $HOME'         = $false
+			"Write-Output 'hi'"          = $true
+		}
+		foreach ($code in $cases.Keys) {
+			$Tokens = $null
+			$Errors = $null
+			$Ast = [System.Management.Automation.Language.Parser]::ParseInput($code, [ref]$Tokens, [ref]$Errors)
+			$Result = AstAnalyze $Ast
+			Assert-Equal $cases[$code] $Result.IsConst "常量判定错误：[$code] IsConst=$($Result.IsConst)"
+		}
+	}
+}
+
+Add-Test @{
 	Name  = 'ps12exe.const-eval.fallback-e2e'
 	Group = 'ps12exe'
 	Deps  = $deps
@@ -216,5 +422,32 @@ Add-Test @{
 		param($ctx)
 		$r = Invoke-ExeCaptureMergedOutput -ExePath $ctx.Builds['fallback']
 		Assert-Match $r.Output 'const-fallback-e2e-ok' "const-eval 回退产出了坏 exe（issue 63）：$($r.Output)"
+	}
+}
+
+Add-Test @{
+	Name  = 'ps12exe.pragma.minify'
+	Group = 'ps12exe'
+	Deps  = $deps
+	Run   = {
+		param($ctx)
+		# #_pragma Build.Minify 必须真的在本次编译期执行 minifier，不能被参数读取顺序吞掉。
+		$marker = Join-Path $ctx.WorkDir 'minify-marker.txt'
+		$env:PS12EXE_TEST_MINIFY_MARKER = $marker
+		try {
+			$content = @(
+				"#_pragma Build.Minify 'Set-Content -LiteralPath `$env:PS12EXE_TEST_MINIFY_MARKER -Value ran'"
+				'Get-Date | Out-Null'
+				"Write-Output 'minify-pragma'"
+			) -join "`n"
+			$src = Join-Path $ctx.WorkDir 'minify.ps1'
+			[System.IO.File]::WriteAllText($src, $content, [System.Text.UTF8Encoding]::new($true))
+			# -PreprocessOnly 在 minify 之后返回，minifier 的副作用可直接观察。
+			$null = ps12exe -inputFile $src -PreprocessOnly -NoUpdateCheck
+			Assert-True (Test-Path -LiteralPath $marker) '#_pragma Build.Minify 未在编译期执行'
+		}
+		finally {
+			Remove-Item Env:PS12EXE_TEST_MINIFY_MARKER -ErrorAction Ignore
+		}
 	}
 }

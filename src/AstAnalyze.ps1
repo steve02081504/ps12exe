@@ -98,9 +98,16 @@ function AstAnalyze([System.Management.Automation.Language.ScriptBlockAst]$Ast) 
 			}
 		}
 		elseif ($Ast -is [System.Management.Automation.Language.VariableExpressionAst]) {
-			if ($script:EffectVariables -contains $Ast.VariablePath.UserPath) {
+			# 作用域/驱动器限定（$global:PWD、$env:PATH）不会以裸名出现在 UserPath 中，先归一化到裸名再比对名单。
+			$UnqualifiedName = $Ast.VariablePath.UserPath -replace '(?i)^(?:global|script|local|private|env):', ''
+			if ($Ast.VariablePath.DriveName -eq 'env') {
+				# 环境变量属于环境态，永远不算常量。记为 env:<名>，供预处理求值再按访客策略单独判定读取权限。
 				$script:AnalyzeResult.IsConst = $false
-				$script:AnalyzeResult.UsedNonConstVariables += $Ast.VariablePath.UserPath
+				$script:AnalyzeResult.UsedNonConstVariables += "env:$UnqualifiedName"
+			}
+			elseif ($script:EffectVariables -contains $UnqualifiedName) {
+				$script:AnalyzeResult.IsConst = $false
+				$script:AnalyzeResult.UsedNonConstVariables += $UnqualifiedName
 			}
 		}
 		elseif ($Ast -is [System.Management.Automation.Language.TypeDefinitionAst]) {

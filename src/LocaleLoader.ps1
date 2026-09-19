@@ -12,8 +12,10 @@
 		param (
 			[string]$Locale
 		)
-		$file = "$LocalizeDir\$Locale.ps1"
-		if (Test-Path $file) { $Script:LocalizeData = try { &$file } catch { $null } }
+		# 只接受 locale 目录下的纯文件名，拒绝路径分隔符/驱动器/遍历，避免 &任意.ps1 执行。
+		if ($Locale -notmatch '^[A-Za-z0-9_-]+$') { return }
+		$file = Join-Path $LocalizeDir "$Locale.ps1"
+		if (Test-Path -LiteralPath $file -PathType Leaf) { $Script:LocalizeData = try { &$file } catch { $null } }
 	},
 	[string]$Locale
 )

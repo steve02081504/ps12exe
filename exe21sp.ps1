@@ -9,6 +9,10 @@
 	  Brotli is not available on .NET Framework, so under Windows PowerShell a Core exe is handed off to pwsh (PowerShell 7); if pwsh is missing, an error is reported.
 	- For minimal exe compiled with TinySharp: parses its CIL and PE image, restores the output string and exit code captured by TinySharp,
 	  and generates a minimal ps1 containing only that string (and optional exit statement) to equivalently reproduce the behavior.
+	The recovered script is post-preprocessed (the #_!! escape is already stripped), so every surviving
+	#_ preprocessor directive gets a #_!! escape back and stays inert if the output is recompiled; only the
+	safe directives exe21sp derives from the exe itself (App.Windowed / Build.Target / Build.Platform / Os.Admin /
+	Resources.* / restored #_require / #_balus) stay active.
 
 .PARAMETER inputFile
 	Path or URL to the .exe file to decompile.
@@ -100,15 +104,13 @@ param(
 		}
 	}
 
-	# 源码里已有的 #_pragma 名称（小写）集合：只补回源码中没有的编译选项，避免重复。
-	function Get-ExistingPragmaNames([string]$Script) {
-		$Names = @{}
-		foreach ($Line in ($Script -split '\r?\n')) {
-			if ($Line -match '^\s*#_pragma\s+(?<name>[a-zA-Z_][a-zA-Z_0-9]*(?:\.[a-zA-Z_][a-zA-Z_0-9]*)*)') {
-				$Names[$Matches['name'].ToLowerInvariant()] = $true
-			}
-		}
-		$Names
+	# exe21sp 会从产物重新推导这些 pragma（窗口化 / 资源 / 图标）。往返时若保留脚本里的同名旧行，
+	# 就会「转义旧行 + 追加新行」反复累积（多次往返膨胀）；因此先把同名行整行删掉（不论是否已转义），
+	# 之后只由产物补唯一一份规范行。
+	function Remove-DerivablePragmaLines([string]$Script) {
+		if ([string]::IsNullOrEmpty($Script)) { return $Script }
+		$Names = 'App\.Windowed|Resources\.(?:Title|Description|Company|Product|Copyright|Trademark|Version|Icon)|Build\.Target|Build\.Platform|Os\.Admin'
+		return [regex]::Replace($Script, "(?im)^[ \t]*(?:#_!!)?#_pragma\s+(?:$Names)(?=\s|$)[^\r\n]*\r?\n?", '')
 	}
 
 	# 把值转成 #_pragma 用的单引号字面量：去掉换行，单引号双写。
@@ -149,11 +151,32 @@ param(
 		$Script
 	}
 
-	# 从产物的 Win32 版本资源里取回资源参数，转成源码里没有的 #_pragma 行。
+	# 产物内嵌的是「预处理后」的脚本：`#_!!` 已被剥掉，所有以 `#_` 开头的指令行都会以注释形式残留。
+	# 若原样输出，重新编译时它们会被重新解释，从而在往返中改变有效内容：`#_pragma Build.Minify` 执行
+	# 编译期脚本、`#_pragma outputFile` 劫持输出路径、`#_if/#_require/#_balus/#_DllExport` 改写产物……
+	# 目标是「任意 exe 往返一次后有效内容不变，注释可以改变」：把所有残留 `#_` 指令统一补回 `#_!!`
+	# （`#_` 后是字母才算指令，已转义的 `#_!!` 跳过），使它们重新编译时只作为注释原样留存。
+	# 之后 exe21sp 再从产物元数据补回与产物一致的安全指令（App.Windowed / Resources.*），并还原 `#_require`；
+	# 这些是唯一保持活动的内容，且只依赖产物、不受脚本里可能的攻击者指令影响。
+	# 注：`#_include` 在源里被 `#_!!` 转义也仍会被读取（其处理在 `#_!!` 剥离之后），但被展开的 include
+	# 不会残留在产物中，故这里只会碰到惰性的畸形 include，补 `#_!!` 无害。
+	function Escape-PreprocessorDirectives([string]$Script) {
+		if ([string]::IsNullOrEmpty($Script)) { return $Script }
+		return [regex]::Replace($Script, '(?m)^(?<indent>[ \t]*)#_(?=[A-Za-z])', '${indent}#_!!#_')
+	}
+
+	# `#_balus` 预处理会展开成一段「延迟自删除并退出」的固定代码。反编译时把这段展开代码还原回 `#_balus <exitcode>`：
+	# 便于阅读，且重编译会生成逐字符相同的代码。该还原在 Escape 之后执行，保持 `#_balus` 为活动指令。
+	function Restore-BalusPragma([string]$Script) {
+		if ([string]::IsNullOrEmpty($Script)) { return $Script }
+		$Pattern = '(?im)^(?<indent>[ \t]*)Start-Process powershell @\("-NoProfile";"-c";"sleep 1;rm `"\$PSCommandPath`""\) -WindowStyle hidden;exit (?<code>\S+)[ \t]*$'
+		return [regex]::Replace($Script, $Pattern, { param($m) $m.Groups['indent'].Value + '#_balus ' + $m.Groups['code'].Value })
+	}
+
+	# 从产物的 Win32 版本资源里取回资源参数，转成从产物补回的 #_pragma 行（同名旧行已在 Remove-DerivablePragmaLines 中先删除）。
 	function Get-PS12ExeResourcePragmaLines {
 		param(
-			[string]$ExePath,
-			[hashtable]$ExistingPragmaNames
+			[string]$ExePath
 		)
 		$Lines = [System.Collections.Generic.List[string]]::new()
 		try { $VersionInfo = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($ExePath) }
@@ -173,7 +196,6 @@ param(
 		Where-Object { $_ } | ForEach-Object { $_.ToLowerInvariant() }
 		$DefaultVersions = @('1.0.0.0', '1.0.0', '0.0.0.0')
 		foreach ($Key in $Map.Keys) {
-			if ($ExistingPragmaNames.ContainsKey($Key.ToLowerInvariant())) { continue }
 			$Value = $VersionInfo.($Map[$Key])
 			if ([string]::IsNullOrWhiteSpace($Value)) { continue }
 			if ($Key -in @('Resources.Title', 'Resources.Company', 'Resources.Product') -and $DefaultNames -contains $Value.ToLowerInvariant()) { continue }
@@ -272,23 +294,39 @@ param(
 			continue
 		}
 
-		# 还原编译期由 #_require 展开的模块安装引导头代码（仅完全匹配时）。
+		# 先删掉产物会重新推导的 pragma 行（窗口化 / 资源 / 图标，不论是否已转义），避免往返累积。
+		$script = Remove-DerivablePragmaLines $script
+
+		# 再给其余残留的 `#_` 指令补回 `#_!!`，使它们重新编译时只作为注释留存。
+		$script = Escape-PreprocessorDirectives $script
+
+		# 还原编译期由 #_require 展开的模块安装引导头代码（仅完全匹配时）；在转义之后补回，保持活动。
 		$script = Restore-RequiredModulePragma $script
 
-		# 反编译时从产物的 Win32 资源取回资源参数：源码里已有对应 #_pragma 的跳过，缺失的在程序开头补回；图标释放到输出目录并用 #_pragma Resources.Icon 引用。
-		$ExistingPragmaNames = Get-ExistingPragmaNames $script
+		# 把 #_balus 展开出的自删除代码还原回 `#_balus <exitcode>`（在转义之后，保持活动）。
+		$script = Restore-BalusPragma $script
+
+		# 从产物重新推导 windowed / Win32 资源 / 构建目标与平台 / 管理员权限 / 图标：这些是唯一保持活动的指令，
+		# 只依赖产物而不受脚本里可能的攻击者指令影响；图标释放到输出目录并用 #_pragma Resources.Icon 引用。
 		$PrefixLines = [System.Collections.Generic.List[string]]::new()
-		# 产物是 windowed（GUI 子系统）说明编译时用了 App.Windowed；源码里已有对应 pragma 的跳过，缺失的在程序开头补回。
-		if (-not $ExistingPragmaNames.ContainsKey('app.windowed') -and [exe21sp.Extractor]::IsWindowedExe($currentExe)) {
+		if ([exe21sp.Extractor]::IsWindowedExe($currentExe)) {
 			$PrefixLines.Add('#_pragma App.Windowed')
 		}
-		foreach ($Line in (Get-PS12ExeResourcePragmaLines -ExePath $currentExe -ExistingPragmaNames $ExistingPragmaNames)) {
+		$Target = [exe21sp.Extractor]::GetTarget($currentExe)
+		if ($Target) {
+			$PrefixLines.Add("#_pragma Build.Target '$Target'")
+		}
+		$Platform = [exe21sp.Extractor]::GetPlatform($currentExe)
+		if ($Platform -and $Platform -ne 'anycpu') {
+			$PrefixLines.Add("#_pragma Build.Platform '$Platform'")
+		}
+		if ([exe21sp.Extractor]::IsAdminExe($currentExe)) {
+			$PrefixLines.Add('#_pragma Os.Admin')
+		}
+		foreach ($Line in (Get-PS12ExeResourcePragmaLines -ExePath $currentExe)) {
 			$PrefixLines.Add($Line)
 		}
-		$IconBytes = $null
-		if (-not $ExistingPragmaNames.ContainsKey('resources.icon')) {
-			$IconBytes = [exe21sp.Extractor]::ExtractIconFromExe($currentExe)
-		}
+		$IconBytes = [exe21sp.Extractor]::ExtractIconFromExe($currentExe)
 
 		$isRedirected = [System.Console]::IsOutputRedirected -or [System.Console]::IsInputRedirected -or [System.Console]::IsErrorRedirected
 		$inputBaseName = if ($currentInput -match "^(https?|ftp)://") {
@@ -320,6 +358,8 @@ param(
 		}
 
 		if ($PrefixLines.Count -gt 0) {
+			# 去掉脚本开头的空行再拼接，否则上一轮留下的分隔空行会随每次往返累积（膨胀）。
+			$script = $script -replace '^[\r\n]+', ''
 			$script = (($PrefixLines -join "`n") + "`n`n" + $script)
 		}
 

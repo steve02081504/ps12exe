@@ -37,7 +37,7 @@ $script:BuildComponentPatterns = [ordered]@{
 		'ps12exe.ps1', 'ps12exe.psm1', 'ps12exe.psd1',
 		'src/AstAnalyze.ps1', 'src/BuildFrame.ps1', 'src/ConstProgramCheck.ps1',
 		'src/GolfModeHeader.ps1', 'src/InitCompileThings.ps1', 'src/PSObjectToString.ps1',
-		'src/ReadScriptFile.ps1', 'src/predicate.ps1',
+		'src/ReadScriptFile.ps1', 'src/predicate.ps1', 'src/GuestUrlGuard.ps1',
 		'src/programFrames/constexpr.cs', 'src/programFrames/CoreHost.cs',
 		'src/programFrames/default.cs', 'src/programFrames/DllExport.cs',
 		'src/programFrames/pack.cs', 'src/programFrames/TinySharp.cs',

@@ -175,7 +175,7 @@ Build            : बिल्ड/टूलचेन विकल्पों �
                    KeepSource       : डीबगिंग के लिए मददगार जानकारी बनाएं।
                    Minify           : कॉम्पाइल से पहले स्क्रिप्ट को कम करने के लिए स्क्रिप्ट ब्लॉक।
                    TempDir          : सामयिक फ़ाइलें संग्रहित करने के लिए फ़ोल्डर (डिफ़ॉल्ट रूप से %temp% में रैंडम फ़ोल्डर)।
-Resources        : संकलित एक्सीक्यूटेबल फ़ाइल में एम्बेड की गई संस्करण संसाधनों की हैश तालिका (Icon, Title, Description, Company, Product, Copyright, Trademark, Version)। Icon एक आइकन फ़ाइल पथ या URL हो सकता है।
+Resources        : संकलित एक्सीक्यूटेबल फ़ाइल में एम्बेड की गई संस्करण संसाधनों की हैश तालिका (Icon, Title, Description, Company, Product, Copyright, Trademark, Version)। Icon एक आइकन फ़ाइल पथ या URL हो सकता है। .exe/.dll के लिए ,<index> जोड़कर संसाधन आइकन चुनें (डिफ़ॉल्ट 0), जैसे shell32.dll,3।
 Signing          : कोड साइनिंग विकल्पों की हैश तालिका (Certificate, Password, Thumbprint, Timestamp)। Certificate या Thumbprint में से एक निर्दिष्ट करना आवश्यक है।
 PreprocessOnly   : इनपुट स्क्रिप्ट को प्रीप्रोसेस करें और इसे संकलित किए बिना वापस करें।
 Golf             : गोल्फ मोड सक्षम करें, अधिकतम संख्या और सामान्य फंक्शनों को जोड़ें।
@@ -376,7 +376,7 @@ Compiled file written -> 2560 bytes
 #_pragma Signing.Certificate "C:\Cert\mycert.pfx" #कोड साइनिंग प्रमाणपत्र सेट करें
 ```
 
-स्ट्रिंग pragma मानों में `$(...)` उप-अभिव्यक्तियाँ भी हो सकती हैं, जिनका मूल्यांकन प्रीप्रोसेस समय पर किया जाता है, जैसे `#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`। केवल श्वेतसूचीबद्ध पथ-संबंधित कमांड (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, और Sandbox के बाहर `Get-Content`), चर (`$env:*`, `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) और सामान्य हानिरहित इंस्टेंस विधियाँ (जैसे `ToUpper`, `Trim`, `Split`, `ToString`) की अनुमति है; अन्य कुछ भी संकलन रोक देता है। एकल उद्धरण वाले मान पूरी तरह से शाब्दिक रहते हैं।
+स्ट्रिंग pragma मानों में `$(...)` उप-अभिव्यक्तियाँ भी हो सकती हैं, जिनका मूल्यांकन प्रीप्रोसेस समय पर किया जाता है, जैसे `#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`। केवल श्वेतसूचीबद्ध पथ-संबंधित कमांड (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, और Sandbox के बाहर `Get-Content`), चर (`$env:*` (Sandbox में केवल `$env:windir`/`$env:SystemRoot`), `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) और सामान्य हानिरहित इंस्टेंस विधियाँ (जैसे `ToUpper`, `Trim`, `Split`, `ToString`) की अनुमति है; अन्य कुछ भी संकलन रोक देता है। एकल उद्धरण वाले मान पूरी तरह से शाब्दिक रहते हैं। Sandbox मोड `#_pragma outputFile`, `Build.TempDir`, `Build.Minify`, और `Signing.Certificate` को भी अनदेखा करता है, और केवल उन्हीं http(s) URL को लाता है जो सार्वजनिक पते पर resolve होते हैं (redirect लक्ष्य भी इसी तरह प्रतिबंधित हैं)। स्थानीय `Resources.Icon` पथ केवल Windows निर्देशिका के अंतर्गत अनुमत हैं।
 
 #### `#_balus`
 

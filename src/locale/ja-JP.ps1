@@ -68,7 +68,7 @@
 				TempDir    = "一時ファイルを保存するディレクトリ（デフォルトは ``%temp%`` にランダムに生成される一時ディレクトリ）。"
 			}
 			Resources        = [ordered]@{
-				Icon        = "実行可能ファイルのアイコン。アイコンファイルのパスまたは URL にできます。"
+				Icon        = "実行可能ファイルのアイコン。アイコンファイルのパスまたは URL にできます。.exe/.dll の場合は ,<index> でリソースアイコンを指定できます（既定 0、例：shell32.dll,3）。"
 				Title       = "実行可能ファイルのタイトル（ファイルの説明）。"
 				Description = "実行可能ファイルの簡単な説明。"
 				Company     = "実行可能ファイルの会社名。"
@@ -178,6 +178,10 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Locale '<言語コー�
 		GuestModeFileTooLarge                     = "ファイル {0} は大きすぎて読み取れません。"
 		GuestModeIconFileTooLarge                 = "アイコン {0} は大きすぎて読み取れません。"
 		GuestModeFtpNotSupported                  = "Sandbox モードでは FTP はサポートされていません。"
+		GuestModeLocalFileForbidden               = "Sandbox モードではローカルファイル {0} を許可していません。"
+		GuestModeUrlForbidden                     = "Sandbox モードでは URL {0} を許可していません。"
+		ExtractingIconFromFile                    = "{0} からアイコンを抽出しています..."
+		IconExtractionFailed                      = "{0} からアイコンを抽出できませんでした：{1}"
 		IconFileNotFound                          = "アイコンファイルが見つかりません：{0}"
 		ConvertingImageToIcon                     = "画像をアイコン形式に変換中..."
 		ImageConvertedToIcon                      = "画像をアイコンに変換しました：{0}"
@@ -218,6 +222,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Locale '<言語コー�
 		ConstEvalNotConstFallback                 = "スクリプトが非定数であると宣言されたため、通常のプログラムフレームにフォールバックします"
 		InvalidArchitecture                       = "無効なプラットフォーム {0} です。AnyCpu を使用します"
 		UnknownPragma                             = "未知の pragma：{0}"
+		PragmaForbiddenInGuestMode                = "pragma {0} を無視します。Sandbox モードでは許可されていません。"
 		UnknownPragmaBadParameterType             = "未知の pragma：{0}。型 {1} は解析できません。"
 		UnknownPragmaBoolValue                    = "未知の pragma 値：{0}。ブール値として解釈できません。"
 		PragmaUnsafeExpression                    = "pragma {0} に安全でない式があります：{1}"

@@ -88,6 +88,7 @@ Add-Test @{
 		$exe = $ctx.Builds['core']
 		$content = Get-Exe21spContent -ExePath $exe
 		Assert-Match $content 'core-packed-embed' "exe21sp Core 未还原：$content"
+		Assert-Match $content "(?m)^#_pragma\s+Build\.Target\s+'Core'$" "exe21sp Core 未补 Build.Target：$content"
 
 		# Windows PowerShell（.NET Framework 无 BrotliStream）下转交 pwsh 解压后同样能还原。
 		$repoEsc = $ctx.RepoRoot -replace "'", "''"
@@ -149,6 +150,34 @@ Add-Test @{
 		$text2 = Get-Content -LiteralPath $extractOut2 -Raw -Encoding UTF8
 		Assert-Equal 1 ([regex]::Matches($text2, '(?m)^\s*#_pragma\s+Resources\.Title\b')).Count 'exe21sp 幂等性：Title pragma 重复'
 		Assert-Equal 1 ([regex]::Matches($text2, '(?m)^\s*#_pragma\s+Resources\.Icon\b')).Count 'exe21sp 幂等性：Icon pragma 重复'
+		Assert-NotMatch $text2 '(?m)#_!!#_pragma\s+Resources' "exe21sp 幂等性：资源 pragma 被转义累积：$text2"
+	}
+}
+
+Add-Test @{
+	Name  = 'exe21sp.roundtrip-stable'
+	Group = 'exe21sp'
+	Deps  = $deps
+	Run   = {
+		param($ctx)
+		# 产物重新推导的 pragma（App.Windowed / Resources.*）不得随往返次数累积膨胀：
+		# exe21sp 会先删掉同名旧行，再只补一份规范行。
+		$work = $ctx.WorkDir
+		$ps1 = Join-Path $work 'cycle.ps1'
+		[System.IO.File]::WriteAllText($ps1, "#_pragma App.Windowed`n#_pragma Resources.Title 'Stable Title'`nGet-Date | Out-Null`nWrite-Output 'cycle'", [System.Text.UTF8Encoding]::new($true))
+		$sizes = [System.Collections.Generic.List[int64]]::new()
+		foreach ($i in 1..3) {
+			$exe = Join-Path $work 'cycle.exe'
+			ps12exe -inputFile $ps1 -outputFile $exe -NoUpdateCheck | Out-Null
+			exe21sp -inputFile $exe -outputFile $ps1 | Out-Null
+			$sizes.Add((Get-Item -LiteralPath $ps1).Length)
+		}
+		$text = Get-Content -LiteralPath $ps1 -Raw -Encoding UTF8
+		Assert-Equal $sizes[0] $sizes[1] "往返一次后字节数变化（膨胀）：$($sizes -join ',')"
+		Assert-Equal $sizes[1] $sizes[2] "往返两次后字节数变化（膨胀）：$($sizes -join ',')"
+		Assert-NotMatch $text '(?m)#_!!#_pragma' "往返累积了被转义的 pragma：$text"
+		Assert-Equal 1 ([regex]::Matches($text, '(?m)^\s*#_pragma\s+App\.Windowed\b')).Count "App.Windowed 行不唯一：$text"
+		Assert-Equal 1 ([regex]::Matches($text, '(?m)^\s*#_pragma\s+Resources\.Title\b')).Count "Resources.Title 行不唯一：$text"
 	}
 }
 
@@ -246,5 +275,129 @@ Add-Test @{
 		ps12exe -inputFile $rtInput -outputFile $rtExe -NoUpdateCheck | Out-Null
 		$rt = Get-Exe21spContent -ExePath $rtExe
 		Assert-Match $rt '(?m)^#_require ps12exe\s*$' "往返后 #_require 丢失：$rt"
+	}
+}
+
+Add-Test @{
+	Name  = 'exe21sp.escape-preprocessor-directives'
+	Group = 'exe21sp'
+	Deps  = $deps
+	Run   = {
+		param($ctx)
+		# 目标：任意 exe 往返一次（反编译 → 重编译）后有效内容不变，攻击者无法通过脚本里的指令改变它；
+		# 指令行只会作为注释留存。exe21sp 给所有残留 #_ 指令补回 #_!!，有效的也一并转义（变成注释）。
+		$work = $ctx.WorkDir
+		$attackerOut = Join-Path $work 'attacker-chosen.exe'
+		$marker = Join-Path $work 'minify-ran.txt'
+		$env:PS12EXE_TEST_MINIFY_MARKER = $marker
+		try {
+			$content = @(
+				"#_!!#_pragma outputFile `"$attackerOut`""
+				"#_!!#_pragma Build.Minify 'Set-Content -LiteralPath `$env:PS12EXE_TEST_MINIFY_MARKER -Value ran'"
+				'#_pragma Build.ConstEval.Enabled 0'
+				'#_!!#_if PSScript'
+				"#_!!Write-Output 'psscript-branch'"
+				'#_!!#_endif'
+				'#_!!#_require ps12exe'
+				'Get-Date | Out-Null'
+				"Write-Output 'escape-roundtrip'"
+			) -join "`n"
+			$src = Join-Path $work 'danger.ps1'
+			[System.IO.File]::WriteAllText($src, $content, [System.Text.UTF8Encoding]::new($true))
+			$exe = Join-Path $work 'danger.exe'
+			ps12exe -inputFile $src -outputFile $exe -NoUpdateCheck | Out-Null
+			Assert-False (Test-Path -LiteralPath $attackerOut) '原始编译时被转义的 outputFile 不应生效'
+			Assert-False (Test-Path -LiteralPath $marker) '原始编译时被转义的 Build.Minify 不应执行'
+
+			$extracted = Join-Path $work 'danger.extracted.ps1'
+			exe21sp -inputFile $exe -outputFile $extracted | Out-Null
+			$text = Get-Content -LiteralPath $extracted -Raw -Encoding UTF8
+			Assert-Match $text '(?m)^#_!!#_pragma outputFile\b' "exe21sp 未给 outputFile 补回 #_!!：$text"
+			Assert-Match $text '(?m)^#_!!#_pragma Build\.Minify\b' "exe21sp 未给 Build.Minify 补回 #_!!：$text"
+			Assert-Match $text '(?m)^#_!!#_pragma Build\.ConstEval\.Enabled 0\b' "exe21sp 未给有效 pragma 补回 #_!!（应作为注释留存）：$text"
+			Assert-Match $text '(?m)^#_!!#_if PSScript\b' "exe21sp 未给 #_if 补回 #_!!：$text"
+			Assert-Match $text '(?m)^#_!!#_require ps12exe\b' "exe21sp 未给 #_require 补回 #_!!：$text"
+
+			# 模拟 VSC 插件写回：重新编译还原出的脚本，残留指令必须全部保持惰性且原行为不变。
+			$recompiled = Join-Path $work 'danger.recompiled.exe'
+			ps12exe -inputFile $extracted -outputFile $recompiled -NoUpdateCheck | Out-Null
+			Assert-FileExists $recompiled '重编译未产出用户指定路径的 exe'
+			Assert-False (Test-Path -LiteralPath $attackerOut) '重编译时被转义的 outputFile 被激活'
+			Assert-False (Test-Path -LiteralPath $marker) '重编译时被转义的 Build.Minify 被激活'
+
+			# 有效内容不变：原始 exe 与往返后 exe 的运行输出必须一致。
+			$before = Invoke-ExeCaptureMergedOutput -ExePath $exe
+			$after = Invoke-ExeCaptureMergedOutput -ExePath $recompiled
+			Assert-Match $before.Output 'psscript-branch' "原始产物缺少分支代码：$($before.Output)"
+			Assert-Equal $before.Output $after.Output '往返后有效输出发生变化'
+		}
+		finally {
+			Remove-Item Env:PS12EXE_TEST_MINIFY_MARKER -ErrorAction Ignore
+		}
+	}
+}
+
+Add-Test @{
+	Name   = 'exe21sp.derived-config'
+	Group  = 'exe21sp'
+	Deps   = $deps
+	Builds = @(
+		@{ Name = 'anycpu'; InputText = "Get-Date | Out-Null`nWrite-Output 'd-anycpu'"; Output = 'd_anycpu.exe' }
+		@{ Name = 'x64'; InputText = "Get-Date | Out-Null`nWrite-Output 'd-x64'"; Params = @{ Build = @{ Platform = 'x64' } }; Output = 'd_x64.exe' }
+		@{ Name = 'x86'; InputText = "Get-Date | Out-Null`nWrite-Output 'd-x86'"; Params = @{ Build = @{ Platform = 'x86' } }; Output = 'd_x86.exe' }
+		@{ Name = 'admin'; InputText = "Get-Date | Out-Null`nWrite-Output 'd-admin'"; Params = @{ Os = @{ Admin = $true } }; Output = 'd_admin.exe' }
+		@{ Name = 'balus'; InputText = "#_balus `$LASTEXITCODE`nGet-Date | Out-Null`nWrite-Output 'd-balus'"; Output = 'd_balus.exe' }
+		@{ Name = 'fw20'; InputText = "Get-Date | Out-Null`nWrite-Output 'd-fw20'"; Params = @{ Build = @{ Target = 'Framework2.0' } }; Output = 'd_fw20.exe' }
+	)
+	Run    = {
+		param($ctx)
+		# Build.Platform / Os.Admin / Build.Target 从产物 PE 推导；#_balus 从展开出的自删除代码还原。
+		$work = $ctx.WorkDir
+		$any = Get-Exe21spContent -ExePath $ctx.Builds['anycpu']
+		Assert-NotMatch $any '(?m)^#_pragma\s+Build\.Platform\b' "anycpu 不应补 Build.Platform：$any"
+		Assert-NotMatch $any '(?m)^#_pragma\s+Build\.Target\b' "Framework4.0 不应补 Build.Target：$any"
+		$x64 = Get-Exe21spContent -ExePath $ctx.Builds['x64']
+		Assert-Match $x64 "(?m)^#_pragma\s+Build\.Platform\s+'x64'$" "x64 未补 Build.Platform：$x64"
+		$x86 = Get-Exe21spContent -ExePath $ctx.Builds['x86']
+		Assert-Match $x86 "(?m)^#_pragma\s+Build\.Platform\s+'x86'$" "x86 未补 Build.Platform：$x86"
+		$admin = Get-Exe21spContent -ExePath $ctx.Builds['admin']
+		Assert-Match $admin '(?m)^#_pragma\s+Os\.Admin$' "admin 未补 Os.Admin：$admin"
+		$balus = Get-Exe21spContent -ExePath $ctx.Builds['balus']
+		Assert-Match $balus '(?m)^#_balus \$LASTEXITCODE$' "balus 未还原 #_balus：$balus"
+		$fw20 = Get-Exe21spContent -ExePath $ctx.Builds['fw20']
+		# 只有装了 PowerShell 2.0 引擎时 Framework2.0 才会产出 CLR v2 元数据（v2.0.50727）并可被推导；
+		# 否则编译降级为 CLR v4，产物与 Framework4.0 无异，推导不出也无需补行。
+		$hasPs2 = $false
+		try {
+			$ps2Version = & powershell -version 2.0 -NoProfile -Command '[System.Environment]::Version' 2>$null | Select-Object -First 1
+			$hasPs2 = $ps2Version -and ([version]$ps2Version).Major -lt 3
+		}
+		catch {}
+		if ($hasPs2) {
+			Assert-Match $fw20 "(?m)^#_pragma\s+Build\.Target\s+'Framework2\.0'$" "fw20 未补 Build.Target：$fw20"
+		}
+		else {
+			Assert-NotMatch $fw20 '(?m)^#_pragma\s+Build\.Target\b' "降级的 fw20 不应补 Build.Target：$fw20"
+		}
+
+		# 往返稳定：重新编译还原出的脚本再提取，推导出的配置 pragma / #_balus 不重复不膨胀。
+		$rtCases = @(
+			@{ name = 'x64'; pattern = "(?m)^#_pragma\s+Build\.Platform\s+'x64'$" },
+			@{ name = 'admin'; pattern = '(?m)^#_pragma\s+Os\.Admin$' },
+			@{ name = 'balus'; pattern = '(?m)^#_balus\b' }
+		)
+		if ($hasPs2) {
+			$rtCases += @{ name = 'fw20'; pattern = "(?m)^#_pragma\s+Build\.Target\s+'Framework2\.0'$" }
+		}
+		foreach ($case in $rtCases) {
+			$ps1 = Join-Path $work "$($case.name).derived.ps1"
+			exe21sp -inputFile $ctx.Builds[$case.name] -outputFile $ps1 | Out-Null
+			$recompiled = Join-Path $work "$($case.name).derived.exe"
+			ps12exe -inputFile $ps1 -outputFile $recompiled -NoUpdateCheck | Out-Null
+			$ps1b = Join-Path $work "$($case.name).derived2.ps1"
+			exe21sp -inputFile $recompiled -outputFile $ps1b | Out-Null
+			$text = Get-Content -LiteralPath $ps1b -Raw -Encoding UTF8
+			Assert-Equal 1 ([regex]::Matches($text, $case.pattern)).Count "往返 $($case.name) 后行不唯一：$text"
+		}
 	}
 }

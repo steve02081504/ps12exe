@@ -23,6 +23,12 @@
 - `src/HelpShower.ps1` 负责渲染：标量逐行输出，嵌套对象先打分组标题，再把子键缩进并对齐。
 - 改动参数时必须同步三处：locale 的 `Usage`/`PrarmsData`、各语言 `docs/README_*.md` 的参数表、必要时 VS Code 扩展的 `lib/definition.mjs` 与 hover/l10n。
 
+## 预处理与反编译
+
+- `#_!!` 的剥离在 `src/ReadScriptFile.ps1` 的管道中位于 `#_pragma`/`#_require`/`#_DllExport`/`#_if` 之后、`#_include` 之前：所以 `#_!!` 能转义前者（当次编译惰性），但 `#_!!#_include` 仍会被读取（被展开的 include 不残留在产物里）。
+- `exe21sp` 反编译拿到的是预处理后文本，残留的 `#_` 指令重编译时会复活。流程：`Remove-DerivablePragmaLines` 先删掉 `App.Windowed`/`Resources.*`/`Build.Target`/`Build.Platform`/`Os.Admin` 这些会重新推导的旧行（否则往返「转义旧行 + 追加新行」会膨胀）；`Escape-PreprocessorDirectives` 给其余残留 `#_` 指令补回 `#_!!`（`#_` 后是字母才算指令），攻击者指令因此只作为注释留存；`Restore-RequiredModulePragma` 还原活动的 `#_require`；`Restore-BalusPragma` 把 `#_balus` 展开出的自删除代码还原回 `#_balus <exitcode>`；最后从产物补唯一一份推导配置（PE 子系统 → `App.Windowed`、无 CLR 头 → `Build.Target 'Core'`、CLR 元数据 `v2.0.50727` → `Build.Target 'Framework2.0'`、PE32+/CorFlags → `Build.Platform`、RT_MANIFEST → `Os.Admin`、版本资源/图标 → `Resources.*`）。`#_DllExport` 功能尚未实现，只作注释。目标：任意 exe 往返后有效内容不变、不膨胀。
+- 访客（Sandbox）模式下远程抓取只允许 http(s)，且逐跳校验重定向：`src/GuestUrlGuard.ps1` 的 `Test-GuestUrlAllowed` 拒绝 loopback/私网/CGNAT/link-local/组播/IPv6 隧道（6to4/Teredo/NAT64/映射）地址，`Invoke-GuestHttpRequest` 关闭 `Invoke-WebRequest` 的自动重定向、手工校验每个 `Location` 并按实际下载字节数限流（脚本/图标均 1mb）；`ReadScriptFile.ps1`/`InitCompileThings.ps1` 的访客分支都走它。预处理侧禁止 `outputFile`/`Build.TempDir`/`Build.Minify`/`Signing.Certificate`，且访客的本地 `Resources.Icon` 仅放行 `%windir%`/`%SystemRoot%` 下的文件（其余本地路径 GDI+ 任意读文件 / UNC SMB 外连一律拒绝），`Signing` 整体禁用（本地 PFX / 时间戳 SSRF），env 仅放行 `windir`/`SystemRoot`（常量分析里 `env:` 一律非 const）。DNS rebinding（校验时解析公网、连接时改内网）属已知残余风险：彻底缓解需连接固定的已校验 IP，会破坏 HTTPS 的 SNI/证书校验，故未实现。
+
 ## 编码
 
 - `.ps1/.psd1/.psm1/.cs` 用 **UTF-8 with BOM**（Windows PowerShell 5.1 对无 BOM 的 UTF-8 中文会乱码/解析失败；C# 源码含中文同理）。写入用 `[System.IO.File]::WriteAllText($f,$t,[System.Text.UTF8Encoding]::new($true))`；不要用会剥掉 BOM 的 `Set-Content -Encoding utf8`。
@@ -39,5 +45,6 @@
 - 语法自检：`[System.Management.Automation.Language.Parser]::ParseFile($f,[ref]$null,[ref]$e)`，`$e.Count` 应为 0（`static.powershell-parses` 用例已覆盖）。
 - 帮助渲染：`. .\src\HelpShower.ps1 -HelpData (& .\src\locale\zh-CN.ps1).ConsoleHelpData | Write-Host`。
 - 新增/修改用例后记得本地跑一次相关 `-Filter`，并在提交前 `pwsh tests/run.ps1 -All` 过一遍。
+- 验证 Sandbox/GuestMode 行为要用 CLI `-Sandbox`（或 `ps12exe -Sandbox`）；WebServer 对 `127.0.0.1` 客户端自动关闭 Sandbox，本地起服务打请求测到的是非访客路径，别据此判断沙箱已生效。
 - JS/TS/HTML 静态检查用仓库根的 `eslint.config.mjs`，它 `import` 的是 https 远程配置；Node 默认 ESM loader 不支持 `https:`，所以**直接运行全局 `eslint .`**（deno 安装，支持 https import），不要用 `npx eslint`（会拉一份纯 Node 的 eslint 并以 `ERR_UNSUPPORTED_ESM_URL_SCHEME` 失败）。只看错误时加 `-quiet`。
 - VS Code 扩展：在 `src/.subrepo/vscode-plug/ps12exe` 下运行 `npm test`。

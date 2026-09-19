@@ -68,7 +68,7 @@
 				TempDir    = "अस्थायी फ़ाइलें संग्रहित करने का फ़ोल्डर (डिफ़ॉल्ट रूप से ``%temp%`` में यादृच्छिक फ़ोल्डर)।"
 			}
 			Resources        = [ordered]@{
-				Icon        = "एक्सीक्यूटेबल का आइकन; एक फ़ाइल पथ या URL हो सकता है।"
+				Icon        = "एक्सीक्यूटेबल का आइकन; एक फ़ाइल पथ या URL हो सकता है। .exe/.dll के लिए ,<index> जोड़कर संसाधन आइकन चुनें (डिफ़ॉल्ट 0), जैसे shell32.dll,3।"
 				Title       = "एक्सीक्यूटेबल का शीर्षक (फ़ाइल विवरण)।"
 				Description = "एक्सीक्यूटेबल का संक्षिप्त विवरण।"
 				Company     = "एक्सीक्यूटेबल की कंपनी का नाम।"
@@ -178,6 +178,10 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Locale '<
 		GuestModeFileTooLarge                     = "फ़ाइल {0} पढ़ने के लिए बहुत बड़ी है।"
 		GuestModeIconFileTooLarge                 = "आइकन {0} पढ़ने के लिए बहुत बड़ा है।"
 		GuestModeFtpNotSupported                  = "FTP को Sandbox मोड में समर्थित नहीं किया जाता है।"
+		GuestModeLocalFileForbidden               = "Sandbox मोड में स्थानीय फ़ाइल {0} की अनुमति नहीं है।"
+		GuestModeUrlForbidden                     = "Sandbox मोड में URL {0} की अनुमति नहीं है।"
+		ExtractingIconFromFile                    = "{0} से आइकन निकाला जा रहा है..."
+		IconExtractionFailed                      = "{0} से आइकन निकालने में विफल: {1}"
 		IconFileNotFound                          = "आइकन फ़ाइल नहीं मिली: {0}"
 		ConvertingImageToIcon                     = "छवि को आइकन प्रारूप में बदल रहा है..."
 		ImageConvertedToIcon                      = "छवि को आइकन में बदल दिया गया: {0}"
@@ -218,6 +222,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Locale '<
 		ConstEvalNotConstFallback                 = "स्क्रिप्ट ने स्वयं को स्थिरांक नहीं घोषित किया, सामान्य प्रोग्राम फ्रेम पर वापस जा रहे हैं"
 		InvalidArchitecture                       = "अमान्य प्लेटफ़ॉर्म {0}, AnyCpu का उपयोग करके"
 		UnknownPragma                             = "अज्ञात pragma: {0}"
+		PragmaForbiddenInGuestMode                = "pragma {0} को अनदेखा किया जा रहा है: Sandbox मोड में अनुमति नहीं है।"
 		UnknownPragmaBadParameterType             = "अज्ञात pragma: {0}, प्रकार {1} का विश्लेषण नहीं किया जा सकता है।"
 		UnknownPragmaBoolValue                    = "अज्ञात pragma मान: {0}, इसे बूलियन के रूप में नहीं ले सकता।"
 		PragmaUnsafeExpression                    = "pragma {0} में असुरक्षित अभिव्यक्ति: {1}"
