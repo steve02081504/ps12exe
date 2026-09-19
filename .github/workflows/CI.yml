@@ -1,4 +1,4 @@
-# CI：单个 windows 作业内按改动增量选择用例、并行执行；构建产物按内容哈希缓存跨 run 复用。
+# CI：用例按改动增量选择并按构建数均衡分片到多个 windows 作业并行；构建产物按组件内容哈希缓存跨 run 复用。
 name: CI
 
 on:
@@ -25,6 +25,12 @@ jobs:
     if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     runs-on: windows-latest
     timeout-minutes: 90
+    # 用例按构建数贪心均衡到 3 片；分片归属只取决于用例名/构建数，跨 run 稳定，
+    # 因此每片用独立缓存键前缀即可各自复用历史构建产物。改这里的分片数时要同步改下面的 -ShardCount。
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -58,9 +64,10 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: tests/.cache/builds
-          key: ps12exe-builds-${{ steps.fingerprint.outputs.value }}
+          # 分片放在指纹前，restore-keys 才能用固定前缀「ps12exe-builds-s<片>-」命中该片最近一次缓存。
+          key: ps12exe-builds-s${{ matrix.shard }}-${{ steps.fingerprint.outputs.value }}
           restore-keys: |
-            ps12exe-builds-
+            ps12exe-builds-s${{ matrix.shard }}-
       - name: Restore NuGet cache
         id: nuget-cache
         uses: actions/cache/restore@v4
@@ -72,8 +79,10 @@ jobs:
       - name: Run tests
         shell: pwsh
         run: |
-          if (Test-Path changed.txt) { pwsh -NoProfile -File tests/run.ps1 -ChangedPathsFile changed.txt }
-          else { pwsh -NoProfile -File tests/run.ps1 -All }
+          # 分片数 3 必须与 strategy.matrix.shard 保持一致。
+          $shardArgs = @('-ShardIndex', '${{ matrix.shard }}', '-ShardCount', '3')
+          if (Test-Path changed.txt) { pwsh -NoProfile -File tests/run.ps1 -ChangedPathsFile changed.txt @shardArgs }
+          else { pwsh -NoProfile -File tests/run.ps1 -All @shardArgs }
       - name: Ensure cache dirs
         if: always()
         shell: pwsh
@@ -87,7 +96,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: tests/.cache/builds
-          key: ps12exe-builds-${{ steps.fingerprint.outputs.value }}
+          key: ps12exe-builds-s${{ matrix.shard }}-${{ steps.fingerprint.outputs.value }}
       - name: Save NuGet cache
         if: always() && steps.nuget-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4

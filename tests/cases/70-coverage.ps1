@@ -120,6 +120,78 @@ Add-Test @{
 }
 
 Add-Test @{
+	Name  = 'coverage.build-component-fingerprint'
+	Group = 'coverage'
+	Deps  = @('tests/lib/common.ps1', 'tests/lib/framework.ps1')
+	Run   = {
+		param($ctx)
+		$root = $ctx.RepoRoot
+		$all = @(Get-CompilerInputFiles -RepoRoot $root)
+		Assert-True ($all.Count -gt 0) '编译输入为空'
+		# 只影响编译期消息/测试运行、不进入产物的文件不得出现在构建指纹里（否则无关改动会打掉全部构建缓存）。
+		foreach ($unrelated in @('exe21sp.ps1', 'src/GUI/', 'src/WebServer/', 'src/locale/', 'src/TaskbarProgress.ps1')) {
+			$hit = @($all | Where-Object { (Get-NormalizedRelPath -Path $_ -Base $root) -like "$unrelated*" })
+			Assert-Equal 0 $hit.Count "构建指纹不应包含无关输入：$unrelated"
+		}
+		# 各编译器只落在自己的组件里。
+		$expect = @{
+			'src/CoreCompiler.ps1'      = 'core'
+			'src/CodeDomCompiler.ps1'   = 'codeDom'
+			'src/TinySharpCompiler.ps1' = 'tinySharp'
+		}
+		foreach ($rel in $expect.Keys) {
+			$owners = @()
+			foreach ($c in @('common', 'codeDom', 'tinySharp', 'core', 'ps2exe')) {
+				if (@(Get-ComponentInputFiles -RepoRoot $root -Component $c | Where-Object { (Get-NormalizedRelPath -Path $_ -Base $root) -eq $rel }).Count) { $owners += $c }
+			}
+			Assert-Equal $expect[$rel] ($owners -join ',') "$rel 的组件归属错误"
+		}
+		# 组件指纹相互独立。
+		$coreFp = Get-SourceFingerprint -RepoRoot $root -Components @('common', 'core')
+		$winFp = Get-SourceFingerprint -RepoRoot $root -Components @('common', 'codeDom', 'tinySharp')
+		Assert-True ($coreFp -ne $winFp) 'Core 与 Windows 组件指纹不应相同'
+		# 构建 → 组件映射。
+		Assert-True ((Get-BuildFingerprintComponents -Spec @{ Compiler = 'ps12exe'; Params = @{ Build = @{ Target = 'Core' } } }) -contains 'core') 'Core 目标应依赖 core 组件'
+		$win = @(Get-BuildFingerprintComponents -Spec @{ Compiler = 'ps12exe' })
+		Assert-True ($win -contains 'codeDom' -and $win -contains 'tinySharp' -and $win -notcontains 'core') '非 Core 目标组件映射错误'
+		Assert-True ((Get-BuildFingerprintComponents -Spec @{ Compiler = 'ps2exe' }) -contains 'ps2exe') 'ps2exe 兼容层应依赖 ps2exe 组件'
+	}
+}
+
+Add-Test @{
+	Name  = 'coverage.shard-partition'
+	Group = 'coverage'
+	Deps  = @('tests/lib/framework.ps1')
+	Run   = {
+		param($ctx)
+		$cases = @(Get-AllTestCases)
+		$count = 3
+		$map = Get-ShardAssignment -Cases $cases -ShardCount $count
+		foreach ($c in $cases) {
+			$s = $map[$c.Name]
+			Assert-True ($s -ge 0 -and $s -lt $count) "用例 $($c.Name) 的分片越界：$s"
+		}
+		# 三片并集 == 全部用例，且不重不漏。
+		$seen = @{}
+		$loads = @()
+		for ($i = 0; $i -lt $count; $i++) {
+			$sel = @(Select-ShardCases -Cases $cases -ShardCount $count -ShardIndex $i -Assignment $map)
+			$builds = 0
+			foreach ($c in $sel) {
+				Assert-False $seen.ContainsKey($c.Name) "用例 $($c.Name) 落在多个分片"
+				$seen[$c.Name] = $true
+				$builds += @(Get-CaseBuildSpecs -Case $c).Count
+			}
+			$loads += $builds
+		}
+		Assert-Equal $cases.Count $seen.Count '分片并集未覆盖全部用例'
+		# 贪心均衡：各片构建数差异不应过大。
+		$spread = ($loads | Measure-Object -Maximum).Maximum - ($loads | Measure-Object -Minimum).Minimum
+		Assert-True ($spread -le 2) "分片构建数不均衡：$($loads -join '/')"
+	}
+}
+
+Add-Test @{
 	Name  = 'webserver.smoke'
 	Group = 'coverage'
 	Deps  = @('src/WebServer/', 'src/WebServer/main.ps1')

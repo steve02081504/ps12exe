@@ -34,7 +34,8 @@
 - 统一入口：`pwsh tests/run.ps1`。默认按本地 git 改动增量选择用例；`-All` 全量，`-Filter '*xxx*' -Group ps12exe -List` 查看/筛选，`-NoCache` 忽略构建缓存，`-ChangedPathsFile f.txt` 指定改动清单。用例全部通过时退出码 0。
 - 框架：`tests/run.ps1`（编排：依赖选择 / 构建去重 / 并行 / 缓存 / GitHub 报告），`tests/lib/`（公共库、断言、worker），`tests/cases/*.ps1`（数据驱动用例）。
 - 用例声明 `Deps`（改动的源文件/目录前缀）、`Build`/`Builds`（`InputText` 或 `InputFile`、`Params` 具名参数哈希、`Compiler='ps2exe'` 走兼容层）、`Run`（断言脚本块，收 `$ctx`：`RepoRoot`/`WorkDir`/`Builds`）。`Deps` 为空表示常跑；改动 `tests/**` 或 `.github/workflows/**` 触发全量。
-- 构建按「源码指纹 + 输入 + 参数 + 输出名」内容哈希去重并缓存到 `tests/.cache/builds`；同一用例多个构建并行，用例间也并行（默认 `min(CPU,4)`，`-ThrottleLimit` 调整）。
+- 构建按「组件源码指纹 + 输入 + 参数 + 输出名」内容哈希去重并缓存到 `tests/.cache/builds`。组件划分见 `tests/lib/common.ps1` 的 `$script:BuildComponentPatterns`（`common`/`codeDom`/`tinySharp`/`core`/`ps2exe`，只收录进入产物的文件），所以改 `CoreCompiler.ps1` 只失效 Core 构建、改 `exe21sp.ps1`/locale/GUI 等不影响任何构建缓存。
+- 并行度：构建默认约 `min(CPU*2,8)`（超订以掩盖进程创建/杀毒/dotnet publish 的 I/O 等待），测试默认 `min(CPU,4)`；`-BuildThrottleLimit`/`-ThrottleLimit` 覆盖。`-ShardCount N -ShardIndex i` 按构建数贪心把用例稳定分到 N 片，配合 CI matrix 跨 runner 并行。
 - 语法自检：`[System.Management.Automation.Language.Parser]::ParseFile($f,[ref]$null,[ref]$e)`，`$e.Count` 应为 0（`static.powershell-parses` 用例已覆盖）。
 - 帮助渲染：`. .\src\HelpShower.ps1 -HelpData (& .\src\locale\zh-CN.ps1).ConsoleHelpData | Write-Host`。
 - 新增/修改用例后记得本地跑一次相关 `-Filter`，并在提交前 `pwsh tests/run.ps1 -All` 过一遍。

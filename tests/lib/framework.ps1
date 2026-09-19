@@ -38,6 +38,8 @@ function Get-AllTestCases {
 	param([string]$CasesDir)
 	if (-not $CasesDir) { $CasesDir = Join-Path $script:RepoRoot 'tests/cases' }
 	if (-not (Test-Path -LiteralPath $CasesDir)) { throw "找不到用例目录：$CasesDir" }
+	# 幂等：重复调用时先清空，避免用例被叠加注册。
+	$script:TestCases = [System.Collections.Generic.List[hashtable]]::new()
 	Get-ChildItem -LiteralPath $CasesDir -Filter '*.ps1' -File | Sort-Object Name | ForEach-Object { . $_.FullName }
 	return $script:TestCases
 }
@@ -92,6 +94,58 @@ function Get-BuildKey {
 	$compiler = if ($Spec.Compiler) { [string]$Spec.Compiler } else { 'ps12exe' }
 	$raw = "fp=$Fingerprint|compiler=$compiler|inputId=$inputId|input=$inputHash|params=$paramsText|env=$envText|out=$out"
 	return (Get-StringHash $raw).Substring(0, 24)
+}
+
+# 一个构建的缓存键只依赖它真正用到的编译组件。Core 目标走 CoreCompiler；
+# 其余（含 TinySharp 常量壳、Framework2.0/4.0）都走 CodeDom/TinySharp；ps2exe 兼容层再加 shim。
+function Get-BuildFingerprintComponents {
+	param([hashtable]$Spec)
+	$names = [System.Collections.Generic.List[string]]::new()
+	$names.Add('common')
+	$target = ''
+	if ($Spec.Params -and $Spec.Params['Build'] -and $Spec.Params['Build']['Target']) {
+		$target = [string]$Spec.Params['Build']['Target']
+	}
+	if ($Spec.Compiler -eq 'ps2exe') {
+		$names.Add('codeDom'); $names.Add('tinySharp'); $names.Add('ps2exe')
+	}
+	elseif ($target -eq 'Core') {
+		$names.Add('core')
+	}
+	else {
+		$names.Add('codeDom'); $names.Add('tinySharp')
+	}
+	return @($names)
+}
+
+# 全量用例的分片归属：按「构建数」贪心均衡到各片。基于全部用例（而非本次选中集）计算，
+# 因此同一用例的分片是稳定的，分片缓存可跨 run 复用；纯测试用例按权重 1 参与均衡。
+function Get-ShardAssignment {
+	param([array]$Cases, [int]$ShardCount)
+	if ($ShardCount -le 1) {
+		$single = @{}
+		foreach ($c in $Cases) { $single[$c.Name] = 0 }
+		return $single
+	}
+	$load = New-Object 'int[]' $ShardCount
+	$map = @{}
+	$ordered = @($Cases | Sort-Object @{ Expression = { @(Get-CaseBuildSpecs -Case $_).Count }; Descending = $true }, @{ Expression = { $_.Name } })
+	foreach ($c in $ordered) {
+		$weight = @(Get-CaseBuildSpecs -Case $c).Count
+		if ($weight -lt 1) { $weight = 1 }
+		$target = 0
+		for ($i = 1; $i -lt $ShardCount; $i++) { if ($load[$i] -lt $load[$target]) { $target = $i } }
+		$map[$c.Name] = $target
+		$load[$target] += $weight
+	}
+	return $map
+}
+
+function Select-ShardCases {
+	param([array]$Cases, [int]$ShardCount, [int]$ShardIndex, [hashtable]$Assignment)
+	if ($ShardCount -le 1) { return @($Cases) }
+	if (-not $Assignment) { $Assignment = Get-ShardAssignment -Cases $Cases -ShardCount $ShardCount }
+	return @($Cases | Where-Object { $Assignment[$_.Name] -eq $ShardIndex })
 }
 
 function Test-DepMatchesPath {

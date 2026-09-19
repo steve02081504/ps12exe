@@ -28,26 +28,67 @@ function Get-NormalizedRelPath {
 	return ($full -replace '\\', '/').TrimStart('/')
 }
 
-# 扫描会影响编译产物的文件（源脚本、C# 帧、locale、子项目兼容层）。用于构建缓存指纹。
+# 编译输入按「组件」划分：构建缓存键只依赖该构建真正相关的组件，改 CoreCompiler 不会
+# 让走 CodeDom/TinySharp 的构建一起失效。路径模式：以 '/' 结尾为目录前缀，支持 '*' 通配。
+# 只收录会影响编译产物字节的文件；locale/GUI/WebServer/Interact/exe21sp 等只在编译期或
+# 测试运行期使用、不进入产物的文件刻意排除，避免无关改动把构建缓存全打掉。
+$script:BuildComponentPatterns = [ordered]@{
+	common    = @(
+		'ps12exe.ps1', 'ps12exe.psm1', 'ps12exe.psd1',
+		'src/AstAnalyze.ps1', 'src/BuildFrame.ps1', 'src/ConstProgramCheck.ps1',
+		'src/GolfModeHeader.ps1', 'src/InitCompileThings.ps1', 'src/PSObjectToString.ps1',
+		'src/ReadScriptFile.ps1', 'src/predicate.ps1',
+		'src/programFrames/constexpr.cs', 'src/programFrames/CoreHost.cs',
+		'src/programFrames/default.cs', 'src/programFrames/DllExport.cs',
+		'src/programFrames/pack.cs', 'src/programFrames/TinySharp.cs',
+		'src/RuntimePwsh2.0/'
+	)
+	codeDom   = @('src/CodeDomCompiler.ps1', 'src/ExeSinker.ps1')
+	tinySharp = @('src/TinySharpCompiler.ps1')
+	core      = @('src/CoreCompiler.ps1')
+	ps2exe    = @('src/.subrepo/PS2EXE2ps12exe/')
+}
+
+function Test-ComponentPathMatch {
+	param([string]$RelPath, [string]$Pattern)
+	$Pattern = $Pattern -replace '\\', '/'
+	if ($Pattern.EndsWith('/')) { return $RelPath.StartsWith($Pattern, [System.StringComparison]::OrdinalIgnoreCase) }
+	if ($Pattern.Contains('*')) { return $RelPath -like $Pattern }
+	return $RelPath -eq $Pattern
+}
+
+# 解析单个组件的文件清单。目录模式递归收集（跳过 node_modules 与 >2mb 文件）。
+function Get-ComponentInputFiles {
+	param([string]$RepoRoot, [string]$Component)
+	if (-not $script:BuildComponentPatterns.Contains($Component)) { throw "未知的编译输入组件：$Component" }
+	$files = [System.Collections.Generic.List[string]]::new()
+	foreach ($pat in @($script:BuildComponentPatterns[$Component])) {
+		if ($pat.EndsWith('/')) {
+			$dir = Join-Path $RepoRoot (($pat.TrimEnd('/')) -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+			if (-not (Test-Path -LiteralPath $dir)) { continue }
+			Get-ChildItem -LiteralPath $dir -Recurse -File -ErrorAction SilentlyContinue | Where-Object {
+				$rel = Get-NormalizedRelPath -Path $_.FullName -Base $RepoRoot
+				if ($rel -match '/(node_modules|\.git)/') { return $false }
+				if ($_.Length -gt 2mb) { return $false }
+				return $true
+			} | ForEach-Object { $files.Add($_.FullName) }
+		}
+		else {
+			$p = Join-Path $RepoRoot ($pat -replace '/', [System.IO.Path]::DirectorySeparatorChar)
+			if (Test-Path -LiteralPath $p -PathType Leaf) { $files.Add((Resolve-Path -LiteralPath $p).Path) }
+		}
+	}
+	return @($files)
+}
+
+# 全部编译输入（所有组件的并集，按路径去重排序）。
 function Get-CompilerInputFiles {
 	param([string]$RepoRoot)
-	$files = [System.Collections.Generic.List[string]]::new()
-	foreach ($f in @('ps12exe.ps1', 'ps12exe.psm1', 'ps12exe.psd1', 'exe21sp.ps1')) {
-		$p = Join-Path $RepoRoot $f
-		if (Test-Path -LiteralPath $p) { $files.Add($p) }
+	$all = [System.Collections.Generic.List[string]]::new()
+	foreach ($c in $script:BuildComponentPatterns.Keys) {
+		foreach ($f in (Get-ComponentInputFiles -RepoRoot $RepoRoot -Component $c)) { $all.Add($f) }
 	}
-	$exts = @('.ps1', '.psm1', '.psd1', '.cs', '.fbs', '.html', '.txt', '.json')
-	$base = Join-Path $RepoRoot 'src'
-	if (Test-Path -LiteralPath $base) {
-		Get-ChildItem -LiteralPath $base -Recurse -File | Where-Object {
-			$rel = Get-NormalizedRelPath -Path $_.FullName -Base $RepoRoot
-			if ($rel -like 'src/.subrepo/vscode-plug/*' -or $rel -like 'src/.subrepo/ps12exeOnline/*') { return $false }
-			if ($rel -like '*/node_modules/*') { return $false }
-			if ($_.Length -gt 2mb) { return $false }
-			$exts -contains $_.Extension.ToLowerInvariant()
-		} | ForEach-Object { $files.Add($_.FullName) }
-	}
-	return $files
+	return @($all | Sort-Object -Unique)
 }
 
 # 扫描仓库文件，默认排除 vcs/build/第三方子模块；跳过 reparse point，避免 junction 造成无限递归。
@@ -80,16 +121,21 @@ function Get-RepoFiles {
 	return $result
 }
 
-# 对全部编译器输入做内容哈希，任何相关源变化都会改变指纹，从而让构建缓存失效。
+# 对指定组件（默认全部）的编译输入做内容哈希。构建缓存键用 -Components 只取相关组件，
+# 使某个组件的源变化只让其自身及依赖它的构建失效。
 function Get-SourceFingerprint {
-	param([string]$RepoRoot)
+	param([string]$RepoRoot, [string[]]$Components)
+	$names = if ($Components -and $Components.Count) { @($Components) } else { @($script:BuildComponentPatterns.Keys) }
+	$names = @($names | Sort-Object -Unique)
 	$sha = [System.Security.Cryptography.SHA256]::Create()
 	try {
 		$sb = [System.Text.StringBuilder]::new()
-		foreach ($f in (Get-CompilerInputFiles -RepoRoot $RepoRoot | Sort-Object)) {
-			$rel = Get-NormalizedRelPath -Path $f -Base $RepoRoot
-			$hash = [System.BitConverter]::ToString($sha.ComputeHash([System.IO.File]::ReadAllBytes($f))).Replace('-', '')
-			[void]$sb.Append($rel).Append(':').Append($hash).Append("`n")
+		foreach ($c in $names) {
+			foreach ($f in (Get-ComponentInputFiles -RepoRoot $RepoRoot -Component $c | Sort-Object)) {
+				$rel = Get-NormalizedRelPath -Path $f -Base $RepoRoot
+				$hash = [System.BitConverter]::ToString($sha.ComputeHash([System.IO.File]::ReadAllBytes($f))).Replace('-', '')
+				[void]$sb.Append($rel).Append(':').Append($hash).Append("`n")
+			}
 		}
 		$final = $sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($sb.ToString()))
 		return [System.BitConverter]::ToString($final).Replace('-', '').Substring(0, 32)

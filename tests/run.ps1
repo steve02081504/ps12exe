@@ -14,6 +14,9 @@ param(
 	[switch]$List,
 	[switch]$NoCache,
 	[int]$ThrottleLimit = 0,
+	[int]$BuildThrottleLimit = 0,
+	[int]$ShardCount = 1,
+	[int]$ShardIndex = 0,
 	[int]$TimeoutSeconds = 0,
 	[switch]$KeepWorkDir,
 	[switch]$PrintFingerprint
@@ -70,6 +73,16 @@ if ($Filter) {
 	})
 }
 
+# 分片：CI 用 matrix 把用例拆到多个 runner 上并行，理论上限由最慢的一片决定。
+if ($ShardCount -lt 1) { throw "ShardCount 必须 >= 1（当前 $ShardCount）" }
+if ($ShardIndex -lt 0 -or $ShardIndex -ge $ShardCount) { throw "ShardIndex 必须落在 [0, $ShardCount)（当前 $ShardIndex）" }
+if ($ShardCount -gt 1) {
+	# 基于全部用例计算分片归属，保证同一用例跨 run 落在同一片（分片缓存可复用）。
+	$shardAssignment = Get-ShardAssignment -Cases $cases -ShardCount $ShardCount
+	$selected = @(Select-ShardCases -Cases $selected -ShardCount $ShardCount -ShardIndex $ShardIndex -Assignment $shardAssignment)
+	$selectionReason += "（分片 $ShardIndex/$ShardCount）"
+}
+
 if ($List) {
 	Write-Output "用例（$($selected.Count)/$($cases.Count)），选择依据：$selectionReason"
 	foreach ($c in $selected) {
@@ -92,7 +105,13 @@ foreach ($d in @($cacheRoot, $buildCacheDir, $jobsDir, $workRoot)) { New-Item -I
 $pwshExe = (Get-Process -Id $PID).Path
 if (-not $pwshExe) { $pwshExe = (Get-Command pwsh).Source }
 $workerPs1 = Join-Path $libDir 'worker.ps1'
-$throttle = if ($ThrottleLimit -gt 0) { $ThrottleLimit } else { [Math]::Max(1, [Math]::Min([Environment]::ProcessorCount, 4)) }
+# 测试并发保持保守（GUI/私有控制台等用例对并发敏感）；构建并发可适当超订以掩盖
+# 进程创建/杀毒扫描/dotnet publish 的 I/O 等待，默认取 CPU 的约 2 倍、上限 8。
+$cpuCount = [Environment]::ProcessorCount
+$throttle = if ($ThrottleLimit -gt 0) { $ThrottleLimit } else { [Math]::Max(1, [Math]::Min($cpuCount, 4)) }
+$buildThrottle = if ($BuildThrottleLimit -gt 0) { $BuildThrottleLimit }
+elseif ($ThrottleLimit -gt 0) { $ThrottleLimit }
+else { [Math]::Max($throttle, [Math]::Min($cpuCount * 2, 8)) }
 
 function New-JobFiles {
 	param([string]$Prefix)
@@ -156,12 +175,21 @@ function Get-JobLog {
 }
 
 # ---- 构建阶段：内容哈希去重 + 缓存 ----
-$fingerprint = Get-SourceFingerprint -RepoRoot $repoRoot
+# 每个构建按自身依赖的组件算指纹：改 CoreCompiler 不会连带失效 CodeDom/TinySharp 构建。
+$fingerprintCache = @{}
+function Get-SpecFingerprint([hashtable]$Spec) {
+	$names = @(Get-BuildFingerprintComponents -Spec $Spec)
+	$id = $names -join '+'
+	if (-not $fingerprintCache.ContainsKey($id)) {
+		$fingerprintCache[$id] = Get-SourceFingerprint -RepoRoot $repoRoot -Components $names
+	}
+	return $fingerprintCache[$id]
+}
 $buildPlan = @{}
 foreach ($c in $selected) {
 	$c.BuildMap = @{}
 	foreach ($entry in (Get-CaseBuildSpecs -Case $c)) {
-		$key = Get-BuildKey -Fingerprint $fingerprint -Spec $entry.Spec
+		$key = Get-BuildKey -Fingerprint (Get-SpecFingerprint -Spec $entry.Spec) -Spec $entry.Spec
 		$c.BuildMap[$entry.Name] = $key
 		if (-not $buildPlan.ContainsKey($key)) {
 			$outputName = if ($entry.Spec.Output) { [string]$entry.Spec.Output } else { 'out.exe' }
@@ -202,8 +230,8 @@ foreach ($key in $buildPlan.Keys) {
 }
 
 if ($buildJobs.Count) {
-	Write-Host "== 构建阶段：$($buildJobs.Count) 个构建（缓存命中 $cachedCount，并行度 $throttle）=="
-	$buildResults = Invoke-WorkerJobs -Jobs $buildJobs -Throttle $throttle
+	Write-Host "== 构建阶段：$($buildJobs.Count) 个构建（缓存命中 $cachedCount，并行度 $buildThrottle）=="
+	$buildResults = Invoke-WorkerJobs -Jobs $buildJobs -Throttle $buildThrottle
 	foreach ($br in $buildResults) {
 		$j = $br.Job
 		if ($br.Result.Success) {
