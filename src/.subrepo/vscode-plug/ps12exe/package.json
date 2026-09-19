@@ -104,6 +104,11 @@
 				"priority": "default"
 			}
 		],
+		"chatSkills": [
+			{
+				"path": "./skills/ps12exe/SKILL.md"
+			}
+		],
 		"grammars": [
 			{
 				"scopeName": "ps12exe.injection",

@@ -11,6 +11,7 @@ Compile PowerShell scripts (`.ps1`) into standalone executables and open **ps12e
 - **Reveal output** — on success, jump straight to the generated `.exe`.
 - **Automatic language selection** — the extension follows the VS Code display language.
 - **Automatic ps12exe install/update** — the ps12exe module is installed when missing and kept up to date; opt out with `ps12exe.autoUpdate`.
+- **Agent skill** — the extension bundles a `ps12exe` Agent Skill for GitHub Copilot (VS Code 1.109+). It encourages the agent to install `ps12exe` and `PS2EXE2ps12exe` itself, then points it at `ps12exe -help`, the installed `PS2EXE2ps12exe` module and the installed module's `README.md` for the parameter surface and the PS2EXE → ps12exe mapping.
 
 ## Preprocessor support
 
