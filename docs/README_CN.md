@@ -106,6 +106,14 @@ Start-ps12exeWebServer
 
 启动 Web 服务，便于在浏览器中在线编译 PowerShell 脚本。
 
+### VS Code 插件
+
+[ps12exe VS Code 插件](https://marketplace.visualstudio.com/items?itemName=steve02081504.ps12exe)让你无需离开编辑器即可把 `.ps1` 脚本编译为可执行文件或打开 ps12exeGUI，并为预处理指令提供语法高亮、诊断、`#_if` 自动闭合、折叠、转到定义、悬停、补全和格式化等编辑支持。
+
+![image](https://github.com/user-attachments/assets/5cace798-2737-479a-8d1e-882484f26f31)
+
+`Set-ps12exeContextMenu` 会自动安装它，你也可以手动安装 `steve02081504.ps12exe`。
+
 ## 参数
 
 ### GUI参数

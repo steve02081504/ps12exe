@@ -106,6 +106,14 @@ Start-ps12exeWebServer
 
 Starts a web server that can be used to compile PowerShell scripts online.
 
+### VS Code Extension
+
+The [ps12exe VS Code extension](https://marketplace.visualstudio.com/items?itemName=steve02081504.ps12exe) compiles a `.ps1` script into an executable — or opens ps12exeGUI — without leaving the editor, and adds editor support for the preprocessor directives (syntax highlighting, diagnostics, `#_if` auto-close, folding, go-to-definition, hover, completion and formatting).
+
+![image](https://github.com/user-attachments/assets/5cace798-2737-479a-8d1e-882484f26f31)
+
+`Set-ps12exeContextMenu` installs it automatically; you can also install `steve02081504.ps12exe` manually.
+
 ## Comparative Advantages 🏆
 
 ### Quick Comparison 🏁

@@ -106,6 +106,14 @@ exe21sp -inputFile .\target.exe -outputFile .\target.ps1
 - **exe21sp** : si `-outputFile` n’est pas précisé et que la sortie standard n’est **pas** redirigée, le script décompilé est enregistré dans un fichier `.ps1` de même nom que l’exe, dans le même répertoire.
 - **exe21sp** : si `-outputFile` n’est pas précisé et que la sortie standard **est** redirigée, le script décompilé est écrit sur la sortie standard.
 
+### Extension VS Code
+
+L'[extension ps12exe pour VS Code](https://marketplace.visualstudio.com/items?itemName=steve02081504.ps12exe) compile un script `.ps1` en exécutable — ou ouvre ps12exeGUI — sans quitter l'éditeur, et ajoute une prise en charge des directives de prétraitement (coloration syntaxique, diagnostics, fermeture automatique des `#_if`, pliage, aller à la définition, survol, complétion et formatage).
+
+![image](https://github.com/user-attachments/assets/5cace798-2737-479a-8d1e-882484f26f31)
+
+`Set-ps12exeContextMenu` l'installe automatiquement ; vous pouvez aussi installer `steve02081504.ps12exe` manuellement.
+
 ## Paramètres
 
 ### Paramètres GUI

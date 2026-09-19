@@ -106,6 +106,14 @@ Start-ps12exeWebServer
 
 ブラウザなどから PowerShell スクリプトをオンラインでコンパイルできる Web サーバーを起動します。
 
+### VS Code 拡張機能
+
+[ps12exe VS Code 拡張機能](https://marketplace.visualstudio.com/items?itemName=steve02081504.ps12exe)を使うと、エディターを離れずに `.ps1` スクリプトを実行ファイルへコンパイルしたり ps12exeGUI を開いたりでき、前処理ディレクティブ向けの編集支援（シンタックスハイライト、診断、`#_if` の自動クローズ、折りたたみ、定義へ移動、ホバー、補完、フォーマット）も追加されます。
+
+![image](https://github.com/user-attachments/assets/5cace798-2737-479a-8d1e-882484f26f31)
+
+`Set-ps12exeContextMenu` が自動でインストールします。`steve02081504.ps12exe` を手動でインストールすることもできます。
+
 ## パラメータ
 
 ### GUI パラメータ
