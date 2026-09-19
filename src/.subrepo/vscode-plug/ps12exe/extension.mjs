@@ -4,6 +4,7 @@ import path from 'node:path'
 import * as vscode from 'vscode'
 
 import { resolveDirectivePath } from './lib/definition.mjs'
+import { buildDirectiveCandidates, directiveAvailability, directivePrefixAt, ifConditionPrefixAt, buildConditionCandidates } from './lib/directives.mjs'
 import { registerExeSource } from './lib/exeSource.mjs'
 import { applyPreprocessorFormatting } from './lib/format.mjs'
 import { getPackageInfo, tagSearchUrl } from './lib/gallery.mjs'
@@ -13,7 +14,7 @@ import { requireModulesAt } from './lib/require.mjs'
 import { POWER_SHELL_EXTENSION_ID, isPowerShellExtensionInstalled, getOfficialEdits, applyTextEdits } from './lib/officialFormatter.mjs'
 import { resolvePowerShell, compileScript, syncModule, launchGUI } from './lib/powershell.mjs'
 import { pragmaNameAt, getPragmaData, lookupPragma, buildPragmaCandidates, clearPragmaCache } from './lib/pragma.mjs'
-import { analyze, endifAutoClose, foldingRanges, toggleBangLines, computeSkipMask } from './lib/preprocessor.mjs'
+import { analyze, endifAutoClose, isBalanced, foldingRanges, toggleBangLines, computeSkipMask } from './lib/preprocessor.mjs'
 
 const OUTPUT_CHANNEL_NAME = 'ps12exe'
 const POWER_SHELL_SELECTOR = { language: 'powershell' }
@@ -416,26 +417,34 @@ async function formatDocumentCommand (uri) {
 }
 
 /**
- * 在刚打开的块下方追加匹配的 `#_endif`。光标停留在空行上，因此可以直接键入块函数体。
+ * 在刚打开的块下方追加匹配的 `#_endif`，并把光标移到两者中间的空行上（缩进一层），因此可以直接键入块函数体。
  *
  * @param {vscode.TextEditor} editor - 目标编辑器
  * @param {number} line 换行后光标移动到的行
  * @param {string} indent `#_if` 行的缩进
+ * @param {string} indentUnit 编辑器的一个缩进单位
  */
-async function insertEndif (editor, line, indent) {
+async function insertEndif (editor, line, indent, indentUnit) {
 	const {document} = editor
 	if (line >= document.lineCount) return
 	const target = document.lineAt(line)
 	if (/^\s*#_endif\b/.test(target.text)) return
 
 	const eol = document.eol === vscode.EndOfLine.CRLF ? '\r\n' : '\n'
-	await editor.edit((builder) => {
-		builder.insert(new vscode.Position(line, target.text.length), `${eol}${indent}#_endif`)
+	// 只有空行才补上块内缩进；光标落在该行末尾，因此可以直接键入块函数体。
+	const body = target.text.trim() === '' ? indent + indentUnit : target.text
+	const applied = await editor.edit((builder) => {
+		builder.replace(new vscode.Range(line, 0, line, target.text.length), `${body}${eol}${indent}#_endif`)
 	}, { undoStopBefore: false, undoStopAfter: false })
+	if (!applied) return
+
+	const position = new vscode.Position(line, body.length)
+	editor.selection = new vscode.Selection(position, position)
 }
 
 /**
  * 用户一开始输入块函数体，就用 `#_endif` 闭合 `#_if …` 行。可通过 `ps12exe.autoCloseIf` 禁用。
+ * 若换行后（未补 `#_endif` 时）文档中的预处理块早已全部闭合，则说明该 `#_if` 已有对应的 `#_endif`，跳过补全以免产生重复的 `#_endif`。
  *
  * @param {vscode.ExtensionContext} context - 扩展上下文，用于注册文档变更监听
  */
@@ -452,8 +461,54 @@ function registerIfAutoClose (context) {
 			const current = breakLine < event.document.lineCount ? event.document.lineAt(breakLine).text : undefined
 			const close = endifAutoClose(current, change.text)
 			if (!close) continue
+			if (isBalanced(event.document.getText())) continue
 
-			void insertEndif(editor, breakLine + close.offset, close.indent)
+			const { insertSpaces, tabSize } = editorFormattingOptions(event.document)
+			const indentUnit = insertSpaces ? ' '.repeat(tabSize || 4) : '\t'
+			void insertEndif(editor, breakLine + close.offset, close.indent, indentUnit)
+			return
+		}
+	}))
+}
+
+// 输入法未切到半角时 `_` 会被打成全角/中文标点（`——`、`＿`、`–` …），它们在视觉上像 `#_`。
+const MISDIRECTIVE_CHAR_RE = /[—–―＿－‐]/
+const MISDIRECTIVE_RE = /^([\t ]*)#[—–―＿－‐]+$/
+
+/**
+ * 键入 `#_` 时主动唤起指令补全列表，并把全角/中文标点误打的 `#——`、`#＿` 纠正为 `#_`。
+ *
+ * `_` 是单词字符，VS Code 把单词字符的输入交给 quick suggestions，而 quick suggestions 默认在注释中关闭；`#_` 恰好
+ * 位于注释行上，因此即使把 `_` 注册为触发字符也不会弹出菜单（触发字符路径对单词字符会让位于 quick suggestions）。
+ * 这里在检测到刚输入的 `_` 落在 `#_` 指令名中时显式调用 `editor.action.triggerSuggest`，只在真正输入 `#_` 时弹出，
+ * 不会干扰普通注释。纠正标点后产生的新变更会以 `_` 再次进入本监听，从而照常弹出补全。
+ *
+ * @param {vscode.ExtensionContext} context - 扩展上下文，用于注册文档变更监听
+ */
+function registerDirectiveSuggest (context) {
+	context.subscriptions.push(vscode.workspace.onDidChangeTextDocument((event) => {
+		if (event.document.languageId !== 'powershell' || event.contentChanges.length === 0) return
+		const editor = vscode.window.activeTextEditor
+		if (!editor || editor.document !== event.document) return
+
+		for (const change of event.contentChanges) {
+			if (change.text === '_') {
+				const position = change.range.start.translate(0, change.text.length)
+				if (position.line >= event.document.lineCount) return
+				const before = event.document.lineAt(position.line).text.slice(0, position.character)
+				if (!directivePrefixAt(before)) continue
+				if (computeSkipMask(event.document.getText().split(/\r\n|\n|\r/))[position.line]) return
+				void vscode.commands.executeCommand('editor.action.triggerSuggest')
+				return
+			}
+
+			if (!MISDIRECTIVE_CHAR_RE.test(change.text)) continue
+			const lineNumber = change.range.start.line
+			const lineText = event.document.lineAt(lineNumber).text
+			const match = MISDIRECTIVE_RE.exec(lineText)
+			if (!match) continue
+			const start = match[1].length + 1
+			void editor.edit((builder) => builder.replace(new vscode.Range(lineNumber, start, lineNumber, lineText.length), '_'))
 			return
 		}
 	}))
@@ -620,9 +675,27 @@ const hoverProvider = {
 	}
 }
 
+/** `followUp` -> 补全后要执行的 VS Code 命令。 */
+const FOLLOW_UP_COMMANDS = Object.freeze({
+	suggest: 'editor.action.triggerSuggest',
+	newline: 'editor.action.insertLineAfter'
+})
+
+/**
+ * 给补全项挂上 `candidate.followUp` 对应的命令。补全自带的尾随空格不会触发注册的触发字符，因此需要显式接续：
+ * `suggest` 重新弹出补全（`#_if` 后接条件、`#_pragma ` 后接参数名），`newline` 换行让 `#_if` 自动补出 `#_endif`。
+ *
+ * @param {vscode.CompletionItem} item - 补全项
+ * @param {string | undefined} followUp - `lib/directives.mjs` 声明的接续动作
+ */
+function applyFollowUp (item, followUp) {
+	const command = FOLLOW_UP_COMMANDS[followUp]
+	if (command) item.command = { command, title: '' }
+}
+
 const completionProvider = {
 	/**
-	 * 在 `#_pragma ` 后补全参数名；已输入父级点号（`App.`）时只列出该父级的直接子键。候选及其说明同样来自当前安装的模块。
+	 * 输入 `#_` 后补全预处理器指令（每项带本地化说明与 README 链接）。在 `#_pragma ` 后补全参数名；已输入父级点号（`App.`）时只列出该父级的直接子键，候选及其说明同样来自当前安装的模块。
 	 *
 	 * @param {vscode.TextDocument} document - 当前文本文档
 	 * @param {vscode.Position} position - 光标位置
@@ -632,11 +705,54 @@ const completionProvider = {
 		if (document.languageId !== 'powershell') return undefined
 		const line = document.lineAt(position.line).text
 		const before = line.slice(0, position.character)
+		const locale = toPs12exeLocale(vscode.env.language)
+
+		const directive = directivePrefixAt(before)
+		if (directive) {
+			const lines = document.getText().split(/\r\n|\n|\r/)
+			if (computeSkipMask(lines)[position.line]) return undefined
+			// 抹掉当前正在输入的指令名再分析块结构，这样半截或完整的 `#_if`/`#_else`/`#_endif` 不会被当成已有结构，
+			// `#_else` / `#_endif` 只在插入后不会出现 stray 或 duplicate 时才进入候选。
+			const probe = [...lines]
+			probe[position.line] = line.slice(0, directive.start) + line.slice(position.character)
+			const availability = directiveAvailability(analyze(probe.join('\n')).blocks, position.line)
+			const range = new vscode.Range(position.line, directive.start, position.line, position.character)
+			return buildDirectiveCandidates(directive.prefix, availability).map((candidate, index) => {
+				const item = new vscode.CompletionItem(candidate.label, vscode.CompletionItemKind.Keyword)
+				item.insertText = candidate.insertText
+				item.range = range
+				// 保留 `DIRECTIVE_COMPLETIONS` 的分组顺序（if/else/endif、include* …），而不是按字母重排。
+				item.sortText = String(index).padStart(2, '0')
+				item.detail = t('ps12exe preprocessor directive')
+				const docs = new vscode.MarkdownString(t(HOVER_MESSAGES[candidate.section]))
+				docs.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${documentationUrl(locale, candidate.section)})`)
+				item.documentation = docs
+				applyFollowUp(item, candidate.followUp)
+				return item
+			})
+		}
+
+		const condition = ifConditionPrefixAt(before)
+		if (condition) {
+			if (computeSkipMask(document.getText().split(/\r\n|\n|\r/))[position.line]) return undefined
+			const range = new vscode.Range(position.line, condition.start, position.line, position.character)
+			return buildConditionCandidates(condition.prefix).map((candidate) => {
+				const item = new vscode.CompletionItem(candidate.label, vscode.CompletionItemKind.Constant)
+				item.insertText = candidate.insertText
+				item.range = range
+				item.detail = t('ps12exe preprocessor condition')
+				const docs = new vscode.MarkdownString(t(HOVER_MESSAGES[candidate.section]))
+				docs.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${documentationUrl(locale, candidate.section)})`)
+				item.documentation = docs
+				applyFollowUp(item, candidate.followUp)
+				return item
+			})
+		}
+
 		const match = /^([\t ]*#_pragma[\t ]+)([A-Z_a-z][\w.]*)?$/.exec(before)
 		if (!match) return undefined
 		if (computeSkipMask(document.getText().split(/\r\n|\n|\r/))[position.line]) return undefined
 
-		const locale = toPs12exeLocale(vscode.env.language)
 		let data
 		try {
 			data = await getPragmaData(locale)
@@ -724,6 +840,7 @@ export function activate (context) {
 	)
 
 	registerIfAutoClose(context)
+	registerDirectiveSuggest(context)
 	registerExeSource(context, { requireHost, channel: getOutputChannel() })
 
 	vscode.workspace.textDocuments.forEach(updateDiagnostics)

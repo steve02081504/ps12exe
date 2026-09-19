@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { analyze, indentText, endifAutoClose, foldingRanges, toggleBangLine, toggleBangLines, branchFragments, pickExemptBlock, computeSkipMask, restoreMarkerIndentation, restoreParenIndentation, restoreClauseIndentation, MESSAGES } from '../lib/preprocessor.mjs'
+import { analyze, indentText, endifAutoClose, isBalanced, foldingRanges, toggleBangLine, toggleBangLines, branchFragments, pickExemptBlock, computeSkipMask, restoreMarkerIndentation, restoreParenIndentation, restoreClauseIndentation, MESSAGES } from '../lib/preprocessor.mjs'
 
 // 该扩展位于 <repo>/src/.subrepo/vscode-plug/ps12exe，因此本测试文件位于 ps12exe 仓库根目录下五层。
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..')
@@ -371,6 +371,17 @@ suite('ps12exe preprocessor', () => {
 		assert.strictEqual(endifAutoClose('Write-Output 1', '\n'), undefined)
 		assert.strictEqual(endifAutoClose('#_if PSEXE', 'x'), undefined)
 		assert.strictEqual(endifAutoClose(undefined, '\n'), undefined)
+	})
+
+	test('detects whether every preprocessor block is closed', () => {
+		assert.strictEqual(isBalanced('Write-Output 1'), true)
+		assert.strictEqual(isBalanced(['#_if PSEXE', 'a', '#_endif'].join('\n')), true)
+		assert.strictEqual(isBalanced(['#_if PSEXE', 'a'].join('\n')), false)
+		// 嵌套时外层已闭合但内层缺失，仍视为不平衡。
+		assert.strictEqual(isBalanced(['#_if PSEXE', '#_if PSScript', 'a', '#_endif', '#_endif'].join('\n')), true)
+		assert.strictEqual(isBalanced(['#_if PSEXE', '#_if PSScript', 'a', '#_endif'].join('\n')), false)
+		// here-string 函数体里的 `#_if` 不是指令。
+		assert.strictEqual(isBalanced(['$s = @"', '#_if PSEXE', '"@'].join('\n')), true)
 	})
 
 	test('repairs the official formatter over-indentation after an open parenthesis', () => {

@@ -99,6 +99,197 @@ suite('ps12exe extension', () => {
 		}
 	})
 
+	/**
+	 * 轮询等待条件成立。
+	 *
+	 * @param {() => boolean} predicate - 条件
+	 * @param {number} [timeout] - 超时毫秒数
+	 * @returns {Promise<void>}
+	 */
+	async function waitFor (predicate, timeout = 5000) {
+		const deadline = Date.now() + timeout
+		while (!predicate()) {
+			if (Date.now() > deadline) throw new Error('timed out waiting for the document to settle')
+			await new Promise((resolve) => setTimeout(resolve, 25))
+		}
+	}
+
+	/**
+	 * 反复接受当前建议，直到 `predicate` 成立或超时。建议列表由文档变更监听异步弹出，列表尚未出现时该命令是空操作，
+	 * 因此可安全重试。
+	 *
+	 * @param {() => boolean} predicate - 条件
+	 * @param {number} [timeout] - 超时毫秒数
+	 * @returns {Promise<void>}
+	 */
+	async function acceptUntil (predicate, timeout = 5000) {
+		const deadline = Date.now() + timeout
+		while (!predicate()) {
+			if (Date.now() > deadline) throw new Error('timed out waiting for a suggestion to be accepted')
+			await vscode.commands.executeCommand('acceptSelectedSuggestion')
+			await new Promise((resolve) => setTimeout(resolve, 100))
+		}
+	}
+
+	test('auto-closes an opened #_if with the cursor indented inside', async () => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ps12exe-autoclose-'))
+		const file = path.join(dir, 'sample.ps1')
+		fs.writeFileSync(file, '#_if PSEXE')
+		try {
+			const document = await vscode.workspace.openTextDocument(file)
+			const editor = await vscode.window.showTextDocument(document)
+			const end = document.lineAt(0).range.end
+			editor.selection = new vscode.Selection(end, end)
+			await editor.edit((builder) => builder.insert(end, '\n'))
+
+			await waitFor(() => document.lineCount >= 3)
+			assert.strictEqual(document.getText().replace(/\r\n/g, '\n'), ['#_if PSEXE', '\t', '#_endif'].join('\n'))
+			// 扩展在编辑落地后才移动光标，因此等待光标稳定，而不是仅等待文本出现。
+			await waitFor(() => editor.selection.active.line === 1 && editor.selection.active.character === 1)
+			assert.strictEqual(editor.selection.active.line, 1)
+			assert.strictEqual(editor.selection.active.character, 1)
+		}
+		finally {
+			await vscode.commands.executeCommand('workbench.action.closeActiveEditor')
+			fs.rmSync(dir, { recursive: true, force: true })
+		}
+	})
+
+	test('skips the auto-close when the document is already balanced', async () => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ps12exe-autoclose-skip-'))
+		const file = path.join(dir, 'sample.ps1')
+		fs.writeFileSync(file, ['#_if PSEXE', '#_endif'].join('\n'))
+		try {
+			const document = await vscode.workspace.openTextDocument(file)
+			const editor = await vscode.window.showTextDocument(document)
+			const end = document.lineAt(0).range.end
+			editor.selection = new vscode.Selection(end, end)
+			await editor.edit((builder) => builder.insert(end, '\n'))
+
+			// 已有的 `#_endif` 已经闭合了这个 `#_if`，因此不应再补一个。
+			await new Promise((resolve) => setTimeout(resolve, 300))
+			assert.strictEqual(document.getText().replace(/\r\n/g, '\n'), ['#_if PSEXE', '', '#_endif'].join('\n'))
+			assert.strictEqual(document.getText().split('#_endif').length - 1, 1)
+		}
+		finally {
+			await vscode.commands.executeCommand('workbench.action.closeActiveEditor')
+			fs.rmSync(dir, { recursive: true, force: true })
+		}
+	})
+
+	test('offers #_ directives through the completion provider, gated by the block structure', async () => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ps12exe-complete-'))
+		try {
+			/**
+			 * 打开一个临时脚本并请求 `#_` 处的补全项标签。
+			 *
+			 * @param {string} name - 临时文件名
+			 * @param {string} text - 文件内容
+			 * @param {vscode.Position} position - 触发补全的位置
+			 * @returns {Promise<string[]>} 补全项标签
+			 */
+			const labelsAt = async (name, text, position) => {
+				const file = path.join(dir, name)
+				fs.writeFileSync(file, text)
+				const document = await vscode.workspace.openTextDocument(file)
+				assert.strictEqual(document.languageId, 'powershell')
+				const list = await vscode.commands.executeCommand('vscode.executeCompletionItemProvider', document.uri, position, '_')
+				return list.items.map((item) => (typeof item.label === 'string' ? item.label : item.label.label))
+			}
+
+			// 顶层、块已闭合：列出指令，但不能补 #_else / #_endif。
+			const closed = await labelsAt('closed.ps1', ['#_if PSEXE', '$x = 1', '#_endif', '#_'].join('\n'), new vscode.Position(3, 2))
+			assert.ok(closed.includes('#_if'), `#_if missing from ${JSON.stringify(closed)}`)
+			assert.ok(closed.includes('#_include'))
+			assert.ok(!closed.includes('#_else'))
+			assert.ok(!closed.includes('#_endif'))
+
+			// 打开的 #_if 尚无 #_else：允许补 #_else 与 #_endif。
+			const open = await labelsAt('open.ps1', ['#_if PSEXE', '#_'].join('\n'), new vscode.Position(1, 2))
+			assert.ok(open.includes('#_else'), `#_else missing from ${JSON.stringify(open)}`)
+			assert.ok(open.includes('#_endif'))
+
+			// 已有 #_else：不再补 #_else，但仍可补 #_endif。
+			const elseUsed = await labelsAt('else.ps1', ['#_if PSEXE', '#_else', '#_'].join('\n'), new vscode.Position(2, 2))
+			assert.ok(!elseUsed.includes('#_else'))
+			assert.ok(elseUsed.includes('#_endif'))
+
+			// here-string 内的 `#_` 不是指令。
+			const hereString = await labelsAt('here.ps1', ['$s = @"', '#_', '"@'].join('\n'), new vscode.Position(1, 2))
+			assert.ok(!hereString.includes('#_if'), `#_if should not be offered in a here-string: ${JSON.stringify(hereString)}`)
+		}
+		finally {
+			fs.rmSync(dir, { recursive: true, force: true })
+		}
+	})
+
+	test('typing `#_` opens the suggestion list', async () => {
+		// `_` 是单词字符、注释行上 quick suggestions 默认关闭，因此弹出列表依赖 registerDirectiveSuggest 显式触发。
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ps12exe-suggest-'))
+		const file = path.join(dir, 'sample.ps1')
+		fs.writeFileSync(file, '#')
+		try {
+			const document = await vscode.workspace.openTextDocument(file)
+			const editor = await vscode.window.showTextDocument(document)
+			const end = new vscode.Position(0, 1)
+			editor.selection = new vscode.Selection(end, end)
+			await editor.edit((builder) => builder.insert(end, '_'))
+
+			// 建议列表由文档变更监听异步触发；反复接受直到某个候选被插入（列表尚未出现时该命令是空操作）。
+			await acceptUntil(() => document.getText() !== '#_')
+			assert.match(document.getText(), /^#_[!#A-Za-z_]/, `no #_ directive was accepted, got ${JSON.stringify(document.getText())}`)
+		}
+		finally {
+			await vscode.commands.executeCommand('workbench.action.closeActiveEditor')
+			fs.rmSync(dir, { recursive: true, force: true })
+		}
+	})
+
+	test('accepting `#_if` continues into the condition list and auto-closes `#_endif`', async () => {
+		// 补全自带尾随空格，不会再触发注册的触发字符；`#_if` 用 follow-up 命令重开列表，选定条件后用换行命令触发自动闭合。
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ps12exe-followup-'))
+		const file = path.join(dir, 'sample.ps1')
+		fs.writeFileSync(file, '#')
+		try {
+			const document = await vscode.workspace.openTextDocument(file)
+			const editor = await vscode.window.showTextDocument(document)
+			const end = new vscode.Position(0, 1)
+			editor.selection = new vscode.Selection(end, end)
+			await editor.edit((builder) => builder.insert(end, '_'))
+
+			await acceptUntil(() => /^#_if [A-Za-z]/.test(document.getText()))
+			assert.match(document.getText(), /^#_if (PSEXE|PSScript)/, `condition was not completed: ${JSON.stringify(document.getText())}`)
+			await acceptUntil(() => document.getText().includes('#_endif'))
+			assert.match(document.getText(), /^#_if (PSEXE|PSScript)\r?\n\t\r?\n#_endif$/, `#_endif was not auto-inserted: ${JSON.stringify(document.getText())}`)
+		}
+		finally {
+			await vscode.commands.executeCommand('workbench.action.closeActiveEditor')
+			fs.rmSync(dir, { recursive: true, force: true })
+		}
+	})
+
+	test('corrects a full-width `#——` into `#_` and opens the list', async () => {
+		// 输入法未切半角时 `_` 会变成中文标点；纠正后应像手动输入 `#_` 一样弹出补全。
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ps12exe-fixdash-'))
+		const file = path.join(dir, 'sample.ps1')
+		fs.writeFileSync(file, '#')
+		try {
+			const document = await vscode.workspace.openTextDocument(file)
+			const editor = await vscode.window.showTextDocument(document)
+			const end = new vscode.Position(0, 1)
+			editor.selection = new vscode.Selection(end, end)
+			await editor.edit((builder) => builder.insert(end, '——'))
+
+			await waitFor(() => document.getText() === '#_')
+			await acceptUntil(() => document.getText() !== '#_')
+			assert.match(document.getText(), /^#_[!#A-Za-z_]/, `the full-width dash was not completed: ${JSON.stringify(document.getText())}`)
+		}
+		finally {
+			await vscode.commands.executeCommand('workbench.action.closeActiveEditor')
+			fs.rmSync(dir, { recursive: true, force: true })
+		}
+	})
+
 	test('maps VS Code locales to ps12exe locales', () => {
 		assert.strictEqual(toPs12exeLocale('en'), 'en-US')
 		assert.strictEqual(toPs12exeLocale('en-US'), 'en-US')

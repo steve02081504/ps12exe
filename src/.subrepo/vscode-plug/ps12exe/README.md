@@ -18,11 +18,12 @@ The ps12exe preprocessor directives (`#_if` / `#_else` / `#_endif`, `#_include*`
 
 - **Syntax highlighting** — directives, their conditions (`PSEXE` / `PSScript`) and pragma names are coloured.
 - **Diagnostics** — unclosed `#_if`, nested (dead-code) `#_if`, unknown conditions, and stray or duplicate `#_else` / `#_endif` are reported as you type.
-- **Auto-close** — finishing a `#_if …` line with Enter inserts the matching `#_endif` on the next line. Disable with `ps12exe.autoCloseIf`.
+- **Auto-close** — finishing a `#_if …` line with Enter inserts the matching `#_endif` below and leaves the cursor on an indented line in between, ready for the block body. It is skipped when the document is already balanced (the `#_if` already has its `#_endif`). Disable with `ps12exe.autoCloseIf`.
 - **Folding** — every `#_if … #_endif` block folds, nested blocks included, with the `#_endif` kept visible.
 - **`#_!!` toggle** — the **ps12exe: Toggle `#_!!` Escape Markers** context-menu command adds `#_!!` to every plain line of the selection (or of the whole file) and removes it from the lines that already carry it.
 - **Go to definition** — Ctrl+click / F12 on the path of an `#_include*` directive or of `#_pragma Resources.Icon` jumps to the referenced file.
 - **Hover** — hovering over a directive shows a localized summary and a link to the matching paragraph of the localized README. Hovering a module name in `#_require` shows its PowerShell Gallery icon, description and clickable tags, plus links to its repository (when it has one) and its gallery page.
+- **Completion** — typing `#_` suggests the preprocessor directives, each with a localized hint and a link to the matching README paragraph. The structural directives are only offered when they fit: `#_else` when the innermost open `#_if` has no `#_else` yet, `#_endif` when an `#_if` is open, so completion never inserts a stray or duplicate directive. Picking `#_if` immediately suggests the condition keywords (`PSEXE` / `PSScript`), and picking a condition moves to the indented body line and inserts the closing `#_endif`. `#_pragma` parameters are completed with their descriptions read from the installed ps12exe module. A `#_` typed as the full-width `#——` (IME left in Chinese punctuation mode) is corrected to `#_` automatically.
 - **Formatting** — format the document through *Format Document*, format-on-save or the **ps12exe: Format Preprocessor Blocks** code action. Preprocessor blocks are indented by nesting level. Requires the PowerShell extension (see [Requirements](#requirements)).
 
 ## Localization

@@ -201,6 +201,16 @@ export function foldingRanges (text) {
 }
 
 /**
+ * 判断文档中的 preprocessor 块是否已经全部闭合（即无需再补 `#_endif`）。
+ *
+ * @param {string} text - 待检查的文档全文
+ * @returns {boolean} 所有块都已闭合时为 true
+ */
+export function isBalanced (text) {
+	return analyze(text).blocks.every((block) => block.closed)
+}
+
+/**
  * 决定在完整的 `#_if …` 行上键入换行后，自动插入 `#_endif` 的位置。
  *
  * @param {string | undefined} currentLine 键入换行所在的行

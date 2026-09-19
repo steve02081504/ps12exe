@@ -46,6 +46,8 @@
 	"`PSScript` — the condition is false while ps12exe compiles the script, so this branch is only kept when the script runs directly as a `.ps1`.": "`PSScript` —— ps12exe 编译脚本时该条件为 false，因此这个分支只在脚本作为 `.ps1` 直接运行时保留。",
 	"`#_DllExport <signature>` exports a PowerShell function from the compiled assembly; this macro is still experimental and undocumented.": "`#_DllExport <signature>` 从编译后的程序集中导出 PowerShell 函数；此宏仍在实验阶段且尚无文档。",
 	"Read more in the ps12exe README": "在 ps12exe README 中了解更多",
+	"ps12exe preprocessor directive": "ps12exe 预处理指令",
+	"ps12exe preprocessor condition": "ps12exe 预处理条件",
 	"ps12exe compilation parameter": "ps12exe 编译参数",
 	"Repository": "仓库",
 	"PowerShell Gallery": "PowerShell 库",

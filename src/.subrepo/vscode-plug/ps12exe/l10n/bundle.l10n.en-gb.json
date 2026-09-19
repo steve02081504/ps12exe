@@ -46,6 +46,8 @@
 	"`PSScript` — the condition is false while ps12exe compiles the script, so this branch is only kept when the script runs directly as a `.ps1`.": "`PSScript` — the condition is false while ps12exe compiles the script, so this branch is only kept when the script runs directly as a `.ps1`.",
 	"`#_DllExport <signature>` exports a PowerShell function from the compiled assembly; this macro is still experimental and undocumented.": "`#_DllExport <signature>` exports a PowerShell function from the compiled assembly; this macro is still experimental and undocumented.",
 	"Read more in the ps12exe README": "Read more in the ps12exe README",
+	"ps12exe preprocessor directive": "ps12exe preprocessor directive",
+	"ps12exe preprocessor condition": "ps12exe preprocessor condition",
 	"ps12exe compilation parameter": "ps12exe compilation parameter",
 	"Repository": "Repository",
 	"PowerShell Gallery": "PowerShell Gallery",
