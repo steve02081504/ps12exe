@@ -11,21 +11,22 @@ Compile PowerShell scripts (`.ps1`) into standalone executables and open **ps12e
 - **Reveal output** — on success, jump straight to the generated `.exe`.
 - **Automatic language selection** — the extension follows the VS Code display language.
 - **Automatic ps12exe install/update** — the ps12exe module is installed when missing and kept up to date; opt out with `ps12exe.autoUpdate`.
-- **Agent skill** — the extension bundles a `ps12exe` Agent Skill for GitHub Copilot (VS Code 1.109+). It encourages the agent to install `ps12exe` and `PS2EXE2ps12exe` itself, then points it at `ps12exe -help`, the installed `PS2EXE2ps12exe` module and the installed module's `README.md` for the parameter surface and the PS2EXE → ps12exe mapping.
+- **Agent skill** — a bundled `ps12exe` Agent Skill tells the agent how to use `ps12exe` and `PS2EXE2ps12exe`.
+- **Embedded-exe source editor** — open a compiled `.exe` to view and edit the embedded script.
 
 ## Preprocessor support
 
 The ps12exe preprocessor directives (`#_if` / `#_else` / `#_endif`, `#_include*`, `#_pragma`, `#_require`, `#_!!`, …) get first-class editor support:
 
-- **Syntax highlighting** — directives, their conditions (`PSEXE` / `PSScript`) and pragma names are coloured.
-- **Diagnostics** — unclosed `#_if`, nested (dead-code) `#_if`, unknown conditions, and stray or duplicate `#_else` / `#_endif` are reported as you type. Deprecated PS2EXE calls get a quick fix that migrates the whole call to the ps12exe object API (`-inputFile` → `-InputFile`, `-noConsole` → `-App @{ Windowed = $true }`, `-title` → `-Resources @{ Title = … }`, …). In files that use the preprocessor, module-management commands (`Get-Module` / `Import-Module` / `Install-Module` and their `gmo` / `ipmo` / `inmo` aliases) are flagged and an install line can be rewritten to `#_require <module>`; aliases are only flagged after the extension confirms on your machine that they still resolve to the standard module cmdlets. Any of these warnings can be silenced with a `# use_ps12exe:ignore` line above it.
-- **Auto-close** — finishing a `#_if …` line with Enter inserts the matching `#_endif` below and leaves the cursor on an indented line in between, ready for the block body. It is skipped when the document is already balanced (the `#_if` already has its `#_endif`). Disable with `ps12exe.autoCloseIf`.
-- **Folding** — every `#_if … #_endif` block folds, nested blocks included, with the `#_endif` kept visible.
-- **`#_!!` toggle** — the **ps12exe: Toggle `#_!!` Escape Markers** context-menu command adds `#_!!` to every plain line of the selection (or of the whole file) and removes it from the lines that already carry it.
-- **Go to definition** — Ctrl+click / F12 on the path of an `#_include*` directive or of `#_pragma Resources.Icon` jumps to the referenced file.
-- **Hover** — hovering over a directive shows a localized summary and a link to the matching paragraph of the localized README. Hovering a module name in `#_require` shows its PowerShell Gallery icon, description and clickable tags, plus links to its repository (when it has one) and its gallery page.
-- **Completion** — typing `#_` suggests the preprocessor directives, each with a localized hint and a link to the matching README paragraph. The structural directives are only offered when they fit: `#_else` when the innermost open `#_if` has no `#_else` yet, `#_endif` when an `#_if` is open, so completion never inserts a stray or duplicate directive. Picking `#_if` immediately suggests the condition keywords (`PSEXE` / `PSScript`), and picking a condition moves to the indented body line and inserts the closing `#_endif`. `#_pragma` parameters are completed with their descriptions read from the installed ps12exe module. A `#_` typed as the full-width `#——` (IME left in Chinese punctuation mode) is corrected to `#_` automatically.
-- **Formatting** — format the document through *Format Document*, format-on-save or the **ps12exe: Format Preprocessor Blocks** code action. Preprocessor blocks are indented by nesting level. Requires the PowerShell extension (see [Requirements](#requirements)).
+- **Syntax highlighting** — directives, conditions and pragma names are coloured.
+- **Diagnostics & quick fixes** — reports unbalanced blocks and unknown conditions; offers one-click migration of deprecated PS2EXE calls to the ps12exe object API and rewrites module installs to `#_require`. Silence any warning with `# use_ps12exe:ignore`.
+- **Auto-close** — completing a `#_if …` line with Enter inserts the matching `#_endif`. Disable with `ps12exe.autoCloseIf`.
+- **Folding** — every `#_if … #_endif` block folds, nested blocks included.
+- **`#_!!` toggle** — **ps12exe: Toggle `#_!!` Escape Markers** adds or removes the marker on the selection (or the whole file).
+- **Go to definition** — open the file referenced by an `#_include*` path or `#_pragma Resources.Icon`.
+- **Hover** — shows a localized summary and a README link for a directive; a module name in `#_require` shows its PowerShell Gallery info.
+- **Completion** — suggests directives, conditions and `#_pragma` parameters, each with a localized hint.
+- **Formatting** — formats preprocessor blocks through *Format Document*, format-on-save or the **ps12exe: Format Preprocessor Blocks** action. Requires the PowerShell extension (see [Requirements](#requirements)).
 
 ## Localization
 
