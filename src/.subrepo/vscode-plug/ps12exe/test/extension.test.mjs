@@ -290,6 +290,67 @@ suite('ps12exe extension', () => {
 		}
 	})
 
+	test('offers quick fixes for PS2EXE and module commands', async () => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ps12exe-commands-'))
+		const file = path.join(dir, 'sample.ps1')
+		fs.writeFileSync(file, [
+			'#_pragma App.Windowed',
+			'ps2exe -inputFile sample.ps1 -noConsole',
+			'gmo ps12exe -ListAvailable',
+			'Install-Module foo -Scope CurrentUser -Force'
+		].join('\n'))
+		try {
+			const document = await vscode.workspace.openTextDocument(file)
+			await vscode.window.showTextDocument(document)
+			await waitFor(() => vscode.languages.getDiagnostics(document.uri).some((d) => d.source === 'ps12exe'))
+
+			const atLine = (code, line) => vscode.languages.getDiagnostics(document.uri)
+				.find((d) => d.source === 'ps12exe' && d.code === code && d.range.start.line === line)
+			const ps2exeDiagnostic = atLine('ps2exe-call', 1)
+			const moduleDiagnostic = atLine('module-command', 2)
+			const installDiagnostic = atLine('module-command', 3)
+			assert.ok(ps2exeDiagnostic, 'no PS2EXE diagnostic')
+			assert.ok(moduleDiagnostic, 'no gmo diagnostic')
+			assert.ok(installDiagnostic, 'no Install-Module diagnostic')
+
+			/**
+			 * 在诊断处请求快速修复，并按编辑内容（而非本地化标题）挑选出目标操作。
+			 *
+			 * @param {vscode.Diagnostic} diagnostic - 目标诊断
+			 * @param {(newText: string) => boolean} predicate - 匹配编辑新文本的谓词
+			 * @returns {Promise<vscode.CodeAction>} 匹配到的代码操作
+			 */
+			const actionMatching = async (diagnostic, predicate) => {
+				const actions = await vscode.commands.executeCommand('vscode.executeCodeActionProvider', document.uri, diagnostic.range)
+				const found = actions.find((action) => action.edit && action.edit.entries().some(([, edits]) => edits.some((edit) => predicate(edit.newText))))
+				assert.ok(found, `no matching action: ${JSON.stringify(actions.map((action) => action.title))}`)
+				return found
+			}
+
+			// PS2EXE 调用整段改写成 ps12exe 的对象式 API。
+			const rewrite = await actionMatching(ps2exeDiagnostic, (text) => text.startsWith('ps12exe -InputFile sample.ps1'))
+			await vscode.workspace.applyEdit(rewrite.edit)
+			assert.match(document.getText(), /^#_pragma App\.Windowed\nps12exe -InputFile sample\.ps1 -App @\{ Windowed = \$true \}$/m)
+
+			// 模块安装行改写成 #_require。
+			const require = await actionMatching(installDiagnostic, (text) => text === '#_require foo')
+			await vscode.workspace.applyEdit(require.edit)
+			assert.match(document.getText(), /^#_require foo$/m)
+
+			// 其余诊断（这里是 gmo）只提供忽略标记。
+			const ignore = await actionMatching(moduleDiagnostic, (text) => text.includes('use_ps12exe:ignore'))
+			await vscode.workspace.applyEdit(ignore.edit)
+			assert.match(document.getText(), /# use_ps12exe:ignore/)
+
+			// 忽略标记生效后该行不再有诊断。
+			await waitFor(() => !vscode.languages.getDiagnostics(document.uri).some((d) => d.source === 'ps12exe' && d.code === 'module-command' && d.range.start.line === moduleDiagnostic.range.start.line + 1))
+		}
+		finally {
+			await vscode.commands.executeCommand('workbench.action.closeActiveEditor')
+			fs.rmSync(dir, { recursive: true, force: true })
+		}
+	})
+
 	test('maps VS Code locales to ps12exe locales', () => {
 		assert.strictEqual(toPs12exeLocale('en'), 'en-US')
 		assert.strictEqual(toPs12exeLocale('en-US'), 'en-US')

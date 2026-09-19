@@ -52,5 +52,10 @@
 	"Repository": "रिपॉज़िटरी",
 	"PowerShell Gallery": "PowerShell गैलरी",
 	"Tags": "टैग",
-	"No module named `{0}` was found on the PowerShell Gallery.": "PowerShell गैलरी पर `{0}` नाम का कोई मॉड्यूल नहीं मिला।"
+	"No module named `{0}` was found on the PowerShell Gallery.": "PowerShell गैलरी पर `{0}` नाम का कोई मॉड्यूल नहीं मिला।",
+	"PS2EXE command \"{0}\" is deprecated; use ps12exe instead.": "PS2EXE कमांड \"{0}\" अब अप्रचलित है; इसके बजाय ps12exe का उपयोग करें।",
+	"Module-management command \"{0}\"; declare module dependencies with #_require so the compiled executable sets them up.": "मॉड्यूल प्रबंधन कमांड \"{0}\"; मॉड्यूल निर्भरताएँ #_require से घोषित करें ताकि संकलित निष्पादन योग्य उन्हें तैयार कर सके।",
+	"Use ps12exe": "ps12exe का उपयोग करें",
+	"Use #_require": "#_require का उपयोग करें",
+	"Ignore this warning": "इस चेतावनी को अनदेखा करें"
 }

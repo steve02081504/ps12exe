@@ -3,6 +3,8 @@ import path from 'node:path'
 
 import * as vscode from 'vscode'
 
+import { currentAliasMap, loadAliasMap } from './lib/aliases.mjs'
+import { analyzeCommandUsage, computeIgnoredMask, IGNORE_DIRECTIVE, PS2EXE_DIAGNOSTIC, MODULE_DIAGNOSTIC } from './lib/commands.mjs'
 import { resolveDirectivePath } from './lib/definition.mjs'
 import { buildDirectiveCandidates, directiveAvailability, directivePrefixAt, ifConditionPrefixAt, buildConditionCandidates } from './lib/directives.mjs'
 import { registerExeSource } from './lib/exeSource.mjs'
@@ -25,6 +27,7 @@ let outputChannel
 /** @type {vscode.DiagnosticCollection | undefined} */
 let diagnosticCollection
 let missingPowerShellNotified = false
+let aliasProbeStarted = false
 const diagnosticsTimers = new Map()
 
 /**
@@ -301,23 +304,52 @@ function editorFormattingOptions (document) {
 }
 
 /**
- * 刷新指定文档的诊断信息。
+ * 首次需要诊断时在后台探测宿主的别名定义（`gmo`/`ipmo`/`inmo` 是否为标准别名），探测完成后刷新所有已打开文档的诊断。
+ * 探测期间先使用内置回退映射，因此结果不会因等待而缺失。
+ */
+function ensureAliasMap () {
+	if (aliasProbeStarted) return
+	aliasProbeStarted = true
+	void loadAliasMap().then(() => {
+		vscode.workspace.textDocuments.forEach(updateDiagnostics)
+	})
+}
+
+/**
+ * 刷新指定文档的诊断信息。包含预处理块结构诊断与 PS2EXE / 模块管理命令诊断；被 `# use_ps12exe:ignore` 抑制的行不发布。
  *
  * @param {vscode.TextDocument} document - 目标文本文档
  */
 function updateDiagnostics (document) {
 	if (!diagnosticCollection || document.languageId !== 'powershell') return
-	const found = analyze(document.getText()).diagnostics
-	const items = found.map((entry) => {
-		const line = document.lineAt(Math.min(entry.line, document.lineCount - 1))
-		const diagnostic = new vscode.Diagnostic(
-			line.range,
-			t(entry.message, ...entry.args),
-			entry.severity === 'error' ? vscode.DiagnosticSeverity.Error : vscode.DiagnosticSeverity.Warning
-		)
-		diagnostic.source = 'ps12exe'
-		return diagnostic
-	})
+	ensureAliasMap()
+	const text = document.getText()
+	const lines = text.split(/\r\n|\n|\r/)
+	const ignored = computeIgnoredMask(lines)
+	const found = [
+		...analyze(text).diagnostics,
+		...analyzeCommandUsage(text, currentAliasMap())
+	]
+
+	const items = found
+		.filter((entry) => !ignored[entry.line])
+		.map((entry) => {
+			const line = document.lineAt(Math.min(entry.line, document.lineCount - 1))
+			const range = typeof entry.start === 'number'
+				? new vscode.Range(line.lineNumber, entry.start, line.lineNumber, entry.end)
+				: line.range
+			const diagnostic = new vscode.Diagnostic(
+				range,
+				t(entry.message, ...entry.args),
+				entry.severity === 'error' ? vscode.DiagnosticSeverity.Error : vscode.DiagnosticSeverity.Warning
+			)
+			diagnostic.source = 'ps12exe'
+			if (entry.code) {
+				diagnostic.code = entry.code
+				diagnostic.data = { replacement: entry.replacement }
+			}
+			return diagnostic
+		})
 	diagnosticCollection.set(document.uri, items)
 }
 
@@ -796,20 +828,76 @@ const foldingProvider = {
 
 const codeActionProvider = {
 	/**
-	 * 提供快速修复操作，用于格式化 preprocessor 块。
+	 * 提供快速修复操作：
+	 *
+	 * - 对 PS2EXE 调用，整段改写为等价的 ps12exe 调用。
+	 * - 对可识别的模块安装行，改写成 `#_require <模块>`。
+	 * - 对任意 ps12exe 命令诊断，在告警行上方插入 `# use_ps12exe:ignore` 以忽略它。
+	 * - 始终提供格式化 preprocessor 块的 source fix-all 操作。
+	 *
+	 * 同一行上的多个诊断可能给出同一个修复（例如 `#_require` 生成样板的 `gmo` 与 `Install-Module`），因此按编辑效果去重。
 	 *
 	 * @param {vscode.TextDocument} document - 当前文本文档
+	 * @param {vscode.Range} _range - 请求代码操作的选区
+	 * @param {vscode.CodeActionContext} context - 该位置上的诊断
 	 * @returns {vscode.CodeAction[]} 代码操作列表
 	 */
-	provideCodeActions (document) {
+	provideCodeActions (document, _range, context) {
 		if (document.languageId !== 'powershell') return []
-		const action = new vscode.CodeAction(t('Format ps12exe preprocessor blocks'), FIX_ALL_KIND)
-		action.command = {
+		const actions = []
+		const seen = new Set()
+		/**
+		 * 按去重键加入操作。
+		 *
+		 * @param {vscode.CodeAction} action - 待加入的操作
+		 * @param {string} key - 去重键
+		 */
+		const add = (action, key) => {
+			if (seen.has(key)) return
+			seen.add(key)
+			actions.push(action)
+		}
+
+		for (const diagnostic of context?.diagnostics || []) {
+			if (diagnostic.source !== 'ps12exe') continue
+			const replacement = diagnostic.data?.replacement
+			const line = diagnostic.range.start.line
+
+			if (diagnostic.code === PS2EXE_DIAGNOSTIC && replacement) {
+				const action = new vscode.CodeAction(t('Use ps12exe'), vscode.CodeActionKind.QuickFix)
+				action.edit = new vscode.WorkspaceEdit()
+				action.edit.replace(document.uri, diagnostic.range, replacement)
+				action.diagnostics = [diagnostic]
+				add(action, `ps12exe:${line}:${replacement}`)
+			}
+
+			if (diagnostic.code === MODULE_DIAGNOSTIC && replacement) {
+				const action = new vscode.CodeAction(t('Use #_require'), vscode.CodeActionKind.QuickFix)
+				action.edit = new vscode.WorkspaceEdit()
+				action.edit.replace(document.uri, diagnostic.range, replacement)
+				action.diagnostics = [diagnostic]
+				add(action, `require:${line}:${replacement}`)
+			}
+
+			if (diagnostic.code === PS2EXE_DIAGNOSTIC || diagnostic.code === MODULE_DIAGNOSTIC) {
+				const indent = (document.lineAt(line).text.match(/^[\t ]*/) || [''])[0]
+				const eol = document.eol === vscode.EndOfLine.CRLF ? '\r\n' : '\n'
+				const action = new vscode.CodeAction(t('Ignore this warning'), vscode.CodeActionKind.QuickFix)
+				action.edit = new vscode.WorkspaceEdit()
+				action.edit.insert(document.uri, new vscode.Position(line, 0), `${indent}${IGNORE_DIRECTIVE}${eol}`)
+				action.diagnostics = [diagnostic]
+				add(action, `ignore:${line}`)
+			}
+		}
+
+		const format = new vscode.CodeAction(t('Format ps12exe preprocessor blocks'), FIX_ALL_KIND)
+		format.command = {
 			command: 'ps12exe.formatDocument',
-			title: action.title,
+			title: format.title,
 			arguments: [document.uri.toString()]
 		}
-		return [action]
+		actions.push(format)
+		return actions
 	}
 }
 
@@ -833,7 +921,7 @@ export function activate (context) {
 		vscode.languages.registerHoverProvider(POWER_SHELL_SELECTOR, hoverProvider),
 		vscode.languages.registerCompletionItemProvider(POWER_SHELL_SELECTOR, completionProvider, '.', ' '),
 		vscode.languages.registerFoldingRangeProvider(POWER_SHELL_SELECTOR, foldingProvider),
-		vscode.languages.registerCodeActionsProvider(POWER_SHELL_SELECTOR, codeActionProvider, { providedCodeActionKinds: [FIX_ALL_KIND] }),
+		vscode.languages.registerCodeActionsProvider(POWER_SHELL_SELECTOR, codeActionProvider, { providedCodeActionKinds: [FIX_ALL_KIND, vscode.CodeActionKind.QuickFix] }),
 		vscode.workspace.onDidOpenTextDocument(updateDiagnostics),
 		vscode.workspace.onDidChangeTextDocument((event) => scheduleDiagnostics(event.document)),
 		vscode.workspace.onDidCloseTextDocument((document) => diagnosticCollection.delete(document.uri))

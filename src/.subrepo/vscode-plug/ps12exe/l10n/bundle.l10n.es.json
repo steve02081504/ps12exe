@@ -52,5 +52,10 @@
 	"Repository": "Repositorio",
 	"PowerShell Gallery": "Galería de PowerShell",
 	"Tags": "Etiquetas",
-	"No module named `{0}` was found on the PowerShell Gallery.": "No se encontró ningún módulo llamado `{0}` en la Galería de PowerShell."
+	"No module named `{0}` was found on the PowerShell Gallery.": "No se encontró ningún módulo llamado `{0}` en la Galería de PowerShell.",
+	"PS2EXE command \"{0}\" is deprecated; use ps12exe instead.": "El comando PS2EXE \"{0}\" está obsoleto; use ps12exe en su lugar.",
+	"Module-management command \"{0}\"; declare module dependencies with #_require so the compiled executable sets them up.": "Comando de gestión de módulos \"{0}\"; declare las dependencias de módulos con #_require para que el ejecutable compilado las prepare.",
+	"Use ps12exe": "Usar ps12exe",
+	"Use #_require": "Usar #_require",
+	"Ignore this warning": "Ignorar esta advertencia"
 }

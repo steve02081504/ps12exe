@@ -52,5 +52,10 @@
 	"Repository": "仓库",
 	"PowerShell Gallery": "PowerShell 库",
 	"Tags": "标签",
-	"No module named `{0}` was found on the PowerShell Gallery.": "在 PowerShell 库上找不到名为 `{0}` 的模块。"
+	"No module named `{0}` was found on the PowerShell Gallery.": "在 PowerShell 库上找不到名为 `{0}` 的模块。",
+	"PS2EXE command \"{0}\" is deprecated; use ps12exe instead.": "PS2EXE 命令 \"{0}\" 已废弃；请改用 ps12exe。",
+	"Module-management command \"{0}\"; declare module dependencies with #_require so the compiled executable sets them up.": "模块管理命令 \"{0}\"；请用 #_require 声明模块依赖，让编译后的可执行文件负责准备它们。",
+	"Use ps12exe": "使用 ps12exe",
+	"Use #_require": "使用 #_require",
+	"Ignore this warning": "忽略此警告"
 }
