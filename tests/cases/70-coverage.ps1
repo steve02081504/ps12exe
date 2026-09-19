@@ -107,15 +107,19 @@ Add-Test @{
 Add-Test @{
 	Name  = 'units.syntax-error-data'
 	Group = 'coverage'
-	Deps  = @('src/SyntaxErrorDataBuilder.ps1', 'src/SyntaxErrorI18nDataGetter.ps1')
+	Deps  = @('src/SyntaxErrorDataBuilder.ps1', 'src/SyntaxErrorI18nDataGetter.ps1', 'src/SyntaxErrorI18nDataBuilder.ps1')
 	Run   = {
 		param($ctx)
-		$data = & (Join-Path $ctx.RepoRoot 'src/SyntaxErrorI18nDataGetter.ps1') -Content 'function {' -Locale 'en-US'
+		$content = "# comment 1`n# comment 2`nfunction {`n# trailing comment"
+		$data = & (Join-Path $ctx.RepoRoot 'src/SyntaxErrorI18nDataGetter.ps1') -Content $content -Locale 'en-US'
 		Assert-True (@($data).Count -ge 1) '无效脚本应产生语法错误数据'
 		$first = @($data)[0]
 		Assert-True ([bool]$first.Message) '语法错误缺少 Message'
 		Assert-True ($first.Spoce.Line -ge 1) '语法错误缺少行号'
 		Assert-True ([bool]$first.ErrorId) '语法错误缺少 ErrorId'
+		# 报错应只显示出错那一行，而不是把整个脚本都打出来
+		$expectedLine = ($content -split "`n")[$first.Spoce.Line - 1]
+		Assert-Equal $expectedLine $first.Text '语法错误应只显示出错行'
 	}
 }
 

@@ -1,5 +1,5 @@
 ﻿param ($SyntaxErrors, $CodeContent, $Locale)
-$result = & $PSScriptRoot/SyntaxErrorDataBuilder.ps1 $SyntaxErrors
+$result = & $PSScriptRoot/SyntaxErrorDataBuilder.ps1 -SyntaxErrors $SyntaxErrors -CodeContent $CodeContent
 
 #_if PSScript
 	if ($PSVersionTable.PSEdition -eq "Core" -and (Get-Command powershell -ErrorAction Ignore)) {
