@@ -25,16 +25,19 @@ if (!$Locale) {
 	$Locale = $env:LANG
 	if (!$Locale) { $Locale = $env:LANGUAGE }
 	if (!$Locale) { $Locale = $env:LC_ALL }
-	if (!$Locale -and (Get-Command locale -ErrorAction Ignore)) {
-		$Locale = try {
-			&locale -uU
-		}
-		catch { $null }
-	}
 	if ($Locale) {
 		$Locale = $Locale.Split('.')[0].Replace('_', '-')
 	}
-	else {
+	elseif ($PSCulture) {
+		$Locale = $PSCulture
+	}
+	elseif (Get-Command locale -ErrorAction Ignore) {
+		$Locale = try {
+			(&locale -uU).Split('.')[0].Replace('_', '-')
+		}
+		catch { $null }
+	}
+	if (!$Locale) {
 		$Locale = (Get-Culture).Name
 	}
 }
