@@ -508,27 +508,43 @@ El desarrollador de ps12exe no usa este proyecto para promover una postura polí
 
 ### Tamaño y Velocidad 🔬
 
-Medido en Windows 11 con PowerShell 7.6.6 (.NET 10) y Windows PowerShell 5.1, 20 ejecuciones en caliente cada uno. El mínimo de creación de procesos (`cmd /c exit`) es de ~15 ms. Reproducir con `pwsh -File ../tools/Benchmark/Compare-Compilers.ps1 -IncludeCore`.
+Medido en Windows 11 con PowerShell 7.6.6 (.NET 10) y Windows PowerShell 5.1, 20 ejecuciones en caliente cada uno. El mínimo de creación de procesos (`cmd /c exit`) es de ~15 ms. Reproducir con `pwsh -File ../tools/Benchmark/Compare-Compilers.ps1 -IncludeCore` (añade `-Compile` para la tabla de velocidad de compilación de abajo).
 
 | Compilación                                              | Tamaño de salida | Arranque en caliente |
 | -------------------------------------------------------- | ---------------- | -------------------- |
-| Windows PowerShell 5.1 ejecutando el script directamente | —                | ~245 ms              |
-| ps12exe · constante · Framework4.0                       | 1024 bytes       | ~33 ms               |
-| ps12exe · no constante · Framework4.0                    | 14848 bytes      | ~210 ms              |
+| Windows PowerShell 5.1 ejecutando el script directamente | —                | ~330 ms              |
+| ps12exe · constante · Framework4.0                       | 1024 bytes       | ~43 ms               |
+| ps12exe · no constante · Framework4.0                    | 14848 bytes      | ~254 ms              |
 | PS2EXE 1.0.18 · no constante                             | 25088 bytes      | ~223 ms              |
 | -------------------------------------------------------- | ---------------- | -------------------- |
-| pwsh 7 ejecutando el script directamente                 | —                | ~450 ms              |
-| ps12exe · constante · Core                               | ~169 KB          | ~70 ms               |
-| ps12exe · no constante · Core                            | ~185 KB          | ~395 ms              |
+| pwsh 7 ejecutando el script directamente                 | —                | ~640 ms              |
+| ps12exe · constante · Core                               | ~165 KB          | ~80 ms               |
+| ps12exe · no constante · Core                            | ~181 KB          | ~500 ms              |
 | PS2EXE 1.0.18 · no constante · Core                      | no compatible    | no compatible        |
 
 Un script constante se evalúa en tiempo de compilación, por lo que su exe pesa 1 KB y nunca inicia PowerShell: es unas 24× más pequeño y 6× más rápido de lanzar que un hello world de PS2EXE. Los exe no constantes son ~40 % más pequeños que los de PS2EXE y, para scripts con muchas variables de ámbito global, también se ejecutan más rápido, porque el script se ejecuta dentro de una función (ámbito local) en lugar del ámbito global.
+
+### Velocidad de compilación ⏱️
+
+Medido con la misma herramienta (`-Compile -IncludeCore`). Cada muestra es un proceso anfitrión nuevo (Windows PowerShell 5.1 para Framework/PS2EXE, pwsh 7 para Core); «en caliente» es la mediana de 5 compilaciones después de la primera. Los datos de PS2EXE usan la versión instalada localmente (1.0.13 en este entorno).
+
+| Compilación                           | Compilación en caliente |
+| ------------------------------------- | ----------------------- |
+| ps12exe · constante · Framework4.0    | ~2,6 s                  |
+| ps12exe · no constante · Framework4.0 | ~1,4 s                  |
+| PS2EXE · no constante                 | ~1,0 s                  |
+| ------------------------------------- | ----------------------- |
+| ps12exe · constante · Core            | ~4,3 s                  |
+| ps12exe · no constante · Core         | ~3,8 s                  |
+| PS2EXE · no constante · Core          | no compatible           |
+
+PS2EXE compila un hello world más rápido porque no es más que una fina envoltura del compilador de .NET Framework integrado en Windows: realiza una sola pasada de CodeDom y nada más. ps12exe además ejecuta una comprobación de sintaxis, clasifica el script y (para scripts constantes) lo evalúa, y empaqueta el marco del programa como carga útil dentro de un lanzador, por lo que su compilación no constante es ~1,4× la de PS2EXE. La contrapartida se ve en la salida: ps12exe genera 1024 / 14848 bytes donde PS2EXE genera 25088, y los programas constantes se lanzan unas 6× más rápido. La compilación Core está dominada por `dotnet publish`; la primera compilación de una configuración también restaura los paquetes NuGet, tras lo cual ps12exe reutiliza el directorio de proyecto generado y ejecuta `dotnet publish --no-restore`.
 
 El compilador en sí se distribuye como módulo de PowerShell:
 
 | Paquete del compilador  | Descomprimido | Comprimido |
 | ----------------------- | ------------- | ---------- |
-| ps12exe (master actual) | ~1,29 MB      | ~513 KB    |
+| ps12exe (master actual) | ~1,86 MB      | ~765 KB    |
 | PS2EXE 1.0.18           | ~171 KB       | ~46 KB     |
 
 El módulo de ps12exe es más grande porque es un compilador de script puro y sin dependencias que incluye binarios [AsmResolver](https://github.com/Washi1337/AsmResolver) recortados (usados para emitir los exe constantes de 1 KB y desempaquetar las cargas), 7 localizaciones y una GUI de script puro; PS2EXE casi no incluye nada y se apoya en el compilador de .NET Framework integrado en Windows.

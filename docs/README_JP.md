@@ -506,27 +506,43 @@ ps12exe の開発者は、このプロジェクトで政治的・DEI・その他
 
 ### サイズと速度のベンチマーク 🔬
 
-Windows 11 + PowerShell 7.6.6（.NET 10）+ Windows PowerShell 5.1 で計測。各項目をウォームアップ後に 20 回実行。プロセス生成の下限（`cmd /c exit`）は約 15 ms。`pwsh -File ../tools/Benchmark/Compare-Compilers.ps1 -IncludeCore` で再現できます。
+Windows 11 + PowerShell 7.6.6（.NET 10）+ Windows PowerShell 5.1 で計測。各項目をウォームアップ後に 20 回実行。プロセス生成の下限（`cmd /c exit`）は約 15 ms。`pwsh -File ../tools/Benchmark/Compare-Compilers.ps1 -IncludeCore` で再現できます（`-Compile` を付けると下のコンパイル速度表が得られます）。
 
 | ビルド                                        | 出力サイズ   | ウォーム起動 |
 | --------------------------------------------- | ------------ | ------------ |
-| Windows PowerShell 5.1 でスクリプトを直接実行 | —            | ~245 ms      |
-| ps12exe · 定数 · Framework4.0                 | 1024 バイト  | ~33 ms       |
-| ps12exe · 非定数 · Framework4.0               | 14848 バイト | ~210 ms      |
+| Windows PowerShell 5.1 でスクリプトを直接実行 | —            | ~330 ms      |
+| ps12exe · 定数 · Framework4.0                 | 1024 バイト  | ~43 ms       |
+| ps12exe · 非定数 · Framework4.0               | 14848 バイト | ~254 ms      |
 | PS2EXE 1.0.18 · 非定数                        | 25088 バイト | ~223 ms      |
 | --------------------------------------------- | ------------ | ------------ |
-| pwsh 7 でスクリプトを直接実行                 | —            | ~450 ms      |
-| ps12exe · 定数 · Core                         | ~169 KB      | ~70 ms       |
-| ps12exe · 非定数 · Core                       | ~185 KB      | ~395 ms      |
+| pwsh 7 でスクリプトを直接実行                 | —            | ~640 ms      |
+| ps12exe · 定数 · Core                         | ~165 KB      | ~80 ms       |
+| ps12exe · 非定数 · Core                       | ~181 KB      | ~500 ms      |
 | PS2EXE 1.0.18 · 非定数 · Core                 | 非対応       | 非対応       |
 
 定数スクリプトはコンパイル時に評価されるため、exe は 1 KB で PowerShell を起動しません。PS2EXE の hello world より約 24 倍小さく、起動は約 6 倍高速です。非定数 exe も PS2EXE より約 40% 小さく、トップレベル変数を多用するスクリプトでは、スクリプトがグローバルスコープではなく関数内（ローカルスコープ）で実行されるため、実行も速くなります。
+
+### コンパイル速度 ⏱️
+
+同じツール（`-Compile -IncludeCore`）で計測。各サンプルは新しいホストプロセスで実行（Framework/PS2EXE は Windows PowerShell 5.1、Core は pwsh 7）。「ウォーム」は初回以降 5 回のコンパイルの中央値です。PS2EXE の数値はローカルにインストールされたリリース（この環境では 1.0.13）を使用しています。
+
+| ビルド                          | ウォームコンパイル |
+| ------------------------------- | ------------------ |
+| ps12exe · 定数 · Framework4.0   | ~2.6 s             |
+| ps12exe · 非定数 · Framework4.0 | ~1.4 s             |
+| PS2EXE · 非定数                 | ~1.0 s             |
+| ------------------------------- | ------------------ |
+| ps12exe · 定数 · Core           | ~4.3 s             |
+| ps12exe · 非定数 · Core         | ~3.8 s             |
+| PS2EXE · 非定数 · Core          | 非対応             |
+
+PS2EXE が hello world を速くコンパイルできるのは、Windows 内蔵の .NET Framework コンパイラを薄くラップしているだけであり、CodeDom のパスを 1 回実行する以外に何もしないからです。ps12exe はさらに構文チェック、スクリプトの分類、（定数スクリプトの場合）評価を行い、プログラムフレームをランチャー内のペイロードとしてパックするため、非常量のコンパイルは PS2EXE の約 1.4 倍になります。その代償は出力に表れます。ps12exe は 1024 / 14848 バイトを出力するのに対し PS2EXE は 25088 バイトで、定数プログラムの起動は約 6 倍高速です。Core のコンパイルは `dotnet publish` が支配的で、ある構成の初回コンパイルでは NuGet パッケージも復元され、その後 ps12exe は生成済みのプロジェクトディレクトリを再利用して `dotnet publish --no-restore` を実行します。
 
 コンパイラ自体は PowerShell モジュールとして配布されます：
 
 | コンパイラパッケージ     | 展開後   | 圧縮後  |
 | ------------------------ | -------- | ------- |
-| ps12exe（現在の master） | ~1.29 MB | ~513 KB |
+| ps12exe（現在の master） | ~1.86 MB | ~765 KB |
 | PS2EXE 1.0.18            | ~171 KB  | ~46 KB  |
 
 ps12exe のモジュールが大きいのは、依存関係のない純スクリプトコンパイラであり、トリミング済みの [AsmResolver](https://github.com/Washi1337/AsmResolver) バイナリ（1 KB の定数 exe の生成とペイロードの展開に使用）、7 言語のローカライズ、純スクリプト GUI を同梱しているためです。PS2EXE はほとんど同梱せず、Windows 内蔵の .NET Framework コンパイラに依存しています。
