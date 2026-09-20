@@ -23,8 +23,11 @@ Get-ChildItem $PSScriptRoot\bin\AsmResolver -Recurse -Filter *.dll | ForEach-Obj
 }
 
 # 添加c#代码
-$TinySharpCode = Get-Content $PSScriptRoot/programFrames/TinySharp.cs -Raw -Encoding UTF8
-Add-Type $TinySharpCode -ReferencedAssemblies $Refs
+# 同进程多次编译时复用已加载的类型：Add-Type 同一份类型定义第二次会报“已存在”，且 Roslyn 下约 1s。
+if (-not ('TinySharp.Program' -as [type])) {
+	$TinySharpCode = Get-Content $PSScriptRoot/programFrames/TinySharp.cs -Raw -Encoding UTF8
+	Add-Type $TinySharpCode -ReferencedAssemblies $Refs
+}
 
 # 编译
 $file = [TinySharp.Program]::Compile($targetRuntime, $architecture, $ConstResult, [ps12exeConstEvalHost]::LastExitCode, -not $noOutput, $noConsole)

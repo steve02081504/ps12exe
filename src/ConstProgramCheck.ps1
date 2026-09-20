@@ -84,7 +84,9 @@ if ($AstAnalyzeResult.IsConst) {
 		Write-I18n Verbose ConstEvalStart
 
 		# 一个自定义host以便挂钩SetShouldExit
-		Add-Type @"
+		# 同进程多次编译时复用已加载的类型：pwsh 下 Roslyn 每次 Add-Type 约 0.8s。
+		if (-not ('ps12exeConstEvalHost' -as [type])) {
+			Add-Type @"
 using System;
 using System.Globalization;
 using System.Management.Automation;
@@ -107,6 +109,9 @@ public class ps12exeConstEvalHost : PSHost {
     public override void NotifyEndApplication() { }
 }
 "@ *> $null
+		}
+		# LastExitCode 是静态字段，每次求值前复位，避免沿用上一次编译的退出码。
+		[ps12exeConstEvalHost]::LastExitCode = 0
 		$myhost = [ps12exeConstEvalHost]::New()
 		$runspace = [runspacefactory]::CreateRunspace($myhost)
 		$runspace.Open()

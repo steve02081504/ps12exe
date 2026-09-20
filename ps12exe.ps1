@@ -202,6 +202,16 @@ function RollUp {
 	}
 }
 if ($Debug) { $DebugPreference = 'Continue' } # 修复 -debug 会把它设为 'Inquire' 的问题
+function bytesOfString([string]$str) {
+	if ($str) { [system.Text.Encoding]::UTF8.GetBytes($str).Count } else { 0 }
+}
+function Test-StdoutRedirected {
+	# 控制台重定向（管道 / 1>文件）。在交互式 ConsoleHost 中，`$exe = ps12exe` 会在不设置 IsOutputRedirected 的情况下捕获 stdout——仍属 stdout 捕获，而非 stderr（仅 2>$null）。
+	if ([System.Console]::IsOutputRedirected) { return $true }
+	$line = (Get-PSCallStack)[1].InvocationInfo.Line
+	return $line -match '\$\w+\s*='
+}
+
 #_if PSScript
 	$LocaleLoaderArg = @{ Locale = $Locale }
 	if ($nested) { $LocaleLoaderArg.FailedLoadLocaleData = {} }
@@ -213,30 +223,39 @@ $LocalizeData =
 	#_include "$PSScriptRoot/src/locale/en-UK.ps1"
 #_endif
 . $PSScriptRoot\src\WriteI18n.ps1
+. $PSScriptRoot\src\Cache.ps1
+. $PSScriptRoot\src\OutputCache.ps1
+. $PSScriptRoot\src\AsmWarmup.ps1
 Set-I18nData -I18nData $LocalizeData.CompilingI18nData
 function Show-Help {
 	. $PSScriptRoot\src\HelpShower.ps1 -HelpData $LocalizeData.ConsoleHelpData | Write-Host
 }
 #_if PSScript
-	$versionNow = (Get-Module -ListAvailable ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1).Version
-	if ($versionNow -ne '0.0.0') { # 非开发版本
-		if (Test-Path $env:TEMP/ps12exe_version.txt) {
-			$versionOnline = Get-Content $env:TEMP/ps12exe_version.txt -Encoding utf8 | Select-Object -First 1
-			if ((-not $nested) -and (-not $SkipVersionCheck) -and ($versionNow -ne $versionOnline)) {
-				try {
-					$ForegroundColor = try { $Host.UI.RawUI.ForegroundColor } catch { 'White' }
-					$Host.UI.RawUI.ForegroundColor = "Yellow"
+	# -NoUpdateCheck 时连模块列表都不必枚举（Get-Module -ListAvailable 在 WinPS 下要数百毫秒）。
+	if (-not $SkipVersionCheck) {
+		$versionNow = (Get-Module -ListAvailable ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1).Version
+		if ($versionNow -ne '0.0.0') { # 非开发版本
+			$versionFile = Join-Path (Get-TempRoot) 'version.txt'
+			if (Test-Path $versionFile) {
+				$versionOnline = Get-Content $versionFile -Encoding utf8 | Select-Object -First 1
+				if ((-not $nested) -and ($versionNow -ne $versionOnline)) {
+					try {
+						$ForegroundColor = try { $Host.UI.RawUI.ForegroundColor } catch { 'White' }
+						$Host.UI.RawUI.ForegroundColor = "Yellow"
+					}
+					catch {}
+					Write-I18n Host NewVersionAvailable $versionOnline
+					try { $Host.UI.RawUI.ForegroundColor = $ForegroundColor } catch {}
 				}
-				catch {}
-				Write-I18n Host NewVersionAvailable $versionOnline
-				try { $Host.UI.RawUI.ForegroundColor = $ForegroundColor } catch {}
 			}
-		}
-		if ((-not $nested) -and (-not $SkipVersionCheck) -and -not (Get-Job -Name ps12exe_version_check -ErrorAction Ignore)) {
-			Start-Job {
-				$versionOnline = (Find-Module ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1).Version
-				Set-Content $env:TEMP/ps12exe_version.txt -Value $versionOnline -Encoding utf8
-			} -Name ps12exe_version_check | Out-Null
+			if ((-not $nested) -and -not (Get-Job -Name ps12exe_version_check -ErrorAction Ignore)) {
+				Start-Job {
+					$versionOnline = (Find-Module ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1).Version
+					$dir = Join-Path $env:TEMP 'ps12exe'
+					New-Item -ItemType Directory -Force -Path $dir | Out-Null
+					Set-Content (Join-Path $dir 'version.txt') -Value $versionOnline -Encoding utf8
+				} -Name ps12exe_version_check | Out-Null
+			}
 		}
 	}
 #_endif
@@ -262,15 +281,6 @@ $ParamList = $MyInvocation.MyCommand.Parameters
 $Params.Remove('Content') | Out-Null #防止回滚覆盖
 $Params.Remove('PreprocessOnly') | Out-Null # 从参数中移除 PreprocessOnly，供编译步骤使用
 
-function bytesOfString([string]$str) {
-	if ($str) { [system.Text.Encoding]::UTF8.GetBytes($str).Count } else { 0 }
-}
-function Test-StdoutRedirected {
-	# 控制台重定向（管道 / 1>文件）。在交互式 ConsoleHost 中，`$exe = ps12exe` 会在不设置 IsOutputRedirected 的情况下捕获 stdout——仍属 stdout 捕获，而非 stderr（仅 2>$null）。
-	if ([System.Console]::IsOutputRedirected) { return $true }
-	$line = (Get-PSCallStack)[1].InvocationInfo.Line
-	return $line -match '\$\w+\s*='
-}
 #_if PSScript #在PSEXE中主机永远是winpwsh，所以不会内嵌
 if (!$nested) {
 #_endif
@@ -691,24 +701,38 @@ $resourceParamKeys | ForEach-Object {
 }
 
 
+$OutputCacheKey = $null
+# 提前命中：脚本已显式声明非常量（#_pragma Build.ConstEval.Enabled 0 或已声明超时），无需 AST 分析即可确定不会
+# 走常量壳，因而可在 AstAnalyze 之前命中缓存、跳过分析与告警。内容与上次成功编译完全一致，语法必然有效，
+# 跳过解析是安全的。产物缓存的键与开关见 src/OutputCache.ps1。
+if (($noConstEval -or $constEvalTimeout) -and (Test-OutputCacheEnabled)) {
+	$OutputCacheKey = Get-OutputCacheKey $PSScriptRoot $PSBoundParameters
+	if ($OutputCacheKey -and (Test-OutputCacheHit $outputFile $OutputCacheKey)) {
+		if (!$nested -and (Test-StdoutRedirected)) { Write-Output $outputFile }
+		$global:LastExitCode = 0
+		return
+	}
+}
+
 . $PSScriptRoot\src\AstAnalyze.ps1
 . $PSScriptRoot\src\TaskbarProgress.ps1
 $AstAnalyzeResult = AstAnalyze $Ast
 Write-Debug "AstAnalyzeResult: $(($AstAnalyzeResult|ConvertTo-Json) -split "\r?\n" -ne '' -join "`n")"
-$CommandNames = (Get-Command).Name + (Get-Alias).Name
 $FoundCmdlets = @()
 $NotFoundCmdlets = @()
+# 旧实现先枚举 (Get-Command).Name + (Get-Alias).Name（约 2000 项）再比对；改为只对脚本实际用到的少数名字做定向解析，
+# 省掉 WinPS 下约 0.5s、pwsh 下约 0.23s 的全量枚举。注意无参 Get-Command 只列函数/筛选器/别名/命令，不含 PATH 上的
+# 应用程序与外部脚本——那两类现在能解析，但编译出的 exe 在目标机上未必还有，归入 FoundCmdlets 提醒。
 $AstAnalyzeResult.UsedNonConstFunctions | ForEach-Object {
 	if ($_ -match '\$' -or -not $_) { return }
-	if ($CommandNames -notcontains $_) {
-		if ($_ -match '^[\w\-_]+$' -and (Get-Command $_ -ErrorAction Ignore)) {
-			$FoundCmdlets += $_
-		}
-		# 跳过成员函数，因为解析Add-Type太过复杂
-		elseif (-not $_.Contains(']::')) {
-			$NotFoundCmdlets += $_
-		}
+	$cmd = if ($_ -match '^[\w\-_]+$') { @(Get-Command $_ -ErrorAction Ignore)[0] } else { $null }
+	if ($cmd) {
+		if ($cmd.CommandType -notin 'Alias', 'Function', 'Filter', 'Cmdlet') { $FoundCmdlets += $_ }
+		return
 	}
+	# 跳过成员函数，因为解析Add-Type太过复杂
+	if ($_.Contains(']::')) { return }
+	$NotFoundCmdlets += $_
 }
 if ($AST.ParamBlock) { $AstAnalyzeResult.IsConst = $false }
 $NotFoundTypes = @()
@@ -724,12 +748,24 @@ if ($NotFoundCmdlets) {
 	Write-I18n Warning SomeNotFoundCmdlets $($NotFoundCmdlets -join '、')
 }
 if ($NotFoundTypes) {
-	Write-I18n Warning SomeTypesMayNotAvailable $($NotFoundTypes -join '、')
+	Write-I18n Warning SomeTypesMayNotAvailable ($NotFoundTypes -join '、')
 }
+
+# 常规命中：确定非常量（AST 判定）的其余路径。若已在上面的提前命中里算过键就不再重复。
+if (-not $OutputCacheKey -and -not $AstAnalyzeResult.IsConst -and (Test-OutputCacheEnabled)) {
+	$OutputCacheKey = Get-OutputCacheKey $PSScriptRoot $PSBoundParameters
+	if ($OutputCacheKey -and (Test-OutputCacheHit $outputFile $OutputCacheKey)) {
+		if (!$nested -and (Test-StdoutRedirected)) { Write-Output $outputFile }
+		$global:LastExitCode = 0
+		return
+	}
+}
+
 if ($TempDir) {
 	New-Item -ItemType Directory -Path $TempDir -ErrorAction SilentlyContinue | Out-Null
 }
 try {
+	$AsmWarmup = if ($isCoreTarget) { $null } else { Start-AsmWarmup $PSScriptRoot }
 	Write-TaskbarProgress -Percent 0
 	. $PSScriptRoot\src\InitCompileThings.ps1
 	Write-TaskbarProgress -Percent 10
@@ -842,6 +878,9 @@ try {
 				Write-I18n Error SigningFailed $_.Exception.Message
 			}
 		}
+		# 编译成功且最终产物已落盘（含 ExeSinker/签名）后回填产物缓存。
+		Save-OutputCache $OutputCacheKey $outputFile
+
 	}
 	if (!$nested -and (Test-StdoutRedirected)) {
 		Write-Output $outputFile
@@ -895,6 +934,7 @@ $($_ | Format-List | Out-String)
 }
 finally {
 	Write-TaskbarProgressClear
+	Stop-AsmWarmup $AsmWarmup
 	if ($TempTempDir) {
 		Remove-Item $TempTempDir -Recurse -Force -ErrorAction SilentlyContinue
 	}

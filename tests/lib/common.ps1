@@ -38,14 +38,16 @@ $script:BuildComponentPatterns = [ordered]@{
 		'src/AstAnalyze.ps1', 'src/BuildFrame.ps1', 'src/ConstProgramCheck.ps1',
 		'src/GolfModeHeader.ps1', 'src/InitCompileThings.ps1', 'src/PSObjectToString.ps1',
 		'src/ReadScriptFile.ps1', 'src/predicate.ps1', 'src/GuestUrlGuard.ps1',
+		'src/OutputCache.ps1', 'src/AsmWarmup.ps1',
 		'src/programFrames/constexpr.cs', 'src/programFrames/CoreHost.cs',
 		'src/programFrames/default.cs', 'src/programFrames/DllExport.cs',
 		'src/programFrames/pack.cs', 'src/programFrames/TinySharp.cs',
+		'src/programFrames/AssemblyInfo.cs',
 		'src/RuntimePwsh2.0/'
 	)
-	codeDom   = @('src/CodeDomCompiler.ps1', 'src/ExeSinker.ps1')
+	codeDom   = @('src/CodeDomCompiler.ps1', 'src/ExeSinker.ps1', 'src/Cache.ps1')
 	tinySharp = @('src/TinySharpCompiler.ps1')
-	core      = @('src/CoreCompiler.ps1')
+	core      = @('src/CoreCompiler.ps1', 'src/Cache.ps1')
 	ps2exe    = @('src/.subrepo/PS2EXE2ps12exe/')
 }
 
@@ -96,7 +98,7 @@ function Get-RepoFiles {
 	param(
 		[string]$RepoRoot,
 		[string[]]$Extensions,
-		[string[]]$ExcludeRelPatterns = @('^(\.git|build|img|docs)/', '^tests/\.cache/', '^src/\.subrepo/(vscode-plug|ps12exeOnline)/')
+		[string[]]$ExcludeRelPatterns = @('^(\.git|build|img|docs)/', '^tests/\.cache/', '^src/\.subrepo/(vscode-plug|ps12exeOnline)/', '(^|/)(bin|obj)/')
 	)
 	$result = [System.Collections.Generic.List[object]]::new()
 	function Test-Excluded([string]$rel) {

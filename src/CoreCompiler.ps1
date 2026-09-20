@@ -42,7 +42,7 @@ $rid = "$ridOs-$ridArch"
 
 $assemblyName = [System.IO.Path]::GetFileNameWithoutExtension($outputFile)
 $assemblyName = ($assemblyName -replace '[^\w\.\-]', '_')
-if (-not $assemblyName) { $assemblyName = 'PS12ExeOutput' }
+if (-not $assemblyName) { $assemblyName = 'output' }
 
 $isConst = $AstAnalyzeResult.IsConst
 $outputType = if ($noConsole) { 'WinExe' } else { 'Exe' }
@@ -95,8 +95,56 @@ $publishedProps = @"
 		$versionElements
 "@
 
-$projectDir = Join-Path $TempDir 'coreproj'
-Remove-Item -LiteralPath $projectDir -Recurse -Force -ErrorAction Ignore
+$payloadDefineConstants = (($coreConstants + 'CoreHost') | Sort-Object -Unique) -join ';'
+
+# ---------- 编译工程缓存 ----------
+# dotnet publish 的成本大头是 NuGet 还原 + MSBuild/SDK 求值；工程本身由选项唯一决定，
+# 与脚本文本无关。把工程目录按「还原输入」缓存下来，后续编译只重编 frame.cs/main.ps1 并
+# 叠加 --no-restore，可省掉每次约 0.8~0.9s 的还原。用命名互斥量串行化同一 key 的并发编译。
+$smaPath = Join-Path $PSHOME 'System.Management.Automation.dll'
+$coreInvariant = @(
+	'corecache-v1'
+	"tfm=$tfm", "rid=$rid", "outputType=$outputType", "debugType=$debugType"
+	"assemblyName=$assemblyName", "winForms=$winForms", "icon=$iconElement"
+	"resources=$resourceElements", "version=$versionElements"
+	"define=$defineConstants"
+	"payloadDefine=$payloadDefineConstants", "isConst=$isConst"
+	"sma=$smaPath", "edition=$($PSVersionTable.PSEdition)", "psver=$($PSVersionTable.PSVersion)"
+) -join "`n"
+$sha = [System.Security.Cryptography.SHA256]::Create()
+try {
+	$coreBuildKey = [System.BitConverter]::ToString($sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($coreInvariant))).Replace('-', '').Substring(0, 24)
+}
+finally { $sha.Dispose() }
+
+$useCoreCache = -not [bool]$env:PS12EXE_NO_CORE_CACHE
+if ($useCoreCache) {
+	$cacheRoot = Get-CacheRoot 'core'
+	$projectDir = Join-Path $cacheRoot $coreBuildKey
+	if (Test-Path -LiteralPath $projectDir) { (Get-Item -LiteralPath $projectDir).LastWriteTimeUtc = [DateTime]::UtcNow }
+	# 清理长期未用的工程（活跃工程刚被 touch，不会命中）。
+	Clear-StaleCache $cacheRoot
+}
+else {
+	$projectDir = Join-Path $TempDir 'coreproj'
+}
+
+$coreMutex = $null
+$coreLocked = $false
+if ($useCoreCache) {
+	try {
+		$coreMutex = [System.Threading.Mutex]::new($false, "ps12exe-core-$coreBuildKey")
+		$coreLocked = $coreMutex.WaitOne(180000)
+	}
+	catch { $coreMutex = $null; $coreLocked = $false }
+	if (-not $coreLocked) {
+		# 拿不到锁（超时/平台不支持）就退化为本次独占临时目录，牺牲复用换取正确性。
+		$projectDir = Join-Path $TempDir "coreproj-$([Guid]::NewGuid().ToString('N'))"
+	}
+}
+if (-not $useCoreCache -or -not $coreLocked) {
+	Remove-Item -LiteralPath $projectDir -Recurse -Force -ErrorAction Ignore
+}
 New-Item -ItemType Directory -Path $projectDir -Force | Out-Null
 
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
@@ -104,10 +152,24 @@ $env:DOTNET_NOLOGO = '1'
 
 $publishDir = Join-Path $projectDir 'publish'
 
-if ($isConst) {
-	# ---------- 常量：constexpr.cs 直接 publish ----------
-	[System.IO.File]::WriteAllText((Join-Path $projectDir 'frame.cs'), $programFrame, [System.Text.UTF8Encoding]::new($false))
-	$constCsproj = @"
+# 统一的 dotnet 调用：若 obj/project.assets.json 已存在（缓存命中）则加 --no-restore；
+# 若 --no-restore 失败（obj 损坏 / SDK 升级）再退回完整还原重试一次。
+function Invoke-CoreDotnet([string[]]$DotnetArgs, [string]$AssetsPath) {
+	$useNoRestore = Test-Path -LiteralPath $AssetsPath
+	$effective = if ($useNoRestore) { $DotnetArgs + '--no-restore' } else { $DotnetArgs }
+	$output = & $dotnet.Source @effective --nologo -v quiet 2>&1
+	if ($LASTEXITCODE -ne 0 -and $useNoRestore) {
+		$output = & $dotnet.Source @DotnetArgs --nologo -v quiet 2>&1
+	}
+	if ($LASTEXITCODE -ne 0) { throw ($output -join "`n") }
+	return $output
+}
+
+try {
+	if ($isConst) {
+		# ---------- 常量：constexpr.cs 直接 publish ----------
+		[System.IO.File]::WriteAllText((Join-Path $projectDir 'frame.cs'), $programFrame, [System.Text.UTF8Encoding]::new($false))
+		$constCsproj = @"
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 $($publishedProps.Replace('__DefineConstants__', [System.Security.SecurityElement]::Escape($defineConstants)))
@@ -117,23 +179,20 @@ $($publishedProps.Replace('__DefineConstants__', [System.Security.SecurityElemen
 	</ItemGroup>
 </Project>
 "@
-	[System.IO.File]::WriteAllText((Join-Path $projectDir 'const.csproj'), $constCsproj, [System.Text.UTF8Encoding]::new($false))
-	Write-I18n Host CoreCompilePublishing
-	Write-Debug "Core compiler: dotnet publish const frame (tfm=$tfm, rid=$rid)"
-	$publishOutput = & $dotnet.Source publish (Join-Path $projectDir 'const.csproj') -c Release -o $publishDir --nologo -v quiet 2>&1
-	if ($LASTEXITCODE -ne 0) {
-		throw ($publishOutput -join "`n")
+		[System.IO.File]::WriteAllText((Join-Path $projectDir 'const.csproj'), $constCsproj, [System.Text.UTF8Encoding]::new($false))
+		Write-I18n Host CoreCompilePublishing
+		Write-Debug "Core compiler: dotnet publish const frame (tfm=$tfm, rid=$rid)"
+		Remove-Item -LiteralPath $publishDir -Recurse -Force -ErrorAction Ignore
+		$null = Invoke-CoreDotnet @('publish', (Join-Path $projectDir 'const.csproj'), '-c', 'Release', '-o', $publishDir) (Join-Path $projectDir 'obj/project.assets.json')
 	}
-}
-else {
-	# ---------- 非常量：payload 程序集 → Brotli → launcher ----------
-	$payloadDir = Join-Path $projectDir 'payload'
-	New-Item -ItemType Directory -Path $payloadDir -Force | Out-Null
-	[System.IO.File]::WriteAllText((Join-Path $payloadDir 'frame.cs'), $programFrame, [System.Text.UTF8Encoding]::new($false))
-	Copy-Item -LiteralPath (Join-Path $TempDir 'main.ps1') -Destination (Join-Path $payloadDir 'main.ps1') -Force
+	else {
+		# ---------- 非常量：payload 程序集 → Brotli → launcher ----------
+		$payloadDir = Join-Path $projectDir 'payload'
+		New-Item -ItemType Directory -Path $payloadDir -Force | Out-Null
+		[System.IO.File]::WriteAllText((Join-Path $payloadDir 'frame.cs'), $programFrame, [System.Text.UTF8Encoding]::new($false))
+		Copy-Item -LiteralPath (Join-Path $TempDir 'main.ps1') -Destination (Join-Path $payloadDir 'main.ps1') -Force
 
-	$payloadDefineConstants = (($coreConstants + 'CoreHost') | Sort-Object -Unique) -join ';'
-	$payloadCsproj = @"
+		$payloadCsproj = @"
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
@@ -158,58 +217,56 @@ else {
 		<Compile Include="frame.cs" />
 		<EmbeddedResource Include="main.ps1" LogicalName="main.ps1" />
 		<Reference Include="System.Management.Automation">
-			<HintPath>$([System.Security.SecurityElement]::Escape((Join-Path $PSHOME 'System.Management.Automation.dll')))</HintPath>
+			<HintPath>$([System.Security.SecurityElement]::Escape($smaPath))</HintPath>
 			<Private>false</Private>
 		</Reference>
 	</ItemGroup>
 </Project>
 "@
-	[System.IO.File]::WriteAllText((Join-Path $payloadDir 'payload.csproj'), $payloadCsproj, [System.Text.UTF8Encoding]::new($false))
+		[System.IO.File]::WriteAllText((Join-Path $payloadDir 'payload.csproj'), $payloadCsproj, [System.Text.UTF8Encoding]::new($false))
 
-	$payloadOut = Join-Path $projectDir 'payloadout'
-	Write-Debug "Core compiler: dotnet build payload (tfm=$tfm, rid=$rid)"
-	$buildOutput = & $dotnet.Source build (Join-Path $payloadDir 'payload.csproj') -c Release -o $payloadOut --nologo -v quiet 2>&1
-	if ($LASTEXITCODE -ne 0) {
-		throw ($buildOutput -join "`n")
-	}
-	$payloadDll = Join-Path $payloadOut "$assemblyName.dll"
-	if (-not (Test-Path -LiteralPath $payloadDll)) {
-		throw "ps12exe: core payload not built: $payloadDll`n$($buildOutput -join "`n")"
-	}
+		$payloadOut = Join-Path $projectDir 'payloadout'
+		Write-Debug "Core compiler: dotnet build payload (tfm=$tfm, rid=$rid)"
+		Remove-Item -LiteralPath $payloadOut -Recurse -Force -ErrorAction Ignore
+		$buildOutput = Invoke-CoreDotnet @('build', (Join-Path $payloadDir 'payload.csproj'), '-c', 'Release', '-o', $payloadOut) (Join-Path $payloadDir 'obj/project.assets.json')
+		$payloadDll = Join-Path $payloadOut "$assemblyName.dll"
+		if (-not (Test-Path -LiteralPath $payloadDll)) {
+			throw "ps12exe: core payload not built: $payloadDll`n$($buildOutput -join "`n")"
+		}
 
-	# 负载整体 Brotli 压缩成 launcher 的 "main" 资源（Core 的 launcher 走 pack.cs 的 Brotli 分支）。
-	$mainPath = Join-Path $projectDir 'main'
-	$inStream = [System.IO.File]::OpenRead($payloadDll)
-	$outStream = [System.IO.File]::Create($mainPath)
-	$brotli = [System.IO.Compression.BrotliStream]::new($outStream, [System.IO.Compression.CompressionLevel]::SmallestSize, $true)
-	try {
-		$inStream.CopyTo($brotli)
-	}
-	finally {
-		$brotli.Dispose(); $outStream.Dispose(); $inStream.Dispose()
-	}
+		# 负载整体 Brotli 压缩成 launcher 的 "main" 资源（Core 的 launcher 走 pack.cs 的 Brotli 分支）。
+		$mainPath = Join-Path $projectDir 'main'
+		$inStream = [System.IO.File]::OpenRead($payloadDll)
+		$outStream = [System.IO.File]::Create($mainPath)
+		$brotli = [System.IO.Compression.BrotliStream]::new($outStream, [System.IO.Compression.CompressionLevel]::SmallestSize, $true)
+		try {
+			$inStream.CopyTo($brotli)
+		}
+		finally {
+			$brotli.Dispose(); $outStream.Dispose(); $inStream.Dispose()
+		}
 
-	# CoreHost.cs 是 launcher 侧引导：探测 $PSHOME、接 PSModulePath、挂 AssemblyResolve。和 pack.cs 一样，编译进 ps12exe.exe 时内嵌，脚本模式从磁盘读取。
-	#_if PSEXE
-		#_include_as_value bootstrapSource "$PSScriptRoot/programFrames/CoreHost.cs"
-	#_else
-		[string]$bootstrapSource = Get-Content $PSScriptRoot/programFrames/CoreHost.cs -Raw -Encoding UTF8
-	#_endif
-	[System.IO.File]::WriteAllText((Join-Path $projectDir 'CoreHost.cs'), $bootstrapSource, [System.Text.UTF8Encoding]::new($false))
+		# CoreHost.cs 是 launcher 侧引导：探测 $PSHOME、接 PSModulePath、挂 AssemblyResolve。和 pack.cs 一样，编译进 ps12exe.exe 时内嵌，脚本模式从磁盘读取。
+		#_if PSEXE
+			#_include_as_value bootstrapSource "$PSScriptRoot/programFrames/CoreHost.cs"
+		#_else
+			[string]$bootstrapSource = Get-Content $PSScriptRoot/programFrames/CoreHost.cs -Raw -Encoding UTF8
+		#_endif
+		[System.IO.File]::WriteAllText((Join-Path $projectDir 'CoreHost.cs'), $bootstrapSource, [System.Text.UTF8Encoding]::new($false))
 
-	# 复用 WinPS pack 用的 pack.cs；CoreHost 定义让它走 Brotli 分支。
-	#_if PSEXE
-		#_include_as_value launcherSource "$PSScriptRoot/programFrames/pack.cs"
-	#_else
-		[string]$launcherSource = Get-Content $PSScriptRoot/programFrames/pack.cs -Raw -Encoding UTF8
-	#_endif
-	$threadingAttr = if ($threadingModel -eq 'MTA') { '[System.MTAThread]' } else { '[System.STAThread]' }
-	$launcherSource = $launcherSource.Replace('[System.STAThread]', $threadingAttr)
-	[System.IO.File]::WriteAllText((Join-Path $projectDir 'launcher.cs'), $launcherSource, [System.Text.UTF8Encoding]::new($false))
+		# 复用 WinPS pack 用的 pack.cs；CoreHost 定义让它走 Brotli 分支。
+		#_if PSEXE
+			#_include_as_value launcherSource "$PSScriptRoot/programFrames/pack.cs"
+		#_else
+			[string]$launcherSource = Get-Content $PSScriptRoot/programFrames/pack.cs -Raw -Encoding UTF8
+		#_endif
+		$threadingAttr = if ($threadingModel -eq 'MTA') { '[System.MTAThread]' } else { '[System.STAThread]' }
+		$launcherSource = $launcherSource.Replace('[System.STAThread]', $threadingAttr)
+		[System.IO.File]::WriteAllText((Join-Path $projectDir 'launcher.cs'), $launcherSource, [System.Text.UTF8Encoding]::new($false))
 
-	# launcher 需要 noConsole，CoreHost 才能用 MessageBox 报错而不是写不存在的控制台。
-	$launcherDefineConstants = if ($noConsole) { 'CoreHost;noConsole' } else { 'CoreHost' }
-	$launcherCsproj = @"
+		# launcher 需要 noConsole，CoreHost 才能用 MessageBox 报错而不是写不存在的控制台。
+		$launcherDefineConstants = if ($noConsole) { 'CoreHost;noConsole' } else { 'CoreHost' }
+		$launcherCsproj = @"
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 $($publishedProps.Replace('__DefineConstants__', $launcherDefineConstants))
@@ -221,26 +278,31 @@ $($publishedProps.Replace('__DefineConstants__', $launcherDefineConstants))
 	</ItemGroup>
 </Project>
 "@
-	[System.IO.File]::WriteAllText((Join-Path $projectDir 'launcher.csproj'), $launcherCsproj, [System.Text.UTF8Encoding]::new($false))
+		[System.IO.File]::WriteAllText((Join-Path $projectDir 'launcher.csproj'), $launcherCsproj, [System.Text.UTF8Encoding]::new($false))
 
-	Write-I18n Host CoreCompilePublishing
-	Write-Debug "Core compiler: dotnet publish launcher (tfm=$tfm, rid=$rid)"
-	$publishOutput = & $dotnet.Source publish (Join-Path $projectDir 'launcher.csproj') -c Release -o $publishDir --nologo -v quiet 2>&1
-	if ($LASTEXITCODE -ne 0) {
-		throw ($publishOutput -join "`n")
+		Write-I18n Host CoreCompilePublishing
+		Write-Debug "Core compiler: dotnet publish launcher (tfm=$tfm, rid=$rid)"
+		Remove-Item -LiteralPath $publishDir -Recurse -Force -ErrorAction Ignore
+		$null = Invoke-CoreDotnet @('publish', (Join-Path $projectDir 'launcher.csproj'), '-c', 'Release', '-o', $publishDir) (Join-Path $projectDir 'obj/project.assets.json')
+	}
+
+	$publishedExe = Join-Path $publishDir "$assemblyName.exe"
+	if (-not (Test-Path -LiteralPath $publishedExe)) {
+		Write-I18n Error OutputFileNotWritten -Category WriteError
+		throw 'ps12exe:core-no-output'
+	}
+	Copy-Item -LiteralPath $publishedExe -Destination $outputFile -Force
+
+	if ($prepareDebug) {
+		$publishedPdb = Join-Path $publishDir "$assemblyName.pdb"
+		if (Test-Path -LiteralPath $publishedPdb) {
+			Copy-Item -LiteralPath $publishedPdb -Destination ($outputFile -replace '\.exe$', '.pdb') -Force
+		}
 	}
 }
-
-$publishedExe = Join-Path $publishDir "$assemblyName.exe"
-if (-not (Test-Path -LiteralPath $publishedExe)) {
-	Write-I18n Error OutputFileNotWritten -Category WriteError
-	throw 'ps12exe:core-no-output'
-}
-Copy-Item -LiteralPath $publishedExe -Destination $outputFile -Force
-
-if ($prepareDebug) {
-	$publishedPdb = Join-Path $publishDir "$assemblyName.pdb"
-	if (Test-Path -LiteralPath $publishedPdb) {
-		Copy-Item -LiteralPath $publishedPdb -Destination ($outputFile -replace '\.exe$', '.pdb') -Force
+finally {
+	if ($coreMutex) {
+		try { if ($coreLocked) { $coreMutex.ReleaseMutex() } } catch {}
+		$coreMutex.Dispose()
 	}
 }
