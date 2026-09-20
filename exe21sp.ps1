@@ -174,7 +174,7 @@ param(
 	}
 
 	# 从产物的 Win32 版本资源里取回资源参数，转成从产物补回的 #_pragma 行（同名旧行已在 Remove-DerivablePragmaLines 中先删除）。
-	function Get-PS12ExeResourcePragmaLines {
+	function Get-ResourcePragmaLines {
 		param(
 			[string]$ExePath
 		)
@@ -323,7 +323,7 @@ param(
 		if ([exe21sp.Extractor]::IsAdminExe($currentExe)) {
 			$PrefixLines.Add('#_pragma Os.Admin')
 		}
-		foreach ($Line in (Get-PS12ExeResourcePragmaLines -ExePath $currentExe)) {
+		foreach ($Line in (Get-ResourcePragmaLines -ExePath $currentExe)) {
 			$PrefixLines.Add($Line)
 		}
 		$IconBytes = [exe21sp.Extractor]::ExtractIconFromExe($currentExe)
