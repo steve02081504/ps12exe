@@ -162,7 +162,6 @@ async function autoUpdateModule (context) {
 	}
 	else if (result.status === 'error') 
 		getOutputChannel().appendLine(`ps12exe auto-update failed: ${result.error || 'unknown error'}`)
-	
 }
 
 /**
@@ -212,7 +211,6 @@ async function compileCommand (resource) {
 		}
 		else 
 			vscode.window.showInformationMessage(message)
-		
 		return
 	}
 
@@ -408,10 +406,8 @@ async function formatDocumentText (document, options) {
 			channel.appendLine(t('Failed to run the official PowerShell formatter; the document was left unchanged.'))
 			channel.appendLine(String(error && error.message ? error.message : error))
 		}
-	
 	else 
 		notifyMissingPowerShell()
-	
 
 	return applyPreprocessorFormatting(current, base, officialApplied, {
 		indentUnit,
@@ -674,7 +670,6 @@ async function createRequireHover (line, moduleToken, locale) {
 	}
 	else 
 		contents.appendMarkdown(t(HOVER_MESSAGES.requireNotFound, moduleToken.name))
-	
 
 	contents.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${documentationUrl(locale, 'require')})`)
 	return new vscode.Hover(contents, new vscode.Range(line, moduleToken.start, line, moduleToken.end))

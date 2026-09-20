@@ -112,7 +112,6 @@ suite('ps12exe command warnings', () => {
 		assert.strictEqual(generated.length, 2)
 		for (const entry of generated) 
 			assert.strictEqual(entry.replacement, '#_require ps12exe')
-		
 	})
 
 	test('does not offer #_require for gmo-only or piped lines', () => {

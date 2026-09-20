@@ -23,7 +23,6 @@ function collectPs1 (dir, out = []) {
 			if (!IGNORED_DIRS.has(entry.name)) collectPs1(path.join(dir, entry.name), out)
 		}
 		else if (entry.name.toLowerCase().endsWith('.ps1')) out.push(path.join(dir, entry.name))
-	
 	return out
 }
 
@@ -480,7 +479,6 @@ suite('ps12exe preprocessor', () => {
 			const { diagnostics } = analyze(fs.readFileSync(file, 'utf8'))
 			for (const d of diagnostics) 
 				failures.push(`${path.relative(REPO_ROOT, file)}:${d.line + 1} [${d.severity}] ${d.message}`)
-			
 		}
 		assert.deepStrictEqual(failures, [], `ps12exe's own scripts must be warning-free:\n${failures.join('\n')}`)
 	})

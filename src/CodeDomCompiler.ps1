@@ -107,8 +107,7 @@ function New-CompilerParameters([string]$outFile, [string[]]$opts, [bool]$debug)
 # 选项、引用、资源/版本源与占位桶等全部编译输入，所以任何输入变化都会自动生成新模板。
 # 公共缓存/PE 逻辑在 src/Cache.ps1，缓存目录 %TEMP%\ps12exe\cache\codedom。
 $script:CacheRoot = Get-CacheRoot 'codedom'
-$useCodeDomCache = -not [bool]$env:PS12EXE_NO_CODEDOM_CACHE
-if ($useCodeDomCache) { Clear-StaleCache $script:CacheRoot }
+Clear-StaleCache $script:CacheRoot
 # 取帧模板字节；缺失则在命名互斥量保护下用 csc 编一次并缓存。模板只含占位资源，生成后不再改动。
 # AssemblyName 决定 csc 的 assembly name（payload 与 launcher 都用固定名，不随输出名变化，以便跨输出名复用模板）。
 function Get-FrameTemplate([string]$Key, [int]$Bucket, [string[]]$Options, [string]$Source, [string]$ResourceName, [string]$AssemblyName) {
@@ -171,22 +170,20 @@ if ($packEnabled) {
 
 	# payload：优先用帧模板补丁（模板不随脚本内容失效），不可用时直编。
 	[byte[]]$payloadBytes = $null
-	if ($useCodeDomCache) {
-		$versionKey = if ($isPwsh20Sma) { 'v3.5' } else { 'v4.0' }
-		$payloadBucket = Get-CacheBucket $scriptBytes.Length
-		if ($payloadBucket) {
-			$payloadKey = Get-TextHash (@(
-					$payloadSource, ($payloadOptions -join "`n"),
-					(($referenceAssembies | Where-Object { $_ }) -join ';'), "c=$versionKey", "b=$payloadBucket"
-				) -join "`n")
-			try {
-				$template = Get-FrameTemplate $payloadKey $payloadBucket $payloadOptions $payloadSource 'main.ps1' "payload.exe"
-				$template = Set-FrameResource $template $scriptBytes
-				[System.IO.File]::WriteAllBytes($payloadPath, $template)
-				$payloadBytes = $template
-			}
-			catch { Write-Debug "CodeDom compiler: payload frame template failed: $_" }
+	$versionKey = if ($isPwsh20Sma) { 'v3.5' } else { 'v4.0' }
+	$payloadBucket = Get-CacheBucket $scriptBytes.Length
+	if ($payloadBucket) {
+		$payloadKey = Get-TextHash (@(
+				$payloadSource, ($payloadOptions -join "`n"),
+				(($referenceAssembies | Where-Object { $_ }) -join ';'), "c=$versionKey", "b=$payloadBucket"
+			) -join "`n")
+		try {
+			$template = Get-FrameTemplate $payloadKey $payloadBucket $payloadOptions $payloadSource 'main.ps1' "payload.exe"
+			$template = Set-FrameResource $template $scriptBytes
+			[System.IO.File]::WriteAllBytes($payloadPath, $template)
+			$payloadBytes = $template
 		}
+		catch { Write-Debug "CodeDom compiler: payload frame template failed: $_" }
 	}
 	if (-not $payloadBytes) {
 		Write-Debug 'CodeDom compiler: payload frame template miss, compiling'
@@ -228,31 +225,29 @@ if ($packEnabled) {
 	}
 	# launcher：同样优先用帧模板补丁（模板不随脚本内容失效；清单/图标走内容哈希入键）。
 	$launcherPatched = $false
-	if ($useCodeDomCache) {
-		$launcherBucket = Get-CacheBucket $gzBytes.Length
-		if ($launcherBucket) {
-			$iconHash = if ($iconFile -and (Test-Path -LiteralPath $iconFile)) { Get-Sha256Hex ([System.IO.File]::ReadAllBytes($iconFile)) } else { '' }
-			$manifestPath = $outputFile + '.win32manifest'
-			$manifestHash = if ($manifestParam -and (Test-Path -LiteralPath $manifestPath)) { Get-Sha256Hex ([System.IO.File]::ReadAllBytes($manifestPath)) } else { '' }
-			# 清单/图标路径随 outputFile 变化但不影响编译结果：键里抹掉路径、改用内容哈希。
-			$launcherOptionsForKey = ($LauncherCompilerOptions | ForEach-Object {
-					($_ -replace '(?i)(?<=/win32manifest:)[^"]*', '<m>') -replace '(?i)(?<=/win32icon:)[^"]*', '<i>'
-				}) -join "`n"
-			# 内部程序集名固定为 output，不随输出名变化：控制台下 $PSCommandPath 取自 exe 路径；
-			# 窗口化标题在运行期回退到 exe 文件名（见 default.cs），因此产物可跨输出名复用同一模板。
-			$launcherKey = Get-TextHash (@(
-					$launcherSource, $launcherOptionsForKey,
-					(($referenceAssembies | Where-Object { $_ }) -join ';'),
-					"m=$manifestHash", "i=$iconHash", "b=$launcherBucket"
-				) -join "`n")
-			try {
-				$template = Get-FrameTemplate $launcherKey $launcherBucket $LauncherCompilerOptions $launcherSource 'main' "output.exe"
-				$template = Set-FrameResource $template $gzBytes
-				[System.IO.File]::WriteAllBytes($outputFile, $template)
-				$launcherPatched = $true
-			}
-			catch { Write-Debug "CodeDom compiler: launcher frame template failed: $_" }
+	$launcherBucket = Get-CacheBucket $gzBytes.Length
+	if ($launcherBucket) {
+		$iconHash = if ($iconFile -and (Test-Path -LiteralPath $iconFile)) { Get-Sha256Hex ([System.IO.File]::ReadAllBytes($iconFile)) } else { '' }
+		$manifestPath = $outputFile + '.win32manifest'
+		$manifestHash = if ($manifestParam -and (Test-Path -LiteralPath $manifestPath)) { Get-Sha256Hex ([System.IO.File]::ReadAllBytes($manifestPath)) } else { '' }
+		# 清单/图标路径随 outputFile 变化但不影响编译结果：键里抹掉路径、改用内容哈希。
+		$launcherOptionsForKey = ($LauncherCompilerOptions | ForEach-Object {
+			($_ -replace '(?i)(?<=/win32manifest:)[^"]*', '<m>') -replace '(?i)(?<=/win32icon:)[^"]*', '<i>'
+		}) -join "`n"
+		# 内部程序集名固定为 output，不随输出名变化：控制台下 $PSCommandPath 取自 exe 路径；
+		# 窗口化标题在运行期回退到 exe 文件名（见 default.cs），因此产物可跨输出名复用同一模板。
+		$launcherKey = Get-TextHash (@(
+				$launcherSource, $launcherOptionsForKey,
+				(($referenceAssembies | Where-Object { $_ }) -join ';'),
+				"m=$manifestHash", "i=$iconHash", "b=$launcherBucket"
+			) -join "`n")
+		try {
+			$template = Get-FrameTemplate $launcherKey $launcherBucket $LauncherCompilerOptions $launcherSource 'main' "output.exe"
+			$template = Set-FrameResource $template $gzBytes
+			[System.IO.File]::WriteAllBytes($outputFile, $template)
+			$launcherPatched = $true
 		}
+		catch { Write-Debug "CodeDom compiler: launcher frame template failed: $_" }
 	}
 	if (-not $launcherPatched) {
 		Write-Debug 'CodeDom compiler: launcher frame template miss, compiling'

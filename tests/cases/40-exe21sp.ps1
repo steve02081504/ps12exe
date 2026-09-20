@@ -289,51 +289,45 @@ Add-Test @{
 		$work = $ctx.WorkDir
 		$attackerOut = Join-Path $work 'attacker-chosen.exe'
 		$marker = Join-Path $work 'minify-ran.txt'
-		$env:PS12EXE_TEST_MINIFY_MARKER = $marker
-		try {
-			$content = @(
-				"#_!!#_pragma outputFile `"$attackerOut`""
-				"#_!!#_pragma Build.Minify 'Set-Content -LiteralPath `$env:PS12EXE_TEST_MINIFY_MARKER -Value ran'"
-				'#_pragma Build.ConstEval.Enabled 0'
-				'#_!!#_if PSScript'
-				"#_!!Write-Output 'psscript-branch'"
-				'#_!!#_endif'
-				'#_!!#_require ps12exe'
-				'Get-Date | Out-Null'
-				"Write-Output 'escape-roundtrip'"
-			) -join "`n"
-			$src = Join-Path $work 'danger.ps1'
-			[System.IO.File]::WriteAllText($src, $content, [System.Text.UTF8Encoding]::new($true))
-			$exe = Join-Path $work 'danger.exe'
-			ps12exe -inputFile $src -outputFile $exe -NoUpdateCheck | Out-Null
-			Assert-False (Test-Path -LiteralPath $attackerOut) '原始编译时被转义的 outputFile 不应生效'
-			Assert-False (Test-Path -LiteralPath $marker) '原始编译时被转义的 Build.Minify 不应执行'
+		$content = @(
+			"#_!!#_pragma outputFile `"$attackerOut`""
+			"#_!!#_pragma Build.Minify 'Set-Content -LiteralPath `"$marker`" -Value ran'"
+			'#_pragma Build.ConstEval.Enabled 0'
+			'#_!!#_if PSScript'
+			"#_!!Write-Output 'psscript-branch'"
+			'#_!!#_endif'
+			'#_!!#_require ps12exe'
+			'Get-Date | Out-Null'
+			"Write-Output 'escape-roundtrip'"
+		) -join "`n"
+		$src = Join-Path $work 'danger.ps1'
+		[System.IO.File]::WriteAllText($src, $content, [System.Text.UTF8Encoding]::new($true))
+		$exe = Join-Path $work 'danger.exe'
+		ps12exe -inputFile $src -outputFile $exe -NoUpdateCheck | Out-Null
+		Assert-False (Test-Path -LiteralPath $attackerOut) '原始编译时被转义的 outputFile 不应生效'
+		Assert-False (Test-Path -LiteralPath $marker) '原始编译时被转义的 Build.Minify 不应执行'
 
-			$extracted = Join-Path $work 'danger.extracted.ps1'
-			exe21sp -inputFile $exe -outputFile $extracted | Out-Null
-			$text = Get-Content -LiteralPath $extracted -Raw -Encoding UTF8
-			Assert-Match $text '(?m)^#_!!#_pragma outputFile\b' "exe21sp 未给 outputFile 补回 #_!!：$text"
-			Assert-Match $text '(?m)^#_!!#_pragma Build\.Minify\b' "exe21sp 未给 Build.Minify 补回 #_!!：$text"
-			Assert-Match $text '(?m)^#_!!#_pragma Build\.ConstEval\.Enabled 0\b' "exe21sp 未给有效 pragma 补回 #_!!（应作为注释留存）：$text"
-			Assert-Match $text '(?m)^#_!!#_if PSScript\b' "exe21sp 未给 #_if 补回 #_!!：$text"
-			Assert-Match $text '(?m)^#_!!#_require ps12exe\b' "exe21sp 未给 #_require 补回 #_!!：$text"
+		$extracted = Join-Path $work 'danger.extracted.ps1'
+		exe21sp -inputFile $exe -outputFile $extracted | Out-Null
+		$text = Get-Content -LiteralPath $extracted -Raw -Encoding UTF8
+		Assert-Match $text '(?m)^#_!!#_pragma outputFile\b' "exe21sp 未给 outputFile 补回 #_!!：$text"
+		Assert-Match $text '(?m)^#_!!#_pragma Build\.Minify\b' "exe21sp 未给 Build.Minify 补回 #_!!：$text"
+		Assert-Match $text '(?m)^#_!!#_pragma Build\.ConstEval\.Enabled 0\b' "exe21sp 未给有效 pragma 补回 #_!!（应作为注释留存）：$text"
+		Assert-Match $text '(?m)^#_!!#_if PSScript\b' "exe21sp 未给 #_if 补回 #_!!：$text"
+		Assert-Match $text '(?m)^#_!!#_require ps12exe\b' "exe21sp 未给 #_require 补回 #_!!：$text"
 
-			# 模拟 VSC 插件写回：重新编译还原出的脚本，残留指令必须全部保持惰性且原行为不变。
-			$recompiled = Join-Path $work 'danger.recompiled.exe'
-			ps12exe -inputFile $extracted -outputFile $recompiled -NoUpdateCheck | Out-Null
-			Assert-FileExists $recompiled '重编译未产出用户指定路径的 exe'
-			Assert-False (Test-Path -LiteralPath $attackerOut) '重编译时被转义的 outputFile 被激活'
-			Assert-False (Test-Path -LiteralPath $marker) '重编译时被转义的 Build.Minify 被激活'
+		# 模拟 VSC 插件写回：重新编译还原出的脚本，残留指令必须全部保持惰性且原行为不变。
+		$recompiled = Join-Path $work 'danger.recompiled.exe'
+		ps12exe -inputFile $extracted -outputFile $recompiled -NoUpdateCheck | Out-Null
+		Assert-FileExists $recompiled '重编译未产出用户指定路径的 exe'
+		Assert-False (Test-Path -LiteralPath $attackerOut) '重编译时被转义的 outputFile 被激活'
+		Assert-False (Test-Path -LiteralPath $marker) '重编译时被转义的 Build.Minify 被激活'
 
-			# 有效内容不变：原始 exe 与往返后 exe 的运行输出必须一致。
-			$before = Invoke-ExeCaptureMergedOutput -ExePath $exe
-			$after = Invoke-ExeCaptureMergedOutput -ExePath $recompiled
-			Assert-Match $before.Output 'psscript-branch' "原始产物缺少分支代码：$($before.Output)"
-			Assert-Equal $before.Output $after.Output '往返后有效输出发生变化'
-		}
-		finally {
-			Remove-Item Env:PS12EXE_TEST_MINIFY_MARKER -ErrorAction Ignore
-		}
+		# 有效内容不变：原始 exe 与往返后 exe 的运行输出必须一致。
+		$before = Invoke-ExeCaptureMergedOutput -ExePath $exe
+		$after = Invoke-ExeCaptureMergedOutput -ExePath $recompiled
+		Assert-Match $before.Output 'psscript-branch' "原始产物缺少分支代码：$($before.Output)"
+		Assert-Equal $before.Output $after.Output '往返后有效输出发生变化'
 	}
 }
 

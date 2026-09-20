@@ -142,7 +142,6 @@ function moduleAliasSet (aliasMap) {
 	const set = new Set()
 	for (const [name, definition] of Object.entries(aliasMap || {})) 
 		if (MODULE_COMMANDS.has(String(definition).toLowerCase())) set.add(name.toLowerCase())
-	
 	return set
 }
 
@@ -190,7 +189,6 @@ const BARE_INSTALL_RE = /^([\t ]*)(?:Install-Module|inmo)\b(.*)$/i
 function unquote (text) {
 	if (text.length >= 2 && ((text.startsWith('\'') && text.endsWith('\'')) || (text.startsWith('"') && text.endsWith('"')))) 
 		return text.slice(1, -1).replace(/''/g, '\'')
-	
 	return text
 }
 

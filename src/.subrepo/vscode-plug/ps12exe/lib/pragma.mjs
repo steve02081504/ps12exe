@@ -153,7 +153,6 @@ export function buildPragmaCandidates (data, prefix) {
 	}
 	for (const [segment, name] of objectNames) 
 		if (!entries.has(segment)) entries.set(segment, { name, description: '' })
-	
 
 	const lower = String(prefix || '').toLowerCase()
 	const parentEnd = lower.lastIndexOf('.')

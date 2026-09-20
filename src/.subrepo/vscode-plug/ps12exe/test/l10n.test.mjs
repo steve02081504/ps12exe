@@ -23,9 +23,7 @@ function usedRuntimeKeys () {
 			const source = fs.readFileSync(path.join(dir, entry.name), 'utf8')
 			for (const match of source.matchAll(/\bt\(\s*'((?:[^'\\]|\\.)*)'/g)) 
 				keys.add(match[1].replace(/\\'/g, '\''))
-			
 		}
-	
 	return keys
 }
 
@@ -45,7 +43,6 @@ function referencedPackageKeys (pkg) {
 	const scan = (value) => {
 		if (typeof value === 'string') 
 			for (const match of value.matchAll(/%([^%]+)%/g)) keys.add(match[1])
-		
 		else if (Array.isArray(value)) value.forEach(scan)
 		else if (value && typeof value === 'object') Object.values(value).forEach(scan)
 	}

@@ -48,7 +48,6 @@ async function hostCandidates () {
 		catch {
 			// 本机未找到。
 		}
-	
 	return candidates
 }
 
@@ -223,7 +222,6 @@ export function runScript (host, script, options = {}) {
 				cancelled = true
 				killTree(child)
 			})
-		
 	})
 }
 
@@ -285,7 +283,6 @@ export async function findIncompleteFragments ({ host, texts, token }) {
 		const parsed = parseIncompleteOutput(result.stdout)
 		if (parsed.length !== texts.length) 
 			throw new Error(`expected ${texts.length} parse results, got ${parsed.length}: ${String(result.stderr || '').trim()}`)
-		
 		return parsed
 	}
 	finally {
@@ -321,7 +318,6 @@ export function compileScript ({ host, file, locale, channel, token }) {
 
 	if (channel) 
 		channel.appendLine(`> ps12exe -inputFile "${file}"${locale ? ` -Locale "${locale}"` : ''}`)
-	
 
 	return runScript(host, script, { channel, token })
 }
@@ -351,7 +347,6 @@ export function extractScriptToFile ({ host, file, outputFile, locale, channel, 
 
 	if (channel) 
 		channel.appendLine(`> exe21sp -inputFile "${file}" -outputFile "${outputFile}"`)
-	
 
 	return runScript(host, script, { channel, token })
 }
@@ -380,7 +375,6 @@ export function compileToExe ({ host, input, output, locale, channel, token }) {
 
 	if (channel) 
 		channel.appendLine(`> ps12exe -inputFile "${input}" -outputFile "${output}"`)
-	
 
 	return runScript(host, script, { channel, token })
 }

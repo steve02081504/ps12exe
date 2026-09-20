@@ -93,7 +93,7 @@ export function analyze (text) {
 					message: MESSAGES.nestedIfDeadCode,
 					args: [condition, blocks[parent].condition]
 				})
-			
+
 			if (!KNOWN_CONDITIONS.has(condition.toLowerCase())) 
 				diagnostics.push({
 					line,
@@ -101,7 +101,7 @@ export function analyze (text) {
 					message: MESSAGES.unknownCondition,
 					args: [condition]
 				})
-			
+
 			const block = {
 				startLine: line,
 				endLine: lines.length - 1,
@@ -124,7 +124,6 @@ export function analyze (text) {
 			const top = blocks[stack[stack.length - 1]]
 			if (top.elseLine !== null) 
 				diagnostics.push({ line, severity: 'warning', message: MESSAGES.duplicateElse, args: [] })
-			
 			top.elseLine = line
 			continue
 		}
@@ -283,7 +282,6 @@ export function branchFragments (blocks, lines) {
 		fragments.push({ block: index, text: lines.slice(entry.startLine + 1, firstEnd).join('\n') })
 		if (entry.elseLine !== null) 
 			fragments.push({ block: index, text: lines.slice(entry.elseLine + 1, entry.endLine).join('\n') })
-		
 	})
 	return fragments
 }
@@ -422,7 +420,6 @@ export function indentText (text, options = {}) {
 		}
 		else 
 			depth[i] = depthFull
-		
 	}
 
 	// 每个块的语法缩进：其第一条代码行的缩进。`null` 标记「尚未找到」，这样合法的空缩进（顶层块）不会被误认为未找到并被周围代码覆盖。
@@ -431,16 +428,14 @@ export function indentText (text, options = {}) {
 		const bodyEnd = block.elseLine !== null ? block.elseLine : block.endLine
 		for (let i = block.startLine + 1; i < bodyEnd; i++) 
 			if (isCode[i]) { block.bodyIndent = leading[i]; break }
-		
+
 		if (block.bodyIndent === null) 
 			for (let i = bodyEnd + 1; i < block.endLine; i++) 
 				if (isCode[i]) { block.bodyIndent = leading[i]; break }
-			
-		
+
 		if (block.bodyIndent === null) 
 			// 两个分支中都没有代码（例如函数体只有 `#_!!` 转义或注释）。官方 formatter 已经把该指令放在周围的语法缩进处，因此使用它自身的行首缩进，而不是最近的不相关代码行（后者可能位于外层构造的缩进处，如在 `if (` + 续行中那样）。
 			block.bodyIndent = leading[block.startLine]
-		
 	}
 
 	// 最近的前/后代码缩进，用作未附着到块的注释的语法缩进。
@@ -504,7 +499,6 @@ function parenDelta (line) {
 			if (char === '\'') 
 				if (line[i + 1] === '\'') i++
 				else state = 'code'
-			
 			continue
 		}
 		if (state === 'double') {
@@ -559,7 +553,6 @@ export function restoreParenIndentation (text, indentUnit) {
 					break
 				}
 			}
-		
 		else {
 			let depth = extra
 			for (let j = i + 1; j < lines.length; j++) {
@@ -576,7 +569,6 @@ export function restoreParenIndentation (text, indentUnit) {
 
 		for (let k = i + 1; k <= close; k++) 
 			if (lines[k].startsWith(closeIndent)) lines[k] = lines[k].slice(indentUnit.repeat(extra).length)
-		
 	}
 
 	return lines.join(eol)
@@ -629,7 +621,6 @@ function referenceDirective (blocks, line) {
 		const block = blocks[index]
 		if (line >= block.startLine && line <= block.endLine && (!best || block.depth > blocks[best.index].depth)) 
 			best = { index, block }
-		
 	}
 	if (!best) return null
 	const directive = best.block.elseLine !== null && line > best.block.elseLine ? best.block.elseLine : best.block.startLine
@@ -660,11 +651,11 @@ export function restoreMarkerIndentation (text, originalText) {
 	const markerLines = []
 	for (let i = 0; i < lines.length; i++) 
 		if (CODE_MARKER_RE.test(lines[i])) markerLines.push(i)
-	
+
 	const originalMarkerLines = []
 	for (let i = 0; i < originalLines.length; i++) 
 		if (CODE_MARKER_RE.test(originalLines[i])) originalMarkerLines.push(i)
-	
+
 	if (!markerLines.length || markerLines.length !== originalMarkerLines.length) return text
 
 	const out = [...lines]
@@ -685,7 +676,6 @@ export function restoreMarkerIndentation (text, originalText) {
 		}
 		else 
 			leading = leadingOf(originalLines[j])
-		
 		out[i] = leading + lines[i].replace(/^[\t ]*/, '')
 	}
 	return out.join(eol)

@@ -160,14 +160,16 @@ Add-Test @{
 		Name      = 'probe'
 		Output    = 'tty-probe.exe'
 		InputText = @'
+$dir = $PSScriptRoot
 @{
 	hostName = $Host.Name
 	inRedirected = [Console]::IsInputRedirected
 	outRedirected = [Console]::IsOutputRedirected
-} | ConvertTo-Json -Compress | Set-Content -LiteralPath $env:PS12EXE_TTY_HOST -Encoding UTF8
-Remove-Item -LiteralPath $env:PS12EXE_TTY_CHILD -ErrorAction Ignore
+} | ConvertTo-Json -Compress | Set-Content -LiteralPath (Join-Path $dir 'host.json') -Encoding UTF8
+$childFlag = Join-Path $dir 'child-redirected.txt'
+Remove-Item -LiteralPath $childFlag -ErrorAction Ignore
 $powershell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
-& $powershell -NoProfile -NonInteractive -File $env:PS12EXE_TTY_CHILD_PS1
+& $powershell -NoProfile -NonInteractive -File (Join-Path $dir 'tty-child.ps1') $childFlag
 if ($LASTEXITCODE) { exit $LASTEXITCODE }
 '@
 	}
@@ -176,11 +178,8 @@ if ($LASTEXITCODE) { exit $LASTEXITCODE }
 		$child = Join-Path $ctx.WorkDir 'tty-child.ps1'
 		$childFlag = Join-Path $ctx.WorkDir 'child-redirected.txt'
 		$hostJson = Join-Path $ctx.WorkDir 'host.json'
-		[System.IO.File]::WriteAllText($child, '[System.IO.File]::WriteAllText($env:PS12EXE_TTY_CHILD, ([Console]::IsOutputRedirected).ToString())', [System.Text.UTF8Encoding]::new($true))
+		[System.IO.File]::WriteAllText($child, 'param($flag) [System.IO.File]::WriteAllText($flag, ([Console]::IsOutputRedirected).ToString())', [System.Text.UTF8Encoding]::new($true))
 		$probe = Copy-BuildAs -BuildPath $ctx.Builds['probe'] -WorkDir $ctx.WorkDir -Name 'tty-probe.exe'
-		$env:PS12EXE_TTY_CHILD = $childFlag
-		$env:PS12EXE_TTY_HOST = $hostJson
-		$env:PS12EXE_TTY_CHILD_PS1 = $child
 		$exit = Invoke-ExeWithPrivateConsole -ExePath $probe -WorkingDirectory $ctx.WorkDir
 		Assert-Equal 0 $exit "tty probe 退出码"
 		$hostInfo = Get-Content -LiteralPath $hostJson -Raw | ConvertFrom-Json

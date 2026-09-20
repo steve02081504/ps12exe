@@ -50,7 +50,7 @@ function bridgeToProjectDrive (executable) {
 	}
 }
 
-const configured = process.env.PS12EXE_VSCODE_EXECUTABLE_PATH || process.env.VSCODE_EXECUTABLE_PATH
+const configured = process.env.VSCODE_EXECUTABLE_PATH || ''
 const executable = bridgeToProjectDrive(configured || await executableFromPath())
 
 /**
@@ -58,6 +58,6 @@ const executable = bridgeToProjectDrive(configured || await executableFromPath()
  */
 export default defineConfig({
 	files: 'test/**/*.test.mjs',
-	// 在可用时复用本机安装的 VS Code，而不是下载 300+ MB 的副本；否则回退到下载。可通过 PS12EXE_VSCODE_EXECUTABLE_PATH 覆盖。
+	// 在可用时复用本机安装的 VS Code，而不是下载 300+ MB 的副本；否则回退到下载。可通过 VSCODE_EXECUTABLE_PATH 覆盖。
 	...executable && { useInstallation: { fromPath: executable } }
 })

@@ -128,7 +128,7 @@ suite('ps12exe directive completion', () => {
 		assert.strictEqual(DIRECTIVE_COMPLETIONS.find((entry) => entry.label === '#_pragma').followUp, 'suggest')
 		for (const entry of DIRECTIVE_COMPLETIONS) 
 			if (entry.label !== '#_if' && entry.label !== '#_pragma') assert.strictEqual(entry.followUp, undefined, `${entry.label} unexpectedly declares a follow-up`)
-		
+
 		// 条件补全后换行，让 `#_if` 自动补出 `#_endif`。
 		for (const entry of CONDITION_COMPLETIONS) assert.strictEqual(entry.followUp, 'newline')
 	})

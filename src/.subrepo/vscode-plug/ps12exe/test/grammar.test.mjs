@@ -58,7 +58,6 @@ suite('ps12exe grammar', () => {
 					source.injectionSelector.includes(target),
 					`${grammar.path} injects into ${target} but its selector does not mention it: ${source.injectionSelector}`
 				)
-			
 		}
 	})
 

@@ -117,32 +117,22 @@ try {
 }
 finally { $sha.Dispose() }
 
-$useCoreCache = -not [bool]$env:PS12EXE_NO_CORE_CACHE
-if ($useCoreCache) {
-	$cacheRoot = Get-CacheRoot 'core'
-	$projectDir = Join-Path $cacheRoot $coreBuildKey
-	if (Test-Path -LiteralPath $projectDir) { (Get-Item -LiteralPath $projectDir).LastWriteTimeUtc = [DateTime]::UtcNow }
-	# 清理长期未用的工程（活跃工程刚被 touch，不会命中）。
-	Clear-StaleCache $cacheRoot
-}
-else {
-	$projectDir = Join-Path $TempDir 'coreproj'
-}
+$cacheRoot = Get-CacheRoot 'core'
+$projectDir = Join-Path $cacheRoot $coreBuildKey
+if (Test-Path -LiteralPath $projectDir) { (Get-Item -LiteralPath $projectDir).LastWriteTimeUtc = [DateTime]::UtcNow }
+# 清理长期未用的工程（活跃工程刚被 touch，不会命中）。
+Clear-StaleCache $cacheRoot
 
 $coreMutex = $null
 $coreLocked = $false
-if ($useCoreCache) {
-	try {
-		$coreMutex = [System.Threading.Mutex]::new($false, "ps12exe-core-$coreBuildKey")
-		$coreLocked = $coreMutex.WaitOne(180000)
-	}
-	catch { $coreMutex = $null; $coreLocked = $false }
-	if (-not $coreLocked) {
-		# 拿不到锁（超时/平台不支持）就退化为本次独占临时目录，牺牲复用换取正确性。
-		$projectDir = Join-Path $TempDir "coreproj-$([Guid]::NewGuid().ToString('N'))"
-	}
+try {
+	$coreMutex = [System.Threading.Mutex]::new($false, "ps12exe-core-$coreBuildKey")
+	$coreLocked = $coreMutex.WaitOne(180000)
 }
-if (-not $useCoreCache -or -not $coreLocked) {
+catch { $coreMutex = $null; $coreLocked = $false }
+if (-not $coreLocked) {
+	# 拿不到锁（超时/平台不支持）就退化为本次独占临时目录，牺牲复用换取正确性。
+	$projectDir = Join-Path $TempDir "coreproj-$([Guid]::NewGuid().ToString('N'))"
 	Remove-Item -LiteralPath $projectDir -Recurse -Force -ErrorAction Ignore
 }
 New-Item -ItemType Directory -Path $projectDir -Force | Out-Null

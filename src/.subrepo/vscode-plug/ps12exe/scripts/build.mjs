@@ -5,7 +5,7 @@
 //   npm run build -- --no-install
 //   npm run build -- --test    run the test suite first
 //
-// VS Code CLI 通过 `@steve02081504/exec` 的 `where_command` 发现；设置 PS12EXE_VSCODE_EXECUTABLE_PATH 可覆盖它。
+// VS Code CLI 通过 `@steve02081504/exec` 的 `where_command` 发现；设置 VSCODE_EXECUTABLE_PATH 可覆盖它。
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -130,12 +130,12 @@ async function packageExtension () {
 }
 
 /**
- * 解析本地 VS Code CLI。`where_command('code')` 在 Windows 上返回 `code.cmd` 垫片，与 GUI 子系统的 `Code.exe` 不同，它会附加到控制台，因此其输出和退出码可用。可通过 PS12EXE_VSCODE_CLI_PATH 覆盖查找。
+ * 解析本地 VS Code CLI。`where_command('code')` 在 Windows 上返回 `code.cmd` 垫片，与 GUI 子系统的 `Code.exe` 不同，它会附加到控制台，因此其输出和退出码可用。可通过 VSCODE_CLI_PATH 覆盖查找。
  *
  * @returns {Promise<string | undefined>} 本地 VS Code CLI 路径，找不到时为 undefined
  */
 async function resolveCodeCli () {
-	const configured = process.env.PS12EXE_VSCODE_CLI_PATH || process.env.PS12EXE_VSCODE_EXECUTABLE_PATH || process.env.VSCODE_EXECUTABLE_PATH
+	const configured = process.env.VSCODE_CLI_PATH || process.env.VSCODE_EXECUTABLE_PATH
 	if (configured) return configured
 	return await where_command('code') || undefined
 }
@@ -149,7 +149,7 @@ async function resolveCodeCli () {
 async function installExtension (vsix) {
 	const code = await resolveCodeCli()
 	if (!code) {
-		console.warn('\nCould not find the local VS Code CLI; set PS12EXE_VSCODE_EXECUTABLE_PATH to override.')
+		console.warn('\nCould not find the local VS Code CLI; set VSCODE_EXECUTABLE_PATH to override.')
 		console.warn(`Install the VSIX manually: code --install-extension "${vsix}" --force`)
 		return false
 	}
@@ -176,7 +176,6 @@ async function main () {
 
 	if (shouldInstall && await installExtension(vsix)) 
 		console.log('\nReload the VS Code window (Developer: Reload Window) to pick up the new build.')
-	
 }
 
 // 仅在直接运行本脚本时执行；被测试 import 时不触发打包/安装。`import.meta.main` 从 Node 24.2 起可用（见 package.json 的 engines.node），测试宿主里是 undefined。这里不能用顶层 await——测试的 CJS mocha 会 require 它。

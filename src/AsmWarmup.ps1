@@ -3,7 +3,6 @@
 
 # 起一个后台 runspace 跑一次 ExeSinker（拿 codedom 缓存里现成的帧模板当样本），返回该 runspace 供收尾。
 function Start-AsmWarmup([string]$RepoRoot) {
-	if ($env:PS12EXE_NO_ASM_WARMUP) { return $null }
 	try {
 		$warmup = [System.Management.Automation.PowerShell]::Create()
 		$null = $warmup.AddScript({

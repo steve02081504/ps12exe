@@ -38,7 +38,6 @@ function isCompleteLine (text) {
 			if (char === '\'') 
 				if (text[i + 1] === '\'') i++
 				else state = 'code'
-			
 			continue
 		}
 		if (state === 'double') {
@@ -298,14 +297,13 @@ export function convertPs2exeInvocation (line, token) {
 		for (const [name, key] of resourceMap) 
 			if (has(name) && value(name) !== '' && value(name) !== '\'\'' && value(name) !== '""') 
 				resources.push([key, toLiteral(value(name))])
-			
 
 		const parts = ['ps12exe']
 		if (has('inputfile')) parts.push('-InputFile', value('inputfile'))
 		if (has('outputfile')) parts.push('-OutputFile', value('outputfile'))
 		for (const [flag, entries] of [['-App', app], ['-Os', os], ['-Build', build], ['-Resources', resources]]) 
 			if (entries.length) parts.push(flag, hashtable(entries))
-		
+
 		if (has('configfile') && bool('configfile')) parts.push('-ConfigFile')
 
 		return { end, text: parts.join(' ') }

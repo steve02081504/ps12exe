@@ -7,7 +7,7 @@
 # 缓存开关：Core 交给独立编译器；图标会下载/抽取/转换；写 config、KeepSource、代码签名、DllExports
 # 都让产物或流程偏离这份缓存所能描述的输入。开关读取调用方（ps12exe 编译流程）的脚本级变量。
 function Test-OutputCacheEnabled {
-	return -not ($isCoreTarget -or $env:PS12EXE_NO_OUTPUT_CACHE -or $iconFile -or $configFile -or $prepareDebug -or $CodeSigning -or $DllExportList)
+	return -not ($isCoreTarget -or $iconFile -or $configFile -or $prepareDebug -or $CodeSigning -or $DllExportList)
 }
 
 # 计算缓存键；缓存不可用（拿不到编译器源文件）返回 $null。

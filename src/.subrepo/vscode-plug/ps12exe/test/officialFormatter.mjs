@@ -140,7 +140,6 @@ function readExtensionConfigurationDefaults () {
 	const codeFormatting = {}
 	for (const [key, value] of Object.entries(defaults)) 
 		if (key.startsWith(CODE_FORMATTING_PREFIX)) codeFormatting[key.slice(CODE_FORMATTING_PREFIX.length)] = value
-	
 	const editor = defaults['[powershell]'] || {}
 	return { codeFormatting, insertSpaces: editor['editor.insertSpaces'] }
 }
@@ -163,10 +162,8 @@ export function readWorkspaceFormatting (repoRoot) {
 		catch {
 			// 格式错误的工作区文件不应导致测试运行失败。
 		}
-	
 	for (const [key, value] of Object.entries(fileSettings)) 
 		if (key.startsWith(CODE_FORMATTING_PREFIX)) overrides[key.slice(CODE_FORMATTING_PREFIX.length)] = value
-	
 	const editor = fileSettings['[powershell]'] || {}
 	const workspaceInsertSpaces = editor['editor.insertSpaces']
 	// VS Code 自身的默认值是空格；本扩展提供的是制表符。

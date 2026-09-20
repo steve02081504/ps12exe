@@ -433,21 +433,15 @@ Add-Test @{
 		param($ctx)
 		# #_pragma Build.Minify 必须真的在本次编译期执行 minifier，不能被参数读取顺序吞掉。
 		$marker = Join-Path $ctx.WorkDir 'minify-marker.txt'
-		$env:PS12EXE_TEST_MINIFY_MARKER = $marker
-		try {
-			$content = @(
-				"#_pragma Build.Minify 'Set-Content -LiteralPath `$env:PS12EXE_TEST_MINIFY_MARKER -Value ran'"
-				'Get-Date | Out-Null'
-				"Write-Output 'minify-pragma'"
-			) -join "`n"
-			$src = Join-Path $ctx.WorkDir 'minify.ps1'
-			[System.IO.File]::WriteAllText($src, $content, [System.Text.UTF8Encoding]::new($true))
-			# -PreprocessOnly 在 minify 之后返回，minifier 的副作用可直接观察。
-			$null = ps12exe -inputFile $src -PreprocessOnly -NoUpdateCheck
-			Assert-True (Test-Path -LiteralPath $marker) '#_pragma Build.Minify 未在编译期执行'
-		}
-		finally {
-			Remove-Item Env:PS12EXE_TEST_MINIFY_MARKER -ErrorAction Ignore
-		}
+		$content = @(
+			"#_pragma Build.Minify 'Set-Content -LiteralPath `"$marker`" -Value ran'"
+			'Get-Date | Out-Null'
+			"Write-Output 'minify-pragma'"
+		) -join "`n"
+		$src = Join-Path $ctx.WorkDir 'minify.ps1'
+		[System.IO.File]::WriteAllText($src, $content, [System.Text.UTF8Encoding]::new($true))
+		# -PreprocessOnly 在 minify 之后返回，minifier 的副作用可直接观察。
+		$null = ps12exe -inputFile $src -PreprocessOnly -NoUpdateCheck
+		Assert-True (Test-Path -LiteralPath $marker) '#_pragma Build.Minify 未在编译期执行'
 	}
 }

@@ -98,7 +98,6 @@ export function looksLikePs12Exe (exePath) {
 		if (handle !== undefined) 
 			try { fs.closeSync(handle) }
 			catch { /* 已关闭 */ }
-		
 	}
 }
 
@@ -188,7 +187,6 @@ export class ExeSourceFileSystemProvider {
 		if (result.error) throw vscode.FileSystemError.Unavailable(result.error.message)
 		if (result.code !== 0 || !fs.existsSync(cacheFile)) 
 			throw vscode.FileSystemError.FileNotFound(vscode.Uri.file(exePath))
-		
 
 		const script = await fsp.readFile(cacheFile, 'utf8')
 		const entry = { script, mtime, cacheFile }
@@ -330,9 +328,7 @@ async function closeCustomEditorTab (exeUri) {
 				input.viewType === EXE_SOURCE_VIEW_TYPE &&
 				input.uri.toString() === exeUri.toString()) 
 				await vscode.window.tabGroups.close(tab)
-			
 		}
-	
 }
 
 /**
@@ -395,12 +391,10 @@ export class ExeSourceCustomEditorProvider {
 			catch (error) {
 				this.provider.channel.appendLine(`ps12exe: could not open exe source for ${exeUri.fsPath}: ${error && error.message ? error.message : error}`)
 			}
-		
 
 		if (!opened) 
 			try { await vscode.commands.executeCommand('vscode.openWith', exeUri, 'default') }
 			catch { /* 内置编辑器不可用；保留空的自定义标签页 */ }
-		
 		await closeCustomEditorTab(exeUri)
 	}
 }
