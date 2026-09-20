@@ -19,7 +19,7 @@ Compile PowerShell scripts (`.ps1`) into standalone executables and open **ps12e
 The ps12exe preprocessor directives (`#_if` / `#_else` / `#_endif`, `#_include*`, `#_pragma`, `#_require`, `#_!!`, …) get first-class editor support:
 
 - **Syntax highlighting** — directives, conditions and pragma names are coloured.
-- **Diagnostics & quick fixes** — reports unbalanced blocks and unknown conditions; offers one-click migration of deprecated PS2EXE calls to the ps12exe object API and rewrites module installs to `#_require`. Silence any warning with `# use_ps12exe:ignore`.
+- **Diagnostics & quick fixes** — reports unbalanced blocks and unknown conditions; offers one-click migration of deprecated PS2EXE calls to the ps12exe object API, rewrites module installs to `#_require`, and replaces a deprecated `#_require PS2EXE` with `#_require ps12exe`. Silence any warning with `# use_ps12exe:ignore`.
 - **Auto-close** — completing a `#_if …` line with Enter inserts the matching `#_endif`. Disable with `ps12exe.autoCloseIf`.
 - **Folding** — every `#_if … #_endif` block folds, nested blocks included.
 - **`#_!!` toggle** — **ps12exe: Toggle `#_!!` Escape Markers** adds or removes the marker on the selection (or the whole file).

@@ -4,7 +4,7 @@ import path from 'node:path'
 import * as vscode from 'vscode'
 
 import { currentAliasMap, loadAliasMap } from './lib/aliases.mjs'
-import { analyzeCommandUsage, computeIgnoredMask, IGNORE_DIRECTIVE, PS2EXE_DIAGNOSTIC, MODULE_DIAGNOSTIC } from './lib/commands.mjs'
+import { analyzeCommandUsage, computeIgnoredMask, IGNORE_DIRECTIVE, PS2EXE_DIAGNOSTIC, PS2EXE_REQUIRE_DIAGNOSTIC, MODULE_DIAGNOSTIC } from './lib/commands.mjs'
 import { resolveDirectivePath } from './lib/definition.mjs'
 import { buildDirectiveCandidates, directiveAvailability, directivePrefixAt, ifConditionPrefixAt, buildConditionCandidates } from './lib/directives.mjs'
 import { registerExeSource } from './lib/exeSource.mjs'
@@ -852,6 +852,7 @@ const codeActionProvider = {
 	 * 提供快速修复操作：
 	 *
 	 * - 对 PS2EXE 调用，整段改写为等价的 ps12exe 调用。
+	 * - 对 `#_require PS2EXE`，把模块名改写成 `ps12exe`。
 	 * - 对可识别的模块安装行，改写成 `#_require <模块>`。
 	 * - 对任意 ps12exe 命令诊断，在告警行上方插入 `# use_ps12exe:ignore` 以忽略它。
 	 * - 始终提供格式化 preprocessor 块的 source fix-all 操作。
@@ -900,7 +901,15 @@ const codeActionProvider = {
 				add(action, `require:${line}:${replacement}`)
 			}
 
-			if (diagnostic.code === PS2EXE_DIAGNOSTIC || diagnostic.code === MODULE_DIAGNOSTIC) {
+			if (diagnostic.code === PS2EXE_REQUIRE_DIAGNOSTIC && replacement) {
+				const action = new vscode.CodeAction(t('Use ps12exe'), vscode.CodeActionKind.QuickFix)
+				action.edit = new vscode.WorkspaceEdit()
+				action.edit.replace(document.uri, diagnostic.range, replacement)
+				action.diagnostics = [diagnostic]
+				add(action, `require-ps2exe:${line}:${replacement}`)
+			}
+
+			if (diagnostic.code === PS2EXE_DIAGNOSTIC || diagnostic.code === PS2EXE_REQUIRE_DIAGNOSTIC || diagnostic.code === MODULE_DIAGNOSTIC) {
 				const indent = (document.lineAt(line).text.match(/^[\t ]*/) || [''])[0]
 				const eol = document.eol === vscode.EndOfLine.CRLF ? '\r\n' : '\n'
 				const action = new vscode.CodeAction(t('Ignore this warning'), vscode.CodeActionKind.QuickFix)

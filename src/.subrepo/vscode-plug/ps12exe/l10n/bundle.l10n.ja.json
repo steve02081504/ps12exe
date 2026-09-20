@@ -54,6 +54,7 @@
 	"Tags": "タグ",
 	"No module named `{0}` was found on the PowerShell Gallery.": "PowerShell ギャラリーに `{0}` という名前のモジュールが見つかりませんでした。",
 	"PS2EXE command \"{0}\" is deprecated; use ps12exe instead.": "PS2EXE コマンド \"{0}\" は非推奨です。ps12exe を使用してください。",
+	"#_require \"{0}\" installs the deprecated PS2EXE module; use ps12exe instead.": "#_require \"{0}\" は非推奨の PS2EXE モジュールをインストールします。ps12exe を使用してください。",
 	"Module-management command \"{0}\"; declare module dependencies with #_require so the compiled executable sets them up.": "モジュール管理コマンド \"{0}\"：コンパイル後の実行ファイルが準備できるよう、モジュールの依存関係は #_require で宣言してください。",
 	"Use ps12exe": "ps12exe を使用",
 	"Use #_require": "#_require を使用",

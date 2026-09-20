@@ -147,11 +147,8 @@ export function analyze (text) {
 		let selected = true
 		for (const index of stack) {
 			const block = blocks[index]
-			const condition = block.condition.toLowerCase()
-			if (!KNOWN_CONDITIONS.has(condition)) { known = false; break }
-			const initialActive = condition === 'psexe'
-			const elseSide = block.elseLine !== null && line > block.elseLine
-			if (!(elseSide ? !initialActive : initialActive)) { selected = false; break }
+			if (!KNOWN_CONDITIONS.has(block.condition.toLowerCase())) { known = false; break }
+			if (!branchActive(block, line)) { selected = false; break }
 		}
 		if (!known) continue
 		if (selected) {
@@ -173,6 +170,36 @@ export function analyze (text) {
 	}
 
 	return { lines, blocks, diagnostics }
+}
+
+/**
+ * 判断一行在编译期是否处于 `block` 的选中分支：`#_if PSEXE` 的主体、以及 `#_if PSScript` 的 `#_else` 主体会进入 EXE，
+ * 反之（`#_if PSScript` 主体、`#_if PSEXE` 的 `#_else` 主体、未知条件）只在直接运行脚本时存在。`#_else` 之前是 `#_if` 侧，之后是 else 侧。
+ *
+ * @param {{ elseLine: number | null, condition: string }} block - `analyze` 返回的块
+ * @param {number} line - 待判断的行号
+ * @returns {boolean} 该行处于选中分支时为真
+ */
+export function branchActive (block, line) {
+	const initialActive = block.condition.toLowerCase() === 'psexe'
+	const elseSide = block.elseLine !== null && line > block.elseLine
+	return elseSide ? !initialActive : initialActive
+}
+
+/**
+ * 计算每一行是否会进入编译后的 EXE。只有该行所有外层块的选中分支都选中（见 `branchActive`）时才会进入；`#_if PSScript`
+ * 仅用于直接运行脚本的分支因此得到 `false`。命令用法检查据此在脚本专用分支里放过只针对 EXE 的诊断（如 `#_require` 建议）。
+ *
+ * @param {Array<{ startLine: number, endLine: number, elseLine: number | null, condition: string }>} blocks - `analyze` 返回的块
+ * @param {number} lineCount - 文档总行数
+ * @returns {boolean[]} 逐行标记：true 表示该行会进入 EXE
+ */
+export function exeLineMask (blocks, lineCount) {
+	const mask = new Array(lineCount).fill(true)
+	for (const block of blocks) 
+		for (let line = block.startLine; line <= block.endLine; line++) 
+			if (!branchActive(block, line)) mask[line] = false
+	return mask
 }
 
 /**

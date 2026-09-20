@@ -297,7 +297,8 @@ suite('ps12exe extension', () => {
 			'#_pragma App.Windowed',
 			'ps2exe -inputFile sample.ps1 -noConsole',
 			'gmo ps12exe -ListAvailable',
-			'Install-Module foo -Scope CurrentUser -Force'
+			'Install-Module foo -Scope CurrentUser -Force',
+			'#_require PS2EXE'
 		].join('\n'))
 		try {
 			const document = await vscode.workspace.openTextDocument(file)
@@ -316,9 +317,11 @@ suite('ps12exe extension', () => {
 			const ps2exeDiagnostic = atLine('ps2exe-call', 1)
 			const moduleDiagnostic = atLine('module-command', 2)
 			const installDiagnostic = atLine('module-command', 3)
+			const requirePs2exeDiagnostic = atLine('ps2exe-require', 4)
 			assert.ok(ps2exeDiagnostic, 'no PS2EXE diagnostic')
 			assert.ok(moduleDiagnostic, 'no gmo diagnostic')
 			assert.ok(installDiagnostic, 'no Install-Module diagnostic')
+			assert.ok(requirePs2exeDiagnostic, 'no #_require PS2EXE diagnostic')
 
 			/**
 			 * 在诊断处请求快速修复，并按编辑内容（而非本地化标题）挑选出目标操作。
@@ -343,6 +346,11 @@ suite('ps12exe extension', () => {
 			const require = await actionMatching(installDiagnostic, (text) => text === '#_require foo')
 			await vscode.workspace.applyEdit(require.edit)
 			assert.match(document.getText(), /^#_require foo$/m)
+
+			// `#_require PS2EXE` 的模块名改写成 ps12exe。
+			const requirePs2exe = await actionMatching(requirePs2exeDiagnostic, (text) => text === 'ps12exe')
+			await vscode.workspace.applyEdit(requirePs2exe.edit)
+			assert.match(document.getText(), /^#_require ps12exe$/m)
 
 			// 其余诊断（这里是 gmo）只提供忽略标记。
 			const ignore = await actionMatching(moduleDiagnostic, (text) => text.includes('use_ps12exe:ignore'))

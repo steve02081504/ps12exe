@@ -2,7 +2,7 @@
 import assert from 'node:assert'
 
 import { parseAliasOutput, FALLBACK_ALIASES } from '../lib/aliases.mjs'
-import { analyzeCommandUsage, computeIgnoredMask, IGNORE_DIRECTIVE, MODULE_ALIASES, PS2EXE_DIAGNOSTIC, MODULE_DIAGNOSTIC } from '../lib/commands.mjs'
+import { analyzeCommandUsage, computeIgnoredMask, IGNORE_DIRECTIVE, MODULE_ALIASES, PS2EXE_DIAGNOSTIC, PS2EXE_REQUIRE_DIAGNOSTIC, MODULE_DIAGNOSTIC } from '../lib/commands.mjs'
 
 // 模块管理告警只在使用了预处理指令的文件里出现，测试文本因此都带上一个 `#_` 指令行。
 const DIRECTIVE = '#_pragma App.Windowed'
@@ -87,6 +87,43 @@ suite('ps12exe command warnings', () => {
 		assert.deepStrictEqual(analyzeCommandUsage('ps2exe a.ps1').map((d) => d.code), [PS2EXE_DIAGNOSTIC])
 	})
 
+	test('suppresses module-management warnings in branches that never enter the exe', () => {
+		// `#_if PSScript` 只在直接运行脚本时存在，`#_require` 建议（针对编译产物）在该分支里没有意义。
+		const psscript = [
+			DIRECTIVE,
+			'#_if PSScript',
+			'gmo ps12exe -ListAvailable',
+			'#_else',
+			'#_!! gmo compiled',
+			'#_endif',
+			'gmo top'
+		].join('\n')
+		assert.deepStrictEqual(
+			analyzeCommandUsage(psscript, MODULE_ALIASES).map((d) => [d.line, d.args[0], d.code]),
+			[
+				[4, 'gmo', MODULE_DIAGNOSTIC],
+				[6, 'gmo', MODULE_DIAGNOSTIC]
+			]
+		)
+
+		// 嵌入 `#_if PSScript` 里的 `#_if PSEXE` 仍处于直接运行宿主，其模块命令同样不告警。
+		const nested = [DIRECTIVE, '#_if PSScript', '#_if PSEXE', 'ipmo foo', '#_endif', '#_endif'].join('\n')
+		assert.deepStrictEqual(analyzeCommandUsage(nested, MODULE_ALIASES), [])
+
+		// 会进入 EXE 的分支照常告警。
+		const install = [DIRECTIVE, '#_if PSEXE', '#_!! Install-Module foo', '#_endif'].join('\n')
+		assert.deepStrictEqual(
+			analyzeCommandUsage(install, MODULE_ALIASES).map((d) => [d.line, d.code]),
+			[[2, MODULE_DIAGNOSTIC]]
+		)
+
+		// PS2EXE 调用是单纯的弃用提示，与是否进入 EXE 无关，脚本专用分支里也照常告警。
+		assert.deepStrictEqual(
+			analyzeCommandUsage(`${DIRECTIVE}\n#_if PSScript\nps2exe a.ps1\n#_endif`).map((d) => d.code),
+			[PS2EXE_DIAGNOSTIC]
+		)
+	})
+
 	test('only flags aliases that resolve to a module cmdlet', () => {
 		// 未确认的别名不告警：既可能是用户自定义函数，也可能这台机器上根本不存在（例如未加载 PowerShellGet 时的 inmo）。
 		assert.deepStrictEqual(analyzeCommandUsage(`${DIRECTIVE}\ngmo foo`, {}), [])
@@ -112,6 +149,22 @@ suite('ps12exe command warnings', () => {
 		assert.strictEqual(generated.length, 2)
 		for (const entry of generated) 
 			assert.strictEqual(entry.replacement, '#_require ps12exe')
+	})
+
+	test('flags #_require of the deprecated PS2EXE module with a ps12exe fix', () => {
+		const line = '#_require PS2EXE'
+		const found = analyzeCommandUsage(line)
+		assert.deepStrictEqual(
+			found.map((d) => [d.line, d.args[0], d.code, d.start, d.end, d.replacement]),
+			[[0, 'PS2EXE', PS2EXE_REQUIRE_DIAGNOSTIC, '#_require '.length, line.length, 'ps12exe']]
+		)
+
+		// 大小写不敏感；只改模块名本身，列表其余部分保留。只命中 PS2EXE，不误伤 ps12exe / PS2EXE2ps12exe。
+		assert.deepStrictEqual(analyzeCommandUsage('#_require ps2exe, Other').map((d) => d.replacement), ['ps12exe'])
+		assert.deepStrictEqual(analyzeCommandUsage('#_require ps12exe\n#_require PS2EXE2ps12exe'), [])
+
+		// 不会进入 EXE 的分支里不告警。
+		assert.deepStrictEqual(analyzeCommandUsage('#_if PSScript\n#_require PS2EXE\n#_endif'), [])
 	})
 
 	test('does not offer #_require for gmo-only or piped lines', () => {

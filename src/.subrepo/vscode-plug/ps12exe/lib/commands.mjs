@@ -1,21 +1,25 @@
-// 命令用法检查：对脚本里的 PS2EXE 调用和模块管理命令给出警告，并提供快速修复。
+// 命令用法检查：对脚本里的 PS2EXE 调用、`#_require PS2EXE` 与模块管理命令给出警告，并提供快速修复。
 //
 // - PS2EXE 调用：`lib/ps2exe.mjs` 会把整次调用（命令名 + 参数）改写成 ps12exe 的对象式 API，因此 PS2EXE 诊断的范围覆盖整次
 //   调用、`replacement` 即改写后的文本。
+// - `#_require PS2EXE`：`lib/require.mjs` 解析出模块名，诊断范围覆盖该模块名、`replacement` 为 `ps12exe`（同样只针对会进入 EXE 的行）。
 // - 模块管理命令：只在**使用了 ps12exe 预处理命令**（文件里出现 `#_…`）的文件里告警——普通 PowerShell 脚本不一定会被
 //   ps12exe 编译，没必要对它指手画脚。若该行是手写/生成的模块安装样板，还会给出整行替换为 `#_require <模块>` 的修复。
+//   该告警只针对编译后的 EXE，因此在 `#_if PSScript` 等不会进入 EXE 的分支里被抑制（见 `exeLineMask`）。
 //
 // 检查是纯文本的（不启动 PowerShell），因此可以随文档变更同步运行；别名是否为标准别名由 `lib/aliases.mjs` 实时探测后作为
 // `aliasMap` 传入，未确认的别名不会被误报。here-string 函数体与块注释内的命令不是调用，因此复用
 // `lib/preprocessor.mjs#computeSkipMask` 跳过；`#_!!` 行会被 ps12exe 去掉标记变成真实代码，所以照常检查。
 
-import { computeSkipMask } from './preprocessor.mjs'
+import { analyze, computeSkipMask, exeLineMask } from './preprocessor.mjs'
 import { convertPs2exeInvocation } from './ps2exe.mjs'
+import { requireModules } from './require.mjs'
 
 /** 英文源字符串；它们同时也是 l10n bundle 的键。 */
 export const COMMAND_MESSAGES = Object.freeze({
 	ps2exeCall: 'PS2EXE command "{0}" is deprecated; use ps12exe instead.',
-	moduleCommand: 'Module-management command "{0}"; declare module dependencies with #_require so the compiled executable sets them up.'
+	moduleCommand: 'Module-management command "{0}"; declare module dependencies with #_require so the compiled executable sets them up.',
+	requirePs2exe: '#_require "{0}" installs the deprecated PS2EXE module; use ps12exe instead.'
 })
 
 /** 在告警行上方（或行尾）插入该注释即可让扩展忽略该行的诊断。 */
@@ -23,8 +27,13 @@ export const IGNORE_DIRECTIVE = '# use_ps12exe:ignore'
 
 /** 诊断代码：PS2EXE 调用。 */
 export const PS2EXE_DIAGNOSTIC = 'ps2exe-call'
+/** 诊断代码：`#_require` 里列出了已废弃的 PS2EXE 模块。 */
+export const PS2EXE_REQUIRE_DIAGNOSTIC = 'ps2exe-require'
 /** 诊断代码：模块管理命令。 */
 export const MODULE_DIAGNOSTIC = 'module-command'
+
+// `#_require` 中作为 PS2EXE 依赖出现的模块名（不区分大小写）；建议改写为 ps12exe。
+const PS2EXE_MODULES = new Set(['ps2exe'])
 
 // PS2EXE 模块导出的函数与别名（见 src/.subrepo/PS2EXE2ps12exe），小写。
 const PS2EXE_COMMANDS = new Set([
@@ -248,11 +257,29 @@ export function analyzeCommandUsage (text, aliasMap = MODULE_ALIASES) {
 	const ignored = computeIgnoredMask(lines)
 	const moduleAliases = moduleAliasSet(aliasMap)
 	const usesPreprocessor = lines.some((line, index) => !skip[index] && DIRECTIVE_RE.test(line))
+	// 行是否会进入编译后的 EXE：`#_require` 建议等只针对 EXE 的诊断只在会进入 EXE 的行上给出。
+	const inExe = exeLineMask(analyze(text).blocks, lines.length)
 	const diagnostics = []
 
 	for (let line = 0; line < lines.length; line++) {
 		if (skip[line] || ignored[line]) continue
 		const raw = lines[line]
+
+		// `#_require PS2EXE` 拉入的是已废弃的模块，建议改写为 `#_require ps12exe`（只在会进入 EXE 的行上）。
+		if (inExe[line]) 
+			for (const module of requireModules(raw)) 
+				if (PS2EXE_MODULES.has(module.name.toLowerCase())) 
+					diagnostics.push({
+						line,
+						severity: /** @type {'warning'} */ 'warning',
+						message: COMMAND_MESSAGES.requirePs2exe,
+						args: [module.name],
+						code: PS2EXE_REQUIRE_DIAGNOSTIC,
+						start: module.start,
+						end: module.end,
+						replacement: 'ps12exe'
+					})
+
 		if (/^[\t ]*#/.test(raw) && !/^[\t ]*#_!!/.test(raw)) continue
 
 		let content = raw
@@ -267,7 +294,7 @@ export function analyzeCommandUsage (text, aliasMap = MODULE_ALIASES) {
 		for (const token of commandTokens(content)) {
 			const info = commandInfo(token.name.toLowerCase(), moduleAliases)
 			if (!info) continue
-			if (info.code === MODULE_DIAGNOSTIC && !usesPreprocessor) continue
+			if (info.code === MODULE_DIAGNOSTIC && (!usesPreprocessor || !inExe[line])) continue
 
 			const diagnostic = {
 				line,

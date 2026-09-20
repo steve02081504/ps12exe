@@ -54,6 +54,7 @@
 	"Tags": "Étiquettes",
 	"No module named `{0}` was found on the PowerShell Gallery.": "Aucun module nommé `{0}` n’a été trouvé dans la galerie PowerShell.",
 	"PS2EXE command \"{0}\" is deprecated; use ps12exe instead.": "La commande PS2EXE « {0} » est obsolète ; utilisez ps12exe à la place.",
+	"#_require \"{0}\" installs the deprecated PS2EXE module; use ps12exe instead.": "#_require « {0} » installe le module PS2EXE obsolète ; utilisez ps12exe à la place.",
 	"Module-management command \"{0}\"; declare module dependencies with #_require so the compiled executable sets them up.": "Commande de gestion de modules « {0} » ; déclarez les dépendances de modules avec #_require pour que l'exécutable compilé les prépare.",
 	"Use ps12exe": "Utiliser ps12exe",
 	"Use #_require": "Utiliser #_require",
