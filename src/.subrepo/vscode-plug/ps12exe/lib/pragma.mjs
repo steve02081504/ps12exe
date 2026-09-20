@@ -20,7 +20,7 @@ const cache = new Map()
  * @param {number} character - 光标所在的列号
  * @returns {{ name: string, start: number, end: number } | null} `start`/`end` 是从零开始、含末尾的区间
  */
-export function pragmaNameAt (line, character) {
+export function pragmaNameAt(line, character) {
 	const match = PRAGMA_NAME_RE.exec(line)
 	if (!match) return null
 	const start = match[0].length - match[2].length
@@ -36,7 +36,7 @@ export function pragmaNameAt (line, character) {
  * @param {object} data - 待压平的 PrarmsData
  * @returns {Map<string, { name: string, description: string }>} 小写点号路径到说明的映射
  */
-function flattenPragmaData (data) {
+function flattenPragmaData(data) {
 	const out = new Map()
 	/**
 	 *
@@ -62,7 +62,7 @@ function flattenPragmaData (data) {
  * @param {string} locale - ps12exe 区域代码
  * @returns {Promise<object>} 解析出的 PrarmsData
  */
-async function fetchPragmaData (host, locale) {
+async function fetchPragmaData(host, locale) {
 	const script = [
 		'$ErrorActionPreference = "Stop"',
 		'[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)',
@@ -96,7 +96,7 @@ async function fetchPragmaData (host, locale) {
  * @param {string} [locale] ps12exe 区域代码（见 `lib/locale.mjs#toPs12exeLocale`）
  * @returns {Promise<Map<string, { name: string, description: string }>>} 小写点号路径到说明的映射
  */
-export async function getPragmaData (locale) {
+export async function getPragmaData(locale) {
 	const key = locale || 'en-UK'
 	let pending = cache.get(key)
 	if (!pending) {
@@ -118,7 +118,7 @@ export async function getPragmaData (locale) {
  * @param {string} name - 待查找的 pragma 名
  * @returns {{ name: string, description: string, negated: boolean } | null} 查到的说明与是否取反，未找到时为 null
  */
-export function lookupPragma (data, name) {
+export function lookupPragma(data, name) {
 	const lower = name.toLowerCase()
 	const exact = data.get(lower)
 	if (exact) return { ...exact, negated: false }
@@ -137,7 +137,7 @@ export function lookupPragma (data, name) {
  * @param {string} prefix - 已输入的前缀
  * @returns {Array<{ name: string, insertText: string, kind: 'object' | 'value', description: string }>} 补全候选列表
  */
-export function buildPragmaCandidates (data, prefix) {
+export function buildPragmaCandidates(data, prefix) {
 	const entries = new Map(data)
 
 	// 所有作为其他键前缀的段（`app`、`build.consteval` …）都是可继续展开的对象：即使它们自身没有说明
@@ -151,7 +151,7 @@ export function buildPragmaCandidates (data, prefix) {
 			index = key.indexOf('.', index + 1)
 		}
 	}
-	for (const [segment, name] of objectNames) 
+	for (const [segment, name] of objectNames)
 		if (!entries.has(segment)) entries.set(segment, { name, description: '' })
 
 	const lower = String(prefix || '').toLowerCase()
@@ -174,6 +174,6 @@ export function buildPragmaCandidates (data, prefix) {
 }
 
 /** 清空缓存；模块更新后调用，使说明文字立即跟随新版本。 */
-export function clearPragmaCache () {
+export function clearPragmaCache() {
 	cache.clear()
 }

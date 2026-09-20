@@ -52,7 +52,7 @@ const previewCache = new Map()
  * @param {string} baseDir - 正在编辑的脚本所在目录
  * @returns {{ file: string, kind: 'icon', index: number | null, start: number, end: number } | null} 图标文件引用
  */
-export function resolveIconAt (line, character, baseDir) {
+export function resolveIconAt(line, character, baseDir) {
 	const target = resolveDirectivePath(line, baseDir)
 	if (!target || target.kind !== 'icon') return null
 	if (character < target.start || character > target.end) return null
@@ -66,7 +66,7 @@ export function resolveIconAt (line, character, baseDir) {
  * @param {number | null} index - 显式给出的资源索引
  * @returns {boolean} 需要抽取时为真
  */
-export function needsIconExtraction (file, index) {
+export function needsIconExtraction(file, index) {
 	const extension = path.extname(file).toLowerCase()
 	if (CONTAINER_EXTENSIONS.includes(extension)) return true
 	return index !== null && index !== undefined && !IMAGE_EXTENSIONS.has(extension)
@@ -78,7 +78,7 @@ export function needsIconExtraction (file, index) {
  * @param {string} file - 图片文件路径
  * @returns {string | null} MIME 类型
  */
-export function renderableMime (file) {
+export function renderableMime(file) {
 	return RENDERABLE_MIME[path.extname(file).toLowerCase()] || null
 }
 
@@ -89,7 +89,7 @@ export function renderableMime (file) {
  * @param {{ file: string, index: number | null }} target - `resolveIconAt` 解析出的图标引用
  * @returns {Promise<string | null>} 预览 data URI，无法预览时为 null
  */
-export async function getIconPreview ({ file, index }) {
+export async function getIconPreview({ file, index }) {
 	const stat = await fsp.stat(file).catch(() => undefined)
 	if (!stat || !stat.isFile()) return null
 
@@ -110,9 +110,9 @@ export async function getIconPreview ({ file, index }) {
  * @param {number | null} index - 资源索引
  * @returns {Promise<string | null>} 预览 data URI
  */
-async function buildPreview (file, index) {
+async function buildPreview(file, index) {
 	const mime = renderableMime(file)
-	if (mime && !needsIconExtraction(file, index)) 
+	if (mime && !needsIconExtraction(file, index))
 		try {
 			const bytes = await fsp.readFile(file)
 			return `data:${mime};base64,${bytes.toString('base64')}`
@@ -139,7 +139,7 @@ async function buildPreview (file, index) {
  * @param {number | null} index - 资源索引；null 表示未显式给出
  * @returns {string} PowerShell 脚本
  */
-export function buildProbeScript (file, index) {
+export function buildProbeScript(file, index) {
 	const containers = CONTAINER_EXTENSIONS.map((extension) => `'${extension}'`).join(', ')
 	const images = [...IMAGE_EXTENSIONS].map((extension) => `'${extension}'`).join(', ')
 	const numericIndex = Number.isInteger(index) ? index : -1
@@ -206,6 +206,6 @@ export function buildProbeScript (file, index) {
 }
 
 /** 清空预览缓存；主要用于测试。 */
-export function clearIconPreviewCache () {
+export function clearIconPreviewCache() {
 	previewCache.clear()
 }

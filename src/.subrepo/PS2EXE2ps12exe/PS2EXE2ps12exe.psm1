@@ -232,9 +232,9 @@ function Invoke-ps2exe {
 		}
 		# PS2EXE 会在运行空间里设置 $ScriptRoot；脚本用到时才补上
 		$scriptRootUsed = $ast.FindAll({
-				param($node)
-				$node -is [System.Management.Automation.Language.VariableExpressionAst] -and $node.VariablePath.UserPath -eq 'ScriptRoot'
-			}, $true)
+			param($node)
+			$node -is [System.Management.Automation.Language.VariableExpressionAst] -and $node.VariablePath.UserPath -eq 'ScriptRoot'
+		}, $true)
 		if ($scriptRootUsed.Count -gt 0) {
 			$inject.Add('$global:ScriptRoot = $PSScriptRoot')
 		}

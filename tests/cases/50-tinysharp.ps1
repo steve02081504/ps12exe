@@ -49,13 +49,13 @@ Add-Test @{
 }
 
 Add-Test @{
-	Name  = 'tinysharp.gui'
-	Deps  = $script:TsDeps
+	Name   = 'tinysharp.gui'
+	Deps   = $script:TsDeps
 	Builds = @(
 		@{ Name = 'gui'; InputText = "'TinySharp-GUI-OK'"; Params = @{ App = @{ Windowed = $true }; Resources = @{ Title = 'CITitle' } }; Output = 'ts_gui.exe' }
 		@{ Name = 'guicompressed'; InputText = "'$($script:BigGui)'"; Params = @{ App = @{ Windowed = $true } }; Output = 'ts_gui_compressed.exe' }
 	)
-	Run   = {
+	Run    = {
 		param($ctx)
 		$exitCode = Invoke-ExeAndSendEnterToWindow -ExePath $ctx.Builds['gui'] -TimeoutSeconds 20
 		Assert-Equal 0 $exitCode 'TinySharp GUI 退出码'
@@ -88,4 +88,3 @@ Add-Test @{
 		Assert-Match $content 'A世界B' "exe21sp 未能还原非 ASCII 常量：$content"
 	}
 }
-

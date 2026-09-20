@@ -37,14 +37,14 @@ Add-Test @{
 }
 
 Add-Test @{
-	Name  = 'ps12exe.host.hello-and-paths'
-	Group = 'ps12exe'
-	Deps  = $deps
+	Name   = 'ps12exe.host.hello-and-paths'
+	Group  = 'ps12exe'
+	Deps   = $deps
 	Builds = @(
 		@{ Name = 'hello'; InputText = "Get-Date | Out-Null; Write-Output 'Hello world!'"; Output = 'hello.exe' }
 		@{ Name = 'paths'; InputText = "`$PSCommandPath`n`$PSScriptRoot"; Output = 'paths.exe' }
 	)
-	Run   = {
+	Run    = {
 		param($ctx)
 		$hello = Invoke-ExeCaptureMergedOutput -ExePath $ctx.Builds['hello']
 		Assert-Match $hello.Output 'Hello world!' 'hello 输出'
@@ -74,9 +74,9 @@ Add-Test @{
 }
 
 Add-Test @{
-	Name  = 'ps12exe.pack.resources'
-	Group = 'ps12exe'
-	Deps  = $deps
+	Name   = 'ps12exe.pack.resources'
+	Group  = 'ps12exe'
+	Deps   = $deps
 	Builds = @(
 		@{
 			Name      = 'respack'
@@ -91,7 +91,7 @@ Add-Test @{
 			Params    = @{ Resources = @{ Title = 'DirectTitle'; Version = '2.3.4.5' }; Build = @{ KeepSource = $true } }
 		}
 	)
-	Run   = {
+	Run    = {
 		param($ctx)
 		$exe = $ctx.Builds['respack']
 		# 最终 exe（launcher）携带文件属性
@@ -190,14 +190,14 @@ if ($LASTEXITCODE) { exit $LASTEXITCODE }
 }
 
 Add-Test @{
-	Name  = 'ps12exe.host.stdin'
-	Group = 'ps12exe'
-	Deps  = $deps
+	Name   = 'ps12exe.host.stdin'
+	Group  = 'ps12exe'
+	Deps   = $deps
 	Builds = @(
 		@{ Name = 'noinput'; InputText = "`$null = [System.IO.File]::Exists('')`n'no-input-ok'"; Output = 'no-input.exe' }
 		@{ Name = 'withinput'; InputText = "'input=[' + ((@(`$input) -join ',')) + ']'"; Output = 'with-input.exe' }
 	)
-	Run   = {
+	Run    = {
 		param($ctx)
 		$noInputExe = Copy-BuildAs -BuildPath $ctx.Builds['noinput'] -WorkDir $ctx.WorkDir -Name 'no-input.exe'
 		$psi = [System.Diagnostics.ProcessStartInfo]::new($noInputExe)
@@ -222,11 +222,11 @@ Add-Test @{
 }
 
 Add-Test @{
-	Name  = 'ps12exe.host.nested'
-	Group = 'ps12exe'
-	Deps  = $deps
+	Name    = 'ps12exe.host.nested'
+	Group   = 'ps12exe'
+	Deps    = $deps
 	Timeout = 900
-	Builds = @(
+	Builds  = @(
 		@{
 			Name = 'okhost'; Output = 'nested-ok-host.exe'
 			InputText = @"
@@ -249,7 +249,7 @@ Write-Host "NESTED_ERROR_COUNT=`$(`$Error.Count)"
 "@
 		}
 	)
-	Run   = {
+	Run     = {
 		param($ctx)
 		$inner = Join-Path $ctx.WorkDir 'inner.ps1'
 		[System.IO.File]::WriteAllText($inner, "Write-Output 'inner-ok'", [System.Text.UTF8Encoding]::new($true))

@@ -26,14 +26,14 @@ let pending = null
  *
  * @returns {Record<string, string>} 别名到定义的映射
  */
-export function currentAliasMap () {
+export function currentAliasMap() {
 	return cached || FALLBACK_ALIASES
 }
 
 /**
  * 清空别名缓存，使下次 {@link loadAliasMap} 重新探测。
  */
-export function clearAliasCache () {
+export function clearAliasCache() {
 	cached = null
 	pending = null
 }
@@ -44,7 +44,7 @@ export function clearAliasCache () {
  *
  * @returns {Promise<Record<string, string>>} 别名到定义的映射
  */
-export function loadAliasMap () {
+export function loadAliasMap() {
 	if (cached) return Promise.resolve(cached)
 	if (pending) return pending
 
@@ -83,7 +83,7 @@ export function loadAliasMap () {
  * @param {string} stdout - 探测脚本的标准输出
  * @returns {Record<string, string>} 别名到定义的映射
  */
-export function parseAliasOutput (stdout) {
+export function parseAliasOutput(stdout) {
 	const map = {}
 	for (const line of String(stdout || '').split(/\r?\n/)) {
 		const index = line.indexOf(MARKER)

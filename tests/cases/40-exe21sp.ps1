@@ -35,16 +35,16 @@ Add-Test @{
 }
 
 Add-Test @{
-	Name  = 'exe21sp.tinysharp'
-	Group = 'exe21sp'
-	Deps  = $deps
+	Name   = 'exe21sp.tinysharp'
+	Group  = 'exe21sp'
+	Deps   = $deps
 	Builds = @(
 		@{ Name = 'c0'; InputText = "'tinysharp-console-zero'"; Output = 'ts_console_0.exe' }
 		@{ Name = 'c42'; InputText = "'tinysharp-console-42'; exit 42"; Output = 'ts_console_42.exe' }
 		@{ Name = 'g0'; InputText = "'tinysharp-gui-zero'"; Params = @{ App = @{ Windowed = $true }; Resources = @{ Title = 'CI' } }; Output = 'ts_gui_0.exe' }
 		@{ Name = 'g42'; InputText = "'tinysharp-gui-42'; exit 42"; Params = @{ App = @{ Windowed = $true }; Resources = @{ Title = 'CI' } }; Output = 'ts_gui_42.exe' }
 	)
-	Run   = {
+	Run    = {
 		param($ctx)
 		$c0 = Get-Exe21spContent -ExePath $ctx.Builds['c0']
 		Assert-Match $c0 'tinysharp-console-zero' "exe21sp TinySharp console 0 内容：$c0"
@@ -120,10 +120,10 @@ Add-Test @{
 	Group = 'exe21sp'
 	Deps  = $deps
 	Build = @{
-		Name    = 'resource'
-		Output  = 'resource.exe'
+		Name      = 'resource'
+		Output    = 'resource.exe'
 		InputText = "Get-Date | Out-Null; Write-Output 'resource-roundtrip'"
-		Params  = @{ Resources = @{ Title = 'RT Title'; Description = 'RT Desc'; Company = 'RT Co'; Version = '2.3.4.5'; Icon = $script:IconFixture } }
+		Params    = @{ Resources = @{ Title = 'RT Title'; Description = 'RT Desc'; Company = 'RT Co'; Version = '2.3.4.5'; Icon = $script:IconFixture } }
 	}
 	Run   = {
 		param($ctx)

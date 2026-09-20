@@ -17,7 +17,7 @@ const incompleteCache = new Map()
  * @param {(message: string) => void} [onError] - 出错时的回调
  * @returns {Promise<Set<number>>} 不完整块的索引集合
  */
-export async function findIncompleteBlocks (text, onError) {
+export async function findIncompleteBlocks(text, onError) {
 	const { blocks, lines } = analyze(text)
 	const fragments = branchFragments(blocks, lines)
 	if (!fragments.length) return new Set()
@@ -57,7 +57,7 @@ export async function findIncompleteBlocks (text, onError) {
  * @param {(message: string) => void} [options.onError] - 出错时的回调
  * @returns {Promise<string>} 格式化后的文本
  */
-export async function formatPreprocessedText (baseText, options = {}) {
+export async function formatPreprocessedText(baseText, options = {}) {
 	const indentUnit = options.indentUnit || '\t'
 	let styled = restoreParenIndentation(baseText, indentUnit)
 	styled = restoreClauseIndentation(styled)
@@ -78,7 +78,7 @@ export async function formatPreprocessedText (baseText, options = {}) {
  * @param {object} [options] 转发给 {@link formatPreprocessedText}
  * @returns {Promise<string>} 格式化后的文档文本
  */
-export async function applyPreprocessorFormatting (currentText, baseText, officialApplied, options = {}) {
+export async function applyPreprocessorFormatting(currentText, baseText, officialApplied, options = {}) {
 	if (!officialApplied) return currentText
 	return formatPreprocessedText(baseText, { ...options, originalText: currentText })
 }

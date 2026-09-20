@@ -29,13 +29,13 @@ const UNSUPPORTED_PARAMS = new Set(['conhost', 'embedfiles'])
  * @param {string} text - 待检查的行
  * @returns {boolean} 行在语法上完整时为 true
  */
-function isCompleteLine (text) {
+function isCompleteLine(text) {
 	let depth = 0
 	let state = 'code'
 	for (let i = 0; i < text.length; i++) {
 		const char = text[i]
 		if (state === 'single') {
-			if (char === '\'') 
+			if (char === '\'')
 				if (text[i + 1] === '\'') i++
 				else state = 'code'
 			continue
@@ -62,7 +62,7 @@ function isCompleteLine (text) {
  * @param {number} start - token 起始列
  * @returns {number} token 结束列（不含）
  */
-function readArgumentToken (text, start) {
+function readArgumentToken(text, start) {
 	let i = start
 	let depth = 0
 	while (i < text.length) {
@@ -106,7 +106,7 @@ function readArgumentToken (text, start) {
  * @param {number} start - 起始列
  * @returns {number} 第一个非空白列
  */
-function skipSpaces (text, start) {
+function skipSpaces(text, start) {
 	let i = start
 	while (i < text.length && (text[i] === ' ' || text[i] === '\t')) i++
 	return i
@@ -118,7 +118,7 @@ function skipSpaces (text, start) {
  * @param {string | true} value - 参数的取值
  * @returns {boolean} 开关的真假
  */
-function switchValue (value) {
+function switchValue(value) {
 	if (value === true) return true
 	const text = String(value).trim().toLowerCase()
 	if (text === '' || text === '$true' || text === 'true' || text === '1') return true
@@ -132,7 +132,7 @@ function switchValue (value) {
  * @param {string} raw - 原始取值文本
  * @returns {string} 字面量文本
  */
-function toLiteral (raw) {
+function toLiteral(raw) {
 	if (raw.startsWith('\'') || raw.startsWith('"')) return raw
 	if (/^[$(@[`]/.test(raw)) return raw
 	return `'${raw.replace(/'/g, '\'\'')}'`
@@ -144,7 +144,7 @@ function toLiteral (raw) {
  * @param {string} raw - 原始取值文本
  * @returns {string} 字符串字面量文本
  */
-function toCultureLiteral (raw) {
+function toCultureLiteral(raw) {
 	if (raw.startsWith('$') || raw.startsWith('(') || raw.startsWith('@')) return `"${raw}"`
 	return toLiteral(raw)
 }
@@ -155,7 +155,7 @@ function toCultureLiteral (raw) {
  * @param {Array<[string, string]>} entries - 键值对
  * @returns {string} 哈希表字面量
  */
-function hashtable (entries) {
+function hashtable(entries) {
 	return `@{ ${entries.map(([key, value]) => `${key} = ${value}`).join('; ')} }`
 }
 
@@ -165,7 +165,7 @@ function hashtable (entries) {
  * @param {boolean} value - 布尔值
  * @returns {string} `$true` 或 `$false`
  */
-function boolLiteral (value) {
+function boolLiteral(value) {
 	return value ? '$true' : '$false'
 }
 
@@ -176,7 +176,7 @@ function boolLiteral (value) {
  * @param {{ start: number, end: number }} token - 命令名 token 的列区间
  * @returns {{ end: number, text: string } | null} 调用结束列与改写后的文本；不可改写时为 null
  */
-export function convertPs2exeInvocation (line, token) {
+export function convertPs2exeInvocation(line, token) {
 	const content = line.slice(token.start)
 	if (!isCompleteLine(content)) return null
 
@@ -294,14 +294,14 @@ export function convertPs2exeInvocation (line, token) {
 			['iconfile', 'Icon'], ['title', 'Title'], ['description', 'Description'], ['company', 'Company'],
 			['product', 'Product'], ['copyright', 'Copyright'], ['trademark', 'Trademark'], ['version', 'Version']
 		]
-		for (const [name, key] of resourceMap) 
-			if (has(name) && value(name) !== '' && value(name) !== '\'\'' && value(name) !== '""') 
+		for (const [name, key] of resourceMap)
+			if (has(name) && value(name) !== '' && value(name) !== '\'\'' && value(name) !== '""')
 				resources.push([key, toLiteral(value(name))])
 
 		const parts = ['ps12exe']
 		if (has('inputfile')) parts.push('-InputFile', value('inputfile'))
 		if (has('outputfile')) parts.push('-OutputFile', value('outputfile'))
-		for (const [flag, entries] of [['-App', app], ['-Os', os], ['-Build', build], ['-Resources', resources]]) 
+		for (const [flag, entries] of [['-App', app], ['-Os', os], ['-Build', build], ['-Resources', resources]])
 			if (entries.length) parts.push(flag, hashtable(entries))
 
 		if (has('configfile') && bool('configfile')) parts.push('-ConfigFile')

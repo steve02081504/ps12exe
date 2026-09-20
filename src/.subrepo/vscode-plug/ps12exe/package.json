@@ -2,7 +2,7 @@
 	"name": "ps12exe",
 	"displayName": "ps12exe",
 	"description": "Compile PowerShell scripts (.ps1) into executables and open ps12exeGUI, directly from Visual Studio Code.",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"publisher": "steve02081504",
 	"license": "LGPL-3.0-only",
 	"icon": "images/icon.png",

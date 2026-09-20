@@ -15,7 +15,7 @@ const SEPARATOR_CHARS = ', |;、　'
  * @param {string} character - 单个字符
  * @returns {boolean} 是分隔符时为真
  */
-function isSeparator (character) {
+function isSeparator(character) {
 	return SEPARATOR_CHARS.includes(character)
 }
 
@@ -25,7 +25,7 @@ function isSeparator (character) {
  * @param {string} line - 待检查的脚本行
  * @returns {Array<{ name: string, start: number, end: number }>} `name` 已去除两端引号；`start`/`end` 是含末尾的区间
  */
-export function requireModules (line) {
+export function requireModules(line) {
 	const match = REQUIRE_RE.exec(line)
 	if (!match) return []
 
@@ -57,6 +57,6 @@ export function requireModules (line) {
  * @param {number} character - 光标所在的列号
  * @returns {{ name: string, start: number, end: number } | null} `name` 已去除两端引号；`start`/`end` 是含末尾的区间
  */
-export function requireModulesAt (line, character) {
+export function requireModulesAt(line, character) {
 	return requireModules(line).find((module) => character >= module.start && character <= module.end) || null
 }

@@ -67,7 +67,7 @@ export const MODULE_ALIASES = Object.freeze({
  * @param {string} text - 文档全文
  * @returns {string[]} 行数组
  */
-function splitLines (text) {
+function splitLines(text) {
 	return String(text).split(/\r\n|\n|\r/)
 }
 
@@ -77,7 +77,7 @@ function splitLines (text) {
  * @param {string} line - 待扫描的行
  * @returns {boolean[]} 逐字符的代码标记
  */
-function codeMask (line) {
+function codeMask(line) {
 	const mask = new Array(line.length).fill(true)
 	let state = 'code'
 	for (let i = 0; i < line.length; i++) {
@@ -118,7 +118,7 @@ const COMMAND_NAME_RE = /^[A-Za-z_][A-Za-z0-9_.-]*/
  * @param {string} line - 待扫描的行（已去掉 `#_!!` 标记）
  * @returns {Array<{ name: string, start: number, end: number }>} 命令位置的 token
  */
-function commandTokens (line) {
+function commandTokens(line) {
 	const mask = codeMask(line)
 	const tokens = []
 	let expectCommand = true
@@ -147,9 +147,9 @@ function commandTokens (line) {
  * @param {Record<string, string>} aliasMap - 别名到定义的映射
  * @returns {Set<string>} 需要告警的别名名集合
  */
-function moduleAliasSet (aliasMap) {
+function moduleAliasSet(aliasMap) {
 	const set = new Set()
-	for (const [name, definition] of Object.entries(aliasMap || {})) 
+	for (const [name, definition] of Object.entries(aliasMap || {}))
 		if (MODULE_COMMANDS.has(String(definition).toLowerCase())) set.add(name.toLowerCase())
 	return set
 }
@@ -161,7 +161,7 @@ function moduleAliasSet (aliasMap) {
  * @param {Set<string>} moduleAliases - 已确认的标准模块别名
  * @returns {{ message: string, code: string } | null} 命中信息，未命中时为 null
  */
-function commandInfo (name, moduleAliases) {
+function commandInfo(name, moduleAliases) {
 	if (PS2EXE_COMMANDS.has(name)) return { message: COMMAND_MESSAGES.ps2exeCall, code: PS2EXE_DIAGNOSTIC }
 	if (MODULE_COMMANDS.has(name) || moduleAliases.has(name)) return { message: COMMAND_MESSAGES.moduleCommand, code: MODULE_DIAGNOSTIC }
 	return null
@@ -173,7 +173,7 @@ function commandInfo (name, moduleAliases) {
  * @param {string[]} lines - 文档的所有行
  * @returns {boolean[]} 逐行的抑制标记
  */
-export function computeIgnoredMask (lines) {
+export function computeIgnoredMask(lines) {
 	const ignored = new Array(lines.length).fill(false)
 	for (let i = 0; i < lines.length; i++) {
 		const trimmed = lines[i].trim()
@@ -195,8 +195,8 @@ const BARE_INSTALL_RE = /^([\t ]*)(?:Install-Module|inmo)\b(.*)$/i
  * @param {string} text - 原始文本
  * @returns {string} 去引号后的文本
  */
-function unquote (text) {
-	if (text.length >= 2 && ((text.startsWith('\'') && text.endsWith('\'')) || (text.startsWith('"') && text.endsWith('"')))) 
+function unquote(text) {
+	if (text.length >= 2 && ((text.startsWith('\'') && text.endsWith('\'')) || (text.startsWith('"') && text.endsWith('"'))))
 		return text.slice(1, -1).replace(/''/g, '\'')
 	return text
 }
@@ -207,7 +207,7 @@ function unquote (text) {
  * @param {string} rest - 命令名之后的参数文本
  * @returns {string | null} 模块名；取不到或为动态表达式时为 null
  */
-function installTarget (rest) {
+function installTarget(rest) {
 	let text = rest.trim()
 	const named = /^-(?:Name|name)\s*:?\s*(.+)$/.exec(text)
 	if (named) text = named[1].trim()
@@ -224,7 +224,7 @@ function installTarget (rest) {
  * @param {string} raw - 原始行
  * @returns {{ indent: string, module: string } | null} 缩进与模块名；无法改写时为 null
  */
-function requireFixForLine (raw) {
+function requireFixForLine(raw) {
 	const generated = GENERATED_INSTALL_RE.exec(raw)
 	if (generated) {
 		const first = unquote(generated[2])
@@ -251,7 +251,7 @@ function requireFixForLine (raw) {
  * @param {Record<string, string>} [aliasMap] - 别名到定义的映射（见 `lib/aliases.mjs`）
  * @returns {Array<{ line: number, severity: 'warning', message: string, args: string[], code: string, start: number, end: number, replacement?: string }>} 诊断列表
  */
-export function analyzeCommandUsage (text, aliasMap = MODULE_ALIASES) {
+export function analyzeCommandUsage(text, aliasMap = MODULE_ALIASES) {
 	const lines = splitLines(text)
 	const skip = computeSkipMask(lines)
 	const ignored = computeIgnoredMask(lines)
@@ -266,9 +266,9 @@ export function analyzeCommandUsage (text, aliasMap = MODULE_ALIASES) {
 		const raw = lines[line]
 
 		// `#_require PS2EXE` 拉入的是已废弃的模块，建议改写为 `#_require ps12exe`（只在会进入 EXE 的行上）。
-		if (inExe[line]) 
-			for (const module of requireModules(raw)) 
-				if (PS2EXE_MODULES.has(module.name.toLowerCase())) 
+		if (inExe[line])
+			for (const module of requireModules(raw))
+				if (PS2EXE_MODULES.has(module.name.toLowerCase()))
 					diagnostics.push({
 						line,
 						severity: /** @type {'warning'} */ 'warning',

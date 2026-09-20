@@ -23,7 +23,7 @@ const shouldTest = flags.has('--test')
  * @param {string} file - JSON 文件路径
  * @returns {any} 解析出的 JSON 内容
  */
-function readJson (file) {
+function readJson(file) {
 	return JSON.parse(fs.readFileSync(file, 'utf8'))
 }
 
@@ -33,7 +33,7 @@ function readJson (file) {
  * @param {string[]} args - 命令行参数
  * @param {object} [options] - 透传给 `execFile` 的选项（如 `cwd`）
  */
-async function run (file, args, options = {}) {
+async function run(file, args, options = {}) {
 	const { code } = await execFile(file, args, { stdio: 'inherit', ...options })
 	if (code !== 0) throw new Error(`${path.basename(file)} ${args.join(' ')} exited with code ${code}`)
 }
@@ -43,7 +43,7 @@ async function run (file, args, options = {}) {
  *
  * @returns {Promise<string>} npm 路径，找不到时退回当前平台上的裸命令名
  */
-export async function resolveNpm () {
+export async function resolveNpm() {
 	return await where_command('npm') || (process.platform === 'win32' ? 'npm.cmd' : 'npm')
 }
 
@@ -55,7 +55,7 @@ export async function resolveNpm () {
  * @param {string} cwd - 扩展目录
  * @returns {Promise<boolean>} 依赖树是否能被 npm 理解
  */
-export async function isDependencyTreeValid (cwd) {
+export async function isDependencyTreeValid(cwd) {
 	const npm = await resolveNpm()
 	try {
 		const { code } = await execFile(npm, ['list', '--production', '--parseable', '--depth=99999', '--loglevel=error'], { cwd })
@@ -72,7 +72,7 @@ export async function isDependencyTreeValid (cwd) {
  * @param {string} cwd - 扩展目录
  * @returns {Promise<void>} 安装完成，无返回值
  */
-export async function repairDependencyTree (cwd) {
+export async function repairDependencyTree(cwd) {
 	await run(await resolveNpm(), ['install'], { cwd })
 }
 
@@ -86,7 +86,7 @@ export async function repairDependencyTree (cwd) {
  * @param {{ warn: (message: string) => void }} [options.log] - 日志器
  * @returns {Promise<boolean>} 是否执行了修复
  */
-export async function ensureDependencyTree (cwd, options = {}) {
+export async function ensureDependencyTree(cwd, options = {}) {
 	const { check = isDependencyTreeValid, repair = repairDependencyTree, log = console } = options
 	if (await check(cwd)) return false
 	log.warn('node_modules 不是 npm 依赖树（可能由 Deno 等其它包管理器安装），正在运行 `npm install` 修复……')
@@ -100,10 +100,10 @@ export async function ensureDependencyTree (cwd, options = {}) {
  *
  * @returns {string|undefined} 本地 vsce 入口点路径，不存在时为 undefined
  */
-function localVsce () {
+function localVsce() {
 	const pkgPath = path.join(root, 'node_modules', '@vscode', 'vsce', 'package.json')
 	if (!fs.existsSync(pkgPath)) return undefined
-	const {bin} = readJson(pkgPath)
+	const { bin } = readJson(pkgPath)
 	const entry = typeof bin === 'string' ? bin : bin && bin.vsce
 	return entry ? path.join(path.dirname(pkgPath), entry) : undefined
 }
@@ -113,7 +113,7 @@ function localVsce () {
  *
  * @returns {Promise<string>} 生成的 VSIX 路径
  */
-async function packageExtension () {
+async function packageExtension() {
 	await ensureDependencyTree(root)
 
 	const entry = localVsce()
@@ -134,7 +134,7 @@ async function packageExtension () {
  *
  * @returns {Promise<string | undefined>} 本地 VS Code CLI 路径，找不到时为 undefined
  */
-async function resolveCodeCli () {
+async function resolveCodeCli() {
 	const configured = process.env.VSCODE_CLI_PATH || process.env.VSCODE_EXECUTABLE_PATH
 	if (configured) return configured
 	return await where_command('code') || undefined
@@ -146,7 +146,7 @@ async function resolveCodeCli () {
  * @param {string} vsix - 待安装的 VSIX 路径
  * @returns {Promise<boolean>} 安装是否执行
  */
-async function installExtension (vsix) {
+async function installExtension(vsix) {
 	const code = await resolveCodeCli()
 	if (!code) {
 		console.warn('\nCould not find the local VS Code CLI; set VSCODE_EXECUTABLE_PATH to override.')
@@ -164,7 +164,7 @@ async function installExtension (vsix) {
  *
  * @returns {Promise<void>} 执行完成，无返回值
  */
-async function main () {
+async function main() {
 	if (shouldTest) {
 		console.log('Running the test suite...\n')
 		const cli = path.join(root, 'node_modules', '@vscode', 'test-cli', 'out', 'bin.mjs')
@@ -174,7 +174,7 @@ async function main () {
 	const vsix = await packageExtension()
 	console.log(`\nPackaged ${vsix}`)
 
-	if (shouldInstall && await installExtension(vsix)) 
+	if (shouldInstall && await installExtension(vsix))
 		console.log('\nReload the VS Code window (Developer: Reload Window) to pick up the new build.')
 }
 

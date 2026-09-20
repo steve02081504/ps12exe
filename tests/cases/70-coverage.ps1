@@ -233,11 +233,11 @@ Add-Test @{
 }
 
 Add-Test @{
-	Name  = 'webserver.smoke'
-	Group = 'coverage'
-	Deps  = @('src/WebServer/', 'src/WebServer/main.ps1')
+	Name    = 'webserver.smoke'
+	Group   = 'coverage'
+	Deps    = @('src/WebServer/', 'src/WebServer/main.ps1')
 	Timeout = 180
-	Run   = {
+	Run     = {
 		param($ctx)
 		$port = Get-Random -Minimum 41000 -Maximum 49000
 		$url = "http://localhost:$port/"

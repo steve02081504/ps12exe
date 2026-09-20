@@ -29,7 +29,7 @@ const MARKER_READ_BYTES = 4 * 1024 * 1024
  * @param {...any} args - 格式化参数
  * @returns {string} 翻译后的字符串
  */
-function t (message, ...args) {
+function t(message, ...args) {
 	return vscode.l10n.t(message, ...args)
 }
 
@@ -39,7 +39,7 @@ function t (message, ...args) {
  * @param {string} filePath - 待判断的文件路径
  * @returns {boolean} 是可执行文件时返回真
  */
-function isExePath (filePath) {
+function isExePath(filePath) {
 	return path.extname(filePath).toLowerCase() === '.exe'
 }
 
@@ -50,9 +50,9 @@ function isExePath (filePath) {
  * @param {string} target - 目标文件路径
  * @returns {Promise<string | undefined>} 创建了备份时返回备份路径
  */
-export async function replaceFile (source, target) {
+export async function replaceFile(source, target) {
 	const backup = `${target}.old`
-	await fsp.rm(backup, { force: true }).catch(() => {})
+	await fsp.rm(backup, { force: true }).catch(() => { })
 
 	let hadTarget = true
 	try {
@@ -68,7 +68,7 @@ export async function replaceFile (source, target) {
 	}
 	catch (error) {
 		// 把原文件放回去，这样即使覆盖失败也不会丢失可执行文件。
-		if (hadTarget) await fsp.rename(backup, target).catch(() => {})
+		if (hadTarget) await fsp.rename(backup, target).catch(() => { })
 		throw error
 	}
 
@@ -81,7 +81,7 @@ export async function replaceFile (source, target) {
  * @param {string} exePath - 可执行文件路径
  * @returns {boolean} 疑似构建产物时返回真
  */
-export function looksLikePs12Exe (exePath) {
+export function looksLikePs12Exe(exePath) {
 	if (!isExePath(exePath)) return false
 	let handle
 	try {
@@ -95,7 +95,7 @@ export function looksLikePs12Exe (exePath) {
 		return false
 	}
 	finally {
-		if (handle !== undefined) 
+		if (handle !== undefined)
 			try { fs.closeSync(handle) }
 			catch { /* 已关闭 */ }
 	}
@@ -115,7 +115,7 @@ export class ExeSourceFileSystemProvider {
 	 * @param {vscode.OutputChannel} options.channel - 输出通道
 	 * @param {vscode.Uri} options.storageUri - 存储根目录
 	 */
-	constructor ({ requireHost, channel, storageUri }) {
+	constructor({ requireHost, channel, storageUri }) {
 		this.requireHost = requireHost
 		this.channel = channel
 		this.storageRoot = path.join(storageUri.fsPath, 'exe-source')
@@ -133,7 +133,7 @@ export class ExeSourceFileSystemProvider {
 	 * @param {string} exePath - 可执行文件路径
 	 * @returns {string} 缓存目录路径
 	 */
-	cacheDirFor (exePath) {
+	cacheDirFor(exePath) {
 		const hash = createHash('sha1').update(exePath.toLowerCase()).digest('hex').slice(0, 16)
 		return path.join(this.storageRoot, hash)
 	}
@@ -145,7 +145,7 @@ export class ExeSourceFileSystemProvider {
 	 * @param {boolean} [force] - 是否强制重新提取
 	 * @returns {Promise<{ script: string, mtime: number, cacheFile: string }>} 缓存的脚本条目
 	 */
-	async load (exePath, force = false) {
+	async load(exePath, force = false) {
 		const exeStat = await fsp.stat(exePath).catch(() => undefined)
 		if (!exeStat) throw vscode.FileSystemError.FileNotFound(vscode.Uri.file(exePath))
 		if (!force) {
@@ -168,7 +168,7 @@ export class ExeSourceFileSystemProvider {
 	 * @param {number} mtime - 文件修改时间
 	 * @returns {Promise<{ script: string, mtime: number, cacheFile: string }>} 缓存的脚本条目
 	 */
-	async #extract (exePath, mtime) {
+	async #extract(exePath, mtime) {
 		const host = await this.requireHost()
 		if (!host) throw vscode.FileSystemError.Unavailable(t('No PowerShell host (pwsh or powershell) was found.'))
 
@@ -185,7 +185,7 @@ export class ExeSourceFileSystemProvider {
 
 		if (result.cancelled) throw vscode.FileSystemError.Unavailable('cancelled')
 		if (result.error) throw vscode.FileSystemError.Unavailable(result.error.message)
-		if (result.code !== 0 || !fs.existsSync(cacheFile)) 
+		if (result.code !== 0 || !fs.existsSync(cacheFile))
 			throw vscode.FileSystemError.FileNotFound(vscode.Uri.file(exePath))
 
 		const script = await fsp.readFile(cacheFile, 'utf8')
@@ -200,7 +200,7 @@ export class ExeSourceFileSystemProvider {
 	 * @param {vscode.Uri} uri - 虚拟文档地址
 	 * @param {Uint8Array} content - 待写入的文件内容
 	 */
-	async writeFile (uri, content) {
+	async writeFile(uri, content) {
 		const entry = await this.load(uri.fsPath)
 		const host = await this.requireHost()
 		if (!host) throw vscode.FileSystemError.Unavailable(t('No PowerShell host (pwsh or powershell) was found.'))
@@ -241,7 +241,7 @@ export class ExeSourceFileSystemProvider {
 	 * @param {vscode.Uri} uri - 虚拟文档地址
 	 * @returns {Promise<vscode.FileStat>} 文件信息
 	 */
-	async stat (uri) {
+	async stat(uri) {
 		const entry = await this.load(uri.fsPath)
 		return {
 			type: vscode.FileType.File,
@@ -257,7 +257,7 @@ export class ExeSourceFileSystemProvider {
 	 * @param {vscode.Uri} uri - 虚拟文档地址
 	 * @returns {Promise<Uint8Array>} 文件字节内容
 	 */
-	async readFile (uri) {
+	async readFile(uri) {
 		const entry = await this.load(uri.fsPath)
 		return Buffer.from(entry.script, 'utf8')
 	}
@@ -267,28 +267,28 @@ export class ExeSourceFileSystemProvider {
 	 *
 	 * @returns {Array} 空目录列表
 	 */
-	readDirectory () {
+	readDirectory() {
 		return []
 	}
 
 	/**
 	 * 创建目录（只读视图不支持，始终抛无权限错误）。
 	 */
-	createDirectory () {
+	createDirectory() {
 		throw vscode.FileSystemError.NoPermissions('read-only')
 	}
 
 	/**
 	 * 删除文件（只读视图不支持，始终抛无权限错误）。
 	 */
-	delete () {
+	delete() {
 		throw vscode.FileSystemError.NoPermissions('read-only')
 	}
 
 	/**
 	 * 重命名文件（只读视图不支持，始终抛无权限错误）。
 	 */
-	rename () {
+	rename() {
 		throw vscode.FileSystemError.NoPermissions('read-only')
 	}
 
@@ -297,7 +297,7 @@ export class ExeSourceFileSystemProvider {
 	 *
 	 * @returns {vscode.Disposable} 可释放的监听器
 	 */
-	watch () {
+	watch() {
 		return new vscode.Disposable(() => { /* 永不触发；该文件系统是静态的 */ })
 	}
 }
@@ -308,7 +308,7 @@ export class ExeSourceFileSystemProvider {
  * @param {vscode.Uri} exeUri - 可执行文件地址
  * @param {ExeSourceFileSystemProvider} provider - 文件系统提供器
  */
-async function openExeSource (exeUri, provider) {
+async function openExeSource(exeUri, provider) {
 	await provider.load(exeUri.fsPath)
 	const target = exeUri.with({ scheme: EXE_SOURCE_SCHEME })
 	const document = await vscode.workspace.openTextDocument(target)
@@ -320,13 +320,13 @@ async function openExeSource (exeUri, provider) {
  * 在 `exeUri` 被替换后关闭其自定义编辑器标签页。
  * @param {vscode.Uri} exeUri - 可执行文件地址
  */
-async function closeCustomEditorTab (exeUri) {
-	for (const group of vscode.window.tabGroups.all) 
+async function closeCustomEditorTab(exeUri) {
+	for (const group of vscode.window.tabGroups.all)
 		for (const tab of group.tabs) {
-			const {input} = tab
+			const { input } = tab
 			if (input instanceof vscode.TabInputCustom &&
 				input.viewType === EXE_SOURCE_VIEW_TYPE &&
-				input.uri.toString() === exeUri.toString()) 
+				input.uri.toString() === exeUri.toString())
 				await vscode.window.tabGroups.close(tab)
 		}
 }
@@ -338,12 +338,12 @@ class ExeSourceDocument {
 	/**
 	 * @param {vscode.Uri} uri - 可执行文件地址
 	 */
-	constructor (uri) {
+	constructor(uri) {
 		this.uri = uri
 	}
 
 	/** 释放文档资源（无需清理）。 */
-	dispose () { /* 无需清理 */ }
+	dispose() { /* 无需清理 */ }
 }
 
 /**
@@ -357,7 +357,7 @@ export class ExeSourceCustomEditorProvider {
 	 *
 	 * @param {ExeSourceFileSystemProvider} provider - 文件系统提供器
 	 */
-	constructor (provider) {
+	constructor(provider) {
 		this.provider = provider
 	}
 
@@ -367,7 +367,7 @@ export class ExeSourceCustomEditorProvider {
 	 * @param {vscode.Uri} uri - 可执行文件地址
 	 * @returns {ExeSourceDocument} 自定义文档
 	 */
-	openCustomDocument (uri) {
+	openCustomDocument(uri) {
 		return new ExeSourceDocument(uri)
 	}
 
@@ -377,13 +377,13 @@ export class ExeSourceCustomEditorProvider {
 	 * @param {ExeSourceDocument} document - 待打开的自定义文档
 	 * @param {vscode.WebviewPanel} panel - 宿主面板
 	 */
-	async resolveCustomEditor (document, panel) {
+	async resolveCustomEditor(document, panel) {
 		panel.webview.html = '<!DOCTYPE html><html><head><meta charset="utf-8"></head><body></body></html>'
 		const exeUri = document.uri
 		const enabled = vscode.workspace.getConfiguration('ps12exe').get('openExeSource', true)
 
 		let opened = false
-		if (enabled && looksLikePs12Exe(exeUri.fsPath)) 
+		if (enabled && looksLikePs12Exe(exeUri.fsPath))
 			try {
 				await openExeSource(exeUri, this.provider)
 				opened = true
@@ -392,7 +392,7 @@ export class ExeSourceCustomEditorProvider {
 				this.provider.channel.appendLine(`ps12exe: could not open exe source for ${exeUri.fsPath}: ${error && error.message ? error.message : error}`)
 			}
 
-		if (!opened) 
+		if (!opened)
 			try { await vscode.commands.executeCommand('vscode.openWith', exeUri, 'default') }
 			catch { /* 内置编辑器不可用；保留空的自定义标签页 */ }
 		await closeCustomEditorTab(exeUri)
@@ -408,7 +408,7 @@ export class ExeSourceCustomEditorProvider {
  * @param {vscode.OutputChannel} options.channel - 输出通道
  * @returns {ExeSourceFileSystemProvider} 文件系统提供器
  */
-export function registerExeSource (context, { requireHost, channel }) {
+export function registerExeSource(context, { requireHost, channel }) {
 	const storageUri = context.storageUri || context.globalStorageUri
 	const provider = new ExeSourceFileSystemProvider({ requireHost, channel, storageUri })
 

@@ -22,14 +22,14 @@ function Add-Test {
 	param([Parameter(Mandatory)][hashtable]$Descriptor)
 	if (-not $Descriptor.Name) { throw 'Add-Test: Name is required' }
 	$d = @{
-		Name       = [string]$Descriptor.Name
-		Group      = if ($Descriptor.Group) { [string]$Descriptor.Group } else { 'misc' }
-		Deps       = @($Descriptor.Deps | Where-Object { $_ })
-		Build      = $Descriptor.Build
-		Builds     = @($Descriptor.Builds | Where-Object { $_ })
-		Run        = $Descriptor.Run
-		Serial     = [bool]$Descriptor.Serial
-		Timeout    = if ($Descriptor.Timeout) { [int]$Descriptor.Timeout } else { 600 }
+		Name    = [string]$Descriptor.Name
+		Group   = if ($Descriptor.Group) { [string]$Descriptor.Group } else { 'misc' }
+		Deps    = @($Descriptor.Deps | Where-Object { $_ })
+		Build   = $Descriptor.Build
+		Builds  = @($Descriptor.Builds | Where-Object { $_ })
+		Run     = $Descriptor.Run
+		Serial  = [bool]$Descriptor.Serial
+		Timeout = if ($Descriptor.Timeout) { [int]$Descriptor.Timeout } else { 600 }
 	}
 	if ($d.Build) { $d.Builds = @($d.Build) + $d.Builds }
 	[void]$script:TestCases.Add($d)

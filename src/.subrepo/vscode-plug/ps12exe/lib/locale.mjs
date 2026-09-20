@@ -25,7 +25,7 @@ export const PS12EXE_LOCALES = Object.freeze({
  * @param {string | undefined} language `vscode.env.language` 的值
  * @returns {string | undefined} ps12exe 接受的区域代码
  */
-export function toPs12exeLocale (language) {
+export function toPs12exeLocale(language) {
 	if (!language) return undefined
 	const key = String(language).toLowerCase()
 	// 未知区域会原样传递：ps12exe 会回退到匹配的区域前缀（例如 `pt` -> 无匹配，然后是 en-UK），而不是失败。

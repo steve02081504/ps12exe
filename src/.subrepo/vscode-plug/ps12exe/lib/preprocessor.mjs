@@ -35,7 +35,7 @@ export const MESSAGES = Object.freeze({
  * @param {string} text - 待检测的文档全文
  * @returns {string} 文档使用的换行符
  */
-function detectEol (text) {
+function detectEol(text) {
 	return text.includes('\r\n') ? '\r\n' : '\n'
 }
 
@@ -45,7 +45,7 @@ function detectEol (text) {
  * @param {string} text - 待切分的文档全文
  * @returns {string[]} 切分后的行数组
  */
-function splitLines (text) {
+function splitLines(text) {
 	return text.split(/\r\n|\n|\r/)
 }
 
@@ -55,7 +55,7 @@ function splitLines (text) {
  * @param {string} line - 待处理的行
  * @returns {string} 该行的前导空白
  */
-function leadingOf (line) {
+function leadingOf(line) {
 	const match = line.match(/^[\t ]*/)
 	return match ? match[0] : ''
 }
@@ -70,7 +70,7 @@ function leadingOf (line) {
  *   diagnostics: Array<{ line: number, severity: 'error' | 'warning', message: string, args: string[] }>
  * }} 解析出的行、块与诊断
  */
-export function analyze (text) {
+export function analyze(text) {
 	const lines = splitLines(text)
 	const skip = computeSkipMask(lines)
 	const blocks = []
@@ -86,7 +86,7 @@ export function analyze (text) {
 		if (ifMatch) {
 			const condition = ifMatch[1]
 			const parent = stack.length ? stack[stack.length - 1] : null
-			if (parent !== null) 
+			if (parent !== null)
 				diagnostics.push({
 					line,
 					severity: 'warning',
@@ -94,7 +94,7 @@ export function analyze (text) {
 					args: [condition, blocks[parent].condition]
 				})
 
-			if (!KNOWN_CONDITIONS.has(condition.toLowerCase())) 
+			if (!KNOWN_CONDITIONS.has(condition.toLowerCase()))
 				diagnostics.push({
 					line,
 					severity: 'error',
@@ -122,7 +122,7 @@ export function analyze (text) {
 				continue
 			}
 			const top = blocks[stack[stack.length - 1]]
-			if (top.elseLine !== null) 
+			if (top.elseLine !== null)
 				diagnostics.push({ line, severity: 'warning', message: MESSAGES.duplicateElse, args: [] })
 			top.elseLine = line
 			continue
@@ -180,7 +180,7 @@ export function analyze (text) {
  * @param {number} line - 待判断的行号
  * @returns {boolean} 该行处于选中分支时为真
  */
-export function branchActive (block, line) {
+export function branchActive(block, line) {
 	const initialActive = block.condition.toLowerCase() === 'psexe'
 	const elseSide = block.elseLine !== null && line > block.elseLine
 	return elseSide ? !initialActive : initialActive
@@ -194,10 +194,10 @@ export function branchActive (block, line) {
  * @param {number} lineCount - 文档总行数
  * @returns {boolean[]} 逐行标记：true 表示该行会进入 EXE
  */
-export function exeLineMask (blocks, lineCount) {
+export function exeLineMask(blocks, lineCount) {
 	const mask = new Array(lineCount).fill(true)
-	for (const block of blocks) 
-		for (let line = block.startLine; line <= block.endLine; line++) 
+	for (const block of blocks)
+		for (let line = block.startLine; line <= block.endLine; line++)
 			if (!branchActive(block, line)) mask[line] = false
 	return mask
 }
@@ -216,7 +216,7 @@ export function exeLineMask (blocks, lineCount) {
  * @param {string} text - 待计算的文档全文
  * @returns {Array<{ start: number, end: number }>} 从零开始、包含末尾的行
  */
-export function foldingRanges (text) {
+export function foldingRanges(text) {
 	const { lines, blocks } = analyze(text)
 	const ranges = []
 	for (const block of blocks) {
@@ -232,7 +232,7 @@ export function foldingRanges (text) {
  * @param {string} text - 待检查的文档全文
  * @returns {boolean} 所有块都已闭合时为 true
  */
-export function isBalanced (text) {
+export function isBalanced(text) {
 	return analyze(text).blocks.every((block) => block.closed)
 }
 
@@ -243,7 +243,7 @@ export function isBalanced (text) {
  * @param {string} insertedText 编辑插入的文本
  * @returns {{ offset: number, indent: string } | undefined} 换行下方 `offset` 行处，缩进与 `#_if` 行相同
  */
-export function endifAutoClose (currentLine, insertedText) {
+export function endifAutoClose(currentLine, insertedText) {
 	if (currentLine === undefined || !/\r?\n/.test(insertedText)) return undefined
 	if (!IF_RE.test(currentLine)) return undefined
 	const indent = (currentLine.match(/^[\t ]*/) || [''])[0]
@@ -265,7 +265,7 @@ const CODE_MARKER_RE = /^[\t ]*#_(?:!!|balus\b)/
  * @param {string} line - 待切换的行
  * @returns {string | undefined} 切换后的行；未改动时为 undefined
  */
-export function toggleBangLine (line) {
+export function toggleBangLine(line) {
 	if (!/\S/.test(line)) return undefined
 	const marked = line.match(BANG_RE)
 	if (marked) return marked[1] + marked[2]
@@ -283,7 +283,7 @@ export function toggleBangLine (line) {
  * @param {boolean[]} [skipMask] 保持不变的行（here-string、块注释）；见 `computeSkipMask`
  * @returns {Array<{ line: number, text: string }>} 发生变更的行
  */
-export function toggleBangLines (lines, startLine, endLine, skipMask) {
+export function toggleBangLines(lines, startLine, endLine, skipMask) {
 	const changes = []
 	const first = Math.max(0, startLine)
 	const last = Math.min(endLine, lines.length - 1)
@@ -302,12 +302,12 @@ export function toggleBangLines (lines, startLine, endLine, skipMask) {
  * @param {string[]} lines - 文档的所有行
  * @returns {Array<{ block: number, text: string }>} `block` 是块索引
  */
-export function branchFragments (blocks, lines) {
+export function branchFragments(blocks, lines) {
 	const fragments = []
 	blocks.forEach((entry, index) => {
 		const firstEnd = entry.elseLine === null ? entry.endLine : entry.elseLine
 		fragments.push({ block: index, text: lines.slice(entry.startLine + 1, firstEnd).join('\n') })
-		if (entry.elseLine !== null) 
+		if (entry.elseLine !== null)
 			fragments.push({ block: index, text: lines.slice(entry.elseLine + 1, entry.endLine).join('\n') })
 	})
 	return fragments
@@ -320,7 +320,7 @@ export function branchFragments (blocks, lines) {
  * @param {number} totalLines - 文档总行数
  * @returns {object | null} 豁免的块，无豁免时为 null
  */
-export function pickExemptBlock (blocks, totalLines) {
+export function pickExemptBlock(blocks, totalLines) {
 	if (!totalLines) return null
 	const threshold = totalLines * 0.9
 	let best = null
@@ -343,7 +343,7 @@ export function pickExemptBlock (blocks, totalLines) {
  * @param {string[]} lines - 文档的所有行
  * @returns {boolean[]} 逐行的跳过标记
  */
-export function computeSkipMask (lines) {
+export function computeSkipMask(lines) {
 	const skip = new Array(lines.length).fill(false)
 	let hereTerminator = null
 	let inBlockComment = false
@@ -374,7 +374,7 @@ export function computeSkipMask (lines) {
 		// 扫描这一行，判断块注释之外是否还有代码。整行都是块注释时跳过；先有代码再出现 `<# … #>` 时是代码行，必须参与缩进。
 		let rest = line
 		let hasCode = false
-		for (;;) {
+		for (; ;) {
 			const open = rest.indexOf('<#')
 			if (open < 0) {
 				if (rest.trim() !== '') hasCode = true
@@ -405,7 +405,7 @@ export function computeSkipMask (lines) {
  * @param {{ indentUnit?: string, incompleteBlocks?: Iterable<number> }} [options] `incompleteBlocks` 列出函数体不构成完整 PowerShell 单元的块（例如在块内打开、在块外关闭的 `if`）；这些块永不加深，见 `branchFragments`。
  * @returns {string} 缩进后的文档文本
  */
-export function indentText (text, options = {}) {
+export function indentText(text, options = {}) {
 	const indentUnit = options.indentUnit || '\t'
 	const eol = detectEol(text)
 	const { lines, blocks } = analyze(text)
@@ -445,7 +445,7 @@ export function indentText (text, options = {}) {
 			depth[i] = depthFull - (top && !top.exempt ? 1 : 0)
 			if (ENDIF_RE.test(content)) stack.pop()
 		}
-		else 
+		else
 			depth[i] = depthFull
 	}
 
@@ -453,14 +453,14 @@ export function indentText (text, options = {}) {
 	for (const block of blocks) {
 		block.bodyIndent = null
 		const bodyEnd = block.elseLine !== null ? block.elseLine : block.endLine
-		for (let i = block.startLine + 1; i < bodyEnd; i++) 
+		for (let i = block.startLine + 1; i < bodyEnd; i++)
 			if (isCode[i]) { block.bodyIndent = leading[i]; break }
 
-		if (block.bodyIndent === null) 
-			for (let i = bodyEnd + 1; i < block.endLine; i++) 
+		if (block.bodyIndent === null)
+			for (let i = bodyEnd + 1; i < block.endLine; i++)
 				if (isCode[i]) { block.bodyIndent = leading[i]; break }
 
-		if (block.bodyIndent === null) 
+		if (block.bodyIndent === null)
 			// 两个分支中都没有代码（例如函数体只有 `#_!!` 转义或注释）。官方 formatter 已经把该指令放在周围的语法缩进处，因此使用它自身的行首缩进，而不是最近的不相关代码行（后者可能位于外层构造的缩进处，如在 `if (` + 续行中那样）。
 			block.bodyIndent = leading[block.startLine]
 	}
@@ -517,13 +517,13 @@ export function indentText (text, options = {}) {
  * @param {string} line - 待统计的行
  * @returns {number} 左括号减右括号的净值
  */
-function parenDelta (line) {
+function parenDelta(line) {
 	let depth = 0
 	let state = 'code'
 	for (let i = 0; i < line.length; i++) {
 		const char = line[i]
 		if (state === 'single') {
-			if (char === '\'') 
+			if (char === '\'')
 				if (line[i + 1] === '\'') i++
 				else state = 'code'
 			continue
@@ -553,7 +553,7 @@ function parenDelta (line) {
  * @param {string} indentUnit formatter 的缩进单位（制表符或空格）
  * @returns {string} 修复后的文本
  */
-export function restoreParenIndentation (text, indentUnit) {
+export function restoreParenIndentation(text, indentUnit) {
 	if (!indentUnit) return text
 	const eol = detectEol(text)
 	const lines = splitLines(text)
@@ -573,7 +573,7 @@ export function restoreParenIndentation (text, indentUnit) {
 		const bodyIndent = closeIndent + indentUnit
 
 		let close = -1
-		if (opensBlock) 
+		if (opensBlock)
 			for (let j = i + 1; j < lines.length; j++) {
 				if (leadingOf(lines[j]) === closeIndent && lines[j].slice(closeIndent.length).startsWith('}')) {
 					close = j
@@ -594,7 +594,7 @@ export function restoreParenIndentation (text, indentUnit) {
 		const firstBody = lines.findIndex((line, index) => index > i && index < bodyLimit && line.trim() !== '')
 		if (firstBody < 0 || leadingOf(lines[firstBody]) !== bodyIndent) continue
 
-		for (let k = i + 1; k <= close; k++) 
+		for (let k = i + 1; k <= close; k++)
 			if (lines[k].startsWith(closeIndent)) lines[k] = lines[k].slice(indentUnit.repeat(extra).length)
 	}
 
@@ -617,7 +617,7 @@ export function restoreParenIndentation (text, indentUnit) {
  * @param {string} text - 待修复的文本
  * @returns {string} 修复后的文本
  */
-export function restoreClauseIndentation (text) {
+export function restoreClauseIndentation(text) {
 	const eol = detectEol(text)
 	const lines = splitLines(text)
 
@@ -642,11 +642,11 @@ export function restoreClauseIndentation (text) {
  * @param {number} line - 待查找的行号
  * @returns {{ index: number, line: number } | null} 最内层块及其分支指令行，不在块内时为 null
  */
-function referenceDirective (blocks, line) {
+function referenceDirective(blocks, line) {
 	let best = null
 	for (let index = 0; index < blocks.length; index++) {
 		const block = blocks[index]
-		if (line >= block.startLine && line <= block.endLine && (!best || block.depth > blocks[best.index].depth)) 
+		if (line >= block.startLine && line <= block.endLine && (!best || block.depth > blocks[best.index].depth))
 			best = { index, block }
 	}
 	if (!best) return null
@@ -667,7 +667,7 @@ function referenceDirective (blocks, line) {
  * @param {string} originalText 官方 formatter 之前的文本
  * @returns {string} 还原标记缩进后的文本
  */
-export function restoreMarkerIndentation (text, originalText) {
+export function restoreMarkerIndentation(text, originalText) {
 	if (!originalText) return text
 	const eol = detectEol(text)
 	const lines = splitLines(text)
@@ -676,11 +676,11 @@ export function restoreMarkerIndentation (text, originalText) {
 	const { blocks: originalBlocks } = analyze(originalText)
 
 	const markerLines = []
-	for (let i = 0; i < lines.length; i++) 
+	for (let i = 0; i < lines.length; i++)
 		if (CODE_MARKER_RE.test(lines[i])) markerLines.push(i)
 
 	const originalMarkerLines = []
-	for (let i = 0; i < originalLines.length; i++) 
+	for (let i = 0; i < originalLines.length; i++)
 		if (CODE_MARKER_RE.test(originalLines[i])) originalMarkerLines.push(i)
 
 	if (!markerLines.length || markerLines.length !== originalMarkerLines.length) return text
@@ -701,7 +701,7 @@ export function restoreMarkerIndentation (text, originalText) {
 			if (relative === null) return text
 			leading = leadingOf(lines[reference.line]) + relative
 		}
-		else 
+		else
 			leading = leadingOf(originalLines[j])
 		out[i] = leading + lines[i].replace(/^[\t ]*/, '')
 	}
@@ -715,9 +715,8 @@ export function restoreMarkerIndentation (text, originalText) {
  * @param {string} prefix - 待去掉的前导空白
  * @returns {string | null} 去掉前缀后的剩余部分，前缀不匹配时为 null
  */
-function stripLeading (line, prefix) {
+function stripLeading(line, prefix) {
 	const leading = leadingOf(line)
 	if (prefix && !leading.startsWith(prefix)) return null
 	return leading.slice(prefix.length)
 }
-

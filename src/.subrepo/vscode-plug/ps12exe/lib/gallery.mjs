@@ -16,7 +16,7 @@ const GENERATED_TAG_PREFIXES = ['PSFunction_', 'PSCommand_', 'PSCmdlet_', 'PSInc
 const cache = new Map()
 
 /** 清空缓存；主要用于测试。 */
-export function clearGalleryCache () {
+export function clearGalleryCache() {
 	cache.clear()
 }
 
@@ -27,7 +27,7 @@ export function clearGalleryCache () {
  * @param {string} [version] - 版本；省略时指向模块的最新版页面
  * @returns {string} 图库页面地址
  */
-export function packagePageUrl (id, version) {
+export function packagePageUrl(id, version) {
 	const base = `${PAGE_BASE}/${encodeURIComponent(id)}`
 	return version ? `${base}/${encodeURIComponent(version)}` : base
 }
@@ -38,7 +38,7 @@ export function packagePageUrl (id, version) {
  * @param {string} tag - tag 名
  * @returns {string} 搜索结果页地址
  */
-export function tagSearchUrl (tag) {
+export function tagSearchUrl(tag) {
 	return `${PAGE_BASE}?q=${encodeURIComponent(`Tags:"${tag}"`)}`
 }
 
@@ -48,7 +48,7 @@ export function tagSearchUrl (tag) {
  * @param {string} tag - 待判断的 tag
  * @returns {boolean} 是自动生成的 tag 时为真
  */
-export function isGeneratedTag (tag) {
+export function isGeneratedTag(tag) {
 	return GENERATED_TAG_PREFIXES.some((prefix) => tag.startsWith(prefix))
 }
 
@@ -58,7 +58,7 @@ export function isGeneratedTag (tag) {
  * @param {string} text - 待解码的文本
  * @returns {string} 解码后的文本
  */
-function decodeXml (text) {
+function decodeXml(text) {
 	return text
 		.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
 		.replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)))
@@ -75,7 +75,7 @@ function decodeXml (text) {
  * @param {string} text - 原始文本
  * @returns {string} 纯文本
  */
-function stripHtml (text) {
+function stripHtml(text) {
 	return text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
@@ -85,7 +85,7 @@ function stripHtml (text) {
  * @param {string} text - 已解码实体的原始文本
  * @returns {string} 保留换行的纯文本
  */
-export function normalizeDescription (text) {
+export function normalizeDescription(text) {
 	return String(text)
 		.replace(/\r\n?/g, '\n')
 		.replace(/<\s*li\b[^>]*>/gi, '\n- ')
@@ -106,7 +106,7 @@ export function normalizeDescription (text) {
  * @param {string} name - 属性名（如 `Description`）
  * @returns {string} 已解码并去除首尾空白的值
  */
-function fieldValue (entry, name) {
+function fieldValue(entry, name) {
 	const match = new RegExp(`<d:${name}(?:\\s[^>]*)?>([\\s\\S]*?)</d:${name}>`).exec(entry)
 	return match ? decodeXml(match[1]).trim() : ''
 }
@@ -117,7 +117,7 @@ function fieldValue (entry, name) {
  * @param {string} xml - 接口返回的 Atom XML
  * @returns {{ id: string, version: string, description: string, iconUrl: string, projectUrl: string, galleryUrl: string, tags: string[] } | null} 解析结果；没有条目时为 null
  */
-export function parseGalleryEntry (xml) {
+export function parseGalleryEntry(xml) {
 	const entry = /<entry\b[\s\S]*?<\/entry>/.exec(xml)
 	if (!entry) return null
 
@@ -144,7 +144,7 @@ export function parseGalleryEntry (xml) {
  * @param {string} id - 模块名
  * @returns {Promise<object | null>} 模块信息，未找到时为 null
  */
-async function fetchPackageInfo (id) {
+async function fetchPackageInfo(id) {
 	// OData 字符串字面量中的单引号需要写成两个。
 	const filter = `Id eq '${String(id).replace(/'/g, '\'\'')}' and IsLatestVersion`
 	const url = `${API_URL}?$filter=${encodeURIComponent(filter)}&$top=1`
@@ -166,7 +166,7 @@ async function fetchPackageInfo (id) {
  * @param {string} id - 模块名
  * @returns {Promise<object | null>} 模块信息，未找到时为 null
  */
-export async function getPackageInfo (id) {
+export async function getPackageInfo(id) {
 	const key = String(id || '').toLowerCase()
 	if (!key) return null
 

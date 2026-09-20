@@ -88,12 +88,12 @@ suite('ps12exe build', () => {
 				 *
 				 * @returns {Promise<void>} 无返回值
 				 */
-				repair: async () => {},
+				repair: async () => { },
 				log: {
 					/**
 					 * 丢弃警告信息的占位日志器。
 					 */
-					warn: () => {}
+					warn: () => { }
 				}
 			}),
 			/npm install/

@@ -18,7 +18,7 @@ const ICON_INDEX_RE = /^(.*),(-?\d+)$/
  * @param {string} value - 待处理的原始路径文本
  * @returns {string} 去引号后的路径
  */
-export function unquote (value) {
+export function unquote(value) {
 	const trimmed = value.trim()
 	if (trimmed.length >= 2 && trimmed.startsWith('\'') && trimmed.endsWith('\'')) return trimmed.slice(1, -1).replace(/''/g, '\'')
 	if (trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"')) return trimmed.slice(1, -1).replace(/""/g, '"')
@@ -32,7 +32,7 @@ export function unquote (value) {
  * @param {string} value - 已去引号的取值
  * @returns {{ value: string, index: number | null }} 去掉索引后的路径与索引
  */
-export function splitIconIndex (value) {
+export function splitIconIndex(value) {
 	const match = ICON_INDEX_RE.exec(value)
 	if (!match) return { value, index: null }
 	return { value: unquote(match[1]), index: Number(match[2]) }
@@ -48,7 +48,7 @@ export function splitIconIndex (value) {
  * @param {string} baseDir 正在编辑的脚本所在目录
  * @returns {{ file: string, kind: 'icon' | 'include', index: number | null, start: number, end: number } | null} 解析出的文件引用，未引用文件时为 null
  */
-export function resolveDirectivePath (line, baseDir) {
+export function resolveDirectivePath(line, baseDir) {
 	const pragma = PRAGMA_PATH_RE.exec(line)
 	const match = pragma || INCLUDE_AS_RE.exec(line) || INCLUDE_RE.exec(line)
 	if (!match) return null

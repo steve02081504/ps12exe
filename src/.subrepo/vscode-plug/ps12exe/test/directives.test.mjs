@@ -126,7 +126,7 @@ suite('ps12exe directive completion', () => {
 		// `#_if` 后接条件、`#_pragma ` 后接参数名；其余指令没有可自动弹出的后续补全。
 		assert.strictEqual(DIRECTIVE_COMPLETIONS.find((entry) => entry.label === '#_if').followUp, 'suggest')
 		assert.strictEqual(DIRECTIVE_COMPLETIONS.find((entry) => entry.label === '#_pragma').followUp, 'suggest')
-		for (const entry of DIRECTIVE_COMPLETIONS) 
+		for (const entry of DIRECTIVE_COMPLETIONS)
 			if (entry.label !== '#_if' && entry.label !== '#_pragma') assert.strictEqual(entry.followUp, undefined, `${entry.label} unexpectedly declares a follow-up`)
 
 		// 条件补全后换行，让 `#_if` 自动补出 `#_endif`。

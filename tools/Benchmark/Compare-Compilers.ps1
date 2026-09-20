@@ -111,10 +111,10 @@ Measure-Exe 'ps12-nonconst-fw' 'ps12exe · non-constant · Framework4.0' $exe
 if ($IncludeCore) {
 	if (-not (Get-Command dotnet -ErrorAction Ignore)) { throw '-IncludeCore requires the .NET SDK.' }
 	$exe = Join-Path $tempDir 'const_core.exe'
-	ps12exe $constScript $exe -Build @{Target='Core'} -NoUpdateCheck
+	ps12exe $constScript $exe -Build @{Target = 'Core' } -NoUpdateCheck
 	Measure-Exe 'ps12-const-core' 'ps12exe · constant · Core' $exe
 	$exe = Join-Path $tempDir 'nonconst_core.exe'
-	ps12exe $nonConstScript $exe -Build @{Target='Core'} -NoUpdateCheck
+	ps12exe $nonConstScript $exe -Build @{Target = 'Core' } -NoUpdateCheck
 	Measure-Exe 'ps12-nonconst-core' 'ps12exe · non-constant · Core' $exe
 }
 

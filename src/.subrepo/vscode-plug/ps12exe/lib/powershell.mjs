@@ -19,7 +19,7 @@ let cachedHost
  * @param {string} script - 待编码的脚本
  * @returns {string} 编码后的命令
  */
-export function encodeCommand (script) {
+export function encodeCommand(script) {
 	return Buffer.from(script, 'utf16le').toString('base64')
 }
 
@@ -29,7 +29,7 @@ export function encodeCommand (script) {
  * @param {string} value - 待引用的值
  * @returns {string} 单引号字符串字面量
  */
-export function psQuote (value) {
+export function psQuote(value) {
 	return `'${String(value).replace(/'/g, '\'\'')}'`
 }
 
@@ -38,9 +38,9 @@ export function psQuote (value) {
  *
  * @returns {Promise<string[]>} 候选主机路径列表
  */
-async function hostCandidates () {
+async function hostCandidates() {
 	const candidates = []
-	for (const name of HOST_NAMES) 
+	for (const name of HOST_NAMES)
 		try {
 			const resolved = await where_command(name)
 			if (resolved) candidates.push(resolved)
@@ -55,7 +55,7 @@ async function hostCandidates () {
  * @param {string} script - 待编码的脚本
  * @returns {string[]} 编码后的参数列表
  */
-function encodedArgs (script) {
+function encodedArgs(script) {
 	// `-OutputFormat Text` 让 PowerShell 的信息流不进入 stderr；否则被重定向的宿主会收到每次 Write-Host 调用的 CLIXML 副本。
 	return ['-NoProfile', '-NonInteractive', '-OutputFormat', 'Text', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', encodeCommand(script)]
 }
@@ -65,7 +65,7 @@ function encodedArgs (script) {
  * @param {string[]} args - 命令行参数
  * @returns {Promise<{ stdout: string, stderr: string }>} 执行结果
  */
-function execFileAsync (command, args) {
+function execFileAsync(command, args) {
 	return new Promise((resolve, reject) => {
 		execFile(command, args, { encoding: 'utf8', windowsHide: true, maxBuffer: 8 * 1024 * 1024 }, (error, stdout, stderr) => {
 			if (error) {
@@ -83,7 +83,7 @@ function execFileAsync (command, args) {
  * @param {string} command - 候选主机路径
  * @returns {Promise<{ command: string, moduleVersion: string | null } | null>} 探测结果
  */
-async function probeHost (command) {
+async function probeHost(command) {
 	try {
 		const { stdout } = await execFileAsync(command, encodedArgs(MODULE_PROBE))
 		return { command, moduleVersion: stdout || null }
@@ -102,7 +102,7 @@ async function probeHost (command) {
  * @param {boolean} [refresh] - 是否强制重新探测
  * @returns {Promise<{ command: string, moduleVersion: string | null } | null>} 可用的主机
  */
-export async function resolvePowerShell (refresh = false) {
+export async function resolvePowerShell(refresh = false) {
 	if (cachedHost && !refresh) return cachedHost
 	let fallback = null
 	for (const command of await hostCandidates()) {
@@ -126,7 +126,7 @@ let cachedPlainHost
  *
  * @returns {Promise<{ command: string } | null>} 可用的主机
  */
-export async function resolvePlainPowerShell () {
+export async function resolvePlainPowerShell() {
 	if (cachedPlainHost !== undefined) return cachedPlainHost
 	const candidates = await hostCandidates()
 	cachedPlainHost = candidates.length ? { command: candidates[0] } : null
@@ -138,7 +138,7 @@ export async function resolvePlainPowerShell () {
  *
  * @param {import('child_process').ChildProcess} child - 子进程
  */
-function killTree (child) {
+function killTree(child) {
 	if (!child.pid) return
 	if (process.platform === 'win32') {
 		spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { windowsHide: true })
@@ -171,7 +171,7 @@ const clean = (text) => String(text).replace(/\u001b\[[\d;]*[A-Za-z]/g, '')
  * @param {import('vscode').CancellationToken} [options.token] - 取消令牌
  * @returns {Promise<{ code?: number | null, error?: Error, stdout: string, stderr: string, cancelled?: boolean }>} 运行结果
  */
-export function runScript (host, script, options = {}) {
+export function runScript(host, script, options = {}) {
 	const { channel, token } = options
 	return new Promise((resolve) => {
 		let child
@@ -217,7 +217,7 @@ export function runScript (host, script, options = {}) {
 		child.on('error', (error) => finish({ error, stdout, stderr }))
 		child.on('close', (code) => finish({ code, stdout, stderr, cancelled }))
 
-		if (token) 
+		if (token)
 			token.onCancellationRequested(() => {
 				cancelled = true
 				killTree(child)
@@ -233,7 +233,7 @@ const PARSE_MARKER = 'PS12EXE_PARSE:'
  * @param {string} stdout - 解析运行的标准输出
  * @returns {boolean[]} 每个片段一个标志，无法解析时为 `true`
  */
-export function parseIncompleteOutput (stdout) {
+export function parseIncompleteOutput(stdout) {
 	const results = []
 	for (const line of String(stdout || '').split(/\r?\n/)) {
 		const index = line.indexOf(PARSE_MARKER)
@@ -251,7 +251,7 @@ export function parseIncompleteOutput (stdout) {
  * @param {import('vscode').CancellationToken} [options.token] - 取消令牌
  * @returns {Promise<boolean[]>} 每个片段是否不完整的标志列表
  */
-export async function findIncompleteFragments ({ host, texts, token }) {
+export async function findIncompleteFragments({ host, texts, token }) {
 	if (!texts.length) return []
 
 	const payload = path.join(os.tmpdir(), `ps12exe-parse-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.json`)
@@ -281,7 +281,7 @@ export async function findIncompleteFragments ({ host, texts, token }) {
 		const result = await runScript(host, script, { token })
 		if (result.error) throw result.error
 		const parsed = parseIncompleteOutput(result.stdout)
-		if (parsed.length !== texts.length) 
+		if (parsed.length !== texts.length)
 			throw new Error(`expected ${texts.length} parse results, got ${parsed.length}: ${String(result.stderr || '').trim()}`)
 		return parsed
 	}
@@ -306,7 +306,7 @@ export async function findIncompleteFragments ({ host, texts, token }) {
  * @param {import('vscode').CancellationToken} [options.token] - 取消令牌
  * @returns {Promise<{ code?: number | null, error?: Error, stdout: string, stderr: string, cancelled?: boolean }>} 运行结果
  */
-export function compileScript ({ host, file, locale, channel, token }) {
+export function compileScript({ host, file, locale, channel, token }) {
 	const script = [
 		'$ErrorActionPreference = "Stop"',
 		'$global:LASTEXITCODE = 0',
@@ -316,7 +316,7 @@ export function compileScript ({ host, file, locale, channel, token }) {
 		'exit $LASTEXITCODE'
 	].join('; ')
 
-	if (channel) 
+	if (channel)
 		channel.appendLine(`> ps12exe -inputFile "${file}"${locale ? ` -Locale "${locale}"` : ''}`)
 
 	return runScript(host, script, { channel, token })
@@ -334,7 +334,7 @@ export function compileScript ({ host, file, locale, channel, token }) {
  * @param {import('vscode').CancellationToken} [options.token] - 取消令牌
  * @returns {Promise<{ code?: number | null, error?: Error, stdout: string, stderr: string, cancelled?: boolean }>} 运行结果
  */
-export function extractScriptToFile ({ host, file, outputFile, locale, channel, token }) {
+export function extractScriptToFile({ host, file, outputFile, locale, channel, token }) {
 	// ps12exe / exe21sp 是函数，设置的是 $global:LastExitCode，而不是 $LASTEXITCODE。
 	const script = [
 		'$ErrorActionPreference = "Stop"',
@@ -345,7 +345,7 @@ export function extractScriptToFile ({ host, file, outputFile, locale, channel, 
 		'exit $global:LastExitCode'
 	].join('; ')
 
-	if (channel) 
+	if (channel)
 		channel.appendLine(`> exe21sp -inputFile "${file}" -outputFile "${outputFile}"`)
 
 	return runScript(host, script, { channel, token })
@@ -363,7 +363,7 @@ export function extractScriptToFile ({ host, file, outputFile, locale, channel, 
  * @param {import('vscode').CancellationToken} [options.token] - 取消令牌
  * @returns {Promise<{ code?: number | null, error?: Error, stdout: string, stderr: string, cancelled?: boolean }>} 运行结果
  */
-export function compileToExe ({ host, input, output, locale, channel, token }) {
+export function compileToExe({ host, input, output, locale, channel, token }) {
 	const script = [
 		'$ErrorActionPreference = "Stop"',
 		'$global:LastExitCode = 0',
@@ -373,7 +373,7 @@ export function compileToExe ({ host, input, output, locale, channel, token }) {
 		'exit $global:LastExitCode'
 	].join('; ')
 
-	if (channel) 
+	if (channel)
 		channel.appendLine(`> ps12exe -inputFile "${input}" -outputFile "${output}"`)
 
 	return runScript(host, script, { channel, token })
@@ -409,7 +409,7 @@ const SYNC_SCRIPT = [
  * @param {string} stdout - 同步脚本的标准输出
  * @returns {{ status: string, version?: string } | undefined} 解析后的同步状态
  */
-export function parseSyncOutput (stdout) {
+export function parseSyncOutput(stdout) {
 	const line = String(stdout || '')
 		.split(/\r?\n/)
 		.reverse()
@@ -429,7 +429,7 @@ export function parseSyncOutput (stdout) {
  * @param {import('vscode').CancellationToken} [options.token] - 取消令牌
  * @returns {Promise<{ status: 'installed' | 'updated' | 'up-to-date' | 'unreachable' | 'unknown' | 'error', version?: string, error?: string }>} 同步结果
  */
-export async function syncModule ({ host, channel, token }) {
+export async function syncModule({ host, channel, token }) {
 	if (channel) channel.appendLine('> syncing ps12exe module')
 
 	const result = await runScript(host, SYNC_SCRIPT, { channel, token })
@@ -451,7 +451,7 @@ export async function syncModule ({ host, channel, token }) {
  * @param {string} [options.uiMode] - 界面模式
  * @returns {Promise<void>}
  */
-export function launchGUI ({ host, file, locale, uiMode = 'Auto' }) {
+export function launchGUI({ host, file, locale, uiMode = 'Auto' }) {
 	const script = [
 		'Import-Module ps12exe -ErrorAction Stop',
 		`ps12exeGUI -PS1File ${psQuote(file)}${locale ? ` -Locale ${psQuote(locale)}` : ''} -UIMode ${psQuote(uiMode)}`
@@ -473,4 +473,3 @@ export function launchGUI ({ host, file, locale, uiMode = 'Auto' }) {
 		})
 	})
 }
-

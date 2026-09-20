@@ -17,8 +17,8 @@ const IGNORED_DIRS = new Set(['node_modules', '.subrepo', '.vscode-test', '.git'
  * @param {string[]} [out] - 输出数组
  * @returns {string[]} 脚本文件路径列表
  */
-function collectPs1 (dir, out = []) {
-	for (const entry of fs.readdirSync(dir, { withFileTypes: true })) 
+function collectPs1(dir, out = []) {
+	for (const entry of fs.readdirSync(dir, { withFileTypes: true }))
 		if (entry.isDirectory()) {
 			if (!IGNORED_DIRS.has(entry.name)) collectPs1(path.join(dir, entry.name), out)
 		}
@@ -477,7 +477,7 @@ suite('ps12exe preprocessor', () => {
 		const failures = []
 		for (const file of files) {
 			const { diagnostics } = analyze(fs.readFileSync(file, 'utf8'))
-			for (const d of diagnostics) 
+			for (const d of diagnostics)
 				failures.push(`${path.relative(REPO_ROOT, file)}:${d.line + 1} [${d.severity}] ${d.message}`)
 		}
 		assert.deepStrictEqual(failures, [], `ps12exe's own scripts must be warning-free:\n${failures.join('\n')}`)

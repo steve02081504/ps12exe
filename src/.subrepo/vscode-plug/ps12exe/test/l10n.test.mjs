@@ -15,13 +15,13 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
  *
  * @returns {Set<string>} 运行时字符串集合
  */
-function usedRuntimeKeys () {
+function usedRuntimeKeys() {
 	const keys = new Set([...Object.values(MESSAGES), ...Object.values(HOVER_MESSAGES), ...Object.values(COMMAND_MESSAGES)])
-	for (const dir of [ROOT, path.join(ROOT, 'lib')]) 
+	for (const dir of [ROOT, path.join(ROOT, 'lib')])
 		for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
 			if (!entry.isFile() || !entry.name.endsWith('.mjs')) continue
 			const source = fs.readFileSync(path.join(dir, entry.name), 'utf8')
-			for (const match of source.matchAll(/\bt\(\s*'((?:[^'\\]|\\.)*)'/g)) 
+			for (const match of source.matchAll(/\bt\(\s*'((?:[^'\\]|\\.)*)'/g))
 				keys.add(match[1].replace(/\\'/g, '\''))
 		}
 	return keys
@@ -33,7 +33,7 @@ function usedRuntimeKeys () {
  * @param {object} pkg - 包清单对象
  * @returns {Set<string>} 引用的键集合
  */
-function referencedPackageKeys (pkg) {
+function referencedPackageKeys(pkg) {
 	const keys = new Set()
 	/**
 	 * 递归收集字符串中的占位键。
@@ -41,7 +41,7 @@ function referencedPackageKeys (pkg) {
 	 * @param {unknown} value - 待扫描的值
 	 */
 	const scan = (value) => {
-		if (typeof value === 'string') 
+		if (typeof value === 'string')
 			for (const match of value.matchAll(/%([^%]+)%/g)) keys.add(match[1])
 		else if (Array.isArray(value)) value.forEach(scan)
 		else if (value && typeof value === 'object') Object.values(value).forEach(scan)

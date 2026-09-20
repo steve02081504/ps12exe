@@ -43,7 +43,7 @@ const CODE_FORMATTING_PREFIX = 'powershell.codeFormatting.'
  * @param {number} [options.tabSize] - 缩进宽度
  * @returns {object} 设置哈希表
  */
-export function buildSettings (options = {}) {
+export function buildSettings(options = {}) {
 	const config = { ...DEFAULTS, ...options.overrides }
 	const insertSpaces = options.insertSpaces !== false
 	const tabSize = options.tabSize || 4
@@ -127,7 +127,7 @@ export function buildSettings (options = {}) {
  *
  * @returns {{ codeFormatting: Record<string, unknown>, insertSpaces: boolean | undefined }} 扩展默认配置
  */
-function readExtensionConfigurationDefaults () {
+function readExtensionConfigurationDefaults() {
 	const manifestPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'package.json')
 	let defaults = {}
 	try {
@@ -138,7 +138,7 @@ function readExtensionConfigurationDefaults () {
 		// 缺少清单文件不应导致测试运行失败。
 	}
 	const codeFormatting = {}
-	for (const [key, value] of Object.entries(defaults)) 
+	for (const [key, value] of Object.entries(defaults))
 		if (key.startsWith(CODE_FORMATTING_PREFIX)) codeFormatting[key.slice(CODE_FORMATTING_PREFIX.length)] = value
 	const editor = defaults['[powershell]'] || {}
 	return { codeFormatting, insertSpaces: editor['editor.insertSpaces'] }
@@ -150,19 +150,19 @@ function readExtensionConfigurationDefaults () {
  * @param {string} repoRoot - 仓库根目录
  * @returns {{ overrides: Record<string, unknown>, insertSpaces: boolean, tabSize: number }} 解析后的格式化设置
  */
-export function readWorkspaceFormatting (repoRoot) {
+export function readWorkspaceFormatting(repoRoot) {
 	const extension = readExtensionConfigurationDefaults()
 	const overrides = { ...extension.codeFormatting }
 	let fileSettings = {}
 	const settingsPath = path.join(repoRoot, '.vscode', 'settings.json')
-	if (fs.existsSync(settingsPath)) 
+	if (fs.existsSync(settingsPath))
 		try {
 			fileSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'))
 		}
 		catch {
 			// 格式错误的工作区文件不应导致测试运行失败。
 		}
-	for (const [key, value] of Object.entries(fileSettings)) 
+	for (const [key, value] of Object.entries(fileSettings))
 		if (key.startsWith(CODE_FORMATTING_PREFIX)) overrides[key.slice(CODE_FORMATTING_PREFIX.length)] = value
 	const editor = fileSettings['[powershell]'] || {}
 	const workspaceInsertSpaces = editor['editor.insertSpaces']
@@ -215,7 +215,7 @@ const FORMAT_SCRIPT = [
  * @param {object} options.settings PSScriptAnalyzer 设置哈希表（参见 {@link buildSettings}）
  * @returns {Promise<{ available: boolean, text: string }>} 格式化结果
  */
-export async function formatWithOfficialFormatter ({ host, text, settings }) {
+export async function formatWithOfficialFormatter({ host, text, settings }) {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ps12exe-fmt-'))
 	const settingsPath = path.join(dir, 'settings.json')
 	const textPath = path.join(dir, 'input.ps1')

@@ -12,7 +12,7 @@ const projectDir = path.dirname(fileURLToPath(import.meta.url))
  *
  * @returns {Promise<string|undefined>} 可执行文件路径，找不到时为 undefined
  */
-async function executableFromPath () {
+async function executableFromPath() {
 	try {
 		const code = await where_command('code')
 		if (!code) return undefined
@@ -31,7 +31,7 @@ async function executableFromPath () {
  * @param {string|undefined} executable - VS Code 可执行文件路径
  * @returns {string|undefined} 可用的可执行文件路径
  */
-function bridgeToProjectDrive (executable) {
+function bridgeToProjectDrive(executable) {
 	if (!executable || process.platform !== 'win32') return executable
 	const installDir = path.dirname(executable)
 	if (path.parse(installDir).root.toLowerCase() === path.parse(projectDir).root.toLowerCase()) return executable

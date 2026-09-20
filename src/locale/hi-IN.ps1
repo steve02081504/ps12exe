@@ -1,30 +1,30 @@
 ﻿@{
-	LangName                     = "हिंदी (हिंदी)"
-	LangID                       = "hi-IN"
+	LangName                       = "हिंदी (हिंदी)"
+	LangID                         = "hi-IN"
 	# Right click Menu
-	CompileTitle                 = "कॉम्पाइल करें EXE में"
-	OpenInGUI                    = "ps12exeGUI में खोलें"
-	GUICfgFileDesc               = "ps12exe GUI कॉन्फ़िगरेशन फ़ाइल"
-	VSCodeExtensionInstalling    = "{0} के लिए ps12exe एक्सटेंशन इंस्टॉल किया जा रहा है..."
-	VSCodeExtensionInstallFailed = "{0} के लिए ps12exe एक्सटेंशन इंस्टॉल नहीं हो सका (हो सकता है यह अभी प्रकाशित न हुआ हो): {1}"
-	VSCodeExtensionUninstalling  = "{0} के लिए ps12exe एक्सटेंशन अनइंस्टॉल किया जा रहा है..."
+	CompileTitle                   = "कॉम्पाइल करें EXE में"
+	OpenInGUI                      = "ps12exeGUI में खोलें"
+	GUICfgFileDesc                 = "ps12exe GUI कॉन्फ़िगरेशन फ़ाइल"
+	VSCodeExtensionInstalling      = "{0} के लिए ps12exe एक्सटेंशन इंस्टॉल किया जा रहा है..."
+	VSCodeExtensionInstallFailed   = "{0} के लिए ps12exe एक्सटेंशन इंस्टॉल नहीं हो सका (हो सकता है यह अभी प्रकाशित न हुआ हो): {1}"
+	VSCodeExtensionUninstalling    = "{0} के लिए ps12exe एक्सटेंशन अनइंस्टॉल किया जा रहा है..."
 	VSCodeExtensionUninstallFailed = "{0} के लिए ps12exe एक्सटेंशन अनइंस्टॉल नहीं हो सका: {1}"
 	# Web Server
-	ErrorHead                    = "त्रुटि:"
-	CompileResult                = "कॉम्पाइल परिणाम"
-	DefaultResult                = "पूरा हुआ!"
-	AskSaveCfg                   = "क्या आप कॉन्फ़िगरेशन फ़ाइल को सहेजना चाहते हैं?"
-	AskSaveCfgTitle              = "कॉन्फ़िगरेशन फ़ाइल सहेजें"
-	CfgFileLabelHead             = "कॉन्फ़िगरेशन फ़ाइल:"
+	ErrorHead                      = "त्रुटि:"
+	CompileResult                  = "कॉम्पाइल परिणाम"
+	DefaultResult                  = "पूरा हुआ!"
+	AskSaveCfg                     = "क्या आप कॉन्फ़िगरेशन फ़ाइल को सहेजना चाहते हैं?"
+	AskSaveCfgTitle                = "कॉन्फ़िगरेशन फ़ाइल सहेजें"
+	CfgFileLabelHead               = "कॉन्फ़िगरेशन फ़ाइल:"
 	# Console
-	ServerStarted                = "HTTP सर्वर शुरू हो गया है!"
-	ServerStopped                = "HTTP सर्वर बंद हो गया है!"
-	ServerStartFailed            = "HTTP सर्वर शुरू करने में विफल रहा!"
-	TryRunAsRoot                 = "कृपया प्रशासक के रूप में चलाने का प्रयास करें।"
-	ServerListening              = "पहुंच का पता:"
-	ExitServerTip                = "आप कभी भी Ctrl+C दबाकर सर्वर को बंद कर सकते हैं"
+	ServerStarted                  = "HTTP सर्वर शुरू हो गया है!"
+	ServerStopped                  = "HTTP सर्वर बंद हो गया है!"
+	ServerStartFailed              = "HTTP सर्वर शुरू करने में विफल रहा!"
+	TryRunAsRoot                   = "कृपया प्रशासक के रूप में चलाने का प्रयास करें।"
+	ServerListening                = "पहुंच का पता:"
+	ExitServerTip                  = "आप कभी भी Ctrl+C दबाकर सर्वर को बंद कर सकते हैं"
 	# GUI
-	ConsoleHelpData              = @{
+	ConsoleHelpData                = @{
 		title      = "उपयोग:"
 		Usage      = "[input |] ps12exe [[-inputFile] '<फ़ाइल नाम|url>' | -Content '<स्क्रिप्ट>'] [-outputFile '<फ़ाइल नाम>']
 	[-App @{Windowed=`$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default';
@@ -37,11 +37,11 @@
 	[-Signing @{Certificate='<PFX फ़ाइल पथ>'; Password='<PFX पासवर्ड>'; Thumbprint='<प्रमाणपत्र फ़िंगरप्रिंट>'; Timestamp='<समय चिह्न सर्वर>'}]
 	[-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<भाषा कोड>'] [-ConfigFile] [-help]"
 		PrarmsData = [ordered]@{
-			input            = "PowerShell स्क्रिप्ट फ़ाइल की सामग्री का स्ट्रिंग, ``-Content`` के समान"
-			inputFile        = "परिवर्तित करने के लिए PowerShell स्क्रिप्ट का पथ या URL (फ़ाइल UTF-8 या UTF-16 एन्कोड होनी चाहिए)।"
-			Content          = "जिसे आप एक्सीक्यूटेबल फ़ाइल में परिवर्तित करना चाहते हैं, उस PowerShell स्क्रिप्ट की सामग्री"
-			outputFile       = "लक्षित एक्सीक्यूटेबल फ़ाइल का नाम या फ़ोल्डर, डिफ़ॉल्ट रूप से ``inputFile`` के साथ ``'.exe'`` एक्सटेंशन के साथ"
-			App              = [ordered]@{
+			input          = "PowerShell स्क्रिप्ट फ़ाइल की सामग्री का स्ट्रिंग, ``-Content`` के समान"
+			inputFile      = "परिवर्तित करने के लिए PowerShell स्क्रिप्ट का पथ या URL (फ़ाइल UTF-8 या UTF-16 एन्कोड होनी चाहिए)।"
+			Content        = "जिसे आप एक्सीक्यूटेबल फ़ाइल में परिवर्तित करना चाहते हैं, उस PowerShell स्क्रिप्ट की सामग्री"
+			outputFile     = "लक्षित एक्सीक्यूटेबल फ़ाइल का नाम या फ़ोल्डर, डिफ़ॉल्ट रूप से ``inputFile`` के साथ ``'.exe'`` एक्सटेंशन के साथ"
+			App            = [ordered]@{
 				Windowed         = "निर्मित एक्सीक्यूटेबल फ़ाइल एक विंडोज फ़ॉर्म्स एप्लिकेशन होगी जिसमें कोई कंसोल विंडो नहीं होगी।"
 				Silence          = "शांत किए जाने वाले आउटपुट स्ट्रीम; ``'Output'``, ``'Verbose'``, ``'Error'``, ``'Warning'``, ``'Debug'`` में से एक या अधिक, या सभी के लिए ``'*'``।"
 				OutputEncoding   = "कंसोल आउटपुट एन्कोडिंग; ``'Default'``, ``'UTF8'`` या ``'UTF16LE'``।"
@@ -51,13 +51,13 @@
 				DpiAware         = "संकलित एक्सीक्यूटेबल फ़ाइल को DPI aware के रूप में चिह्नित करें।"
 				WinFormsDpiAware = "WinForms को DPI स्केलिंग का उपयोग करने दें (Windows 10 और .Net 4.7 या इससे ऊपर की आवश्यकता है)।"
 			}
-			Os               = [ordered]@{
+			Os             = [ordered]@{
 				Admin      = "अगर UAC सक्षम है, तो कॉम्पाइल की गई एक्सीक्यूटेबल फ़ाइल को सिर्फ उच्चाधिकार कांटेक्स्ट में चलाया जा सकेगा (आवश्यकता होने पर, UAC संवाद बॉक्स प्रकट होगा)।"
 				ModernOS   = "नवीनतम Windows संस्करण की विशेषताओं का उपयोग करें (विभिन्नता देखने के लिए ``[Environment]::OSVersion`` का चालन करें)।"
 				LongPaths  = "यदि ऑपरेटिंग सिस्टम पर सक्षम है, तो लंबी पथ (260 वर्ण से अधिक) को सक्षम करें (केवल Windows 10 या इससे ऊपर के लिए)।"
 				Virtualize = "ऐप्लिकेशन वर्चुअलाईजेशन सक्रिय कर दिया गया है (x86 रनटाइम को बाध्य करता है)।"
 			}
-			Build            = [ordered]@{
+			Build          = [ordered]@{
 				Target     = "लक्ष्य रनटाइम संस्करण, डिफ़ॉल्ट रूप से ``'Framework4.0'``; ``'Framework2.0'`` और ``'Core'`` समर्थित हैं। ``'Core'`` PowerShell Core (.NET) निष्पादन योग्य बनाता है (कंपाइल और लक्ष्य मशीन दोनों पर PowerShell Core और .NET आवश्यक; आउटपुट बहुत बड़ा होता है)।"
 				Platform   = "केवल विशेष रनटाइम के लिए कॉम्पाइल करें। संभावित मान हैं ``'AnyCpu'``, ``'x64'`` और ``'x86'``।"
 				Apartment  = "``'STA'`` या ``'MTA'`` मॉडल।"
@@ -67,7 +67,7 @@
 				Minify     = "कॉम्पाइल से पहले स्क्रिप्ट को छोटा करने के लिए स्क्रिप्ट ब्लॉक।"
 				TempDir    = "अस्थायी फ़ाइलें संग्रहित करने का फ़ोल्डर (डिफ़ॉल्ट रूप से ``%temp%`` में यादृच्छिक फ़ोल्डर)।"
 			}
-			Resources        = [ordered]@{
+			Resources      = [ordered]@{
 				Icon        = "एक्सीक्यूटेबल का आइकन; एक फ़ाइल पथ या URL हो सकता है। .exe/.dll के लिए ,<index> जोड़कर संसाधन आइकन चुनें (डिफ़ॉल्ट 0), जैसे shell32.dll,3।"
 				Title       = "एक्सीक्यूटेबल का शीर्षक (फ़ाइल विवरण)।"
 				Description = "एक्सीक्यूटेबल का संक्षिप्त विवरण।"
@@ -77,22 +77,22 @@
 				Trademark   = "एक्सीक्यूटेबल की ट्रेडमार्क जानकारी।"
 				Version     = "एक्सीक्यूटेबल का संस्करण संख्या (उदाहरण ``'1.0.0.0'``)।"
 			}
-			Signing          = [ordered]@{
+			Signing        = [ordered]@{
 				Certificate = "PFX प्रमाणपत्र फ़ाइल का पथ; ``Certificate`` या ``Thumbprint`` में से एक निर्दिष्ट करना आवश्यक है।"
 				Password    = "PFX प्रमाणपत्र का पासवर्ड।"
 				Thumbprint  = "प्रमाणपत्र फ़िंगरप्रिंट; ``Certificate`` या ``Thumbprint`` में से एक निर्दिष्ट करना आवश्यक है।"
 				Timestamp   = "कोड साइनिंग के लिए उपयोग किए जाने वाले समय चिह्न सर्वर का URL।"
 			}
-			PreprocessOnly   = "इनपुट स्क्रिप्ट को प्रीप्रोसेस करें और इसे संकलित किए बिना वापस करें"
-			Golf             = "गॉल्फ मोड सक्षम करें, संक्षिप्त रूप और सामान्य फ़ंक्शन जोड़ें"
-			Sandbox          = "एक्सट्रा सुरक्षा के साथ स्क्रिप्ट को कॉम्पाइल करें, स्थानीय फ़ाइलों की पहुँच को टालें"
-			NoUpdateCheck    = "ps12exe के नए संस्करण की जाँच छोड़ें"
-			Locale           = "संदेशों के लिए भाषा कोड।"
-			ConfigFile       = "एक कॉन्फ़िगरेशन फ़ाइल लिखें (``<आउटपुटफ़ाइल>.exe.config``)"
-			Help             = "इस मदद सूचना को दिखाएँ"
+			PreprocessOnly = "इनपुट स्क्रिप्ट को प्रीप्रोसेस करें और इसे संकलित किए बिना वापस करें"
+			Golf           = "गॉल्फ मोड सक्षम करें, संक्षिप्त रूप और सामान्य फ़ंक्शन जोड़ें"
+			Sandbox        = "एक्सट्रा सुरक्षा के साथ स्क्रिप्ट को कॉम्पाइल करें, स्थानीय फ़ाइलों की पहुँच को टालें"
+			NoUpdateCheck  = "ps12exe के नए संस्करण की जाँच छोड़ें"
+			Locale         = "संदेशों के लिए भाषा कोड।"
+			ConfigFile     = "एक कॉन्फ़िगरेशन फ़ाइल लिखें (``<आउटपुटफ़ाइल>.exe.config``)"
+			Help           = "इस मदद सूचना को दिखाएँ"
 		}
 	}
-	GUIHelpData                  = @{
+	GUIHelpData                    = @{
 		title      = "उपयोग:"
 		Usage      = @"
 ps12exeGUI [[-ConfigFile] '<कॉन्फ़िगरेशन फ़ाइल>'] [-PS1File '<स्क्रिप्ट फ़ाइल>'] [-Locale '<भाषा कोड>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
@@ -107,7 +107,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Locale '<
 			help       = "इस मदद सूचना को दिखाएँ।"
 		}
 	}
-	SetContextMenuHelpData       = @{
+	SetContextMenuHelpData         = @{
 		title      = "उपयोग:"
 		Usage      = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Locale '<भाषा कोड>'] [-SkipEditorExtension] [-help]"
 		PrarmsData = [ordered]@{
@@ -117,7 +117,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Locale '<
 			help                = "इस मदद सूचना को दिखाएँ।"
 		}
 	}
-	WebServerHelpData            = @{
+	WebServerHelpData              = @{
 		title      = "उपयोग:"
 		Usage      = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
 	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<पथ>']
@@ -134,7 +134,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Locale '<
 			help              = "इस मदद सूचना को दिखाएँ।"
 		}
 	}
-	exe21spHelpData              = @{
+	exe21spHelpData                = @{
 		title      = "उपयोग:"
 		Usage      = "[input |] exe21sp [[-inputFile] '<exe पथ या url>'] [-outputFile '<.ps1 पथ>'] [-help]"
 		PrarmsData = [ordered]@{
@@ -144,7 +144,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Locale '<
 			help       = "यह सहायता दिखाएँ।"
 		}
 	}
-	CompilingI18nData            = @{
+	CompilingI18nData              = @{
 		NewVersionAvailable                       = "ps12exe का नया संस्करण उपलब्ध है: {0}!"
 		NoneInput                                 = "कोई इनपुट फ़ाइल निर्दिष्ट नहीं है!"
 		BothInputAndContentSpecified              = "इनपुट फ़ाइल और सामग्री का उपयोग एक साथ नहीं किया जा सकता है!"
@@ -229,13 +229,13 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Locale '<
 		DllExportDelNoneTypeArg                   = "{0}: {1} एक गैर-प्रकार का पैरामीटर है, मान लें कि यह एक स्ट्रिंग है।"
 		DllExportUsing                            = "आप #_DllExport का उपयोग कर रहे हैं, यह मैक्रो अभी भी विकास के अधीन है और अभी तक समर्थित नहीं है।"
 	}
-	WebServerI18nData            = @{
+	WebServerI18nData              = @{
 		CompilingUserInput  = "उपयोगकर्ता इनपुट संकलित कर रहा है: {0}"
 		EmptyResponse       = "अनुरोध को संभालते समय कोई डेटा नहीं मिला, खाली प्रतिक्रिया लौटा रहा है"
 		InputTooLarge413    = "उपयोगकर्ता इनपुट बहुत बड़ा है, 413 त्रुटि लौटा रहा है"
 		ReqLimitExceeded429 = "IP {0} ने प्रति मिनट {1} अनुरोधों की सीमा पार कर ली है, 429 त्रुटि लौटा रहा है"
 	}
-	InteractI18nData             = @{
+	InteractI18nData               = @{
 		ModeName                    = "इंटरैक्टिव मोड"
 		Welcome                     = "ps12exe इंटरैक्टिव मोड में आपका स्वागत है। किसी भी समय बाहर निकलने के लिए Ctrl+C दबाएं।"
 		EnterInputFile              = "कृपया इनपुट फ़ाइल पथ या URL दर्ज करें:"
@@ -280,7 +280,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Locale '<
 		CompileAnother              = "एक और फ़ाइल संकलित करें?"
 		Exiting                     = "इंटरैक्टिव मोड से बाहर निकल रहा है।"
 	}
-	exe21spInteractI18nData      = @{
+	exe21spInteractI18nData        = @{
 		ModeName                 = "इंटरैक्टिव मोड"
 		Welcome                  = "exe21sp इंटरैक्टिव मोड में आपका स्वागत है। किसी भी समय बाहर निकलने के लिए Ctrl+C दबाएं।"
 		EnterInputFile           = "इनपुट exe का पथ या URL दर्ज करें:"
@@ -294,7 +294,7 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Locale '<
 		ConvertAnother           = "किसी अन्य exe को परिवर्तित करें?"
 		Exiting                  = "इंटरैक्टिव मोड से बाहर निकल रहा है।"
 	}
-	exe21spI18nData              = @{
+	exe21spI18nData                = @{
 		NoneInput                    = "कोई इनपुट फ़ाइल निर्दिष्ट नहीं है!"
 		TinySharpNoTextSection       = "एक्ज़ीक्यूटेबल एक .NET असेंबली है लेकिन TinySharp लेआउट से मेल नहीं खाता (.text सेक्शन नहीं)।"
 		TinySharpTextSectionEmpty    = "एक्ज़ीक्यूटेबल एक .NET असेंबली है लेकिन TinySharp लेआउट से मेल नहीं खाता (.text सेक्शन खाली)।"

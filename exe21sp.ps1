@@ -129,24 +129,24 @@ param(
 		# 单模块：#_require <模块> 展开为 if(!(gmo <模块> -ListAvailable -ea SilentlyContinue)){<NuGet>;Install-Module <模块> -Scope CurrentUser -Force -ea Stop}
 		$SinglePattern = "(?m)^if\(!\(gmo (?<a>[^\r\n]+?) -ListAvailable -ea SilentlyContinue\)\)\{$Nu;Install-Module (?<b>[^\r\n]+?) -Scope CurrentUser -Force -ea Stop\}\r?$"
 		$Script = [regex]::Replace($Script, $SinglePattern, {
-				param($m)
-				if ($m.Groups['a'].Value.Length -gt 0 -and $m.Groups['a'].Value -ceq $m.Groups['b'].Value) {
-					"#_require $($m.Groups['a'].Value)"
-				}
-				else { $m.Value }
-			})
+			param($m)
+			if ($m.Groups['a'].Value.Length -gt 0 -and $m.Groups['a'].Value -ceq $m.Groups['b'].Value) {
+				"#_require $($m.Groups['a'].Value)"
+			}
+			else { $m.Value }
+		})
 
 		# 多模块（来自多行 #_require）：展开为 @('m1', 'm2')|%{if(!(gmo $_ -ListAvailable -ea SilentlyContinue)){<NuGet>;Install-Module $_ -Scope CurrentUser -Force -ea Stop}}
 		$MultiPattern = '(?m)^(?<list>@\(.*?\))\|%\{if\(!\(gmo \$_ -ListAvailable -ea SilentlyContinue\)\)\{' + $Nu + ';Install-Module \$_ -Scope CurrentUser -Force -ea Stop\}\}\r?$'
 		$Script = [regex]::Replace($Script, $MultiPattern, {
-				param($m)
-				$Names = @([regex]::Matches($m.Groups['list'].Value, "'(?<v>(?:[^']|'')*)'") | ForEach-Object { $_.Groups['v'].Value.Replace("''", "'") })
-				if ($Names.Count -eq 0) { return $m.Value }
-				# 重新拼出规范形式，要求与原文本逐字符一致，确保是 ps12exe 的原始展开而非用户手写。
-				$Canonical = '@(' + (($Names | ForEach-Object { "'" + $_.Replace("'", "''") + "'" }) -join ', ') + ')'
-				if ($Canonical -cne $m.Groups['list'].Value) { return $m.Value }
-				($Names | ForEach-Object { "#_require $_" }) -join "`n"
-			})
+			param($m)
+			$Names = @([regex]::Matches($m.Groups['list'].Value, "'(?<v>(?:[^']|'')*)'") | ForEach-Object { $_.Groups['v'].Value.Replace("''", "'") })
+			if ($Names.Count -eq 0) { return $m.Value }
+			# 重新拼出规范形式，要求与原文本逐字符一致，确保是 ps12exe 的原始展开而非用户手写。
+			$Canonical = '@(' + (($Names | ForEach-Object { "'" + $_.Replace("'", "''") + "'" }) -join ', ') + ')'
+			if ($Canonical -cne $m.Groups['list'].Value) { return $m.Value }
+			($Names | ForEach-Object { "#_require $_" }) -join "`n"
+		})
 
 		$Script
 	}

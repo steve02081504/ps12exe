@@ -24,7 +24,7 @@ const WORKSPACE_TARGETS = [
  * @param {string} relativePath - 相对路径
  * @returns {{ text: string, indentUnit: string, settings: object } | undefined} 目标数据，文件不存在时返回空
  */
-function loadWorkspaceTarget (relativePath) {
+function loadWorkspaceTarget(relativePath) {
 	const file = path.join(REPO_ROOT, relativePath)
 	if (!fs.existsSync(file)) return undefined
 	const { overrides, insertSpaces, tabSize } = readWorkspaceFormatting(REPO_ROOT)

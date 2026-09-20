@@ -147,7 +147,7 @@ suite('ps12exe command warnings', () => {
 			`${DIRECTIVE}\nif(!(gmo ps12exe -ListAvailable -ea SilentlyContinue)){try{Import-PackageProvider NuGet}catch{};Install-Module ps12exe -Scope CurrentUser -Force -ea Stop}`
 		)
 		assert.strictEqual(generated.length, 2)
-		for (const entry of generated) 
+		for (const entry of generated)
 			assert.strictEqual(entry.replacement, '#_require ps12exe')
 	})
 

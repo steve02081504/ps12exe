@@ -33,7 +33,7 @@ const DIRECTIVE_PREFIX_RE = /^([\t ]*)(#_[!#A-Za-z_]*)$/
  * @param {string} textBeforeCursor - 当前行光标之前的部分
  * @returns {{ start: number, prefix: string } | null} `start` 为 `#` 的列号（从零开始），不在指令名上时为 null
  */
-export function directivePrefixAt (textBeforeCursor) {
+export function directivePrefixAt(textBeforeCursor) {
 	const match = DIRECTIVE_PREFIX_RE.exec(textBeforeCursor)
 	if (!match) return null
 	return { start: match[1].length, prefix: match[2] }
@@ -51,7 +51,7 @@ export function directivePrefixAt (textBeforeCursor) {
  * @param {number} line - 光标所在行号（从零开始）
  * @returns {{ allowElse: boolean, allowEndIf: boolean }} 允许的结构性指令
  */
-export function directiveAvailability (blocks, line) {
+export function directiveAvailability(blocks, line) {
 	const open = blocks.filter((block) => line > block.startLine && (!block.closed || line < block.endLine))
 	const innermost = open.reduce((best, block) => best && best.depth >= block.depth ? best : block, null)
 	return {
@@ -68,7 +68,7 @@ export function directiveAvailability (blocks, line) {
  * @param {{ allowElse: boolean, allowEndIf: boolean }} [availability] 光标处的上下文，见 `directiveAvailability`
  * @returns {Array<{ label: string, insertText: string, section: string }>} 匹配的候选列表
  */
-export function buildDirectiveCandidates (prefix, availability) {
+export function buildDirectiveCandidates(prefix, availability) {
 	const lower = String(prefix || '').toLowerCase()
 	return DIRECTIVE_COMPLETIONS.filter((entry) => {
 		if (!entry.label.toLowerCase().startsWith(lower)) return false
@@ -98,7 +98,7 @@ const IF_CONDITION_PREFIX_RE = /^([\t ]*#_if[\t ]+)([A-Za-z_]*)$/
  * @param {string} textBeforeCursor - 当前行光标之前的部分
  * @returns {{ start: number, prefix: string } | null} `start` 为条件关键字的列号（从零开始），不在条件上时为 null
  */
-export function ifConditionPrefixAt (textBeforeCursor) {
+export function ifConditionPrefixAt(textBeforeCursor) {
 	const match = IF_CONDITION_PREFIX_RE.exec(textBeforeCursor)
 	if (!match) return null
 	return { start: match[1].length, prefix: match[2] }
@@ -110,7 +110,7 @@ export function ifConditionPrefixAt (textBeforeCursor) {
  * @param {string} prefix - 已输入的条件前缀
  * @returns {Array<{ label: string, insertText: string, section: string }>} 匹配的候选列表
  */
-export function buildConditionCandidates (prefix) {
+export function buildConditionCandidates(prefix) {
 	const lower = String(prefix || '').toLowerCase()
 	return CONDITION_COMPLETIONS.filter((entry) => entry.label.toLowerCase().startsWith(lower))
 }

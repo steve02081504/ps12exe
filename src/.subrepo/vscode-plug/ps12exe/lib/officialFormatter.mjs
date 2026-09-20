@@ -9,7 +9,7 @@ const FORMAT_DOCUMENT_COMMAND = 'vscode.executeFormatDocumentProvider'
  *
  * @returns {boolean} 已安装时为 true
  */
-export function isPowerShellExtensionInstalled () {
+export function isPowerShellExtensionInstalled() {
 	return !!vscode.extensions.getExtension(POWER_SHELL_EXTENSION_ID)
 }
 
@@ -21,7 +21,7 @@ export function isPowerShellExtensionInstalled () {
  * @param {import('vscode').TextEdit[]} edits - 待应用的编辑
  * @returns {string} 应用编辑后的文本
  */
-export function applyTextEdits (document, text, edits) {
+export function applyTextEdits(document, text, edits) {
 	const ordered = [...edits].sort((a, b) => document.offsetAt(b.range.start) - document.offsetAt(a.range.start))
 	let result = text
 	for (const edit of ordered) {
@@ -41,7 +41,7 @@ export function applyTextEdits (document, text, edits) {
  * @param {import('vscode').FormattingOptions} options - 格式化选项
  * @returns {Promise<import('vscode').TextEdit[]>} 官方 formatter 的编辑列表
  */
-export async function getOfficialEdits (document, options) {
+export async function getOfficialEdits(document, options) {
 	const config = vscode.workspace.getConfiguration('editor', document)
 	const hasWorkspace = !!(vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length)
 	const target = hasWorkspace ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global

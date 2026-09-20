@@ -1,30 +1,30 @@
 ﻿@{
-	LangName                     = "日本語"
-	LangID                       = "ja-JP"
+	LangName                       = "日本語"
+	LangID                         = "ja-JP"
 	# 右クリックメニュー
-	CompileTitle                 = "EXE にコンパイル"
-	OpenInGUI                    = "ps12exeGUI で開く"
-	GUICfgFileDesc               = "ps12exe GUI 設定ファイル"
-	VSCodeExtensionInstalling    = "{0} 用の ps12exe 拡張機能をインストールしています..."
-	VSCodeExtensionInstallFailed = "{0} 用の ps12exe 拡張機能をインストールできませんでした（まだ公開されていない可能性があります）: {1}"
-	VSCodeExtensionUninstalling  = "{0} 用の ps12exe 拡張機能をアンインストールしています..."
+	CompileTitle                   = "EXE にコンパイル"
+	OpenInGUI                      = "ps12exeGUI で開く"
+	GUICfgFileDesc                 = "ps12exe GUI 設定ファイル"
+	VSCodeExtensionInstalling      = "{0} 用の ps12exe 拡張機能をインストールしています..."
+	VSCodeExtensionInstallFailed   = "{0} 用の ps12exe 拡張機能をインストールできませんでした（まだ公開されていない可能性があります）: {1}"
+	VSCodeExtensionUninstalling    = "{0} 用の ps12exe 拡張機能をアンインストールしています..."
 	VSCodeExtensionUninstallFailed = "{0} 用の ps12exe 拡張機能をアンインストールできませんでした: {1}"
 	# Web サーバー
-	ErrorHead                    = "エラー："
-	CompileResult                = "コンパイル結果"
-	DefaultResult                = "完了！"
-	AskSaveCfg                   = "設定ファイルを保存しますか？"
-	AskSaveCfgTitle              = "設定ファイルの保存"
-	CfgFileLabelHead             = "設定ファイル："
+	ErrorHead                      = "エラー："
+	CompileResult                  = "コンパイル結果"
+	DefaultResult                  = "完了！"
+	AskSaveCfg                     = "設定ファイルを保存しますか？"
+	AskSaveCfgTitle                = "設定ファイルの保存"
+	CfgFileLabelHead               = "設定ファイル："
 	# コンソール
-	ServerStarted                = "HTTP サーバーが起動しました！"
-	ServerStopped                = "HTTP サーバーが停止しました！"
-	ServerStartFailed            = "HTTP サーバーの起動に失敗しました！"
-	TryRunAsRoot                 = "管理者権限で実行してください。"
-	ServerListening              = "アクセスアドレス："
-	ExitServerTip                = "いつでも Ctrl+C を押してサーバーを終了できます"
+	ServerStarted                  = "HTTP サーバーが起動しました！"
+	ServerStopped                  = "HTTP サーバーが停止しました！"
+	ServerStartFailed              = "HTTP サーバーの起動に失敗しました！"
+	TryRunAsRoot                   = "管理者権限で実行してください。"
+	ServerListening                = "アクセスアドレス："
+	ExitServerTip                  = "いつでも Ctrl+C を押してサーバーを終了できます"
 	# GUI
-	ConsoleHelpData              = @{
+	ConsoleHelpData                = @{
 		title      = "使用方法："
 		Usage      = "[input |] ps12exe [[-inputFile] '<ファイル名|url>' | -Content '<スクリプト>'] [-outputFile '<ファイル名>']
 	[-App @{Windowed=`$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default';
@@ -37,11 +37,11 @@
 	[-Signing @{Certificate='<PFXファイルパス>'; Password='<PFXパスワード>'; Thumbprint='<証明書指紋>'; Timestamp='<時刻同期サーバー>'}]
 	[-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<言語コード>'] [-ConfigFile] [-help]"
 		PrarmsData = [ordered]@{
-			input            = "PowerShell スクリプトファイルの内容の文字列で、``-Content`` と同じです"
-			inputFile        = "変換元の PowerShell スクリプトのパスまたは URL（ファイルは UTF-8 または UTF-16 エンコードである必要があります）。"
-			Content          = "実行可能ファイルに変換したい PowerShell スクリプトの内容"
-			outputFile       = "ターゲットの実行可能ファイル名またはディレクトリ。デフォルトは ``'.exe'`` 拡張子を持つ ``inputFile`` です"
-			App              = [ordered]@{
+			input          = "PowerShell スクリプトファイルの内容の文字列で、``-Content`` と同じです"
+			inputFile      = "変換元の PowerShell スクリプトのパスまたは URL（ファイルは UTF-8 または UTF-16 エンコードである必要があります）。"
+			Content        = "実行可能ファイルに変換したい PowerShell スクリプトの内容"
+			outputFile     = "ターゲットの実行可能ファイル名またはディレクトリ。デフォルトは ``'.exe'`` 拡張子を持つ ``inputFile`` です"
+			App            = [ordered]@{
 				Windowed         = "生成された実行可能ファイルは、コンソールウィンドウのない Windows Forms アプリケーションになります。"
 				Silence          = "抑制する出力ストリームの名前。``'Output'``、``'Verbose'``、``'Error'``、``'Warning'``、``'Debug'`` のいずれか 1 つ以上、またはすべてを表す ``'*'``。"
 				OutputEncoding   = "コンソール出力のエンコーディング。``'Default'``、``'UTF8'``、``'UTF16LE'``。"
@@ -51,13 +51,13 @@
 				DpiAware         = "コンパイルされた実行可能ファイルを DPI 対応としてマークします。"
 				WinFormsDpiAware = "WinForms で DPI スケーリングを使用します（Windows 10 および .Net 4.7 以上が必要）。"
 			}
-			Os               = [ordered]@{
+			Os             = [ordered]@{
 				Admin      = "UAC が有効になっている場合、コンパイルされた実行可能ファイルは昇格されたコンテキストでのみ実行可能です（必要に応じて UAC ダイアログが表示されます）。"
 				ModernOS   = "最新の Windows バージョンの機能を使用します（``[Environment]::OSVersion`` を実行して違いを確認）。"
 				LongPaths  = "OS で有効になっている場合、長いパス（260 文字超）を有効にします（Windows 10 以上にのみ適用）。"
 				Virtualize = "アプリケーションの仮想化が有効になっています（x86 ランタイムを強制）。"
 			}
-			Build            = [ordered]@{
+			Build          = [ordered]@{
 				Target     = "ターゲット ランタイム バージョン、既定値は ``'Framework4.0'``、``'Framework2.0'`` と ``'Core'`` がサポートされています。``'Core'`` は PowerShell Core (.NET) 実行可能ファイルを生成します（コンパイル機とターゲット機の両方に PowerShell Core と .NET が必要で、成果物は大幅に大きくなります）。"
 				Platform   = "特定のランタイムのみのコンパイル。可能な値は ``'AnyCpu'``、``'x64'``、``'x86'`` です。"
 				Apartment  = "``'STA'``（シングルスレッドアパートメント）または ``'MTA'``（マルチスレッドアパートメント）モード。"
@@ -67,7 +67,7 @@
 				Minify     = "コンパイル前にスクリプトを縮小するスクリプトブロック。"
 				TempDir    = "一時ファイルを保存するディレクトリ（デフォルトは ``%temp%`` にランダムに生成される一時ディレクトリ）。"
 			}
-			Resources        = [ordered]@{
+			Resources      = [ordered]@{
 				Icon        = "実行可能ファイルのアイコン。アイコンファイルのパスまたは URL にできます。.exe/.dll の場合は ,<index> でリソースアイコンを指定できます（既定 0、例：shell32.dll,3）。"
 				Title       = "実行可能ファイルのタイトル（ファイルの説明）。"
 				Description = "実行可能ファイルの簡単な説明。"
@@ -77,22 +77,22 @@
 				Trademark   = "実行可能ファイルの商標情報。"
 				Version     = "実行可能ファイルのバージョン番号（例： ``'1.0.0.0'``）。"
 			}
-			Signing          = [ordered]@{
+			Signing        = [ordered]@{
 				Certificate = "PFX 証明書ファイルのパス。``Certificate`` または ``Thumbprint`` のいずれかを指定する必要があります。"
 				Password    = "PFX 証明書のパスワード。"
 				Thumbprint  = "証明書のサムプリント。``Certificate`` または ``Thumbprint`` のいずれかを指定する必要があります。"
 				Timestamp   = "コード署名に使用するタイムスタンプ サーバーの URL。"
 			}
-			PreprocessOnly   = "入力スクリプトをプリプロセス処理し、コンパイルせずに返します"
-			Golf             = "golf モードを有効にします、略語と一般的な関数を追加します"
-			Sandbox          = "ネイティブ ファイルへのアクセスを防ぐために、スクリプトをコンパイルする際に保護を追加します"
-			NoUpdateCheck    = "ps12exe の新しいバージョンの確認をスキップします。"
-			Locale           = "使用する言語コード"
-			ConfigFile       = "設定ファイル（``<outputfile>.exe.config``）を書き込みます"
-			Help             = "このヘルプ情報を表示します"
+			PreprocessOnly = "入力スクリプトをプリプロセス処理し、コンパイルせずに返します"
+			Golf           = "golf モードを有効にします、略語と一般的な関数を追加します"
+			Sandbox        = "ネイティブ ファイルへのアクセスを防ぐために、スクリプトをコンパイルする際に保護を追加します"
+			NoUpdateCheck  = "ps12exe の新しいバージョンの確認をスキップします。"
+			Locale         = "使用する言語コード"
+			ConfigFile     = "設定ファイル（``<outputfile>.exe.config``）を書き込みます"
+			Help           = "このヘルプ情報を表示します"
 		}
 	}
-	GUIHelpData                  = @{
+	GUIHelpData                    = @{
 		title      = "使用方法："
 		Usage      = @"
 ps12exeGUI [[-ConfigFile] '<設定ファイル>'] [-PS1File '<スクリプトファイル>'] [-Locale '<言語コード>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
@@ -107,7 +107,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Locale '<言語コー�
 			help       = "このヘルプ情報を表示します。"
 		}
 	}
-	SetContextMenuHelpData       = @{
+	SetContextMenuHelpData         = @{
 		title      = "使用方法："
 		Usage      = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Locale '<言語コード>'] [-SkipEditorExtension] [-help]"
 		PrarmsData = [ordered]@{
@@ -117,7 +117,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Locale '<言語コー�
 			help                = "このヘルプ情報を表示します。"
 		}
 	}
-	WebServerHelpData            = @{
+	WebServerHelpData              = @{
 		title      = "使用方法："
 		Usage      = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
 	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<パス>']
@@ -134,7 +134,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Locale '<言語コー�
 			help              = "このヘルプ情報を表示します。"
 		}
 	}
-	exe21spHelpData              = @{
+	exe21spHelpData                = @{
 		title      = "用法："
 		Usage      = "[input |] exe21sp [[-inputFile] '<exeのパスまたはurl>'] [-outputFile '<出力ps1パス>'] [-help]"
 		PrarmsData = [ordered]@{
@@ -144,7 +144,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Locale '<言語コー�
 			help       = "このヘルプを表示。"
 		}
 	}
-	CompilingI18nData            = @{
+	CompilingI18nData              = @{
 		NewVersionAvailable                       = "ps12exe の新しいバージョンが利用可能です: {0}！"
 		NoneInput                                 = "入力ファイルが指定されていません！"
 		BothInputAndContentSpecified              = "入力ファイルとコンテンツを同時に使用することはできません！"
@@ -229,13 +229,13 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Locale '<言語コー�
 		DllExportDelNoneTypeArg                   = "{0}：{1} は無型パラメーターです。文字列として扱います。"
 		DllExportUsing                            = "#_DllExport を使用しています。このマクロはまだ開発中であり、サポートされていません。"
 	}
-	WebServerI18nData            = @{
+	WebServerI18nData              = @{
 		CompilingUserInput  = "ユーザー入力をコンパイルしています：{0}"
 		EmptyResponse       = "要求を処理中にデータが見つかりませんでした。空の応答を返します"
 		InputTooLarge413    = "ユーザー入力が大きすぎるため、413 エラーを返します"
 		ReqLimitExceeded429 = "IP {0} は、1 分あたりのリクエスト数 {1} の制限を超えたため、429 エラーを返します"
 	}
-	InteractI18nData             = @{
+	InteractI18nData               = @{
 		ModeName                    = "インタラクティブモード"
 		Welcome                     = "ps12exe インタラクティブモードへようこそ。いつでも Ctrl+C で終了できます。"
 		EnterInputFile              = "入力ファイルのパスまたはURLを入力してください:"
@@ -280,7 +280,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Locale '<言語コー�
 		CompileAnother              = "続けてコンパイルしますか？"
 		Exiting                     = "インタラクティブモードを終了します。"
 	}
-	exe21spInteractI18nData      = @{
+	exe21spInteractI18nData        = @{
 		ModeName                 = "インタラクティブモード"
 		Welcome                  = "exe21sp インタラクティブモードへようこそ。いつでも Ctrl+C で終了できます。"
 		EnterInputFile           = "入力 exe のパスまたは URL を入力してください："
@@ -294,7 +294,7 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Locale '<言語コー�
 		ConvertAnother           = "別の exe を変換しますか？"
 		Exiting                  = "インタラクティブモードを終了します。"
 	}
-	exe21spI18nData              = @{
+	exe21spI18nData                = @{
 		NoneInput                    = "入力ファイルが指定されていません！"
 		TinySharpNoTextSection       = "実行ファイルは .NET アセンブリですが、TinySharp レイアウトと一致しません（.text セクションがありません）。"
 		TinySharpTextSectionEmpty    = "実行ファイルは .NET アセンブリですが、TinySharp レイアウトと一致しません（.text セクションが空です）。"

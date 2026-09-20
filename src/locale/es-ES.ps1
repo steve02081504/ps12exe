@@ -1,30 +1,30 @@
 ﻿@{
-	LangName                     = "Español (España)"
-	LangID                       = "es-ES"
+	LangName                       = "Español (España)"
+	LangID                         = "es-ES"
 	# Right click Menu
-	CompileTitle                 = "Compilar a EXE"
-	OpenInGUI                    = "Abrir en ps12exeGUI"
-	GUICfgFileDesc               = "Archivo de configuración de ps12exe GUI"
-	VSCodeExtensionInstalling    = "Instalando la extensión ps12exe para {0}..."
-	VSCodeExtensionInstallFailed = "No se pudo instalar la extensión ps12exe para {0} (puede que aún no esté publicada): {1}"
-	VSCodeExtensionUninstalling  = "Desinstalando la extensión ps12exe para {0}..."
+	CompileTitle                   = "Compilar a EXE"
+	OpenInGUI                      = "Abrir en ps12exeGUI"
+	GUICfgFileDesc                 = "Archivo de configuración de ps12exe GUI"
+	VSCodeExtensionInstalling      = "Instalando la extensión ps12exe para {0}..."
+	VSCodeExtensionInstallFailed   = "No se pudo instalar la extensión ps12exe para {0} (puede que aún no esté publicada): {1}"
+	VSCodeExtensionUninstalling    = "Desinstalando la extensión ps12exe para {0}..."
 	VSCodeExtensionUninstallFailed = "No se pudo desinstalar la extensión ps12exe para {0}: {1}"
 	# Web Server
-	ErrorHead                    = "Error:"
-	CompileResult                = "Resultado de la compilación"
-	DefaultResult                = "¡Hecho!"
-	AskSaveCfg                   = "¿Desea guardar el archivo de configuración?"
-	AskSaveCfgTitle              = "Guardar archivo de configuración"
-	CfgFileLabelHead             = "Archivo de configuración:"
+	ErrorHead                      = "Error:"
+	CompileResult                  = "Resultado de la compilación"
+	DefaultResult                  = "¡Hecho!"
+	AskSaveCfg                     = "¿Desea guardar el archivo de configuración?"
+	AskSaveCfgTitle                = "Guardar archivo de configuración"
+	CfgFileLabelHead               = "Archivo de configuración:"
 	# Console
-	ServerStarted                = "¡Servidor HTTP iniciado!"
-	ServerStopped                = "¡Servidor HTTP detenido!"
-	ServerStartFailed            = "Error al iniciar el servidor HTTP."
-	TryRunAsRoot                 = "Vuelva a intentarlo como usuario root."
-	ServerListening              = "Dirección de acceso:"
-	ExitServerTip                = "Puede presionar Ctrl+C para salir del servidor en cualquier momento."
+	ServerStarted                  = "¡Servidor HTTP iniciado!"
+	ServerStopped                  = "¡Servidor HTTP detenido!"
+	ServerStartFailed              = "Error al iniciar el servidor HTTP."
+	TryRunAsRoot                   = "Vuelva a intentarlo como usuario root."
+	ServerListening                = "Dirección de acceso:"
+	ExitServerTip                  = "Puede presionar Ctrl+C para salir del servidor en cualquier momento."
 	# GUI
-	ConsoleHelpData              = @{
+	ConsoleHelpData                = @{
 		title      = "Uso:"
 		Usage      = "[input |] ps12exe [[-inputFile] '<nombre de archivo|url>' | -Content '<script>'] [-outputFile '<nombre de archivo>']
 	[-App @{Windowed=`$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default';
@@ -37,11 +37,11 @@
 	[-Signing @{Certificate='<ruta_del_archivo_PFX>'; Password='<contraseña_PFX>'; Thumbprint='<huella_digital_del_certificado>'; Timestamp='<servidor_de_marca_de_tiempo>'}]
 	[-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<código de idioma>'] [-ConfigFile] [-help]"
 		PrarmsData = [ordered]@{
-			input            = "La cadena del contenido del archivo de script de PowerShell, igual que ``-Content``."
-			inputFile        = "Ruta o URL del script de PowerShell a convertir (el archivo debe estar codificado en UTF-8 o UTF-16)."
-			Content          = "El contenido del script de PowerShell que desea convertir en un archivo ejecutable"
-			outputFile       = "El nombre del archivo o carpeta de destino, por defecto es el ``inputFile`` con la extensión ``'.exe'``"
-			App              = [ordered]@{
+			input          = "La cadena del contenido del archivo de script de PowerShell, igual que ``-Content``."
+			inputFile      = "Ruta o URL del script de PowerShell a convertir (el archivo debe estar codificado en UTF-8 o UTF-16)."
+			Content        = "El contenido del script de PowerShell que desea convertir en un archivo ejecutable"
+			outputFile     = "El nombre del archivo o carpeta de destino, por defecto es el ``inputFile`` con la extensión ``'.exe'``"
+			App            = [ordered]@{
 				Windowed         = "El archivo ejecutable generado será una aplicación de Windows Forms sin ventana de consola."
 				Silence          = "Nombres de flujos a silenciar; uno o varios de ``'Output'``, ``'Verbose'``, ``'Error'``, ``'Warning'``, ``'Debug'``, o ``'*'`` para todos."
 				OutputEncoding   = "Codificación de salida de la consola; ``'Default'``, ``'UTF8'`` o ``'UTF16LE'``."
@@ -51,13 +51,13 @@
 				DpiAware         = "Marcar el archivo ejecutable compilado como DPI aware."
 				WinFormsDpiAware = "Permitir que WinForms use el escalado DPI (requiere Windows 10 y .Net 4.7 o superior)."
 			}
-			Os               = [ordered]@{
+			Os             = [ordered]@{
 				Admin      = "Si se habilita el UAC, el archivo ejecutable compilado sólo se podrá ejecutar en un contexto elevado (si es necesario, aparecerá el cuadro de diálogo del UAC)."
 				ModernOS   = "Usar las características de las últimas versiones de Windows (ejecutar ``[Environment]::OSVersion`` para ver las diferencias)."
 				LongPaths  = "Habilitar las rutas largas (``> 260`` caracteres) si están habilitadas en el sistema operativo (sólo para Windows 10 o superior)."
 				Virtualize = "Se ha activado la virtualización de aplicaciones (se fuerza el tiempo de ejecución x86)."
 			}
-			Build            = [ordered]@{
+			Build          = [ordered]@{
 				Target     = "Versión de tiempo de ejecución de destino, ``'Framework4.0'`` por defecto; se admiten ``'Framework2.0'`` y ``'Core'``. ``'Core'`` genera un ejecutable de PowerShell Core (.NET) (requiere PowerShell Core y .NET en las máquinas de compilación y de destino; el resultado es mucho mayor)."
 				Platform   = "Compilar sólo para un tiempo de ejecución específico. Los valores posibles son ``'AnyCpu'``, ``'x64'`` y ``'x86'``."
 				Apartment  = "Modo ``'apartamento de un solo hilo'`` o ``'apartamento de varios hilos'``."
@@ -67,7 +67,7 @@
 				Minify     = "Bloque de script que reduce el tamaño del script antes de la compilación."
 				TempDir    = "El directorio donde se almacenan los archivos temporales (por defecto es un directorio temporal generado aleatoriamente en ``%temp%``)."
 			}
-			Resources        = [ordered]@{
+			Resources      = [ordered]@{
 				Icon        = "Icono del ejecutable; puede ser una ruta de archivo o una URL. En .exe/.dll, añada ,<índice> para elegir un icono de recurso (por defecto 0), p. ej. shell32.dll,3."
 				Title       = "Título (descripción del archivo) del ejecutable."
 				Description = "Descripción breve del ejecutable."
@@ -77,22 +77,22 @@
 				Trademark   = "Información de marca del ejecutable."
 				Version     = "Número de versión del ejecutable (por ejemplo ``'1.0.0.0'``)."
 			}
-			Signing          = [ordered]@{
+			Signing        = [ordered]@{
 				Certificate = "Ruta del archivo de certificado PFX; se debe especificar ``Certificate`` o ``Thumbprint``."
 				Password    = "Contraseña del certificado PFX."
 				Thumbprint  = "Huella digital del certificado; se debe especificar ``Certificate`` o ``Thumbprint``."
 				Timestamp   = "URL del servidor de marca de tiempo usado para la firma de código."
 			}
-			PreprocessOnly   = "Preprocesa el script de entrada y devuélvelo sin compilar"
-			Golf             = "Activar el modo golf, agregando abreviaturas y funciones comunes"
-			Sandbox          = "Compilación de scripts con protección adicional frente al acceso a archivos nativos"
-			NoUpdateCheck    = "Omitir la comprobación de nuevas versiones de ps12exe"
-			Locale           = "El código de idioma que desea usar"
-			ConfigFile       = "Escribir un archivo de configuración (``<outputfile>.exe.config``)"
-			Help             = "Mostrar esta información de ayuda"
+			PreprocessOnly = "Preprocesa el script de entrada y devuélvelo sin compilar"
+			Golf           = "Activar el modo golf, agregando abreviaturas y funciones comunes"
+			Sandbox        = "Compilación de scripts con protección adicional frente al acceso a archivos nativos"
+			NoUpdateCheck  = "Omitir la comprobación de nuevas versiones de ps12exe"
+			Locale         = "El código de idioma que desea usar"
+			ConfigFile     = "Escribir un archivo de configuración (``<outputfile>.exe.config``)"
+			Help           = "Mostrar esta información de ayuda"
 		}
 	}
-	GUIHelpData                  = @{
+	GUIHelpData                    = @{
 		title      = "Uso:"
 		Usage      = @"
 ps12exeGUI [[-ConfigFile] '<archivo de configuración>'] [-PS1File '<archivo de código>'] [-Locale '<código de idioma>'] [-UIMode 'Dark'|'Light'|'Auto'] [-help]
@@ -107,7 +107,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Locale '<código de idioma>'] [
 			help       = "Mostrar esta información de ayuda."
 		}
 	}
-	SetContextMenuHelpData       = @{
+	SetContextMenuHelpData         = @{
 		title      = "Uso:"
 		Usage      = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Locale '<código de idioma>'] [-SkipEditorExtension] [-help]"
 		PrarmsData = [ordered]@{
@@ -117,7 +117,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Locale '<código de idioma>'] [
 			help                = "Mostrar esta información de ayuda."
 		}
 	}
-	WebServerHelpData            = @{
+	WebServerHelpData              = @{
 		title      = "Uso:"
 		Usage      = "Start-ps12exeWebServer [[-HostUrl] '<url>'] [-MaxCompileThreads '<uint>'] [-MaxCompileTime '<uint>']
 	[-ReqLimitPerMin '<uint>'] [-MaxCachedFileSize '<uint>'] [-MaxScriptFileSize '<uint>'] [-CacheDir '<donde>']
@@ -134,7 +134,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Locale '<código de idioma>'] [
 			help              = "Mostrar esta información de ayuda."
 		}
 	}
-	exe21spHelpData              = @{
+	exe21spHelpData                = @{
 		title      = "Uso:"
 		Usage      = "[input |] exe21sp [[-inputFile] '<ruta o url al exe>'] [-outputFile '<ruta al .ps1>'] [-help]"
 		PrarmsData = [ordered]@{
@@ -144,7 +144,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Locale '<código de idioma>'] [
 			help       = "Mostrar esta ayuda."
 		}
 	}
-	CompilingI18nData            = @{
+	CompilingI18nData              = @{
 		NewVersionAvailable                       = "¡Hay una nueva versión de ps12exe disponible: {0}!"
 		NoneInput                                 = "¡No se ha especificado ningún archivo de entrada!"
 		BothInputAndContentSpecified              = "¡No se puede usar el archivo de entrada y el contenido al mismo tiempo!"
@@ -229,13 +229,13 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Locale '<código de idioma>'] [
 		DllExportDelNoneTypeArg                   = "{0}: {1} es un parámetro de tipo nulo, se asume que es una cadena."
 		DllExportUsing                            = "Está utilizando #_DllExport, esta macro está en desarrollo y aún no es compatible."
 	}
-	WebServerI18nData            = @{
+	WebServerI18nData              = @{
 		CompilingUserInput  = "Compilando entrada de usuario: {0}"
 		EmptyResponse       = "No se encontraron datos al manejar la solicitud, se devuelve una respuesta vacía"
 		InputTooLarge413    = "La entrada del usuario es demasiado grande, se devuelve un error 413"
 		ReqLimitExceeded429 = "La IP {0} ha superado el límite de {1} solicitudes por minuto, se devuelve un error 429"
 	}
-	InteractI18nData             = @{
+	InteractI18nData               = @{
 		ModeName                    = "Modo interactivo"
 		Welcome                     = "Bienvenido al modo interactivo de ps12exe. Pulsa Ctrl+C para salir en cualquier momento."
 		EnterInputFile              = "Introduce la ruta o URL del archivo de entrada:"
@@ -280,7 +280,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Locale '<código de idioma>'] [
 		CompileAnother              = "¿Compilar otro archivo?"
 		Exiting                     = "Saliendo del modo interactivo."
 	}
-	exe21spInteractI18nData      = @{
+	exe21spInteractI18nData        = @{
 		ModeName                 = "Modo interactivo"
 		Welcome                  = "Bienvenido al modo interactivo de exe21sp. Pulsa Ctrl+C para salir en cualquier momento."
 		EnterInputFile           = "Introduce la ruta o URL del exe de entrada:"
@@ -294,7 +294,7 @@ ps12exeGUI [[-PS1File] '<archivo de código>'] [-Locale '<código de idioma>'] [
 		ConvertAnother           = "¿Convertir otro exe?"
 		Exiting                  = "Saliendo del modo interactivo."
 	}
-	exe21spI18nData              = @{
+	exe21spI18nData                = @{
 		NoneInput                    = "¡No se ha especificado ningún archivo de entrada!"
 		TinySharpNoTextSection       = "El ejecutable es un ensamblado .NET pero no coincide con el diseño TinySharp (no hay sección .text)."
 		TinySharpTextSectionEmpty    = "El ejecutable es un ensamblado .NET pero no coincide con el diseño TinySharp (la sección .text está vacía)."

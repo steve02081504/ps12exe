@@ -38,7 +38,7 @@ const diagnosticsTimers = new Map()
  * @param {...any} args - 格式化参数列表
  * @returns {string} 本地化后的字符串
  */
-function t (message, ...args) {
+function t(message, ...args) {
 	return vscode.l10n.t(message, ...args)
 }
 
@@ -47,7 +47,7 @@ function t (message, ...args) {
  *
  * @returns {vscode.OutputChannel} 共享输出通道实例
  */
-function getOutputChannel () {
+function getOutputChannel() {
 	if (!outputChannel) outputChannel = vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME)
 	return outputChannel
 }
@@ -58,7 +58,7 @@ function getOutputChannel () {
  * @param {unknown} resource - 命令触发时传入的资源参数
  * @returns {vscode.Uri | undefined} 解析到的目标文件地址，未找到时为 undefined
  */
-function resolveTarget (resource) {
+function resolveTarget(resource) {
 	if (resource instanceof vscode.Uri) return resource
 	const editor = vscode.window.activeTextEditor
 	if (editor) return editor.document.uri
@@ -71,7 +71,7 @@ function resolveTarget (resource) {
  * @param {vscode.Uri | undefined} uri - 待判断的文档地址
  * @returns {boolean} 是本地 .ps1 文件时为真
  */
-function isPs1 (uri) {
+function isPs1(uri) {
 	return !!uri && uri.scheme === 'file' && path.extname(uri.fsPath).toLowerCase() === '.ps1'
 }
 
@@ -80,7 +80,7 @@ function isPs1 (uri) {
  *
  * @returns {string} 对应的界面模式取值
  */
-function currentUiMode () {
+function currentUiMode() {
 	switch (vscode.window.activeColorTheme.kind) {
 		case vscode.ColorThemeKind.Dark:
 		case vscode.ColorThemeKind.HighContrast:
@@ -97,7 +97,7 @@ function currentUiMode () {
  * 打开一个终端，为当前用户安装 ps12exe 模块。
  * @param {{command: string}} host - PowerShell 宿主信息，包含可执行命令
  */
-function installModule (host) {
+function installModule(host) {
 	const terminal = vscode.window.createTerminal(OUTPUT_CHANNEL_NAME)
 	terminal.sendText(`${host.command} -NoProfile -ExecutionPolicy Bypass -Command "Install-Module ps12exe -Scope CurrentUser -Force"`)
 	terminal.show()
@@ -109,7 +109,7 @@ function installModule (host) {
  *
  * @returns {Promise<{ command: string } | undefined>} 解析到的可用宿主，未找到或安装失败时为 undefined
  */
-async function requireHost () {
+async function requireHost() {
 	const host = await resolvePowerShell()
 	if (!host) {
 		vscode.window.showErrorMessage(t('No PowerShell host (pwsh or powershell) was found.'))
@@ -147,7 +147,7 @@ async function requireHost () {
  *
  * @param {vscode.ExtensionContext} context - 扩展上下文，用于读取配置与订阅
  */
-async function autoUpdateModule (context) {
+async function autoUpdateModule(context) {
 	if (context.extensionMode === vscode.ExtensionMode.Test) return
 	if (!vscode.workspace.getConfiguration('ps12exe').get('autoUpdate', true)) return
 
@@ -161,7 +161,7 @@ async function autoUpdateModule (context) {
 		if (result.status === 'installed') vscode.window.showInformationMessage(t('ps12exe {0} has been installed.', result.version || ''))
 		else vscode.window.showInformationMessage(t('ps12exe has been updated to {0}.', result.version || ''))
 	}
-	else if (result.status === 'error') 
+	else if (result.status === 'error')
 		getOutputChannel().appendLine(`ps12exe auto-update failed: ${result.error || 'unknown error'}`)
 }
 
@@ -170,7 +170,7 @@ async function autoUpdateModule (context) {
  *
  * @param {vscode.Uri | undefined} resource - 待编译的脚本资源，未提供时使用活动编辑器
  */
-async function compileCommand (resource) {
+async function compileCommand(resource) {
 	const uri = resolveTarget(resource)
 	if (!isPs1(uri)) {
 		vscode.window.showWarningMessage(t('Please select or open a PowerShell script (.ps1) file.'))
@@ -210,7 +210,7 @@ async function compileCommand (resource) {
 			if (choice === revealLabel) vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(outputPath))
 			else if (choice === showOutputLabel) getOutputChannel().show(true)
 		}
-		else 
+		else
 			vscode.window.showInformationMessage(message)
 		return
 	}
@@ -224,7 +224,7 @@ async function compileCommand (resource) {
  *
  * @param {vscode.Uri | undefined} resource - 待打开的脚本资源，未提供时使用活动编辑器
  */
-async function guiCommand (resource) {
+async function guiCommand(resource) {
 	const uri = resolveTarget(resource)
 	if (!isPs1(uri)) {
 		vscode.window.showWarningMessage(t('Please select or open a PowerShell script (.ps1) file.'))
@@ -253,7 +253,7 @@ async function guiCommand (resource) {
  *
  * @returns {Promise<void>}
  */
-async function toggleBangCommand () {
+async function toggleBangCommand() {
 	const editor = vscode.window.activeTextEditor
 	if (!editor || editor.document.languageId !== 'powershell') {
 		vscode.window.showWarningMessage(t('Please select or open a PowerShell script (.ps1) file.'))
@@ -282,7 +282,7 @@ async function toggleBangCommand () {
  * @param {vscode.TextDocument} document - 目标文本文档
  * @returns {vscode.Range} 覆盖全文的范围
  */
-function fullDocumentRange (document) {
+function fullDocumentRange(document) {
 	const lastLine = Math.max(document.lineCount - 1, 0)
 	return new vscode.Range(new vscode.Position(0, 0), document.lineAt(lastLine).range.end)
 }
@@ -293,7 +293,7 @@ function fullDocumentRange (document) {
  * @param {vscode.TextDocument} document - 目标文本文档
  * @returns {{insertSpaces: boolean, tabSize: number}} 编辑器缩进选项
  */
-function editorFormattingOptions (document) {
+function editorFormattingOptions(document) {
 	const config = vscode.workspace.getConfiguration('editor', document)
 	return {
 		// `[powershell]` 默认为制表符（见 package.json 中的 `configurationDefaults`）；显式的 `editor.insertSpaces` 仍然优先。
@@ -306,7 +306,7 @@ function editorFormattingOptions (document) {
  * 首次需要诊断时在后台探测宿主的别名定义（`gmo`/`ipmo`/`inmo` 是否为标准别名），探测完成后刷新所有已打开文档的诊断。
  * 探测期间先使用内置回退映射，因此结果不会因等待而缺失。
  */
-function ensureAliasMap () {
+function ensureAliasMap() {
 	if (aliasProbeStarted) return
 	aliasProbeStarted = true
 	void loadAliasMap().then(() => {
@@ -319,7 +319,7 @@ function ensureAliasMap () {
  *
  * @param {vscode.TextDocument} document - 目标文本文档
  */
-function updateDiagnostics (document) {
+function updateDiagnostics(document) {
 	if (!diagnosticCollection || document.languageId !== 'powershell') return
 	ensureAliasMap()
 	const text = document.getText()
@@ -357,7 +357,7 @@ function updateDiagnostics (document) {
  *
  * @param {vscode.TextDocument} document - 目标文本文档
  */
-function scheduleDiagnostics (document) {
+function scheduleDiagnostics(document) {
 	if (document.languageId !== 'powershell') return
 	const key = document.uri.toString()
 	clearTimeout(diagnosticsTimers.get(key))
@@ -370,7 +370,7 @@ function scheduleDiagnostics (document) {
 /**
  * 缺少 PowerShell 扩展时弹窗提示安装。
  */
-function notifyMissingPowerShell () {
+function notifyMissingPowerShell() {
 	if (missingPowerShellNotified) return
 	missingPowerShellNotified = true
 	const installLabel = t('Install PowerShell extension')
@@ -389,14 +389,14 @@ function notifyMissingPowerShell () {
  * @param {vscode.FormattingOptions} options - VS Code 传入的格式化选项
  * @returns {Promise<string>} 格式化后的完整文档文本
  */
-async function formatDocumentText (document, options) {
+async function formatDocumentText(document, options) {
 	const current = document.getText()
 	const formattingOptions = options || editorFormattingOptions(document)
 	const indentUnit = formattingOptions.insertSpaces ? ' '.repeat(formattingOptions.tabSize || 4) : '\t'
 
 	let base = current
 	let officialApplied = false
-	if (isPowerShellExtensionInstalled()) 
+	if (isPowerShellExtensionInstalled())
 		try {
 			const edits = await getOfficialEdits(document, formattingOptions)
 			officialApplied = true
@@ -407,7 +407,7 @@ async function formatDocumentText (document, options) {
 			channel.appendLine(t('Failed to run the official PowerShell formatter; the document was left unchanged.'))
 			channel.appendLine(String(error && error.message ? error.message : error))
 		}
-	else 
+	else
 		notifyMissingPowerShell()
 
 	return applyPreprocessorFormatting(current, base, officialApplied, {
@@ -427,7 +427,7 @@ async function formatDocumentText (document, options) {
  *
  * @param {string | undefined} uri - 触发命令时传入的文档地址字符串，未提供时使用活动编辑器
  */
-async function formatDocumentCommand (uri) {
+async function formatDocumentCommand(uri) {
 	let document
 	if (uri) document = await vscode.workspace.openTextDocument(vscode.Uri.parse(uri))
 	else document = vscode.window.activeTextEditor && vscode.window.activeTextEditor.document
@@ -453,8 +453,8 @@ async function formatDocumentCommand (uri) {
  * @param {string} indent `#_if` 行的缩进
  * @param {string} indentUnit 编辑器的一个缩进单位
  */
-async function insertEndif (editor, line, indent, indentUnit) {
-	const {document} = editor
+async function insertEndif(editor, line, indent, indentUnit) {
+	const { document } = editor
 	if (line >= document.lineCount) return
 	const target = document.lineAt(line)
 	if (/^\s*#_endif\b/.test(target.text)) return
@@ -477,7 +477,7 @@ async function insertEndif (editor, line, indent, indentUnit) {
  *
  * @param {vscode.ExtensionContext} context - 扩展上下文，用于注册文档变更监听
  */
-function registerIfAutoClose (context) {
+function registerIfAutoClose(context) {
 	context.subscriptions.push(vscode.workspace.onDidChangeTextDocument((event) => {
 		if (event.document.languageId !== 'powershell' || event.contentChanges.length === 0) return
 		if (!vscode.workspace.getConfiguration('ps12exe', event.document).get('autoCloseIf', true)) return
@@ -514,7 +514,7 @@ const MISDIRECTIVE_RE = /^([\t ]*)#[—–―＿－‐]+$/
  *
  * @param {vscode.ExtensionContext} context - 扩展上下文，用于注册文档变更监听
  */
-function registerDirectiveSuggest (context) {
+function registerDirectiveSuggest(context) {
 	context.subscriptions.push(vscode.workspace.onDidChangeTextDocument((event) => {
 		if (event.document.languageId !== 'powershell' || event.contentChanges.length === 0) return
 		const editor = vscode.window.activeTextEditor
@@ -551,7 +551,7 @@ const formattingProvider = {
 	 * @param {vscode.FormattingOptions} options - VS Code 传入的格式化选项
 	 * @returns {Promise<vscode.TextEdit[]>} 格式化编辑列表
 	 */
-	async provideDocumentFormattingEdits (document, options) {
+	async provideDocumentFormattingEdits(document, options) {
 		const formatted = await formatDocumentText(document, options)
 		if (formatted === document.getText()) return []
 		return [vscode.TextEdit.replace(fullDocumentRange(document), formatted)]
@@ -566,7 +566,7 @@ const definitionProvider = {
 	 * @param {vscode.Position} position - 光标位置
 	 * @returns {vscode.Location | null} 跳转目标位置，未找到时为空
 	 */
-	provideDefinition (document, position) {
+	provideDefinition(document, position) {
 		if (document.languageId !== 'powershell' || document.uri.scheme !== 'file') return null
 		const line = document.lineAt(position.line).text
 		const target = resolveDirectivePath(line, path.dirname(document.uri.fsPath))
@@ -585,7 +585,7 @@ const definitionProvider = {
  * @param {string | undefined} locale - 当前区域标识，未知时为 undefined
  * @returns {Promise<vscode.Hover>} 构造好的悬浮提示
  */
-async function createPragmaHover (line, pragma, locale) {
+async function createPragmaHover(line, pragma, locale) {
 	let description
 	try {
 		const data = await getPragmaData(locale)
@@ -612,7 +612,7 @@ async function createPragmaHover (line, pragma, locale) {
  * @param {string | undefined} locale - 当前区域标识，未知时为 undefined
  * @returns {vscode.Hover} 构造好的悬浮提示
  */
-function createDirectiveHover (line, token, locale) {
+function createDirectiveHover(line, token, locale) {
 	const contents = new vscode.MarkdownString()
 	contents.appendMarkdown(t(HOVER_MESSAGES[token.section]))
 	const url = documentationUrl(locale, token.section)
@@ -629,7 +629,7 @@ const MAX_HOVER_TAGS = 12
  * @param {string} url - 链接目标
  * @returns {string} markdown 链接
  */
-function markdownLink (label, url) {
+function markdownLink(label, url) {
 	return `[${String(label).replace(/[[\]]/g, '')}](<${url}>)`
 }
 
@@ -643,7 +643,7 @@ function markdownLink (label, url) {
  * @param {string | undefined} locale - 当前区域标识，未知时为 undefined
  * @returns {Promise<vscode.Hover>} 构造好的悬浮提示
  */
-async function createRequireHover (line, moduleToken, locale) {
+async function createRequireHover(line, moduleToken, locale) {
 	let info
 	try {
 		info = await getPackageInfo(moduleToken.name)
@@ -669,7 +669,7 @@ async function createRequireHover (line, moduleToken, locale) {
 		links.push(markdownLink(t(HOVER_MESSAGES.requireGallery), info.galleryUrl))
 		contents.appendMarkdown(`\n\n${links.join(' · ')}`)
 	}
-	else 
+	else
 		contents.appendMarkdown(t(HOVER_MESSAGES.requireNotFound, moduleToken.name))
 
 	contents.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${documentationUrl(locale, 'require')})`)
@@ -685,7 +685,7 @@ async function createRequireHover (line, moduleToken, locale) {
  * @param {string | undefined} locale - 当前区域标识，未知时为 undefined
  * @returns {Promise<vscode.Hover | null>} 构造好的悬浮提示，无法预览时为 null
  */
-async function createIconHover (line, icon, locale) {
+async function createIconHover(line, icon, locale) {
 	const preview = await getIconPreview(icon)
 	if (!preview) return null
 
@@ -708,7 +708,7 @@ const hoverProvider = {
 	 * @param {vscode.Position} position - 光标位置
 	 * @returns {Promise<vscode.Hover | null>} 悬浮提示，未命中指令时为空
 	 */
-	async provideHover (document, position) {
+	async provideHover(document, position) {
 		if (document.languageId !== 'powershell') return null
 		const line = document.lineAt(position.line).text
 		const locale = toPs12exeLocale(vscode.env.language)
@@ -741,7 +741,7 @@ const FOLLOW_UP_COMMANDS = Object.freeze({
  * @param {vscode.CompletionItem} item - 补全项
  * @param {string | undefined} followUp - `lib/directives.mjs` 声明的接续动作
  */
-function applyFollowUp (item, followUp) {
+function applyFollowUp(item, followUp) {
 	const command = FOLLOW_UP_COMMANDS[followUp]
 	if (command) item.command = { command, title: '' }
 }
@@ -754,7 +754,7 @@ const completionProvider = {
 	 * @param {vscode.Position} position - 光标位置
 	 * @returns {Promise<vscode.CompletionItem[] | undefined>} 补全候选列表，无候选时为 undefined
 	 */
-	async provideCompletionItems (document, position) {
+	async provideCompletionItems(document, position) {
 		if (document.languageId !== 'powershell') return undefined
 		const line = document.lineAt(position.line).text
 		const before = line.slice(0, position.character)
@@ -839,7 +839,7 @@ const foldingProvider = {
 	 * @param {vscode.TextDocument} document - 当前文本文档
 	 * @returns {vscode.FoldingRange[]} 折叠区域列表
 	 */
-	provideFoldingRanges (document) {
+	provideFoldingRanges(document) {
 		if (document.languageId !== 'powershell') return []
 		return foldingRanges(document.getText()).map(
 			(range) => new vscode.FoldingRange(range.start, range.end, vscode.FoldingRangeKind.Region)
@@ -864,7 +864,7 @@ const codeActionProvider = {
 	 * @param {vscode.CodeActionContext} context - 该位置上的诊断
 	 * @returns {vscode.CodeAction[]} 代码操作列表
 	 */
-	provideCodeActions (document, _range, context) {
+	provideCodeActions(document, _range, context) {
 		if (document.languageId !== 'powershell') return []
 		const actions = []
 		const seen = new Set()
@@ -936,7 +936,7 @@ const codeActionProvider = {
  *
  * @param {vscode.ExtensionContext} context - 扩展上下文，用于注册订阅
  */
-export function activate (context) {
+export function activate(context) {
 	outputChannel = vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME)
 	diagnosticCollection = vscode.languages.createDiagnosticCollection(OUTPUT_CHANNEL_NAME)
 	context.subscriptions.push(outputChannel, diagnosticCollection)
@@ -969,6 +969,6 @@ export function activate (context) {
 /**
  * 停用扩展，订阅会由 VS Code 自动释放。
  */
-export function deactivate () {
+export function deactivate() {
 	// 一切都通过 `context.subscriptions` 释放。
 }

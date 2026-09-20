@@ -23,7 +23,7 @@ const SAMPLE = [
  * @param {string} text - 待高亮的示例文本
  * @returns {Promise<object[]>} 捕获的词元与作用域列表
  */
-async function captureScopes (text) {
+async function captureScopes(text) {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ps12exe-grammar-'))
 	const file = path.join(dir, 'sample.ps1')
 	fs.writeFileSync(file, text)
@@ -53,7 +53,7 @@ suite('ps12exe grammar', () => {
 			assert.strictEqual(typeof source.injectionSelector, 'string', `${grammar.path} has no injectionSelector`)
 			assert.ok(source.injectionSelector.trim().length > 0, `${grammar.path} has an empty injectionSelector`)
 
-			for (const target of grammar.injectTo) 
+			for (const target of grammar.injectTo)
 				assert.ok(
 					source.injectionSelector.includes(target),
 					`${grammar.path} injects into ${target} but its selector does not mention it: ${source.injectionSelector}`

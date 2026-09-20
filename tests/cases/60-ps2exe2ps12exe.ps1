@@ -41,14 +41,14 @@ Add-Test @{
 }
 
 Add-Test @{
-	Name  = 'ps2exe.arch-mapping'
-	Group = 'ps2exe2ps12exe'
-	Deps  = $script:PS2EXEDeps
+	Name   = 'ps2exe.arch-mapping'
+	Group  = 'ps2exe2ps12exe'
+	Deps   = $script:PS2EXEDeps
 	Builds = @(
 		@{ Name = 'x64'; Compiler = 'ps2exe'; InputFile = $archFixture; Params = @{ x64 = $true }; Output = 'arch_x64.exe' }
 		@{ Name = 'x86'; Compiler = 'ps2exe'; InputFile = $archFixture; Params = @{ x86 = $true }; Output = 'arch_x86.exe' }
 	)
-	Run   = {
+	Run    = {
 		param($ctx)
 		function Get-PEMachine([string]$Path) {
 			$bytes = [System.IO.File]::ReadAllBytes($Path)
@@ -134,14 +134,14 @@ Add-Test @{
 }
 
 Add-Test @{
-	Name  = 'ps2exe.runtime-mapping'
-	Group = 'ps2exe2ps12exe'
-	Deps  = $script:PS2EXEDeps
+	Name   = 'ps2exe.runtime-mapping'
+	Group  = 'ps2exe2ps12exe'
+	Deps   = $script:PS2EXEDeps
 	Builds = @(
 		@{ Name = 'rt20'; Compiler = 'ps2exe'; InputFile = $runtimeFixture; Params = @{ runtime20 = $true }; Output = 'rt20.exe' }
 		@{ Name = 'rt40'; Compiler = 'ps2exe'; InputFile = $runtimeFixture; Params = @{ runtime40 = $true }; Output = 'rt40.exe' }
 	)
-	Run   = {
+	Run    = {
 		param($ctx)
 		Assert-FileExists $ctx.Builds['rt20'] 'shim -runtime20 未产出 exe'
 		Assert-FileExists $ctx.Builds['rt40'] 'shim -runtime40 未产出 exe'

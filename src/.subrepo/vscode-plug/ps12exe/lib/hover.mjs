@@ -79,7 +79,7 @@ const IF_CONDITION_RE = /^([\t ]*)#_if[\t ]+(PSEXE|PSScript)\b/
  * @param {number} character - 光标所在的列号
  * @returns {{ name: string, section: string, start: number, end: number } | null} `start`/`end` 是含 `#_` 标记的区间（从零开始、含末尾）
  */
-export function directiveAt (line, character) {
+export function directiveAt(line, character) {
 	const word = WORD_DIRECTIVE_RE.exec(line)
 	if (word) {
 		const start = word[1].length
@@ -108,7 +108,7 @@ export function directiveAt (line, character) {
  * @param {number} character - 光标所在的列号
  * @returns {{ name: string, section: string, start: number, end: number } | null} `start`/`end` 是条件关键字的区间（从零开始、含末尾）
  */
-export function conditionAt (line, character) {
+export function conditionAt(line, character) {
 	const match = IF_CONDITION_RE.exec(line)
 	if (!match) return null
 	const start = match[0].length - match[2].length
@@ -123,7 +123,7 @@ export function conditionAt (line, character) {
  * @param {string} text - 多行纯文本
  * @returns {string} 硬换行后的 markdown
  */
-export function preserveLineBreaks (text) {
+export function preserveLineBreaks(text) {
 	return String(text).replace(/\r\n?/g, '\n').replace(/(\S)[ \t]*\n(?=\S)/g, '$1  \n')
 }
 
@@ -133,7 +133,7 @@ export function preserveLineBreaks (text) {
  * @param {string} text - 原始文本
  * @returns {string} 转义后的文本
  */
-export function escapeHtmlAttribute (text) {
+export function escapeHtmlAttribute(text) {
 	return String(text)
 		.replace(/&/g, '&amp;')
 		.replace(/"/g, '&quot;')
@@ -148,7 +148,7 @@ export function escapeHtmlAttribute (text) {
  * @param {string} section `HOVER_MESSAGES` 的小节键
  * @returns {string} 对应小节的文档链接
  */
-export function documentationUrl (locale, section) {
+export function documentationUrl(locale, section) {
 	const region = README_FILES[locale] ? locale : 'en-UK'
 	const anchor = SECTION_ANCHORS[section] || SECTION_ANCHORS.dllExport
 	return `${README_BASE}${README_FILES[region]}#${anchor}`

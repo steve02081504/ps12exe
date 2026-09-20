@@ -30,8 +30,8 @@ function Get-OutputCacheKey([string]$RepoRoot, [System.Collections.IDictionary]$
 		return "$value"
 	}
 	$paramParts = @($BoundParams.Keys | Where-Object { $_ -ne 'inputFile' -and $_ -ne 'outputFile' } | Sort-Object | ForEach-Object {
-			$_ + '=' + (ConvertTo-CanonicalParam $BoundParams[$_])
-		})
+		$_ + '=' + (ConvertTo-CanonicalParam $BoundParams[$_])
+	})
 	return (Get-TextHash (@(
 				"content=$(Get-TextHash $Content)"
 				"params=$($paramParts -join ';')"

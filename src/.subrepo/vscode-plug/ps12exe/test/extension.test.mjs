@@ -106,7 +106,7 @@ suite('ps12exe extension', () => {
 	 * @param {number} [timeout] - 超时毫秒数
 	 * @returns {Promise<void>}
 	 */
-	async function waitFor (predicate, timeout = 5000) {
+	async function waitFor(predicate, timeout = 5000) {
 		const deadline = Date.now() + timeout
 		while (!predicate()) {
 			if (Date.now() > deadline) throw new Error('timed out waiting for the document to settle')
@@ -122,7 +122,7 @@ suite('ps12exe extension', () => {
 	 * @param {number} [timeout] - 超时毫秒数
 	 * @returns {Promise<void>}
 	 */
-	async function acceptUntil (predicate, timeout = 5000) {
+	async function acceptUntil(predicate, timeout = 5000) {
 		const deadline = Date.now() + timeout
 		while (!predicate()) {
 			if (Date.now() > deadline) throw new Error('timed out waiting for a suggestion to be accepted')

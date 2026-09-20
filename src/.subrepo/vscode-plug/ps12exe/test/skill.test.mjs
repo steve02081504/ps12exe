@@ -12,7 +12,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
  * @param {string} text - 文件内容
  * @returns {Record<string, string>} 解析出的键值
  */
-function frontmatter (text) {
+function frontmatter(text) {
 	const match = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text)
 	assert.ok(match, 'SKILL.md is missing YAML frontmatter')
 	const data = {}
