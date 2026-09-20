@@ -11,23 +11,7 @@ using System.Reflection;
 #endif
 using System.Runtime.Versioning;
 
-// 不显示在属性对话框的详细信息选项卡中，但会嵌入到文件里
-#if Resources
-	[assembly: AssemblyDescription("$description")]
-	[assembly: AssemblyCompany("$company")]
-	[assembly: AssemblyTitle("$title")]
-	[assembly: AssemblyProduct("$product")]
-	[assembly: AssemblyCopyright("$copyright")]
-	[assembly: AssemblyTrademark("$trademark")]
-#endif
-#if version
-	[assembly: AssemblyVersion("$version")]
-	[assembly: AssemblyFileVersion("$version")]
-#endif
-#if winFormsDPIAware
-	[assembly: TargetFrameworkAttribute("$TargetFramework,Profile=Client")]
-#endif
-
+/*__ASSEMBLY_ATTRIBUTES__*/
 namespace PSRunnerNS {
 	internal static class PSRunnerEntry {
 		private static int Main() {

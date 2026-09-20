@@ -74,6 +74,60 @@ Add-Test @{
 }
 
 Add-Test @{
+	Name  = 'ps12exe.pack.resources'
+	Group = 'ps12exe'
+	Deps  = $deps
+	Builds = @(
+		@{
+			Name      = 'respack'
+			Output    = 'respack.exe'
+			InputText = "Get-Date | Out-Null; Write-Output 'respack'"
+			Params    = @{ Resources = @{ Title = 'PackTitle'; Version = '1.2.3.4'; Company = 'PackCo' } }
+		}
+		@{
+			Name      = 'resdirect'
+			Output    = 'resdirect.exe'
+			InputText = "Get-Date | Out-Null; Write-Output 'resdirect'"
+			Params    = @{ Resources = @{ Title = 'DirectTitle'; Version = '2.3.4.5' }; Build = @{ KeepSource = $true } }
+		}
+	)
+	Run   = {
+		param($ctx)
+		$exe = $ctx.Builds['respack']
+		# 最终 exe（launcher）携带文件属性
+		$vi = (Get-Item -LiteralPath $exe).VersionInfo
+		Assert-Equal 'PackTitle' $vi.FileDescription 'launcher 文件说明（AssemblyTitle）'
+		Assert-Equal '1.2.3.4' $vi.FileVersion 'launcher 文件版本'
+		Assert-Equal 'PackCo' $vi.CompanyName 'launcher 公司名'
+
+		# 反解 launcher 内嵌的 payload：资源/版本属性只在最外层（launcher/直编帧）上；
+		# payload 编译把帧里的标记替换为空（窗口标题运行期从 Assembly.GetEntryAssembly() 读，即 launcher）。
+		$launcher = [System.Reflection.Assembly]::LoadFile($exe)
+		Assert-Equal 1 (@($launcher.GetCustomAttributes([System.Reflection.AssemblyTitleAttribute], $false)).Count) 'launcher 应带 AssemblyTitle'
+		$stream = $launcher.GetManifestResourceStream('main')
+		Assert-True ($null -ne $stream) 'launcher 缺少 main 资源'
+		$gz = [System.IO.Compression.GZipStream]::new($stream, [System.IO.Compression.CompressionMode]::Decompress)
+		try {
+			$ms = [System.IO.MemoryStream]::new()
+			try {
+				$gz.CopyTo($ms)
+				$payload = [System.Reflection.Assembly]::Load($ms.ToArray())
+			}
+			finally { $ms.Dispose() }
+		}
+		finally { $gz.Dispose() }
+		Assert-Equal 0 (@($payload.GetCustomAttributes([System.Reflection.AssemblyTitleAttribute], $false)).Count) 'payload 不应带 AssemblyTitle'
+		Assert-Equal 0 (@($payload.GetCustomAttributes([System.Reflection.AssemblyFileVersionAttribute], $false)).Count) 'payload 不应带 AssemblyFileVersion'
+		Assert-Equal 0 (@($payload.GetCustomAttributes([System.Reflection.AssemblyCompanyAttribute], $false)).Count) 'payload 不应带 AssemblyCompany'
+
+		# 直编（pack 关闭）：属性由自身携带
+		$dvi = (Get-Item -LiteralPath $ctx.Builds['resdirect']).VersionInfo
+		Assert-Equal 'DirectTitle' $dvi.FileDescription '直编文件说明'
+		Assert-Equal '2.3.4.5' $dvi.FileVersion '直编文件版本'
+	}
+}
+
+Add-Test @{
 	Name  = 'ps12exe.host.native-stdout'
 	Group = 'ps12exe'
 	Deps  = $deps

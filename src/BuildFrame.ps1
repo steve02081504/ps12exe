@@ -7,9 +7,21 @@ if (!$programFrame) {
 	#_endif
 }
 
+# 资源/版本属性抽到公共片段（AssemblyInfo.cs），编译时替换帧里的 /*__ASSEMBLY_ATTRIBUTES__*/ 标记。
+# 只有“最外层”程序集（launcher / 直编帧）替换成属性；payload 替换为空，因此帧本身与资源参数无关。
+if (!$resourceAttributes) {
+	#_if PSEXE
+		#_include_as_value resourceAttributes "$PSScriptRoot/programFrames/AssemblyInfo.cs"
+	#_else
+		[string]$resourceAttributes = Get-Content $PSScriptRoot/programFrames/AssemblyInfo.cs -Raw -Encoding UTF8
+	#_endif
+}
+
 $programFrame = $programFrame.Replace("`$lcid", $lcid)
 $programFrame = $programFrame.Replace("`$threadingModel", $threadingModel)
 $programFrame = $programFrame.Replace("`$TargetFramework", $TargetFramework)
+
+$resourceAttributes = $resourceAttributes.Replace("`$TargetFramework", $TargetFramework)
 $resourceParamKeys | ForEach-Object {
-	$programFrame = $programFrame.Replace("`$$_", $resourceParams[$_])
+	$resourceAttributes = $resourceAttributes.Replace("`$$_", $resourceParams[$_])
 }

@@ -87,7 +87,7 @@ if ($iconFile) {
 
 $CompilerOptions += "/define:$($Constants -join ';')"
 
-function New-PS12ExeCompilerParameters([string]$outFile, [string[]]$opts, [bool]$debug) {
+function New-CompilerParameters([string]$outFile, [string[]]$opts, [bool]$debug) {
 	$p = New-Object System.CodeDom.Compiler.CompilerParameters($referenceAssembies, $outFile)
 	$p.GenerateInMemory = $FALSE
 	$p.GenerateExecutable = $TRUE
@@ -99,6 +99,52 @@ function New-PS12ExeCompilerParameters([string]$outFile, [string[]]$opts, [bool]
 	return $p
 }
 
+# ---------- 程序帧模板缓存 ----------
+# 打包路径要把「帧 + 脚本」编成 payload、再把 gzip(payload) 塞进 launcher，每次跑两次 csc；但帧的 IL
+# 只由「帧源码 + 编译选项 + 引用 + 编译器版本」决定，脚本 / gz 都只是内嵌资源。于是把帧预编成模板缓存：
+# 模板里嵌一个 bucket 大小的占位资源，每次编译用 Set-FrameResource 原地覆写 [Int32 长度][数据] 并
+# 更新 CLI 资源目录大小（不重排 PE），随后照旧走 ExeSinker——产物大小与不缓存时一致。模板键哈希帧源码、
+# 选项、引用、资源/版本源与占位桶等全部编译输入，所以任何输入变化都会自动生成新模板。
+# 公共缓存/PE 逻辑在 src/Cache.ps1，缓存目录 %TEMP%\ps12exe\cache\codedom。
+$script:CacheRoot = Get-CacheRoot 'codedom'
+$useCodeDomCache = -not [bool]$env:PS12EXE_NO_CODEDOM_CACHE
+if ($useCodeDomCache) { Clear-StaleCache $script:CacheRoot }
+# 取帧模板字节；缺失则在命名互斥量保护下用 csc 编一次并缓存。模板只含占位资源，生成后不再改动。
+# AssemblyName 决定 csc 的 assembly name（payload 与 launcher 都用固定名，不随输出名变化，以便跨输出名复用模板）。
+function Get-FrameTemplate([string]$Key, [int]$Bucket, [string[]]$Options, [string]$Source, [string]$ResourceName, [string]$AssemblyName) {
+	$cachePath = Join-Path $script:CacheRoot "frame_$Key.exe"
+	$bytes = Get-CachedBytes $cachePath
+	if ($bytes) { return , $bytes }
+	$mutex = [System.Threading.Mutex]::new($false, "ps12exe-frame-$Key")
+	$locked = $mutex.WaitOne(120000)
+	try {
+		if (-not $locked) { return $null }
+		$bytes = Get-CachedBytes $cachePath
+		if ($bytes) { return , $bytes }
+		$buildDir = Join-Path $script:CacheRoot ("build_" + [Guid]::NewGuid().ToString('N'))
+		New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
+		try {
+			$phPath = Join-Path $buildDir $ResourceName
+			[System.IO.File]::WriteAllBytes($phPath, [byte[]]::new($Bucket))
+			$templateOut = Join-Path $buildDir $AssemblyName
+			$p = New-CompilerParameters $templateOut $Options $FALSE
+			[VOID]$p.EmbeddedResources.Add($phPath)
+			$r = $cop.CompileAssemblyFromSource($p, $Source)
+			if ($r.Errors.Count -gt 0) { throw ($r.Errors -join "`n") }
+			$bytes = [System.IO.File]::ReadAllBytes($templateOut)
+			Set-CachedBytes $cachePath $bytes
+			return , $bytes
+		}
+		finally {
+			Remove-Item -LiteralPath $buildDir -Recurse -Force -ErrorAction Ignore
+		}
+	}
+	finally {
+		if ($locked) { try { $mutex.ReleaseMutex() } catch {} }
+		$mutex.Dispose()
+	}
+}
+
 # 默认路径：先编出普通托管程序集作为负载，gzip 后塞进一个极小的 launcher 里。launcher 启动时在内存中解压并用 Assembly.Load 载入负载，因此负载不会落到磁盘。仅当无法打包时才退化为普通编译（Build.KeepSource 需要负载源码/PDB、Build.DllExports、真实 PS2 SMA）。常量脚本的 constexpr.cs 入口是无参 Main()，与 pack launcher 的 Main(string[]) 调用约定不符，故不走 pack。
 $packEnabled = (
 	-not $prepareDebug -and
@@ -108,44 +154,64 @@ $packEnabled = (
 	$TempDir
 )
 
+# 帧里的资源/版本属性片段占位标记：payload 编译替换为空，launcher/直编替换为 $resourceAttributes（见 BuildFrame.ps1）。
+$assemblyAttributesMarker = '/*__ASSEMBLY_ATTRIBUTES__*/'
+
 if ($packEnabled) {
-	$payloadPath = Join-Path $TempDir 'PS12ExePayload.exe'
+	$payloadSource = $programFrame.Replace($assemblyAttributesMarker, '')
 	$payloadOptions = @($BaseCompilerOptions) + @(
 		"/platform:$architecture",
 		"/target:exe",
 		"/nowin32manifest",
 		"/define:$($Constants -join ';')"
 	)
-	$pcp = New-PS12ExeCompilerParameters $payloadPath $payloadOptions $FALSE
-	if (!$AstAnalyzeResult.IsConst) {
-		[VOID]$pcp.EmbeddedResources.Add("$TempDir\main.ps1")
+	$exeSinker = Join-Path $PSScriptRoot 'ExeSinker.ps1'
+	[byte[]]$scriptBytes = [System.IO.File]::ReadAllBytes("$TempDir\main.ps1")
+	$payloadPath = Join-Path $TempDir 'payload.exe'
+
+	# payload：优先用帧模板补丁（模板不随脚本内容失效），不可用时直编。
+	[byte[]]$payloadBytes = $null
+	if ($useCodeDomCache) {
+		$versionKey = if ($isPwsh20Sma) { 'v3.5' } else { 'v4.0' }
+		$payloadBucket = Get-CacheBucket $scriptBytes.Length
+		if ($payloadBucket) {
+			$payloadKey = Get-TextHash (@(
+					$payloadSource, ($payloadOptions -join "`n"),
+					(($referenceAssembies | Where-Object { $_ }) -join ';'), "c=$versionKey", "b=$payloadBucket"
+				) -join "`n")
+			try {
+				$template = Get-FrameTemplate $payloadKey $payloadBucket $payloadOptions $payloadSource 'main.ps1' "payload.exe"
+				$template = Set-FrameResource $template $scriptBytes
+				[System.IO.File]::WriteAllBytes($payloadPath, $template)
+				$payloadBytes = $template
+			}
+			catch { Write-Debug "CodeDom compiler: payload frame template failed: $_" }
+		}
 	}
-	$pcr = $cop.CompileAssemblyFromSource($pcp, $programFrame)
-	if ($pcr.Errors.Count -gt 0) {
-		throw $pcr.Errors -join "`n"
+	if (-not $payloadBytes) {
+		Write-Debug 'CodeDom compiler: payload frame template miss, compiling'
+		$pcp = New-CompilerParameters $payloadPath $payloadOptions $FALSE
+		[VOID]$pcp.EmbeddedResources.Add("$TempDir\main.ps1")
+		$pcr = $cop.CompileAssemblyFromSource($pcp, $payloadSource)
+		if ($pcr.Errors.Count -gt 0) {
+			throw $pcr.Errors -join "`n"
+		}
 	}
 
 	# csc 默认会塞进 manifest/版本信息资源；负载用不到这些，先剥掉再压缩省一点。
-	$exeSinker = Join-Path $PSScriptRoot 'ExeSinker.ps1'
 	if (Test-Path $exeSinker) {
 		& $exeSinker $payloadPath -removeResources
 	}
+	$payloadBytes = [System.IO.File]::ReadAllBytes($payloadPath)
 
+	# 负载整体 gzip 到内存（launcher 补丁需要其字节）。
+	$gzMs = New-Object System.IO.MemoryStream
+	$gzip = New-Object System.IO.Compression.GZipStream($gzMs, [System.IO.Compression.CompressionMode]::Compress, $true)
+	try { $gzip.Write($payloadBytes, 0, $payloadBytes.Length) }
+	finally { $gzip.Dispose() }
+	[byte[]]$gzBytes = $gzMs.ToArray()
+	$gzMs.Dispose()
 	$gzPath = Join-Path $TempDir 'main'
-	[byte[]]$payloadBytes = [System.IO.File]::ReadAllBytes($payloadPath)
-	$fileStream = [System.IO.File]::Create($gzPath)
-	try {
-		$gzip = New-Object System.IO.Compression.GZipStream($fileStream, [System.IO.Compression.CompressionMode]::Compress)
-		try {
-			$gzip.Write($payloadBytes, 0, $payloadBytes.Length)
-		}
-		finally {
-			$gzip.Dispose()
-		}
-	}
-	finally {
-		$fileStream.Dispose()
-	}
 
 	# 和 default.cs 一样：编译进 ps12exe.exe 时内嵌 pack.cs，脚本模式从磁盘读取。
 	#_if PSEXE
@@ -153,30 +219,58 @@ if ($packEnabled) {
 	#_else
 		[string]$launcherSource = Get-Content $PSScriptRoot/programFrames/pack.cs -Raw -Encoding UTF8
 	#_endif
-	# 资源参数走 #if + $placeholder 替换，pack.cs 自身保持纯 C#。
-	$launcherSource = $launcherSource.Replace("`$TargetFramework", $TargetFramework)
-	$resourceParamKeys | ForEach-Object {
-		$launcherSource = $launcherSource.Replace("`$$_", $resourceParams[$_])
-	}
-
+	# pack.cs 保持纯 C#；把帧里的标记替换为资源/版本属性片段，由 launcher 携带这些元数据。
+	$launcherSource = $launcherSource.Replace($assemblyAttributesMarker, $resourceAttributes)
 	[string[]]$LauncherCompilerOptions = $CompilerOptions
 	if (-not $manifestParam) {
 		# 没有自定义清单需求时，launcher 也不需要默认清单。
 		$LauncherCompilerOptions += "/nowin32manifest"
 	}
-	$lcp = New-PS12ExeCompilerParameters $outputFile $LauncherCompilerOptions $FALSE
-	[VOID]$lcp.EmbeddedResources.Add($gzPath)
-	$cr = $cop.CompileAssemblyFromSource($lcp, $launcherSource)
-	if ($cr.Errors.Count -gt 0) {
-		throw $cr.Errors -join "`n"
+	# launcher：同样优先用帧模板补丁（模板不随脚本内容失效；清单/图标走内容哈希入键）。
+	$launcherPatched = $false
+	if ($useCodeDomCache) {
+		$launcherBucket = Get-CacheBucket $gzBytes.Length
+		if ($launcherBucket) {
+			$iconHash = if ($iconFile -and (Test-Path -LiteralPath $iconFile)) { Get-Sha256Hex ([System.IO.File]::ReadAllBytes($iconFile)) } else { '' }
+			$manifestPath = $outputFile + '.win32manifest'
+			$manifestHash = if ($manifestParam -and (Test-Path -LiteralPath $manifestPath)) { Get-Sha256Hex ([System.IO.File]::ReadAllBytes($manifestPath)) } else { '' }
+			# 清单/图标路径随 outputFile 变化但不影响编译结果：键里抹掉路径、改用内容哈希。
+			$launcherOptionsForKey = ($LauncherCompilerOptions | ForEach-Object {
+					($_ -replace '(?i)(?<=/win32manifest:)[^"]*', '<m>') -replace '(?i)(?<=/win32icon:)[^"]*', '<i>'
+				}) -join "`n"
+			# 内部程序集名固定为 output，不随输出名变化：控制台下 $PSCommandPath 取自 exe 路径；
+			# 窗口化标题在运行期回退到 exe 文件名（见 default.cs），因此产物可跨输出名复用同一模板。
+			$launcherKey = Get-TextHash (@(
+					$launcherSource, $launcherOptionsForKey,
+					(($referenceAssembies | Where-Object { $_ }) -join ';'),
+					"m=$manifestHash", "i=$iconHash", "b=$launcherBucket"
+				) -join "`n")
+			try {
+				$template = Get-FrameTemplate $launcherKey $launcherBucket $LauncherCompilerOptions $launcherSource 'main' "output.exe"
+				$template = Set-FrameResource $template $gzBytes
+				[System.IO.File]::WriteAllBytes($outputFile, $template)
+				$launcherPatched = $true
+			}
+			catch { Write-Debug "CodeDom compiler: launcher frame template failed: $_" }
+		}
+	}
+	if (-not $launcherPatched) {
+		Write-Debug 'CodeDom compiler: launcher frame template miss, compiling'
+		[System.IO.File]::WriteAllBytes($gzPath, $gzBytes)
+		$lcp = New-CompilerParameters $outputFile $LauncherCompilerOptions $FALSE
+		[VOID]$lcp.EmbeddedResources.Add($gzPath)
+		$cr = $cop.CompileAssemblyFromSource($lcp, $launcherSource)
+		if ($cr.Errors.Count -gt 0) {
+			throw $cr.Errors -join "`n"
+		}
 	}
 }
 else {
-	$cp = New-PS12ExeCompilerParameters $outputFile $CompilerOptions $prepareDebug
+	$cp = New-CompilerParameters $outputFile $CompilerOptions $prepareDebug
 	if (!$AstAnalyzeResult.IsConst) {
 		[VOID]$cp.EmbeddedResources.Add("$TempDir\main.ps1")
 	}
-	$cr = $cop.CompileAssemblyFromSource($cp, $programFrame)
+	$cr = $cop.CompileAssemblyFromSource($cp, $programFrame.Replace($assemblyAttributesMarker, $resourceAttributes))
 	if ($cr.Errors.Count -gt 0) {
 		throw $cr.Errors -join "`n"
 	}

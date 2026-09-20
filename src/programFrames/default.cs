@@ -22,23 +22,7 @@ using System.Runtime.InteropServices;
 #endif
 using System.Runtime.Versioning;
 
-// 不显示在属性对话框的详细信息选项卡中，但会嵌入到文件里
-#if Resources
-	[assembly: AssemblyDescription("$description")]
-	[assembly: AssemblyCompany("$company")]
-	[assembly: AssemblyTitle("$title")]
-	[assembly: AssemblyProduct("$product")]
-	[assembly: AssemblyCopyright("$copyright")]
-	[assembly: AssemblyTrademark("$trademark")]
-#endif
-#if version
-	[assembly: AssemblyVersion("$version")]
-	[assembly: AssemblyFileVersion("$version")]
-#endif
-#if winFormsDPIAware
-	[assembly: TargetFrameworkAttribute("$TargetFramework,Profile=Client")]
-#endif
-
+/*__ASSEMBLY_ATTRIBUTES__*/
 namespace PSRunnerNS {
 	#if noConsole || credentialGUI
 	internal class Credential_Form {
@@ -143,12 +127,16 @@ namespace PSRunnerNS {
 			#if noConsole
 			private string _windowTitleData;
 			public PSRunnerRawUI() {
-				// 加载 assembly:AssemblyTitle
-				AssemblyTitleAttribute titleAttribute = (AssemblyTitleAttribute) Attribute.GetCustomAttribute(Assembly.GetExecutingAssembly(), typeof(AssemblyTitleAttribute));
+				AssemblyTitleAttribute titleAttribute = (AssemblyTitleAttribute) Attribute.GetCustomAttribute(Assembly.GetEntryAssembly(), typeof(AssemblyTitleAttribute));
 				if (titleAttribute != null)
 					_windowTitleData = titleAttribute.Title;
-				else
-					_windowTitleData = System.AppDomain.CurrentDomain.FriendlyName;
+				else {
+					Assembly entry = Assembly.GetEntryAssembly();
+					if (entry == null || string.IsNullOrEmpty(entry.Location))
+						_windowTitleData = System.AppDomain.CurrentDomain.FriendlyName;
+					else
+						_windowTitleData = Path.GetFileNameWithoutExtension(entry.Location);
+				}
 			}
 			#endif
 		#else

@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 
 // 单文件自宿主的 Core launcher 没有 pwsh 的启动流程，这里在模块初始化时把 PowerShell 引擎与模块目录接上：探测本机 $PSHOME、接上 PSModulePath、挂 AssemblyResolve，好让内存里的 payload 找到没打包的 SMA 与内置模块。
-internal static class PS12ExeCoreHost {
+internal static class CoreHost {
 	const string PshomeMissingMessage = "PowerShell Core (pwsh) not found. Install PowerShell 7, or add it to PATH / set the PSHOME environment variable.";
 	static string pshome;
 
