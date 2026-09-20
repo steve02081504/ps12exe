@@ -426,4 +426,28 @@ suite('ps12exe extension', () => {
 		assert.strictEqual(editor.document.uri.scheme, 'ps12exe-exe')
 		assert.strictEqual(editor.document.languageId, 'powershell')
 	})
+
+	test('previews the Resources.Icon image on hover', async () => {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ps12exe-icon-hover-'))
+		const file = path.join(dir, 'sample.ps1')
+		const icon = path.join(dir, 'icon.png')
+		const bytes = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 1, 2, 3])
+		fs.writeFileSync(icon, bytes)
+		const line = '#_pragma Resources.Icon "icon.png"'
+		fs.writeFileSync(file, [line, '$x = 1'].join('\n'))
+		try {
+			const document = await vscode.workspace.openTextDocument(file)
+			const position = new vscode.Position(0, line.indexOf('icon.png'))
+			const hovers = await vscode.commands.executeCommand('vscode.executeHoverProvider', document.uri, position)
+			const text = hovers
+				.map((hover) => hover.contents.map((content) => typeof content === 'string' ? content : content.value).join('\n'))
+				.join('\n')
+			assert.match(text, /data:image\/png;base64,/, `no icon preview in ${JSON.stringify(text)}`)
+			assert.ok(text.includes(bytes.toString('base64')), 'the preview should contain the image bytes')
+		}
+		finally {
+			await vscode.commands.executeCommand('workbench.action.closeActiveEditor')
+			fs.rmSync(dir, { recursive: true, force: true })
+		}
+	})
 })

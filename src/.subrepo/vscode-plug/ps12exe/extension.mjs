@@ -11,6 +11,7 @@ import { registerExeSource } from './lib/exeSource.mjs'
 import { applyPreprocessorFormatting } from './lib/format.mjs'
 import { getPackageInfo, tagSearchUrl } from './lib/gallery.mjs'
 import { HOVER_MESSAGES, directiveAt, conditionAt, documentationUrl, preserveLineBreaks, escapeHtmlAttribute } from './lib/hover.mjs'
+import { resolveIconAt, getIconPreview } from './lib/icon.mjs'
 import { toPs12exeLocale } from './lib/locale.mjs'
 import { POWER_SHELL_EXTENSION_ID, isPowerShellExtensionInstalled, getOfficialEdits, applyTextEdits } from './lib/officialFormatter.mjs'
 import { resolvePowerShell, compileScript, syncModule, launchGUI } from './lib/powershell.mjs'
@@ -675,11 +676,33 @@ async function createRequireHover (line, moduleToken, locale) {
 	return new vscode.Hover(contents, new vscode.Range(line, moduleToken.start, line, moduleToken.end))
 }
 
+/**
+ * 为 `#_pragma Resources.Icon` 引用的图标路径构造悬浮提示：内联预览图标内容（exe/dll 等 PE 资源会按其索引抽取），
+ * 并链接到 README 的 pragma 小节。图标无法读取或转换时返回 null，让悬浮回退到不显示内容。
+ *
+ * @param {number} line - 悬浮提示所在行号
+ * @param {{ file: string, index: number | null, start: number, end: number }} icon - 识别到的图标引用
+ * @param {string | undefined} locale - 当前区域标识，未知时为 undefined
+ * @returns {Promise<vscode.Hover | null>} 构造好的悬浮提示，无法预览时为 null
+ */
+async function createIconHover (line, icon, locale) {
+	const preview = await getIconPreview(icon)
+	if (!preview) return null
+
+	const contents = new vscode.MarkdownString()
+	// 图标用原始 HTML，这样才能控制预览尺寸；data URI 只含 base64 字母表，转义后可直接放进属性。
+	contents.supportHtml = true
+	contents.appendMarkdown(`<img src="${escapeHtmlAttribute(preview)}" width="96" height="96" alt="">`)
+	contents.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${documentationUrl(locale, 'pragma')})`)
+	return new vscode.Hover(contents, new vscode.Range(line, icon.start, line, icon.end))
+}
+
 const hoverProvider = {
 	/**
-	 * 在 preprocessor 指令、`#_if` 条件关键字（`PSEXE`/`PSScript`）、`#_pragma` 变量名，以及 `#_require` 的模块名上
-	 * 显示提示：指令与条件链接到当前区域 README 中对应的小节，模块名则展示 PowerShell Gallery 上的图标、简介与 tags，
-	 * 并给出仓库与图库页面链接。here-string 函数体和块注释内的 `#_…` 不是指令，因此不提示。
+	 * 在 preprocessor 指令、`#_if` 条件关键字（`PSEXE`/`PSScript`）、`#_pragma` 变量名、`#_pragma Resources.Icon`
+	 * 的图标路径，以及 `#_require` 的模块名上显示提示：指令与条件链接到当前区域 README 中对应的小节，图标路径
+	 * 内联预览图标内容，模块名则展示 PowerShell Gallery 上的图标、简介与 tags，并给出仓库与图库页面链接。
+	 * here-string 函数体和块注释内的 `#_…` 不是指令，因此不提示。
 	 *
 	 * @param {vscode.TextDocument} document - 当前文本文档
 	 * @param {vscode.Position} position - 光标位置
@@ -690,12 +713,15 @@ const hoverProvider = {
 		const line = document.lineAt(position.line).text
 		const locale = toPs12exeLocale(vscode.env.language)
 
-		const pragma = pragmaNameAt(line, position.character)
-		const required = pragma ? null : requireModulesAt(line, position.character)
-		const token = pragma || required ? null : conditionAt(line, position.character) || directiveAt(line, position.character)
-		if (!pragma && !required && !token) return null
+		// 图标路径引用的文件相对于脚本目录；虚拟的 exe 源码文档没有有意义的 $PSScriptRoot，因此只在本地 .ps1 上解析。
+		const icon = document.uri.scheme === 'file' ? resolveIconAt(line, position.character, path.dirname(document.uri.fsPath)) : null
+		const pragma = icon ? null : pragmaNameAt(line, position.character)
+		const required = icon || pragma ? null : requireModulesAt(line, position.character)
+		const token = icon || pragma || required ? null : conditionAt(line, position.character) || directiveAt(line, position.character)
+		if (!icon && !pragma && !required && !token) return null
 		if (computeSkipMask(document.getText().split(/\r\n|\n|\r/))[position.line]) return null
 
+		if (icon) return createIconHover(position.line, icon, locale)
 		if (pragma) return createPragmaHover(position.line, pragma, locale)
 		if (required) return createRequireHover(position.line, required, locale)
 		return createDirectiveHover(position.line, token, locale)
