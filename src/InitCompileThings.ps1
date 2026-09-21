@@ -1,5 +1,13 @@
 ﻿. $PSScriptRoot\GuestUrlGuard.ps1
 
+# 从脚本源码粗略识别 WinForms / WPF 的使用：Core 目标下 console 应用默认不引用 WindowsDesktop 框架，
+# 命中时由编译器按需打开 UseWindowsForms / UseWPF（PS2EXE.Core #6）。宁可多开也不漏——误判只让产物大一点。
+function Get-GuiFrameworkUsage([string]$Text) {
+	$winForms = $Text -match '(?i)(?<![\w.])System\.Windows\.Forms(?!\w)|(?<![\w.])System\.Drawing(?!\w)'
+	$wpf = $Text -match '(?i)(?<![\w.])System\.Windows\.(?!Forms)|(?<![\w.])PresentationFramework(?!\w)|(?<![\w.])PresentationCore(?!\w)|(?<![\w.])WindowsBase(?!\w)'
+	return @{ WinForms = $winForms; Wpf = $wpf }
+}
+
 function GetAssembly($name, $otherinfo) {
 	$n = New-Object System.Reflection.AssemblyName(@($name, $otherinfo) -ne $null -join ",")
 	try {

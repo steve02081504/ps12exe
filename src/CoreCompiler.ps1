@@ -30,7 +30,6 @@ else {
 	$runtimeVersion = [System.Environment]::Version
 	$tfm = "net$($runtimeVersion.Major).$($runtimeVersion.Minor)"
 }
-if ($noConsole -and $tfm -notmatch '-windows$') { $tfm += '-windows' }
 
 # 目标平台：Build.Core.TargetOs 优先，否则用宿主 OS；架构来自 Build.Platform。
 $ridOs = switch ($coreTargetOs) {
@@ -54,6 +53,13 @@ if ($ridOs -ne 'win' -and $ridArch -eq 'x86') { $ridArch = 'x64' }
 if ($ridOs -ne 'win' -and $conHost) { throw 'ps12exe:conhost-not-windows' }
 $rid = "$ridOs-$ridArch"
 
+# GUI 框架检测（PS2EXE.Core #6）：WPF 在宿主应用里会错误解析到 .NET Framework 的 GAC 版本，
+# 必须显式打开 UseWPF 并让 TFM 带 -windows；WinForms 在 Shared 下由 CoreHost 从 $PSHOME 解析，
+# 无需额外框架引用（只补 noConsole 自身用到的那份）。常量脚本只用预定义类型，不可能用到 GUI。
+$guiUsage = if ($AstAnalyzeResult.IsConst) { @{ Wpf = $false } } else { Get-GuiFrameworkUsage $Content }
+$useWpf = $guiUsage.Wpf -and $ridOs -eq 'win'
+if (($noConsole -or $useWpf) -and $tfm -notmatch '-windows$') { $tfm += '-windows' }
+
 $assemblyName = [System.IO.Path]::GetFileNameWithoutExtension($outputFile)
 $assemblyName = ($assemblyName -replace '[^\w\.\-]', '_')
 if (-not $assemblyName) { $assemblyName = 'output' }
@@ -65,6 +71,13 @@ $outputType = if ($launcherWinExe) { 'WinExe' } else { 'Exe' }
 $debugType = if ($prepareDebug) { 'portable' } else { 'none' }
 $iconElement = if ($iconFile) { "<ApplicationIcon>$([System.Security.SecurityElement]::Escape($iconFile))</ApplicationIcon>" } else { '' }
 $winForms = if ($noConsole) { '<UseWindowsForms>true</UseWindowsForms>' } else { '' }
+if ($useWpf) { $winForms += '<UseWPF>true</UseWPF>' }
+
+# Add-Type 的编译路径（-TypeDefinition / -MemberDefinition / -Path *.cs）需要 $PSHOME\ref 下的引用程序集，
+# 但宿主应用里 Add-Type 会去「入口程序集所在目录\ref」找（PS2EXE.Core #24）：把 ref 作为内容一起发布，
+# 单文件下再让内容自解压即可命中。没用到 Add-Type 就不带（ref 约 6MB，Shared 的卖点是小）。
+$needsRefAssemblies = (-not $isConst) -and ($Content -match '(?i)\bAdd-Type\b') -and (Test-Path -LiteralPath (Join-Path $PSHOME 'ref'))
+$selfExtractElement = if ($needsRefAssemblies -and $singleFile) { '<IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>' } else { '' }
 
 # 资源/版本元数据由 SDK 生成，因此 DefineConstants 里剔除 Resources/version。
 $coreConstants = @($Constants | Where-Object { $_ -and $_ -ne 'Resources' -and $_ -ne 'version' })
@@ -100,6 +113,7 @@ $publishedProps = @"
 		<RuntimeIdentifier>$rid</RuntimeIdentifier>
 		<SelfContained>false</SelfContained>
 		<PublishSingleFile>$($singleFile.ToString().ToLowerInvariant())</PublishSingleFile>
+		$selfExtractElement
 		<NoWarn>`$(NoWarn);CA1416;IL3000;CS8073</NoWarn>
 		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
 		<AssemblyName>$assemblyName</AssemblyName>
@@ -131,7 +145,7 @@ $coreInvariant = @(
 	"resources=$resourceElements", "version=$versionElements"
 	"define=$defineConstants"
 	"payloadDefine=$payloadDefineConstants", "isConst=$isConst"
-	"singleFile=$singleFile", "conHost=$conHost"
+	"singleFile=$singleFile", "conHost=$conHost", "needsRef=$needsRefAssemblies"
 	"sma=$smaPath", "edition=$($PSVersionTable.PSEdition)", "psver=$($PSVersionTable.PSVersion)"
 ) -join "`n"
 $sha = [System.Security.Cryptography.SHA256]::Create()
@@ -281,6 +295,16 @@ $($publishedProps.Replace('__DefineConstants__', [System.Security.SecurityElemen
 		$launcherDefineConstants = 'CoreHost'
 		if ($noConsole) { $launcherDefineConstants += ';noConsole' }
 		if ($conHost) { $launcherDefineConstants += ';conHost' }
+		$refContentItem = if ($needsRefAssemblies) {
+			$refDir = [System.Security.SecurityElement]::Escape((Join-Path $PSHOME 'ref'))
+			@"
+		<Content Include="$refDir\*.dll">
+			<Link>ref\%(Filename)%(Extension)</Link>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+"@
+		}
+		else { '' }
 		$launcherCsproj = @"
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
@@ -290,6 +314,7 @@ $($publishedProps.Replace('__DefineConstants__', $launcherDefineConstants))
 		<Compile Include="launcher.cs" />
 		<Compile Include="CoreHost.cs" />
 		<EmbeddedResource Include="main" LogicalName="main" />
+$refContentItem
 	</ItemGroup>
 </Project>
 "@

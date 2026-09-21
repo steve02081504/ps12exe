@@ -8,7 +8,7 @@ $script:TestCases = [System.Collections.Generic.List[hashtable]]::new()
 # 刻意逐文件枚举而非用 `src/` 前缀，好让未列入的新文件触发「零匹配 -> 全量」安全网。
 $script:CoreCompileDeps = @(
 	'ps12exe.ps1', 'ps12exe.psm1', 'ps12exe.psd1',
-	'src/CodeDomCompiler.ps1', 'src/CoreCompiler.ps1', 'src/TinySharpCompiler.ps1', 'src/BuildFrame.ps1',
+	'src/CodeDomCompiler.ps1', 'src/CoreCompiler.ps1', 'src/CoreBundledCompiler.ps1', 'src/TinySharpCompiler.ps1', 'src/BuildFrame.ps1',
 	'src/InitCompileThings.ps1', 'src/ConstProgramCheck.ps1', 'src/ReadScriptFile.ps1', 'src/AstAnalyze.ps1',
 	'src/ExeSinker.ps1', 'src/GolfModeHeader.ps1', 'src/predicate.ps1', 'src/PSObjectToString.ps1',
 	'src/WriteI18n.ps1', 'src/LocaleLoader.ps1', 'src/GuestUrlGuard.ps1',

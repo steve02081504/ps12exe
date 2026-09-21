@@ -346,3 +346,104 @@ Add-Test @{
 		Assert-Match $r.Output 'bundled-const-ok' "Bundled 常量输出不符：$($r.Output)"
 	}
 }
+
+# Shared 单文件：Add-Type 的静态初始化器会去「入口程序集目录\ref」找引用程序集，单文件下入口程序集
+# Location 为空；编译器把 $PSHOME\ref 作为内容发布并自解压后才可用（PS2EXE.Core #24）。
+Add-Test @{
+	Name  = 'ps12exe.core.addtype-singlefile'
+	Group = 'ps12exe'
+	Deps  = $deps
+	Build = @{
+		Name      = 'addtype'
+		Output    = 'addtype.exe'
+		InputText = @'
+Add-Type -TypeDefinition 'public static class Ps12exeAddTypeProbe { public static string Get() { return "addtype-ok"; } }'
+Write-Output ([Ps12exeAddTypeProbe]::Get())
+'@
+		Params    = @{ Build = @{ Target = 'Core' } }
+	}
+	Run   = {
+		param($ctx)
+		if (-not (Get-Command dotnet -ErrorAction Ignore)) { throw 'Core 目标需要 .NET SDK（dotnet）' }
+		$r = Invoke-ExeCaptureMergedOutput -ExePath $ctx.Builds['addtype']
+		Assert-Match $r.Output 'addtype-ok' "Shared 单文件 Add-Type -TypeDefinition 失败：$($r.Output)"
+	}
+}
+
+# Shared 多文件：ref 目录必须随产物一起落到 exe 旁，否则 Add-Type 找不到引用程序集（PS2EXE.Core #24）。
+Add-Test @{
+	Name  = 'ps12exe.core.addtype-multifile-ref'
+	Group = 'ps12exe'
+	Deps  = $deps
+	Build = @{
+		Name      = 'addtypemulti'
+		Output    = 'addtypemulti.exe'
+		InputText = @'
+Add-Type -TypeDefinition 'public static class Ps12exeAddTypeProbe2 { public static string Get() { return "addtype-multi-ok"; } }'
+Write-Output ([Ps12exeAddTypeProbe2]::Get())
+'@
+		Params    = @{ Build = @{ Target = 'Core'; Core = @{ SingleFile = $false } } }
+	}
+	Run   = {
+		param($ctx)
+		if (-not (Get-Command dotnet -ErrorAction Ignore)) { throw 'Core 目标需要 .NET SDK（dotnet）' }
+		$exe = $ctx.Builds['addtypemulti']
+		Assert-True (Test-Path -LiteralPath (Join-Path (Split-Path -Parent $exe) 'ref')) 'Shared 多文件未在 exe 旁发布 ref 引用程序集'
+		$r = Invoke-ExeCaptureMergedOutput -ExePath $exe
+		Assert-Match $r.Output 'addtype-multi-ok' "Shared 多文件 Add-Type -TypeDefinition 失败：$($r.Output)"
+	}
+}
+
+# Console 应用用 WinForms/WPF：Shared 下 WPF 会误解析到 .NET Framework GAC 版本，必须显式 UseWPF；
+# Bundled 下 WinForms/WPF 都需显式引用（PS2EXE.Core #6）。
+Add-Test @{
+	Name    = 'ps12exe.core.gui-console-shared'
+	Group   = 'ps12exe'
+	Deps    = $deps
+	Timeout = 900
+	Build   = @{
+		Name      = 'guishared'
+		Output    = 'guishared.exe'
+		InputText = @'
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName PresentationFramework
+Write-Output ('wf=' + [System.Windows.Forms.Form].FullName)
+Write-Output ('wpf=' + [System.Windows.Window].FullName)
+'@
+		Params    = @{ Build = @{ Target = 'Core' } }
+	}
+	Run     = {
+		param($ctx)
+		if (-not $IsWindows) { return }
+		if (-not (Get-Command dotnet -ErrorAction Ignore)) { throw 'Core 目标需要 .NET SDK（dotnet）' }
+		$r = Invoke-ExeCaptureMergedOutput -ExePath $ctx.Builds['guishared']
+		Assert-Match $r.Output 'wf=System\.Windows\.Forms\.Form' "Shared console 不能用 WinForms：$($r.Output)"
+		Assert-Match $r.Output 'wpf=System\.Windows\.Window' "Shared console 不能用 WPF：$($r.Output)"
+	}
+}
+
+Add-Test @{
+	Name    = 'ps12exe.core.gui-console-bundled'
+	Group   = 'ps12exe'
+	Deps    = $deps
+	Timeout = 1800
+	Build   = @{
+		Name      = 'guibundled'
+		Output    = 'guibundled.exe'
+		InputText = @'
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName PresentationFramework
+Write-Output ('wf=' + [System.Windows.Forms.Form].FullName)
+Write-Output ('wpf=' + [System.Windows.Window].FullName)
+'@
+		Params    = @{ Build = @{ Target = 'Core'; Core = @{ Backend = 'Bundled' } } }
+	}
+	Run     = {
+		param($ctx)
+		if (-not $IsWindows) { return }
+		if (-not (Get-Command dotnet -ErrorAction Ignore)) { throw 'Core 目标需要 .NET SDK（dotnet）' }
+		$r = Invoke-ExeCaptureMergedOutput -ExePath $ctx.Builds['guibundled']
+		Assert-Match $r.Output 'wf=System\.Windows\.Forms\.Form' "Bundled console 不能用 WinForms：$($r.Output)"
+		Assert-Match $r.Output 'wpf=System\.Windows\.Window' "Bundled console 不能用 WPF：$($r.Output)"
+	}
+}

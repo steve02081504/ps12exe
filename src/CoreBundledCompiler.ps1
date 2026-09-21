@@ -40,10 +40,18 @@ if ($tfmBaseMajor -and $mappedMajor -and $tfmBaseMajor -lt $mappedMajor) {
 	throw 'ps12exe:core-bundled-tfm-too-low'
 }
 $tfm = $tfmBase
-if ($noConsole -and $tfm -notmatch '-windows$') { $tfm += '-windows' }
+
+# GUI 框架检测：console 应用默认不引用 WindowsDesktop 框架，脚本用到 WinForms/WPF 时按需打开（PS2EXE.Core #6），
+# 并据此让 TFM 带 -windows。常量脚本只用预定义类型，不可能用到 GUI。
+$guiUsage = if ($isConst) { @{ WinForms = $false; Wpf = $false } } else { Get-GuiFrameworkUsage $Content }
+$useWinForms = $guiUsage.WinForms -and $rid -like 'win-*'
+$useWpf = $guiUsage.Wpf -and $rid -like 'win-*'
+if (($noConsole -or $useWinForms -or $useWpf) -and $tfm -notmatch '-windows$') { $tfm += '-windows' }
 
 $bundleOutputType = if ($noConsole -or ($conHost -and -not $isConst)) { 'WinExe' } else { 'Exe' }
-$bundleWinForms = if ($noConsole) { '<UseWindowsForms>true</UseWindowsForms>' } else { '' }
+$bundleWinForms = ''
+if ($noConsole -or $useWinForms) { $bundleWinForms += '<UseWindowsForms>true</UseWindowsForms>' }
+if ($useWpf) { $bundleWinForms += '<UseWPF>true</UseWPF>' }
 # 非常量帧用 CoreHost 定义选择 Environment.ProcessPath（单文件发布下 Assembly.Location 为空）。
 $bundleConstants = if ($isConst) { $defineConstants } else { (($coreConstants + 'CoreHost') | Sort-Object -Unique) -join ';' }
 
