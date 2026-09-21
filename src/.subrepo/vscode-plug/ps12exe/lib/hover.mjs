@@ -54,6 +54,7 @@ export const HOVER_MESSAGES = Object.freeze({
 	bang: '`#_!!` is an escape marker: it is stripped from the line, so the line is a comment when run directly and real code in the compiled EXE.',
 	require: '`#_require <modulesList>` installs the listed PowerShell modules before the script runs; it installs but does not import them.',
 	pragma: '`#_pragma <name> [value]` sets a compilation parameter such as `App.Windowed`, `Resources.Icon` or `Resources.Title` without modifying the script.',
+	pragmaGroup: 'Parameter group. Supported keys: {0}.',
 	balus: '`#_balus <exitcode>` exits the process with the given exit code and deletes the compiled EXE.',
 	psexe: '`PSEXE` — the condition is true while ps12exe compiles the script, so this branch is kept in the compiled EXE.',
 	psscript: '`PSScript` — the condition is false while ps12exe compiles the script, so this branch is only kept when the script runs directly as a `.ps1`.',

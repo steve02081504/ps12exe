@@ -25,7 +25,7 @@
 
 - 控制台帮助数据位于各 `src/locale/<lang>.ps1` 的 `ConsoleHelpData.PrarmsData`；对象参数（`App`/`Os`/`Build`/`Resources`/`Signing`）的值是**嵌套哈希表**，逐键给出详细说明。
 - `src/HelpShower.ps1` 负责渲染：标量逐行输出，嵌套对象先打分组标题，再把子键缩进并对齐。
-- 改动参数时必须同步三处：locale 的 `Usage`/`PrarmsData`、各语言 `docs/README_*.md` 的参数表、必要时 VS Code 扩展的 `lib/definition.mjs` 与 hover/l10n。
+- 改动参数时必须同步三处：locale 的 `Usage`/`PrarmsData`、各语言 `docs/README_*.md` 的参数表、必要时 VS Code 扩展的 `lib/definition.mjs` 与 hover/l10n。嵌套对象（`App`/`Build`/`Build.Core`…）的 pragma hover/补全由扩展读取 `PrarmsData` 动态生成，新增嵌套键无需改扩展；只有新增非参数 hover 文案时才需同步 `lib/hover.mjs#HOVER_MESSAGES` 与 `l10n/bundle.l10n.*`。
 
 ## 预处理与反编译
 

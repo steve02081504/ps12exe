@@ -590,7 +590,7 @@ async function createPragmaHover(line, pragma, locale) {
 	try {
 		const data = await getPragmaData(locale)
 		const entry = lookupPragma(data, pragma.name)
-		if (entry) description = entry.description
+		if (entry) description = entry.isGroup ? t(HOVER_MESSAGES.pragmaGroup, entry.children.join(', ')) : entry.description
 	}
 	catch {
 		// 模块未安装或读取失败：退回通用说明，不改动悬停本身。
@@ -824,7 +824,11 @@ const completionProvider = {
 			item.insertText = candidate.insertText
 			item.range = range
 			item.detail = t('ps12exe compilation parameter')
-			const docs = new vscode.MarkdownString(candidate.description)
+			const docs = new vscode.MarkdownString(
+				candidate.kind === 'object' && candidate.children?.length
+					? t(HOVER_MESSAGES.pragmaGroup, candidate.children.join(', '))
+					: candidate.description
+			)
 			docs.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${url})`)
 			item.documentation = docs
 			return item

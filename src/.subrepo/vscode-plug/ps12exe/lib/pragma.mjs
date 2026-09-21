@@ -112,11 +112,53 @@ export async function getPragmaData(locale) {
 }
 
 /**
+ * 返回分组（如 `App`、`Build`、`Build.Core`）的直接子键的显示名（只取最后一段，如 `Backend`）。
+ *
+ * 子键既可能是叶子（`Build.Core.Backend`），也可能是更深的子分组（`Build.Core.Trim`），两者都算一级子键。
+ * 分组本身在 `PrarmsData` 里是嵌套哈希表，没有标量值，因此不会作为叶子进入扁平数据。
+ *
+ * @param {Map<string, { name: string, description: string }>} data - 扁平化后的说明数据
+ * @param {string} lowerName - 分组的点号路径（小写）
+ * @returns {string[]} 排序后的直接子键显示名；该名字不是分组时为空数组
+ */
+function directChildNames(data, lowerName) {
+	const prefix = `${lowerName}.`
+	const children = new Map()
+	for (const [key, entry] of data) {
+		if (!key.startsWith(prefix)) continue
+		const rest = key.slice(prefix.length)
+		const dot = rest.indexOf('.')
+		const childLower = dot >= 0 ? key.slice(0, prefix.length + dot) : key
+		children.set(childLower, entry.name.slice(0, childLower.length))
+	}
+	return [...children.values()]
+		.map((full) => full.slice(full.lastIndexOf('.') + 1))
+		.sort((a, b) => a.localeCompare(b))
+}
+
+/**
+ * 用某个后代键的规范大小写还原分组的显示名（如 `build.core` -> `Build.Core`）。
+ *
+ * @param {Map<string, { name: string, description: string }>} data - 扁平化后的说明数据
+ * @param {string} lowerName - 分组的点号路径（小写）
+ * @returns {string} 分组的显示名；找不到后代时原样返回
+ */
+function canonicalGroupName(data, lowerName) {
+	const prefix = `${lowerName}.`
+	for (const [key, entry] of data)
+		if (key.startsWith(prefix)) return entry.name.slice(0, lowerName.length)
+	return lowerName
+}
+
+/**
  * 在扁平数据中查找一个 pragma 名。`no` 前缀（如 `#_pragma noGolf`）会回退到其基名。
+ *
+ * 分组名（`App`、`Build.Core` 等）没有标量值，命中时返回带 `isGroup`/`children` 的条目，
+ * 由调用方拼出「支持哪些子键」的说明。
  *
  * @param {Map<string, { name: string, description: string }>} data - 扁平化后的说明数据
  * @param {string} name - 待查找的 pragma 名
- * @returns {{ name: string, description: string, negated: boolean } | null} 查到的说明与是否取反，未找到时为 null
+ * @returns {{ name: string, description: string, negated: boolean, isGroup?: boolean, children?: string[] } | null} 查到的说明与是否取反，未找到时为 null
  */
 export function lookupPragma(data, name) {
 	const lower = name.toLowerCase()
@@ -124,6 +166,8 @@ export function lookupPragma(data, name) {
 	if (exact) return { ...exact, negated: false }
 	const base = data.get(lower.startsWith('no') ? lower.slice(2) : '')
 	if (base) return { ...base, negated: true }
+	const children = directChildNames(data, lower)
+	if (children.length) return { name: canonicalGroupName(data, lower), description: '', negated: false, isGroup: true, children }
 	return null
 }
 
@@ -135,7 +179,7 @@ export function lookupPragma(data, name) {
  *
  * @param {Map<string, { name: string, description: string }>} data - 扁平化后的说明数据
  * @param {string} prefix - 已输入的前缀
- * @returns {Array<{ name: string, insertText: string, kind: 'object' | 'value', description: string }>} 补全候选列表
+ * @returns {Array<{ name: string, insertText: string, kind: 'object' | 'value', description: string, children?: string[] }>} 补全候选列表
  */
 export function buildPragmaCandidates(data, prefix) {
 	const entries = new Map(data)
@@ -162,12 +206,14 @@ export function buildPragmaCandidates(data, prefix) {
 		if (!key.startsWith(parent) || !key.startsWith(lower)) continue
 		if (key.slice(parent.length).includes('.')) continue
 		const isObject = objectNames.has(key)
-		candidates.push({
+		const candidate = {
 			name: entry.name,
 			insertText: isObject ? `${entry.name}.` : entry.name,
 			kind: isObject ? 'object' : 'value',
 			description: entry.description
-		})
+		}
+		if (isObject) candidate.children = directChildNames(data, key)
+		candidates.push(candidate)
 	}
 	candidates.sort((a, b) => a.name.localeCompare(b.name))
 	return candidates

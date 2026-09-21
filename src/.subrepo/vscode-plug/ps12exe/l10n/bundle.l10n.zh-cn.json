@@ -41,6 +41,7 @@
 	"`#_!!` is an escape marker: it is stripped from the line, so the line is a comment when run directly and real code in the compiled EXE.": "`#_!!` 是转义标记：它会被从行首去除，因此该行直接运行时是注释，在编译后的 EXE 中是真实代码。",
 	"`#_require <modulesList>` installs the listed PowerShell modules before the script runs; it installs but does not import them.": "`#_require <modulesList>` 会在脚本运行前安装列出的 PowerShell 模块；它只安装，不导入。",
 	"`#_pragma <name> [value]` sets a compilation parameter such as `App.Windowed`, `Resources.Icon` or `Resources.Title` without modifying the script.": "`#_pragma <name> [value]` 设置编译参数（如 `App.Windowed`、`Resources.Icon`、`Resources.Title`），但不修改脚本内容。",
+	"Parameter group. Supported keys: {0}.": "参数分组。支持的键：{0}。",
 	"`#_balus <exitcode>` exits the process with the given exit code and deletes the compiled EXE.": "`#_balus <exitcode>` 以给定的退出码退出进程，并删除编译生成的 EXE。",
 	"`PSEXE` — the condition is true while ps12exe compiles the script, so this branch is kept in the compiled EXE.": "`PSEXE` —— ps12exe 编译脚本时该条件为 true，因此这个分支会保留在编译后的 EXE 中。",
 	"`PSScript` — the condition is false while ps12exe compiles the script, so this branch is only kept when the script runs directly as a `.ps1`.": "`PSScript` —— ps12exe 编译脚本时该条件为 false，因此这个分支只在脚本作为 `.ps1` 直接运行时保留。",

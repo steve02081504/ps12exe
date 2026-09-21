@@ -130,6 +130,8 @@ suite('ps12exe pragma names', () => {
 		const data = new Map([
 			['app.windowed', { name: 'App.Windowed', description: 'windowed' }],
 			['app.silence', { name: 'App.Silence', description: 'silence' }],
+			['build.core.backend', { name: 'Build.Core.Backend', description: 'backend' }],
+			['build.core.aot', { name: 'Build.Core.Aot', description: 'aot' }],
 			['build.target', { name: 'Build.Target', description: 'target' }],
 			['golf', { name: 'Golf', description: 'golf' }]
 		])
@@ -138,12 +140,41 @@ suite('ps12exe pragma names', () => {
 		assert.deepStrictEqual(top.map((candidate) => candidate.insertText), ['App.', 'Build.', 'Golf'])
 		assert.strictEqual(top.find((candidate) => candidate.name === 'App').kind, 'object')
 		assert.strictEqual(top.find((candidate) => candidate.name === 'Golf').kind, 'value')
+		// 分组候选带上直接子键，供补全说明展示。
+		assert.deepStrictEqual(top.find((candidate) => candidate.name === 'Build').children, ['Core', 'Target'])
 
 		const nested = buildPragmaCandidates(data, 'App.Win')
 		assert.deepStrictEqual(nested.map((candidate) => candidate.insertText), ['App.Windowed'])
 
+		// `Build.Core` 是子分组：列出它自己的子键，而不是被当成未知项。
+		const core = buildPragmaCandidates(data, 'Build.Core.').map((candidate) => candidate.name)
+		assert.deepStrictEqual(core, ['Build.Core.Aot', 'Build.Core.Backend'])
+		const coreGroup = buildPragmaCandidates(data, 'Build.').find((candidate) => candidate.name === 'Build.Core')
+		assert.strictEqual(coreGroup.kind, 'object')
+		assert.deepStrictEqual(coreGroup.children, ['Aot', 'Backend'])
+
 		const exact = buildPragmaCandidates(data, 'app.sil')
 		assert.deepStrictEqual(exact.map((candidate) => candidate.name), ['App.Silence'])
+	})
+
+	test('describes a parameter group with its direct children', () => {
+		const data = new Map([
+			['build.core.backend', { name: 'Build.Core.Backend', description: 'backend' }],
+			['build.core.aot', { name: 'Build.Core.Aot', description: 'aot' }],
+			['build.core.publish.deep', { name: 'Build.Core.Publish.Deep', description: 'deep' }],
+			['build.target', { name: 'Build.Target', description: 'target' }],
+			['golf', { name: 'Golf', description: 'golf' }]
+		])
+		assert.deepStrictEqual(lookupPragma(data, 'Build.Core'), {
+			name: 'Build.Core', description: '', negated: false, isGroup: true, children: ['Aot', 'Backend', 'Publish']
+		})
+		assert.deepStrictEqual(lookupPragma(data, 'build'), {
+			name: 'Build', description: '', negated: false, isGroup: true, children: ['Core', 'Target']
+		})
+		// 叶子仍按原样解析；分组判定不会把 `no` 前缀或未知名字误判为分组。
+		assert.strictEqual(lookupPragma(data, 'Build.Core.Publish.Deep').description, 'deep')
+		assert.strictEqual(lookupPragma(data, 'noGolf').negated, true)
+		assert.strictEqual(lookupPragma(data, 'Unknown'), null)
 	})
 })
 
