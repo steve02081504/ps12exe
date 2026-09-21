@@ -288,7 +288,13 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Locale '<语言代码>'] [-UIMode 'Da
 		UnknownPragmaBoolValue                    = "未知的pragma值：{0}，无法将其视为bool。"
 		PragmaUnsafeExpression                    = "pragma {0} 中的表达式不安全：{1}"
 		DllExportDelNoneTypeArg                   = "{0}：{1}是无类型参数，假设它是字符串。"
-		DllExportUsing                            = "您正在使用 #_DllExport，此宏尚在开发中，尚未支持。"
+		DllExportCompiling                        = "正在为 #_DllExport 生成原生 DLL 导出..."
+		DllExportToolchainFailed                  = "无法获取原生导出工具链：{0}"
+		DllExportMethodNotFound                   = "在 IL 中找不到导出方法 {0}"
+		DllExportForcePlatform                    = "原生导出不支持 AnyCPU，已自动选择目标平台 {0}。"
+		DllExportCoreUnsupported                  = "#_DllExport 不支持 Build.Target='Core'，请使用 Framework4.0。"
+		DllExportFramework2Unsupported            = "#_DllExport 不支持 Framework2.0，请使用 Framework4.0。"
+		DllExportPlatformUnsupported              = "#_DllExport 不支持平台 {0}（仅支持 x86/x64）。"
 	}
 
 	# Web 服务器运行时消息

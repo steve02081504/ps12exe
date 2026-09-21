@@ -127,7 +127,9 @@ namespace PSRunnerNS {
 			#if noConsole
 			private string _windowTitleData;
 			public PSRunnerRawUI() {
-				AssemblyTitleAttribute titleAttribute = (AssemblyTitleAttribute) Attribute.GetCustomAttribute(Assembly.GetEntryAssembly(), typeof(AssemblyTitleAttribute));
+				// DLL 导出模式下没有托管入口程序集，回退到当前程序集。
+				Assembly hostAssembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+				AssemblyTitleAttribute titleAttribute = (AssemblyTitleAttribute) Attribute.GetCustomAttribute(hostAssembly, typeof(AssemblyTitleAttribute));
 				if (titleAttribute != null)
 					_windowTitleData = titleAttribute.Title;
 				else {
@@ -588,7 +590,7 @@ namespace PSRunnerNS {
 			form.FormBorderStyle = FormBorderStyle.FixedDialog;
 			form.StartPosition = FormStartPosition.CenterScreen;
 			try {
-				form.Icon = Icon.ExtractAssociatedIcon(Assembly.GetEntryAssembly().Location);
+				form.Icon = Icon.ExtractAssociatedIcon((Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly()).Location);
 			} catch {}
 			form.MinimizeBox = false;
 			form.MaximizeBox = false;
@@ -676,7 +678,7 @@ namespace PSRunnerNS {
 			form.FormBorderStyle = FormBorderStyle.FixedDialog;
 			form.StartPosition = FormStartPosition.CenterScreen;
 			try {
-				form.Icon = Icon.ExtractAssociatedIcon(Assembly.GetEntryAssembly().Location);
+				form.Icon = Icon.ExtractAssociatedIcon((Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly()).Location);
 			} catch {}
 			form.MinimizeBox = false;
 			form.MaximizeBox = false;
@@ -810,7 +812,7 @@ namespace PSRunnerNS {
 			form.FormBorderStyle = FormBorderStyle.FixedDialog;
 			form.StartPosition = FormStartPosition.CenterScreen;
 			try {
-				form.Icon = Icon.ExtractAssociatedIcon(Assembly.GetEntryAssembly().Location);
+				form.Icon = Icon.ExtractAssociatedIcon((Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly()).Location);
 			} catch {}
 			form.MinimizeBox = false;
 			form.MaximizeBox = false;
@@ -1917,7 +1919,11 @@ namespace PSRunnerNS {
 			#if CoreHost
 				string exepath = System.Environment.ProcessPath;
 			#else
-				string exepath = Assembly.GetEntryAssembly().Location;
+				// DLL 导出模式下 GetEntryAssembly 可能为 null（native 宿主），回退到当前程序集。
+				Assembly entryAssembly = Assembly.GetEntryAssembly();
+				string exepath = (entryAssembly != null && !string.IsNullOrEmpty(entryAssembly.Location))
+					? entryAssembly.Location
+					: Assembly.GetExecutingAssembly().Location;
 			#endif
 			Assembly executingAssembly = Assembly.GetExecutingAssembly();
 			string script;
@@ -2006,7 +2012,7 @@ namespace PSRunnerNS {
 			}
 		}
 	}
-	static class PSRunnerEntry {
+	static partial class PSRunnerEntry {
 		static PSRunner me;
 
 		#if ScriptHasParam

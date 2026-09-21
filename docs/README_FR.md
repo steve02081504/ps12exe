@@ -397,6 +397,23 @@ La commande pragma peut définir tous les paramètres de compilation ; utilisez 
 
 Les valeurs de pragma de type chaîne peuvent également contenir des sous-expressions `$(...)`, évaluées au moment du prétraitement, par ex. `#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`. Seules les commandes liées aux chemins figurant sur la liste blanche (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, plus `Get-Content` hors Sandbox), les variables (`$env:*` (dans Sandbox uniquement `$env:windir`/`$env:SystemRoot`), `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) et les méthodes d’instance inoffensives courantes (par ex. `ToUpper`, `Trim`, `Split`, `ToString`) sont autorisées ; toute autre chose interrompt la compilation. Les valeurs entre guillemets simples restent entièrement littérales. Le mode Sandbox ignore aussi `#_pragma outputFile`, `Build.TempDir`, `Build.Minify` et `Signing.Certificate`, et ne récupère que les URL http(s) résolues vers des adresses publiques (les cibles de redirection sont restreintes de la même façon). Les chemins locaux de `Resources.Icon` ne sont autorisés que sous le répertoire Windows.
 
+#### `#_DllExport`
+
+<a id="preprocessing-dllexport"></a>
+
+```powershell
+#_DllExport int Add(int a, int b)
+#_DllExport Add(int a, int b)
+#_DllExport DoSomething(int value)
+
+function Add($a, $b) { return $a + $b }
+function DoSomething($value) { ... }
+```
+
+`#_DllExport` compile le script en une DLL Win32 native au lieu d'un exécutable, en exportant les fonctions listées afin que les appelants natifs puissent les utiliser directement via `LoadLibrary`/`GetProcAddress` (ou `DllImport`). Chaque fonction exportée est relayée vers la fonction PowerShell du même nom : les arguments sont passés sous forme de tableau et la sortie de la fonction devient la valeur de retour. Les types de retour et de paramètres s'écrivent en syntaxe C# ; sans type de retour, `void` est utilisé, et un paramètre sans type est traité comme `string`.
+
+L'export natif nécessite une cible .NET Framework 4.0 et une plateforme `x86`/`x64` (`AnyCPU` est résolu automatiquement selon l'architecture de l'hôte) ; la sortie est `.dll` par défaut. La fonctionnalité est indisponible en mode invité (sandbox). La chaîne d'outils ILAsm/ILDasm est fournie avec le module dans `src/bin/ILAsm`.
+
 #### `#_balus`
 
 <a id="preprocessing-balus"></a>

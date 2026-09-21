@@ -397,6 +397,23 @@ The pragma command can set any compilation parameter; use `.` in the name to set
 
 String pragma values can also contain `$(...)` subexpressions, which are evaluated at preprocess time, e.g. `#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`. Only whitelisted path-related commands (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, plus `Get-Content` outside Sandbox), variables (`$env:*` (inside Sandbox only `$env:windir`/`$env:SystemRoot`), `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) and common harmless instance methods (e.g. `ToUpper`, `Trim`, `Split`, `ToString`) are allowed; anything else aborts the compile. Single-quoted values stay fully literal. Sandbox mode also ignores `#_pragma outputFile`, `Build.TempDir`, `Build.Minify`, and `Signing.Certificate`, and only fetches http(s) URLs that resolve to public addresses (redirect targets are restricted the same way). Local `Resources.Icon` paths are only allowed under the Windows directory.
 
+#### `#_DllExport`
+
+<a id="preprocessing-dllexport"></a>
+
+```powershell
+#_DllExport int Add(int a, int b)
+#_DllExport Add(int a, int b)
+#_DllExport DoSomething(int value)
+
+function Add($a, $b) { return $a + $b }
+function DoSomething($value) { ... }
+```
+
+`#_DllExport` compiles the script into a native Win32 DLL instead of an executable, exporting the listed functions so native callers can use `LoadLibrary`/`GetProcAddress` (or `DllImport`) directly. Each exported function forwards to the PowerShell function of the same name: arguments are passed as an array and the function's output becomes the return value. Return and parameter types are written in C# syntax; an omitted return type means `void`, and a parameter without a type is treated as `string`.
+
+Native exports require a .NET Framework 4.0 target and an `x86`/`x64` platform (`AnyCPU` is resolved automatically to the host bitness), and the output defaults to `.dll`. The feature is unavailable in guest (sandbox) mode. The ILAsm/ILDasm toolchain ships with the module in `src/bin/ILAsm`.
+
 #### `#_balus`
 
 <a id="preprocessing-balus"></a>

@@ -13,8 +13,21 @@
   3. `Restore-RequiredModulePragma` 还原活动的 `#_require`；
   4. `Restore-BalusPragma` 把 `#_balus` 展开出的自删除代码还原回 `#_balus <exitcode>`；
   5. 最后从产物补唯一一份推导配置：PE 子系统 → `App.Windowed`、无 CLR 头 → `Build.Target 'Core'`、CLR 元数据 `v2.0.50727` → `Build.Target 'Framework2.0'`、PE32+/CorFlags → `Build.Platform`、RT_MANIFEST → `Os.Admin`、版本资源/图标 → `Resources.*`。
-- `#_DllExport` 功能尚未实现，只作注释。
+- `#_DllExport` 不是注释：它会把声明收集进 `$DllExportList`，走原生 DLL 导出路径（见下）；访客模式下忽略。
 - 目标：任意 exe 往返后有效内容不变、不膨胀。
+
+<a id="dllexport"></a>
+
+## 原生 DLL 导出（`#_DllExport` / `Build.DllExports`）
+
+- 目标：一步产出可被 native `LoadLibrary`/`GetProcAddress` 调用的 Win32 DLL，导出函数转发到脚本里的同名 PowerShell 函数。
+- 仅支持 Framework4.0 + x86/x64：`AnyCPU` 会自动选宿主位数并告警；`arm64`/`Framework2.0`/`Core` 直接报错；访客模式忽略该指令（避免编译期联网下载并执行工具）。
+- 实现（`src/DllExportCompiler.ps1` + `src/programFrames/DllExport.cs`）：
+  1. CodeDom 把 `default.cs` 与 `DllExport.cs` 两个源文件（同一个 `PSRunnerEntry` partial 类）按 `/target:library` 编译成普通类库；每个导出声明生成一个 `PS12ExeDllExport<i>` 包装方法，首次调用时 `DllInitChecker` 惰性建宿主并以点源方式在全局作用域运行脚本（函数定义在 `PSEXEMainFunction` 体内是局部的，导出必须走顶层/点源）。
+  2. `ildasm` 反汇编，在每个包装方法体开头插入 ILAsm 的 `.export [序号] as '导出名'` 指令，再 `ilasm` 汇编回 DLL；导出桩与 CLR vtable fixup 由 ilasm 生成（与 DllExport 项目同机制）。导出名用单引号包裹以容纳 `-` 等字符。
+  3. 该路径跳过 pack 与 `ExeSinker`（后者重建 PE 会干扰 ilasm 生成的导出表/重定位），也不写产物缓存。
+- 工具链：官方 `runtime.win-x64.Microsoft.NETCore.ILAsm`/`ILDAsm`（MIT），随模块内置在 `src/bin/ILAsm`；x64 工具经 `/x64`/`/32bit` 即可产出两种位数。**别改用 3F ILAsm 包里的 ilasm**：其 x64 输出生成的 CLR 引导桩会让 exe 挂起。
+- 导出包装方法把异常挡在 native 边界内：出错写 stderr 并返回默认值（托管异常穿过 native 边界会变成进程级崩溃）。
 
 <a id="sandbox-guest"></a>
 

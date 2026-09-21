@@ -397,6 +397,23 @@ pragma命令可以设置任何编译参数；参数名用 `.` 可以设置嵌套
 
 字符串类型的 pragma 值也可以包含 `$(...)` 子表达式，并在预处理时求值，例如 `#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`。仅允许白名单内的 path 相关命令（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`，以及非沙箱模式下的 `Get-Content`）、变量（`$env:*`（沙箱内仅 `$env:windir`/`$env:SystemRoot`）、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）和常见无害实例方法（如 `ToUpper`、`Trim`、`Split`、`ToString`）；其他内容将中止编译。单引号值保持完全字面。沙箱模式还会忽略 `#_pragma outputFile`、`Build.TempDir`、`Build.Minify`、`Signing.Certificate`，且只抓取解析到公网地址的 http(s) URL（重定向目标同样受此限制）。本地 `Resources.Icon` 仅放行 Windows 目录下的文件。
 
+#### `#_DllExport`
+
+<a id="preprocessing-dllexport"></a>
+
+```powershell
+#_DllExport int Add(int a, int b)
+#_DllExport Add(int a, int b)
+#_DllExport DoSomething(int value)
+
+function Add($a, $b) { return $a + $b }
+function DoSomething($value) { ... }
+```
+
+`#_DllExport` 会把脚本编译成原生 Win32 DLL 而非 exe，并把列出的函数导出，让 native 调用方可以直接用 `LoadLibrary`/`GetProcAddress`（或 `DllImport`）调用。每个导出函数转发到同名的 PowerShell 函数：参数以数组形式传入，函数输出作为返回值。返回类型与参数类型按 C# 语法书写；省略返回类型时默认为 `void`，参数不写类型时按 `string` 处理。
+
+原生导出要求 .NET Framework 4.0 目标与 `x86`/`x64` 平台（`AnyCPU` 会自动按宿主位数选择），输出默认 `.dll`。访客/沙箱模式下不可用。工具链（ILAsm/ILDasm）随模块内置在 `src/bin/ILAsm`，无需额外安装。
+
 #### `#_balus`
 
 <a id="preprocessing-balus"></a>

@@ -397,6 +397,23 @@ Compiled file written -> 2560 bytes
 
 स्ट्रिंग pragma मानों में `$(...)` उप-अभिव्यक्तियाँ भी हो सकती हैं, जिनका मूल्यांकन प्रीप्रोसेस समय पर किया जाता है, जैसे `#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`। केवल श्वेतसूचीबद्ध पथ-संबंधित कमांड (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, और Sandbox के बाहर `Get-Content`), चर (`$env:*` (Sandbox में केवल `$env:windir`/`$env:SystemRoot`), `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) और सामान्य हानिरहित इंस्टेंस विधियाँ (जैसे `ToUpper`, `Trim`, `Split`, `ToString`) की अनुमति है; अन्य कुछ भी संकलन रोक देता है। एकल उद्धरण वाले मान पूरी तरह से शाब्दिक रहते हैं। Sandbox मोड `#_pragma outputFile`, `Build.TempDir`, `Build.Minify`, और `Signing.Certificate` को भी अनदेखा करता है, और केवल उन्हीं http(s) URL को लाता है जो सार्वजनिक पते पर resolve होते हैं (redirect लक्ष्य भी इसी तरह प्रतिबंधित हैं)। स्थानीय `Resources.Icon` पथ केवल Windows निर्देशिका के अंतर्गत अनुमत हैं।
 
+#### `#_DllExport`
+
+<a id="preprocessing-dllexport"></a>
+
+```powershell
+#_DllExport int Add(int a, int b)
+#_DllExport Add(int a, int b)
+#_DllExport DoSomething(int value)
+
+function Add($a, $b) { return $a + $b }
+function DoSomething($value) { ... }
+```
+
+`#_DllExport` स्क्रिप्ट को एक्ज़ीक्यूटेबल के बजाय नेटिव Win32 DLL में कंपाइल करता है और सूचीबद्ध फ़ंक्शन निर्यात करता है, ताकि नेटिव कॉलर उन्हें सीधे `LoadLibrary`/`GetProcAddress` (या `DllImport`) से कॉल कर सकें। प्रत्येक निर्यातित फ़ंक्शन उसी नाम के PowerShell फ़ंक्शन को अग्रेषित करता है: आर्ग्युमेंट एक सरणी के रूप में भेजे जाते हैं और फ़ंक्शन का आउटपुट रिटर्न मान बनता है। रिटर्न और पैरामीटर प्रकार C# सिंटैक्स में लिखे जाते हैं; रिटर्न प्रकार छोड़ने पर `void`, और बिना प्रकार वाला पैरामीटर `string` माना जाता है।
+
+नेटिव निर्यात के लिए .NET Framework 4.0 लक्ष्य और `x86`/`x64` प्लेटफ़ॉर्म आवश्यक है (`AnyCPU` स्वतः होस्ट बिटनेस पर हल हो जाता है), और डिफ़ॉल्ट आउटपुट `.dll` है। यह सुविधा गेस्ट (सैंडबॉक्स) मोड में उपलब्ध नहीं है। ILAsm/ILDasm टूलचेन मॉड्यूल के साथ `src/bin/ILAsm` में शामिल है।
+
 #### `#_balus`
 
 <a id="preprocessing-balus"></a>

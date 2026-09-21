@@ -397,6 +397,23 @@ El comando pragma puede establecer cualquier parámetro de compilación; usa `.`
 
 Los valores de pragma de tipo cadena también pueden contener subexpresiones `$(...)`, que se evalúan en tiempo de preprocesamiento, p. ej. `#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`. Solo se permiten comandos relacionados con rutas en la lista blanca (`Get-Command`, `Join-Path`, `Split-Path`, `Resolve-Path`, `Convert-Path`, `Get-Item`, `Test-Path`, `Get-ChildItem`, más `Get-Content` fuera de Sandbox), variables (`$env:*` (dentro de Sandbox solo `$env:windir`/`$env:SystemRoot`), `$PSScriptRoot`, `$ScriptRoot`, `$HOME`, `$PWD`, `$PSCommandPath`) y métodos de instancia inofensivos comunes (p. ej. `ToUpper`, `Trim`, `Split`, `ToString`); cualquier otra cosa aborta la compilación. Los valores entre comillas simples permanecen completamente literales. El modo Sandbox también ignora `#_pragma outputFile`, `Build.TempDir`, `Build.Minify` y `Signing.Certificate`, y solo descarga URL http(s) que resuelven a direcciones públicas (los destinos de redirección se restringen igual). Las rutas locales de `Resources.Icon` solo se permiten bajo el directorio de Windows.
 
+#### `#_DllExport`
+
+<a id="preprocessing-dllexport"></a>
+
+```powershell
+#_DllExport int Add(int a, int b)
+#_DllExport Add(int a, int b)
+#_DllExport DoSomething(int value)
+
+function Add($a, $b) { return $a + $b }
+function DoSomething($value) { ... }
+```
+
+`#_DllExport` compila el script en una DLL nativa de Win32 en lugar de un ejecutable, exportando las funciones indicadas para que los clientes nativos puedan llamarlas directamente con `LoadLibrary`/`GetProcAddress` (o `DllImport`). Cada función exportada reenvía a la función de PowerShell del mismo nombre: los argumentos se pasan como una matriz y la salida de la función se convierte en el valor de retorno. Los tipos de retorno y de los parámetros se escriben con sintaxis de C#; si se omite el tipo de retorno se usa `void`, y un parámetro sin tipo se trata como `string`.
+
+La exportación nativa requiere el destino .NET Framework 4.0 y una plataforma `x86`/`x64` (`AnyCPU` se resuelve automáticamente a la arquitectura del host), y la salida predeterminada es `.dll`. La función no está disponible en el modo invitado (sandbox). La cadena de herramientas ILAsm/ILDasm se incluye con el módulo en `src/bin/ILAsm`.
+
 #### `#_balus`
 
 <a id="preprocessing-balus"></a>

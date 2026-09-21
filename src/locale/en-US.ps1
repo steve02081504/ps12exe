@@ -262,7 +262,13 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Locale '<language code>'] [-UIMode 'Dark'
 		UnknownPragmaBoolValue                    = "Unknown pragma value: {0}, can't use that as a boolean."
 		PragmaUnsafeExpression                    = "Unsafe expression in pragma {0}: {1}"
 		DllExportDelNoneTypeArg                   = "{0}: {1} is a none type parameter, assuming it's a string."
-		DllExportUsing                            = "You're using #_DllExport, this macro is in dev and not supported yet."
+		DllExportCompiling                        = "Generating native DLL exports for #_DllExport..."
+		DllExportToolchainFailed                  = "Failed to obtain the native export toolchain: {0}"
+		DllExportMethodNotFound                   = "Export method {0} was not found in the IL."
+		DllExportForcePlatform                    = "Native exports do not support AnyCPU; target platform set to {0}."
+		DllExportCoreUnsupported                  = "#_DllExport does not support Build.Target='Core'; use Framework4.0."
+		DllExportFramework2Unsupported            = "#_DllExport does not support Framework2.0; use Framework4.0."
+		DllExportPlatformUnsupported              = "#_DllExport does not support platform {0} (x86/x64 only)."
 	}
 	WebServerI18nData              = @{
 		CompilingUserInput  = "Compiling User Input: {0}"

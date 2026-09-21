@@ -262,7 +262,13 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Locale '<言語コー�
 		UnknownPragmaBoolValue                    = "未知の pragma 値：{0}。ブール値として解釈できません。"
 		PragmaUnsafeExpression                    = "pragma {0} に安全でない式があります：{1}"
 		DllExportDelNoneTypeArg                   = "{0}：{1} は無型パラメーターです。文字列として扱います。"
-		DllExportUsing                            = "#_DllExport を使用しています。このマクロはまだ開発中であり、サポートされていません。"
+		DllExportCompiling                        = "#_DllExport のネイティブ DLL エクスポートを生成しています..."
+		DllExportToolchainFailed                  = "ネイティブエクスポートツールチェーンを取得できませんでした: {0}"
+		DllExportMethodNotFound                   = "IL 内にエクスポートメソッド {0} が見つかりません。"
+		DllExportForcePlatform                    = "ネイティブエクスポートは AnyCPU に対応していません。ターゲットプラットフォームを {0} に設定しました。"
+		DllExportCoreUnsupported                  = "#_DllExport は Build.Target='Core' に対応していません。Framework4.0 を使用してください。"
+		DllExportFramework2Unsupported            = "#_DllExport は Framework2.0 に対応していません。Framework4.0 を使用してください。"
+		DllExportPlatformUnsupported              = "#_DllExport はプラットフォーム {0} に対応していません（x86/x64 のみ）。"
 	}
 	WebServerI18nData              = @{
 		CompilingUserInput  = "ユーザー入力をコンパイルしています：{0}"

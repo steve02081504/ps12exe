@@ -9,7 +9,11 @@ else { $o.Add("CompilerVersion", "v4.0") }
 $cop = (New-Object Microsoft.CSharp.CSharpCodeProvider($o))
 [string[]]$BaseCompilerOptions = @($CompilerOptions)
 
-$manifestParam = if (($AstAnalyzeResult.IsConst -or $virtualize) -and -not $requireAdmin) {
+$manifestParam = if ($DllExportList) {
+	# 原生导出产物是 DLL，没有入口点，也不需要管理员/DPI 清单。
+	"/nowin32manifest"
+}
+elseif (($AstAnalyzeResult.IsConst -or $virtualize) -and -not $requireAdmin) {
 	"/nowin32manifest"
 }
 elseif ($requireAdmin -or $DPIAware -or $supportOS -or $longPaths) {
@@ -58,7 +62,12 @@ if ($virtualize) {
 	$architecture = "x86"
 }
 $CompilerOptions += "/platform:$architecture"
-$CompilerOptions += "/target:$( if ($noConsole){'winexe'}else{'exe'})"
+if ($DllExportList) {
+	$CompilerOptions += "/target:library"
+}
+else {
+	$CompilerOptions += "/target:$( if ($noConsole){'winexe'}else{'exe'})"
+}
 $CompilerOptions += $manifestParam
 
 $configFileForEXE3 = @"
@@ -87,10 +96,10 @@ if ($iconFile) {
 
 $CompilerOptions += "/define:$($Constants -join ';')"
 
-function New-CompilerParameters([string]$outFile, [string[]]$opts, [bool]$debug) {
+function New-CompilerParameters([string]$outFile, [string[]]$opts, [bool]$debug, [bool]$executable = $TRUE) {
 	$p = New-Object System.CodeDom.Compiler.CompilerParameters($referenceAssembies, $outFile)
 	$p.GenerateInMemory = $FALSE
-	$p.GenerateExecutable = $TRUE
+	$p.GenerateExecutable = $executable
 	$p.IncludeDebugInformation = $debug
 	$p.CompilerOptions = ($opts -ne '') -join ' '
 	$p.TempFiles = New-Object System.CodeDom.Compiler.TempFileCollection($TempDir)
@@ -155,6 +164,15 @@ $packEnabled = (
 
 # 帧里的资源/版本属性片段占位标记：payload 编译替换为空，launcher/直编替换为 $resourceAttributes（见 BuildFrame.ps1）。
 $assemblyAttributesMarker = '/*__ASSEMBLY_ATTRIBUTES__*/'
+
+# 原生 DLL 导出：default.cs 与 DllExport.cs 是同一个 PSRunnerEntry partial 类，按导出声明生成包装方法后一起编译。
+$dllExportMethods = $null
+$dllExportFrame = $null
+if ($DllExportList) {
+	Write-I18n Host DllExportCompiling
+	$dllExportMethods = New-DllExportMethods $DllExportList
+	$dllExportFrame = (Get-Content "$PSScriptRoot/programFrames/DllExport.cs" -Raw -Encoding UTF8).Replace('/*__PS12EXE_DLL_EXPORTS__*/', $dllExportMethods.Code)
+}
 
 if ($packEnabled) {
 	$payloadSource = $programFrame.Replace($assemblyAttributesMarker, '')
@@ -265,13 +283,18 @@ if ($packEnabled) {
 	}
 }
 else {
-	$cp = New-CompilerParameters $outputFile $CompilerOptions $prepareDebug
+	$cp = New-CompilerParameters $outputFile $CompilerOptions $prepareDebug (-not $DllExportList)
 	if (!$AstAnalyzeResult.IsConst) {
 		[VOID]$cp.EmbeddedResources.Add("$TempDir\main.ps1")
 	}
-	$cr = $cop.CompileAssemblyFromSource($cp, $programFrame.Replace($assemblyAttributesMarker, $resourceAttributes))
+	$frameSource = $programFrame.Replace($assemblyAttributesMarker, $resourceAttributes)
+	[string[]]$sources = if ($DllExportList) { @($frameSource, $dllExportFrame) } else { @($frameSource) }
+	$cr = $cop.CompileAssemblyFromSource($cp, $sources)
 	if ($cr.Errors.Count -gt 0) {
 		throw $cr.Errors -join "`n"
+	}
+	if ($DllExportList) {
+		Add-DllExportsToAssembly -AssemblyPath $outputFile -Exports $dllExportMethods.Map -Architecture $architecture
 	}
 }
 

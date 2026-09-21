@@ -383,32 +383,39 @@ function Preprocessor($Content, $FilePath) {
 	# 处理#_DllExport
 	ForEach-Object {
 		$_ # 对于#_DllExport，我们不在预处理时移除它：考虑到它可能被用于$PSEXEscript中
+		$callsign = $null
+		$callsignParams = $null
 		if ($_ -match "^(\s*)(#_DllExport\s+(?<callsign>[^#\(]+)\((?<callsignParams>[^#\)]*)\))\s*(?!#.*)") {
 			$callsign = $Matches["callsign"] -split ' ' | ForEach-Object { $_.Trim() }
-			$callsignParams = $Matches["callsignParams"] -split ',' | ForEach-Object { $_.Trim() }
+			$callsignParams = @($Matches["callsignParams"] -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' })
 		}
 		elseif ($_ -match "^(\s*)(#_DllExport\s+(?<callsign>[^#\(]+))\s*(?!#.*)") {
 			$callsign = $Matches["callsign"] -split ' ' | ForEach-Object { $_.Trim() }
 			$callsignParams = @()
 		}
 		if ($callsign) {
-			if (!$callsign[1]) { $callsign = @('void', $callsign[0]) }
-			$DllExportData = @{
-				returntype = $callsign[0]
-				funcname   = $callsign[1]
-				params     = @()
+			if ($GuestMode) {
+				# 访客模式需要联网下载并在编译期执行 ilasm/ildasm，直接忽略该指令（产物退化为普通 exe）。
+				Write-I18n Warning PragmaForbiddenInGuestMode '#_DllExport'
 			}
-			foreach ($param in $callsignParams) {
-				$paramData = $param -split ' ' | ForEach-Object { $_.Trim() }
-				if ($paramData.Count -eq 1) {
-					Write-I18n Warning DllExportDelNoneTypeArg $($Matches[2], $paramData[0])
-					$paramData = @('string', $paramData[0])
+			else {
+				if (!$callsign[1]) { $callsign = @('void', $callsign[0]) }
+				$DllExportData = @{
+					returntype = $callsign[0]
+					funcname   = $callsign[1]
+					params     = @()
 				}
-				$DllExportData.params += @{ name = $paramData[1]; type = $paramData[0] }
+				foreach ($param in $callsignParams) {
+					$paramData = $param -split ' ' | ForEach-Object { $_.Trim() }
+					if ($paramData.Count -eq 1) {
+						Write-I18n Warning DllExportDelNoneTypeArg $($Matches[2], $paramData[0])
+						$paramData = @('string', $paramData[0])
+					}
+					$DllExportData.params += @{ name = $paramData[1]; type = $paramData[0] }
+				}
+				$DllExportList.Add($DllExportData) | Out-Null
+				Write-Debug "$($Matches[2]): FuncSign: [$($DllExportData.returntype)]$($DllExportData.funcname)($(($DllExportData.params|ForEach-Object{ $_.type + ' ' + $_.name }) -join ', '))"
 			}
-			$DllExportList.Add($DllExportData) | Out-Null
-			Write-I18n Warning DllExportUsing
-			Write-Debug "$($Matches[2]): FuncSign: [$($DllExportData.returntype)]$($DllExportData.funcname)($(($DllExportData.params|ForEach-Object{ $_.type + ' ' + $_.name }) -join ', '))"
 		}
 	} |
 	# 处理#_!!<line>、#_balus <?exitcode>

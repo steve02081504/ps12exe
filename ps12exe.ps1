@@ -111,7 +111,7 @@ Param(
 	[String]$Content,
 	[Parameter(ParameterSetName = 'InputFile', Position = 1)]
 	[Parameter(ParameterSetName = 'Content', Position = 0)]
-	[ValidatePattern(".*\.(exe|com|scr|bin|bat|cmd)$")]
+	[ValidatePattern(".*\.(exe|com|scr|bin|bat|cmd|dll)$")]
 	[String]$outputFile = $NULL,
 	[ArgumentCompleter({
 		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
@@ -229,6 +229,7 @@ $LocalizeData =
 . $PSScriptRoot\src\Cache.ps1
 . $PSScriptRoot\src\OutputCache.ps1
 . $PSScriptRoot\src\AsmWarmup.ps1
+. $PSScriptRoot\src\DllExportCompiler.ps1
 Set-I18nData -I18nData $LocalizeData.CompilingI18nData
 function Show-Help {
 	. $PSScriptRoot\src\HelpShower.ps1 -HelpData $LocalizeData.ConsoleHelpData | Write-Host
@@ -442,9 +443,13 @@ if (-not $TempDir) { $TempDir = $NULL }
 $ConstEvalOption = Get-Opt $Build 'ConstEval' $null
 $noConstEval = -not (ConvertTo-OptBool (Get-Opt $ConstEvalOption 'Enabled' $true) $true)
 $constEvalTimeout = ConvertTo-OptBool (Get-Opt $ConstEvalOption 'Timeout' $false) $false
-# 内部/开发用（暂不写入文档）
+# 原生 DLL 导出（#_DllExport 的编程式等价物）。访客模式下禁用：需要下载并执行 ilasm/ildasm。
 if (Get-Opt $Build 'DllExports' $null) {
 	[System.Collections.ArrayList]$DllExportList = @(Get-Opt $Build 'DllExports' $null)
+}
+if ($DllExportList.Count -and $GuestMode) {
+	Write-I18n Warning PragmaForbiddenInGuestMode 'Build.DllExports'
+	$DllExportList = @()
 }
 $StartupTiming = ConvertTo-OptBool (Get-Opt $Build 'StartupTiming' $false) $false
 
@@ -511,6 +516,30 @@ switch -Regex ($targetRuntime) {
 	}
 }
 $isCoreTarget = $targetRuntime -eq 'Core'
+
+# 原生 DLL 导出（#_DllExport / Build.DllExports）：仅支持 Framework4.0 与 x86/x64；原生导出表不支持 AnyCPU。
+$hasDllExports = $DllExportList.Count -gt 0
+if ($hasDllExports) {
+	if ($isCoreTarget) {
+		Write-I18n Error DllExportCoreUnsupported -Category NotSupported
+		$global:LastExitCode = 2 # 调用格式错误
+		return
+	}
+	if ($targetRuntime -eq 'Framework2.0') {
+		Write-I18n Error DllExportFramework2Unsupported -Category NotSupported
+		$global:LastExitCode = 2 # 调用格式错误
+		return
+	}
+	if ($architecture -eq 'arm64') {
+		Write-I18n Error DllExportPlatformUnsupported $architecture -Category NotSupported
+		$global:LastExitCode = 2 # 调用格式错误
+		return
+	}
+	if ($architecture -eq 'anycpu') {
+		$architecture = if ([System.Environment]::Is64BitOperatingSystem) { 'x64' } else { 'x86' }
+		Write-I18n Warning DllExportForcePlatform $architecture
+	}
+}
 
 # Build.Core.* 校验（对象已在上方解析；此处依赖 $isCoreTarget / $noConsole / $conHost）。
 if (-not $isCoreTarget) {
@@ -624,18 +653,19 @@ if (-not $inputFile) {
 if ($inputFile -notmatch "^(https?|ftp)://") {
 	$inputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($inputFile)
 }
+$defaultOutputExtension = if ($hasDllExports) { '.dll' } else { '.exe' }
 if (-not $outputFile) {
 	if ($inputFile -match "^https?://") {
-		$outputFile = ([System.IO.Path]::Combine($PWD, [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
+		$outputFile = ([System.IO.Path]::Combine($PWD, [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + $defaultOutputExtension))
 	}
 	else {
-		$outputFile = ([System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($inputFile), [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
+		$outputFile = ([System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($inputFile), [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + $defaultOutputExtension))
 	}
 }
 else {
 	$outputFile = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($outputFile)
 	if ((Test-Path $outputFile -PathType Container)) {
-		$outputFile = ([System.IO.Path]::Combine($outputFile, [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + ".exe"))
+		$outputFile = ([System.IO.Path]::Combine($outputFile, [System.IO.Path]::GetFileNameWithoutExtension($inputFile) + $defaultOutputExtension))
 	}
 }
 #_if PSScript #在PSEXE中主机永远是winpwsh，可省略该部分
@@ -842,6 +872,8 @@ $AstAnalyzeResult.UsedNonConstFunctions | ForEach-Object {
 	$NotFoundCmdlets += $_
 }
 if ($AST.ParamBlock) { $AstAnalyzeResult.IsConst = $false }
+# 原生 DLL 导出要的是可被导出的函数集合，必须用完整的 default.cs 帧而非 constexpr.cs 常量壳。
+if ($hasDllExports) { $AstAnalyzeResult.IsConst = $false }
 $NotFoundTypes = @()
 $AstAnalyzeResult.UsedNonConstTypes | ForEach-Object {
 	if (!($_ -as [Type])) {
@@ -922,7 +954,8 @@ try {
 	}
 	else {
 		#_if PSScript
-			if (-not $TinySharpSuccess -and -not $isCoreTarget) {
+			# DLL 导出产物已由 ilasm 生成导出表/重定位，不要再让 ExeSinker 用 AsmResolver 重建 PE。
+			if (-not $TinySharpSuccess -and -not $isCoreTarget -and -not $hasDllExports) {
 				Write-TaskbarProgress -Percent 75
 				& $PSScriptRoot\src\ExeSinker.ps1 $outputFile -removeResources:$(
 					$NoResource -and $AstAnalyzeResult.IsConst -and -not $requireAdmin

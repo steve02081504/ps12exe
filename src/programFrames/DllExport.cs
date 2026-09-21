@@ -3,98 +3,76 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
-using RGiesecke.DllExport;
-using System.Runtime.InteropServices;
-using System.Threading;
 
+// 原生 DLL 导出层：与 default.cs 的 PSRunnerEntry 组成同一个 partial 类。
+// 工具（src/DllExportCompiler.ps1）会把每个 #_DllExport 声明生成一个包装方法，并注入到本文件末尾的
+// 导出方法标记处；编译成类库后再经 ildasm/ilasm 注入原生导出表。
 namespace PSRunnerNS {
-	partial static class PSRunnerEntry {
-		private static readonly object _lock = new object(); // 用于线程同步
+	static partial class PSRunnerEntry {
+		private static readonly object _dllLock = new object();
+		private static bool _dllInited = false;
 
-		// DllInitChecker
-		[$threadingModelThread]
-		public static void DllInitChecker() {
-			lock (_lock) {
-				if (!PSRunner.Inited) {
-					PSRunner.BaseInit();
-					me = new PSRunner(); // 创建 PSRunner 实例
-
-					// 执行初始化脚本（如果需要）
-					PSDataCollection<PSObject> colOutput = new PSDataCollection<PSObject>();
-
-					IAsyncResult asyncResult = me.pwsh.BeginInvoke<PSObject, PSObject>(null, colOutput);
-
-					// 使用 ManualResetEvent 等待 PowerShell 执行完成
-					using (ManualResetEvent mre = new ManualResetEvent(false)) {
-						ThreadPool.QueueUserWorkItem(_ => {
-							try {
-								foreach (PSObject outputItem in colOutput)
-									Console.WriteLine(outputItem.ToString());
-								foreach (ErrorRecord errorItem in me.pwsh.Streams.Error)
-									me.ui.WriteErrorRecord(errorItem);
-
-								if (me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed) {
-									me.ExitCode = 1;
-									me.ui.WriteErrorLine("DllInitChecker failed: " + me.pwsh.InvocationStateInfo.Reason.Message);
-								}
-							}
-							finally {
-								mre.Set();
-							}
-						});
-						mre.WaitOne();
-						me.pwsh.EndInvoke(asyncResult);
-					}
-
-					PSRunner.Inited = true; // 标记为已初始化
+		// 首次导出调用时惰性初始化：运行脚本（在全局作用域，确保其函数定义持久可用），
+		// 之后各导出方法就能按名字调用这些函数。多线程调用由 _dllLock 串行化。
+		private static void DllInitChecker() {
+			lock (_dllLock) {
+				if (_dllInited) return;
+				PSRunner.BaseInit();
+				me = new PSRunner();
+				try {
+					me.pwsh.Streams.Error.Clear();
+					me.pwsh.Commands.Clear();
+					// 顶层运行脚本而不是调用 PSEXEMainFunction：函数定义在函数体内是局部的，
+					// 只有顶层（或点源）定义才会留在 runspace 的全局作用域里供导出调用。
+					me.pwsh.AddScript(". ([scriptblock]::Create($PSEXEscript))");
+					System.Collections.ObjectModel.Collection<PSObject> initOutput = me.pwsh.Invoke();
+					foreach (PSObject outputItem in initOutput)
+						System.Console.WriteLine(outputItem == null ? "" : outputItem.ToString());
+					foreach (ErrorRecord errorItem in me.pwsh.Streams.Error)
+						me.ui.WriteErrorRecord(errorItem);
+					me.pwsh.Streams.Error.Clear();
+					if (me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed)
+						throw new InvalidOperationException("PowerShell script init failed: " + me.pwsh.InvocationStateInfo.Reason.Message);
 				}
+				catch (Exception ex) {
+					ReportDllExportError("<init>", ex);
+				}
+				_dllInited = true;
 			}
 		}
-		[DllExport("DllExportExample", CallingConvention = CallingConvention.StdCall)]
-		public static object DllExportExample(int a, int b) { // 返回类型改为 object
-			DllInitChecker();
-			object result = null;
-			lock (_lock) {
-				if (me.ShouldExit)
-					throw new InvalidOperationException("PSRunner is exiting."); // 更合适的异常
 
-				// 将参数设置为 psrunspace 中的变量
-				me.PSRunSpace.SessionStateProxy.SetVariable("PSEXEDLLCallIngParameters", new ArrayList { a, b });
-				me.pwsh.Commands.Clear(); // 清除之前的命令
-				me.pwsh.AddScript("DllExportExample @PSEXEDLLCallIngParameters");
-
-				PSDataCollection<PSObject> colOutput = new PSDataCollection<PSObject>();
-				IAsyncResult asyncResult = me.pwsh.BeginInvoke<PSObject, PSObject>(null, colOutput);
-
-				// 使用 ManualResetEvent 等待 PowerShell 执行完成
-				using (ManualResetEvent mre = new ManualResetEvent(false)) {
-					ThreadPool.QueueUserWorkItem(_ => {
-						try {
-							foreach (PSObject outputItem in colOutput)
-								Console.WriteLine(outputItem.ToString());
-							foreach (ErrorRecord errorItem in me.pwsh.Streams.Error)
-								me.ui.WriteErrorRecord(errorItem);
-
-							if (me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed)
-								throw new InvalidOperationException("DllExportExample failed: " + me.pwsh.InvocationStateInfo.Reason.Message);
-						}
-						finally {
-							mre.Set();
-						}
-					});
-
-					mre.WaitOne(); // 等待输出处理完成
-					me.pwsh.EndInvoke(asyncResult);
+		// 以 PSEXEDLLCallIngParameters 数组为参数调用脚本里的函数，返回其输出。
+		private static object InvokePSFunction(string exportName, object[] args) {
+			lock (_dllLock) {
+				if (!_dllInited || me == null) throw new InvalidOperationException("PSRunner is not initialized.");
+				if (me.ShouldExit) throw new InvalidOperationException("PSRunner is exiting.");
+				me.PSRunSpace.SessionStateProxy.SetVariable("PSEXEDLLCallIngParameters", new ArrayList(args));
+				me.PSRunSpace.SessionStateProxy.SetVariable("PSEXEDLLExportName", exportName);
+				me.pwsh.Streams.Error.Clear();
+				me.pwsh.Commands.Clear();
+				me.pwsh.AddScript("& $PSEXEDLLExportName @PSEXEDLLCallIngParameters");
+				System.Collections.ObjectModel.Collection<PSObject> output = me.pwsh.Invoke();
+				foreach (ErrorRecord errorItem in me.pwsh.Streams.Error)
+					me.ui.WriteErrorRecord(errorItem);
+				me.pwsh.Streams.Error.Clear();
+				if (me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed)
+					throw new InvalidOperationException("PowerShell function '" + exportName + "' failed: " + me.pwsh.InvocationStateInfo.Reason.Message);
+				if (output.Count == 1 && output[0] != null) return output[0].BaseObject;
+				if (output.Count > 1) {
+					object[] results = new object[output.Count];
+					for (int i = 0; i < output.Count; i++)
+						results[i] = output[i] == null ? null : output[i].BaseObject;
+					return results;
 				}
-
-				//处理返回值
-				if (colOutput.Count == 1)
-					result = colOutput[0].BaseObject; //返回实际的值, 而不是PSObject
-				else if (colOutput.Count > 1)
-					result = colOutput.ToArray(); // 如果有多个输出，返回 PSObject 数组
+				return null;
 			}
-
-			return result;
 		}
+
+		// 异常不能穿过 native 边界（会变成进程级崩溃），这里记录到 stderr 后由包装方法返回默认值。
+		private static void ReportDllExportError(string exportName, Exception ex) {
+			try { System.Console.Error.WriteLine("PS12exe DllExport '" + exportName + "': " + ex.Message); }
+			catch { }
+		}
+		/*__PS12EXE_DLL_EXPORTS__*/
 	}
 }

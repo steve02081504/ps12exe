@@ -262,7 +262,13 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Locale '<
 		UnknownPragmaBoolValue                    = "अज्ञात pragma मान: {0}, इसे बूलियन के रूप में नहीं ले सकता।"
 		PragmaUnsafeExpression                    = "pragma {0} में असुरक्षित अभिव्यक्ति: {1}"
 		DllExportDelNoneTypeArg                   = "{0}: {1} एक गैर-प्रकार का पैरामीटर है, मान लें कि यह एक स्ट्रिंग है।"
-		DllExportUsing                            = "आप #_DllExport का उपयोग कर रहे हैं, यह मैक्रो अभी भी विकास के अधीन है और अभी तक समर्थित नहीं है।"
+		DllExportCompiling                        = "#_DllExport के लिए नेटिव DLL निर्यात बनाया जा रहा है..."
+		DllExportToolchainFailed                  = "नेटिव निर्यात टूलचेन प्राप्त नहीं हो सका: {0}"
+		DllExportMethodNotFound                   = "IL में निर्यात विधि {0} नहीं मिली।"
+		DllExportForcePlatform                    = "नेटिव निर्यात AnyCPU का समर्थन नहीं करते; लक्ष्य प्लेटफ़ॉर्म {0} निर्धारित किया गया।"
+		DllExportCoreUnsupported                  = "#_DllExport Build.Target='Core' का समर्थन नहीं करता; Framework4.0 का उपयोग करें।"
+		DllExportFramework2Unsupported            = "#_DllExport Framework2.0 का समर्थन नहीं करता; Framework4.0 का उपयोग करें।"
+		DllExportPlatformUnsupported              = "#_DllExport प्लेटफ़ॉर्म {0} का समर्थन नहीं करता (केवल x86/x64)।"
 	}
 	WebServerI18nData              = @{
 		CompilingUserInput  = "उपयोगकर्ता इनपुट संकलित कर रहा है: {0}"

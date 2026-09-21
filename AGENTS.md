@@ -30,6 +30,7 @@
 ## 预处理与反编译
 
 - `#_!!` 的剥离顺序与 exe21sp 往返流程（含各步骤的函数与推导规则）：见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#preprocessing-roundtrip)。
+- 原生 DLL 导出（`#_DllExport` / 编程式 `Build.DllExports`）：仅 Framework4.0 + x86/x64，输出默认 `.dll`，走 `default.cs`+`DllExport.cs` 双源库编译 + ildasm/ilasm 注入 `.export`，工具链随模块内置在 `src/bin/ILAsm`；实现与坑见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#dllexport)。
 - 访客（Sandbox）模式的 URL/重定向/图标/env 限制、已知残余风险与验证方式：见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#sandbox-guest)。
 
 ## 编译期诊断

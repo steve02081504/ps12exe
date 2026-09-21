@@ -395,6 +395,23 @@ pragma コマンドは任意のコンパイルパラメータを設定できま�
 
 文字列型の pragma 値には `$(...)` 部分式を記述でき、プリプロセス時に評価されます（例：`#_pragma Resources.Icon $(Join-Path $env:USERPROFILE 'foo.ico')`）。許可されるのはホワイトリストに含まれる path 関連コマンド（`Get-Command`、`Join-Path`、`Split-Path`、`Resolve-Path`、`Convert-Path`、`Get-Item`、`Test-Path`、`Get-ChildItem`、および Sandbox 以外での `Get-Content`）、変数（`$env:*`（Sandbox 内は `$env:windir`/`$env:SystemRoot` のみ）、`$PSScriptRoot`、`$ScriptRoot`、`$HOME`、`$PWD`、`$PSCommandPath`）、および一般的な無害なインスタンスメソッド（例：`ToUpper`、`Trim`、`Split`、`ToString`）のみです。それ以外はコンパイルを中断します。単引用符で囲んだ値は完全にリテラルとして扱われます。Sandbox モードでは `#_pragma outputFile`、`Build.TempDir`、`Build.Minify`、`Signing.Certificate` も無視し、解決先が公網アドレスである http(s) URL のみ取得を許可します（リダイレクト先も同様に制限されます）。ローカルの `Resources.Icon` パスは Windows ディレクトリ配下のみ許可されます。
 
+#### `#_DllExport`
+
+<a id="preprocessing-dllexport"></a>
+
+```powershell
+#_DllExport int Add(int a, int b)
+#_DllExport Add(int a, int b)
+#_DllExport DoSomething(int value)
+
+function Add($a, $b) { return $a + $b }
+function DoSomething($value) { ... }
+```
+
+`#_DllExport` はスクリプトを実行ファイルではなくネイティブ Win32 DLL としてコンパイルし、指定した関数をエクスポートして、ネイティブ側から `LoadLibrary`/`GetProcAddress`（または `DllImport`）で直接呼び出せるようにします。各エクスポート関数は同名の PowerShell 関数に転送され、引数は配列として渡され、関数の出力が戻り値になります。戻り値と引数の型は C# 構文で記述します。戻り値の型を省略すると `void`、型のない引数は `string` として扱われます。
+
+ネイティブエクスポートには .NET Framework 4.0 ターゲットと `x86`/`x64` プラットフォームが必要です（`AnyCPU` はホストのビット数に自動解決されます）。出力はデフォルトで `.dll` です。ゲスト（サンドボックス）モードでは利用できません。ILAsm/ILDasm ツールチェーンはモジュールに同梱されています（`src/bin/ILAsm`）。
+
 #### `#_balus`
 
 <a id="preprocessing-balus"></a>
