@@ -13,7 +13,8 @@
 
 ## 参数 API 约定（重要）
 
-- 对外统一使用对象式参数：`-App @{…}`、`-Os @{…}`、`-Build @{…}`、`-Resources @{…}`、`-Signing @{…}`，外加模式开关 `-PreprocessOnly -Golf -Sandbox -NoUpdateCheck -Locale -ConfigFile -help`。
+- 对外统一使用对象式参数：`-App @{…}`、`-Os @{…}`、`-Build @{…}`、`-Resources @{…}`、`-Signing @{…}`，外加模式开关 `-PreprocessOnly -Golf -Sandbox -NoUpdateCheck -Quiet -Locale -ConfigFile -help`。
+- Core 目标的 .NET/PowerShell 打包选项集中在 `Build.Core` 嵌套对象（`Backend='Shared'|'Bundled'`、`TargetOs`、`TargetFramework`、`PowerShellVersion`、`SingleFile`、`SelfContained`、`Trimmed`、`TrimMode`、`ReadyToRun`、`InvariantGlobalization`、`Aot`）；`Backend='Shared'` 用目标机 pwsh 解析 SMA，`Bundled` 打包 `Microsoft.PowerShell.SDK` 以支持 self-contained/trim/AOT。`arm64` 只对 Core 有效。
 - **行为型开关只允许改名/归类，不允许删除**；新增参数优先放进最贴近的对象里。
 - 公开 API 在 `ps12exe.ps1` 内经 `Get-Opt` / `ConvertTo-OptBool` 适配为内部规范变量（`$noConsole`、`$resourceParams`、`$targetRuntime` 等），下游编译器与 C# 帧只认这些内部变量。
 - `#_pragma` 使用对象点号路径（如 `#_pragma App.Windowed`、`#_pragma Build.ConstEval.Enabled 0`）；支持无值形式（等价 `$true`）与任意层级。

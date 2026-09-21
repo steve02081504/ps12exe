@@ -141,14 +141,15 @@ help       : 显示此帮助信息。
 ```powershell
 [input |] ps12exe [[-inputFile] '<文件名|url>' | -Content '<脚本>'] [-outputFile '<文件名>']
         [-App @{Windowed=$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default'; VisualStyles=$true;
-        ExitOnCancel=$true; CredentialGUI=$true; DpiAware=$true; WinFormsDpiAware=$true}]
+        ExitOnCancel=$true; CredentialGUI=$true; DpiAware=$true; WinFormsDpiAware=$true; ConHost=$true}]
         [-Os @{Admin=$true; ModernOS=$true; LongPaths=$true; Virtualize=$true}]
-        [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'; Apartment='STA'|'MTA';
-        Culture='<文化>'; Options='<选项>'; KeepSource=$true; Minify={<scriptblock>}; TempDir='<文件夹>'}]
+        [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
+        Culture='<文化>'; Options='<选项>'; KeepSource=$true; Minify={<scriptblock>}; TempDir='<文件夹>';
+        Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>'; SingleFile=$true; SelfContained=$true; Trimmed=$true; TrimMode='partial'|'full'; ReadyToRun=$true; InvariantGlobalization=$true; Aot=$true}}]
         [-Resources @{Icon='<文件名|url>'; Title='<标题>'; Description='<简介>'; Company='<公司>';
         Product='<产品>'; Copyright='<版权>'; Trademark='<水印>'; Version='<版本>'}]
         [-Signing @{Certificate='<PFX文件路径>'; Password='<PFX密码>'; Thumbprint='<证书指纹>'; Timestamp='<时间戳服务器>'}]
-        [-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<语言代码>'] [-ConfigFile] [-help]
+        [-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Quiet] [-Locale '<语言代码>'] [-ConfigFile] [-help]
 ```
 
 ```text
@@ -165,6 +166,7 @@ App              : 描述生成的应用程序行为的哈希表。支持的键�
                    CredentialGUI    : 在控制台模式下使用GUI提示凭据。
                    DpiAware         : 将编译的可执行文件标记为DPI感知。
                    WinFormsDpiAware : 让WinForms使用DPI缩放（需要Windows 10和.Net 4.7或更高版本）。
+                   ConHost          : 强制使用 conhost 控制台而非 Windows 终端；会禁用输入/输出/错误重定向。
 Os               : 操作系统集成选项的哈希表。支持的键：
                    Admin            : 如果启用了UAC，编译的可执行文件只能在提升的上下文中运行（如果需要，会出现UAC对话框）。
                    ModernOS         : 使用最新Windows版本的功能（执行[Environment]::OSVersion以查看差异）。
@@ -172,19 +174,32 @@ Os               : 操作系统集成选项的哈希表。支持的键：
                    Virtualize       : 已激活应用程序虚拟化（强制x86运行时）。
 Build            : 构建/工具链选项的哈希表。支持的键：
                    Target           : 目标运行时版本，默认为 'Framework4.0'，支持 'Framework2.0' 与 'Core'；'Core' 编译为 PowerShell Core (.NET) 可执行程序（需要编译机与目标机都装有 PowerShell Core 与 .NET，且产物体积大很多）。
-                   Platform         : 仅为特定运行时编译。可能的值为 'AnyCpu'、'x64' 和 'x86'。
+                   Platform         : 仅为特定运行时编译。可能的值为 'AnyCpu'、'x64'、'x86' 和 'arm64'（arm64 仅对 'Core' 有效）。
                    Apartment        : 'STA'（单线程单元）或 'MTA'（多线程单元）模式。
                    Culture          : 编译的可执行文件的文化。如果未指定，则为当前用户文化。
                    Options          : 额外的编译器选项（参见 https://msdn.microsoft.com/en-us/library/78f4aasd.aspx）。
                    KeepSource       : 创建有助于调试的信息。
                    Minify           : 在编译之前缩小脚本的脚本块。
                    TempDir          : 存储临时文件的目录（默认为%temp%中随机生成的临时目录）。
+                   Core             : 'Core' 目标构建的选项。支持的键：
+                                      Backend                : 'Shared'（默认）从目标机的 pwsh 安装中解析 PowerShell，产物较小；'Bundled' 打包 PowerShell SDK（Microsoft.PowerShell.SDK），目标机无需 pwsh，且 SelfContained/Trimmed/ReadyToRun/InvariantGlobalization/Aot 可用，代价是产物体积大很多。
+                                      TargetOs               : 目标操作系统：'Windows'、'Linux' 或 'MacOS'（默认：构建机所在系统）。GUI/窗口化输出需要 'Windows'。
+                                      TargetFramework        : 目标 .NET 框架名字对象（例如 'net8.0'）。默认为构建机的运行时（Shared）或映射到 PowerShellVersion 的框架（Bundled）。
+                                      PowerShellVersion      : 打包的 PowerShell SDK 版本（仅 Bundled）。默认为构建机的 PowerShell 版本。
+                                      SingleFile             : 发布单文件可执行程序（默认 $true）。为 $false 时，可执行文件及其依赖会以文件夹形式写出。
+                                      SelfContained          : 包含 .NET 运行时（仅 Bundled；默认 $false）。体积大很多，但无需安装运行时。
+                                      Trimmed                : 启用 IL 裁剪以减小体积（仅 Bundled；默认 $false）。
+                                      TrimMode               : 设置 Trimmed 时的裁剪力度：'partial'（默认，安全）或 'full'（激进，可能破坏反射）。
+                                      ReadyToRun             : 预编译程序集以加快启动（仅 Bundled）。
+                                      InvariantGlobalization : 使用固定全球化，从自包含构建中移除 ICU 库（仅 Bundled）。
+                                      Aot                    : 实验性 Native AOT 编译（仅 Bundled；需要 SelfContained）。PowerShell 大量使用反射，可能破坏某些脚本。
 Resources        : 编译的可执行文件的版本资源哈希表（Icon、Title、Description、Company、Product、Copyright、Trademark、Version）。Icon 可以是图标文件路径或URL；对 .exe/.dll 可用 ,<索引> 指定资源图标（默认 0），如 shell32.dll,3。
 Signing          : 编译的可执行文件的代码签名选项哈希表（Certificate、Password、Thumbprint、Timestamp）。必须指定 Certificate 或 Thumbprint 之一。
 PreprocessOnly   : 预处理输入脚本并在不编译的情况下返回它。
 Golf             : 启用golf模式，添加缩写和常用函数。
 Sandbox          : 在额外的保护下编译脚本，避免本机文件被访问。
 NoUpdateCheck    : 跳过ps12exe的新版本检查。
+Quiet            : 编译期间抑制信息性（主机）输出；错误和警告仍会显示。
 Locale           : 指定本地化语言。
 ConfigFile       : 写一个配置文件（<outputfile>.exe.config）。
 Help             : 显示此帮助信息。

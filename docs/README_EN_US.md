@@ -141,14 +141,15 @@ help       : Shows this help message.
 ```powershell
 [input |] ps12exe [[-inputFile] '<filename|url>' | -Content '<script>'] [-outputFile '<filename>']
         [-App @{Windowed=$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default'; VisualStyles=$true;
-        ExitOnCancel=$true; CredentialGUI=$true; DpiAware=$true; WinFormsDpiAware=$true}]
+        ExitOnCancel=$true; CredentialGUI=$true; DpiAware=$true; WinFormsDpiAware=$true; ConHost=$true}]
         [-Os @{Admin=$true; ModernOS=$true; LongPaths=$true; Virtualize=$true}]
-        [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'; Apartment='STA'|'MTA';
-        Culture='<culture>'; Options='<options>'; KeepSource=$true; Minify={<scriptblock>}; TempDir='<directory>'}]
+        [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
+        Culture='<culture>'; Options='<options>'; KeepSource=$true; Minify={<scriptblock>}; TempDir='<directory>';
+        Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>'; SingleFile=$true; SelfContained=$true; Trimmed=$true; TrimMode='partial'|'full'; ReadyToRun=$true; InvariantGlobalization=$true; Aot=$true}}]
         [-Resources @{Icon='<file|url>'; Title='<title>'; Description='<description>'; Company='<company>';
         Product='<product>'; Copyright='<copyright>'; Trademark='<trademark>'; Version='<version>'}]
         [-Signing @{Certificate='<PFX path>'; Password='<password>'; Thumbprint='<thumbprint>'; Timestamp='<timestamp server>'}]
-        [-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<language code>'] [-ConfigFile] [-help]
+        [-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Quiet] [-Locale '<language code>'] [-ConfigFile] [-help]
 ```
 
 ```text
@@ -165,6 +166,7 @@ App              : A hashtable describing how the produced application behaves. 
                    CredentialGUI    : Use a GUI for prompting credentials in console mode.
                    DpiAware         : Mark the compiled executable as DPI aware.
                    WinFormsDpiAware : Let WinForms use DPI scaling (requires Windows 10 and .NET 4.7 or up).
+                   ConHost          : Force a conhost console instead of Windows Terminal; disables input/output/error redirection.
 Os               : A hashtable of OS integration options. Supported keys:
                    Admin            : If UAC is enabled, the compiled executable runs only in an elevated context (UAC dialog appears).
                    ModernOS         : Use functions of the newest Windows versions (run [Environment]::OSVersion to see the difference).
@@ -172,19 +174,32 @@ Os               : A hashtable of OS integration options. Supported keys:
                    Virtualize       : App virtualization is activated (forcing x86 runtime).
 Build            : A hashtable of build/toolchain options. Supported keys:
                    Target           : Target runtime version, 'Framework4.0' by default; 'Framework2.0' and 'Core' are supported. 'Core' builds a PowerShell Core (.NET) executable (needs PowerShell Core and .NET on both build and target machines; the output is much larger).
-                   Platform         : Compile for a specific runtime. Possible values are 'AnyCpu', 'x64', and 'x86'.
+                   Platform         : Compile for a specific runtime. Possible values are 'AnyCpu', 'x64', 'x86' and 'arm64' (arm64 only for 'Core').
                    Apartment        : 'STA' (Single Thread Apartment) or 'MTA' (Multi Thread Apartment) mode.
                    Culture          : Locale for the compiled executable. Uses the current user culture if omitted.
                    Options          : Additional compiler options (see https://msdn.microsoft.com/en-us/library/78f4aasd.aspx).
                    KeepSource       : Creates info to help with debugging.
                    Minify           : Scriptblock to minify the script before compiling.
                    TempDir          : Directory for temporary files (default: a random folder under %temp%).
+                   Core             : Options for 'Core' target builds. Supported keys:
+                                      Backend                : 'Shared' (default) resolves PowerShell from the target machine's pwsh install and keeps the output small; 'Bundled' bundles the PowerShell SDK (Microsoft.PowerShell.SDK) so the target machine needs no pwsh and SelfContained/Trimmed/ReadyToRun/InvariantGlobalization/Aot become available, at the cost of a much larger output.
+                                      TargetOs               : Target operating system: 'Windows', 'Linux' or 'MacOS' (default: the build machine's OS). GUI/windowed output requires 'Windows'.
+                                      TargetFramework        : Target .NET framework moniker (for example 'net8.0'). Defaults to the build machine's runtime (Shared) or the framework mapped to PowerShellVersion (Bundled).
+                                      PowerShellVersion      : Version of the bundled PowerShell SDK (Bundled only). Defaults to the build machine's PowerShell version.
+                                      SingleFile             : Publish a single-file executable (default $true). When $false, the executable and its dependencies are written as a folder.
+                                      SelfContained          : Include the .NET runtime (Bundled only; default $false). Much larger but needs no installed runtime.
+                                      Trimmed                : Enable IL trimming to reduce size (Bundled only; default $false).
+                                      TrimMode               : Trimming aggressiveness when Trimmed is set: 'partial' (default, safe) or 'full' (aggressive, may break reflection).
+                                      ReadyToRun             : Pre-compile assemblies for faster startup (Bundled only).
+                                      InvariantGlobalization : Use invariant globalization, removing ICU libraries from self-contained builds (Bundled only).
+                                      Aot                    : Experimental Native AOT compilation (Bundled only; requires SelfContained). Heavy reflection used by PowerShell may break some scripts.
 Resources        : A hashtable of version resources embedded into the executable (Icon, Title, Description, Company, Product, Copyright, Trademark, Version). Icon can be a file path or URL; for .exe/.dll append ,<index> to pick a resource icon (default 0), e.g. shell32.dll,3.
 Signing          : A hashtable of code signing options (Certificate, Password, Thumbprint, Timestamp). Either Certificate or Thumbprint must be specified.
 PreprocessOnly   : Preprocess the input script and return it without compiling.
 Golf             : Enable golf mode, adding abbreviations and common functions.
 Sandbox          : Compile scripts with extra protection, preventing access to native files.
 NoUpdateCheck    : Skip the check for new versions of ps12exe.
+Quiet            : Suppress informational (host) output during compilation; errors and warnings are still shown.
 Locale           : Language code for localized messages.
 ConfigFile       : Write a config file (<outputfile>.exe.config).
 Help             : Show this help message.

@@ -122,7 +122,12 @@ Add-Test @{
 			@{ Name = 'STA+MTA'; Args = @{ STA = $true; MTA = $true } },
 			@{ Name = 'noConsole+conHost'; Args = @{ noConsole = $true; conHost = $true } },
 			@{ Name = 'configFile+noConfigFile'; Args = @{ configFile = $true; noConfigFile = $true } },
-			@{ Name = 'runtime20+runtime40'; Args = @{ runtime20 = $true; runtime40 = $true } }
+			@{ Name = 'runtime20+runtime40'; Args = @{ runtime20 = $true; runtime40 = $true } },
+			@{ Name = 'x86+ARM'; Args = @{ x86 = $true; ARM = $true } },
+			@{ Name = 'Core+runtime20'; Args = @{ Core = $true; runtime20 = $true } },
+			@{ Name = 'TargetOS without Core'; Args = @{ TargetOS = 'Linux' } },
+			@{ Name = 'AOT without SelfContained'; Args = @{ Core = $true; AOT = $true } },
+			@{ Name = 'TrimMode without Trimmed'; Args = @{ Core = $true; TrimMode = 'full' } }
 		)
 		foreach ($c in $cases) {
 			$rejected = $false
@@ -145,5 +150,25 @@ Add-Test @{
 		param($ctx)
 		Assert-FileExists $ctx.Builds['rt20'] 'shim -runtime20 未产出 exe'
 		Assert-FileExists $ctx.Builds['rt40'] 'shim -runtime40 未产出 exe'
+	}
+}
+
+Add-Test @{
+	Name  = 'ps2exe.core-forwarding'
+	Group = 'ps2exe2ps12exe'
+	Deps  = $script:PS2EXEDeps
+	Build = @{
+		Name     = 'corefwd'
+		Compiler = 'ps2exe'
+		InputFile = $helloFixture
+		Params   = @{ Core = $true; Quiet = $true; TargetFramework = "net$([System.Environment]::Version.Major).$([System.Environment]::Version.Minor)" }
+		Output   = 'core-fwd.exe'
+	}
+	Run   = {
+		param($ctx)
+		if (-not (Get-Command dotnet -ErrorAction Ignore)) { throw 'Core 目标需要 .NET SDK（dotnet）' }
+		Assert-FileExists $ctx.Builds['corefwd'] 'shim -Core 未产出 exe'
+		$r = Invoke-ExeCaptureMergedOutput -ExePath $ctx.Builds['corefwd']
+		Assert-Match $r.Output 'hello-compat' "shim -Core 输出不符：$($r.Output)"
 	}
 }

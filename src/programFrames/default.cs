@@ -2154,8 +2154,30 @@ namespace PSRunnerNS {
 		#endif
 
 		// EXE 主入口
+		#if conHost
+		// App.ConHost：产物的 launcher 以 winexe 启动（未附加控制台），这里显式分配一个 conhost 控制台再接上标准流，
+		// 从而避免挂到 Windows Terminal。若已有控制台（如未走 pack 的直编路径）则跳过，不重复分配。
+		[System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+		[return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+		private static extern bool AllocConsole();
+		[System.Runtime.InteropServices.DllImport("kernel32.dll")]
+		private static extern System.IntPtr GetConsoleWindow();
+		#endif
+
 		[$threadingModelThread]
 		private static int Main(string[] args) {
+			#if conHost
+			if (GetConsoleWindow() == System.IntPtr.Zero) {
+				AllocConsole();
+				System.Console.SetIn(new System.IO.StreamReader(System.Console.OpenStandardInput()));
+				System.IO.StreamWriter conOut = new System.IO.StreamWriter(System.Console.OpenStandardOutput());
+				conOut.AutoFlush = true;
+				System.Console.SetOut(conOut);
+				System.IO.StreamWriter conErr = new System.IO.StreamWriter(System.Console.OpenStandardError());
+				conErr.AutoFlush = true;
+				System.Console.SetError(conErr);
+			}
+			#endif
 			#if StartupTiming
 				PSRunner.TimerSw.Restart();
 			#endif

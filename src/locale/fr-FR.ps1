@@ -32,14 +32,16 @@
 		title      = "Utilisation :"
 		Usage      = "[input |] ps12exe [[-inputFile] '<nom_de_fichier|url>' | -Content '<script>'] [-outputFile '<nom_de_fichier>']
 	[-App @{Windowed=`$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default';
-	VisualStyles=`$true; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true}]
+	VisualStyles=`$true; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true; ConHost=`$true}]
 	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
-	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'; Apartment='STA'|'MTA';
-	Culture='<culture>'; Options='<options>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<dossier>'}]
+	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
+	Culture='<culture>'; Options='<options>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<dossier>';
+	Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>';
+	SingleFile=`$true; SelfContained=`$true; Trimmed=`$true; TrimMode='partial'|'full'; ReadyToRun=`$true; InvariantGlobalization=`$true; Aot=`$true}}]
 	[-Resources @{Icon='<nom_de_fichier|url>'; Title='<titre>'; Description='<description>'; Company='<société>';
 	Product='<produit>'; Copyright='<copyright>'; Trademark='<marque_déposée>'; Version='<version>'}]
 	[-Signing @{Certificate='<chemin_du_fichier_PFX>'; Password='<mot_de_passe_PFX>'; Thumbprint='<empreinte_numérique_de_certificat>'; Timestamp='<serveur_de_timestamp>'}]
-	[-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<code_de_langue>'] [-ConfigFile] [-help]"
+	[-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Quiet] [-Locale '<code_de_langue>'] [-ConfigFile] [-help]"
 		PrarmsData = [ordered]@{
 			input          = "Chaîne de caractères du contenu du fichier de script PowerShell, identique à ``-Content``."
 			inputFile      = "Chemin d’accès ou URL du fichier de script PowerShell que vous voulez convertir en exécutable (le fichier doit être encodé en UTF8 ou UTF16)."
@@ -54,6 +56,7 @@
 				CredentialGUI    = "Utilise une invite GUI pour les informations d'identification en mode console."
 				DpiAware         = "Marque le fichier exécutable compilé comme compatible DPI."
 				WinFormsDpiAware = "Laisse WinForms utiliser la mise à l'échelle DPI (nécessite Windows 10 et .Net 4.7 ou supérieur)."
+				ConHost          = "Force une console conhost au lieu de Windows Terminal (l'exécutable compilé est lancé en tant que processus fenêtré et alloue lui-même une console). Désactive la redirection des entrées/sorties/erreurs."
 			}
 			Os             = [ordered]@{
 				Admin      = "Si UAC est activé, l'exécutable compilé ne peut s'exécuter que dans un contexte élevé (une boîte de dialogue UAC apparaîtra si nécessaire)."
@@ -63,13 +66,26 @@
 			}
 			Build          = [ordered]@{
 				Target     = "Version du runtime cible, par défaut ``'Framework4.0'``, prend également en charge ``'Framework2.0'`` et ``'Core'``. ``'Core'`` produit un exécutable PowerShell Core (.NET) (nécessite PowerShell Core et .NET sur les machines de compilation et cible ; le résultat est bien plus volumineux)."
-				Platform   = "Compile uniquement pour un runtime spécifique. Les valeurs possibles sont ``'AnyCpu'``, ``'x64'`` et ``'x86'``."
+				Platform   = "Compile uniquement pour un runtime spécifique. Les valeurs possibles sont ``'AnyCpu'``, ``'x64'``, ``'x86'`` et ``'arm64'`` (arm64 n'est valide que pour ``'Core'``)."
 				Apartment  = "Mode ``'Appartement à un seul thread'`` ou ``'Appartement à plusieurs threads'``."
 				Culture    = "Culture du fichier exécutable compilé. Si non spécifié, la culture de l'utilisateur actuel sera utilisée."
 				Options    = "Options de compilation supplémentaires (voir ``https://msdn.microsoft.com/en-us/library/78f4aasd.aspx``)."
 				KeepSource = "Crée des informations utiles pour le débogage."
 				Minify     = "Bloc de script pour réduire la taille du script avant la compilation."
 				TempDir    = "Répertoire pour stocker les fichiers temporaires (par défaut un répertoire temporaire aléatoire généré dans ``%temp%``)."
+				Core       = [ordered]@{
+					Backend                = "Comment l'exécutable Core obtient PowerShell. ``'Shared'`` (par défaut) le résout depuis l'installation pwsh de la machine cible et garde la sortie petite ; ``'Bundled'`` embarque le SDK PowerShell (``Microsoft.PowerShell.SDK``), donc la machine cible n'a pas besoin de pwsh et SelfContained/Trimmed/ReadyToRun/InvariantGlobalization/Aot deviennent disponibles, au prix d'une sortie beaucoup plus volumineuse."
+					TargetOs               = "Système d'exploitation cible pour l'exécutable Core : ``'Windows'``, ``'Linux'`` ou ``'MacOS'`` (par défaut : l'OS de la machine de compilation). La sortie GUI/fenêtrée n'est possible qu'avec ``'Windows'``."
+					TargetFramework        = "Moniker de framework .NET cible pour l'exécutable Core (par exemple ``'net8.0'``). Par défaut, le runtime de la machine de compilation (Shared) ou le framework associé à ``PowerShellVersion`` (Bundled)."
+					PowerShellVersion      = "Version du SDK PowerShell embarqué (backend Bundled uniquement). Par défaut, la version de PowerShell de la machine de compilation."
+					SingleFile             = "Publie un exécutable à fichier unique (par défaut `` `$true ``). Si `` `$false ``, l'exécutable et ses dépendances sont écrits sous forme de dossier."
+					SelfContained          = "Inclut le runtime .NET dans la sortie (backend Bundled uniquement ; par défaut `` `$false ``). Augmente fortement la taille mais supprime le besoin d'un runtime installé."
+					Trimmed                = "Active le découpage IL pour réduire la taille de la sortie (backend Bundled uniquement ; par défaut `` `$false ``)."
+					TrimMode               = "Agressivité du découpage lorsque ``Trimmed`` est défini : ``'partial'`` (par défaut, sûr) ou ``'full'`` (agressif, peut casser la réflexion)."
+					ReadyToRun             = "Précompile les assemblys pour un démarrage plus rapide (backend Bundled uniquement ; sortie légèrement plus volumineuse)."
+					InvariantGlobalization = "Utilise la globalisation invariante, en supprimant les bibliothèques ICU des builds autonomes (backend Bundled uniquement). Le formatage propre à une culture peut être cassé."
+					Aot                    = "Compilation Native AOT expérimentale pour un binaire sans JIT (backend Bundled uniquement ; nécessite ``SelfContained``). La réflexion intensive utilisée par PowerShell peut casser certains scripts."
+				}
 			}
 			Resources      = [ordered]@{
 				Icon        = "Icône de l'exécutable ; peut être un chemin de fichier ou une URL. Pour un .exe/.dll, ajoutez ,<index> pour choisir une icône de ressource (0 par défaut), par ex. shell32.dll,3."
@@ -91,6 +107,7 @@
 			Golf           = "Activer le mode golf : ajoute des abréviations et des fonctions courantes au script."
 			Sandbox        = "Compiler le script avec une protection supplémentaire, empêchant l’accès aux fichiers natifs."
 			NoUpdateCheck  = "Ignorer la vérification de la nouvelle version de ps12exe."
+			Quiet          = "Supprime la sortie d'information (hôte) pendant la compilation ; les erreurs et avertissements restent affichés."
 			Locale         = "Spécifier la langue de localisation."
 			ConfigFile     = "Écrire un fichier de configuration (``<fichier_de_sortie>.exe.config``)."
 			Help           = "Affiche cette aide."
@@ -216,6 +233,20 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Locale '<code_de_langue>'] [-UIM
 		ConstEvalThrowErrorFallback               = "Une erreur s’est produite lors du calcul de la constante, retour au framework de programme normal."
 		ConstEvalNotConstFallback                 = "Le script s'est déclaré non constant, retour au framework de programme normal."
 		InvalidArchitecture                       = "Plateforme {0} non valide, utilisation de AnyCpu."
+		InvalidBuildPlatform                      = "Plateforme {0} non valide, utilisation de AnyCpu."
+		InvalidBuildTarget                        = "Runtime cible {0} non valide, utilisation de Framework4.0."
+		InvalidCoreBackend                        = "Build.Core.Backend {0} non valide, utilisation de Shared."
+		InvalidCoreTargetOs                       = "Build.Core.TargetOs {0} non valide, utilisation de l'OS de la machine de compilation."
+		InvalidCoreTargetFramework                = "Build.Core.TargetFramework {0} non valide, il est ignoré."
+		InvalidCorePowerShellVersion              = "Version de PowerShell {0} non valide."
+		CoreVersionNoMapping                      = "Aucun mappage de framework .NET pour PowerShell {0} ; utilisation de {1}."
+		CoreTargetFrameworkTooLow                 = "Le framework cible {0} est inférieur à {1}, requis par la version de PowerShell sélectionnée."
+		CoreOptionsIgnoredNotCore                 = "Les options Build.Core sont ignorées sauf si Build.Target est 'Core'."
+		CoreAdvancedRequiresBundled               = "Ces options nécessitent -Build @{{Core=@{{Backend='Bundled'}}}} : {0}"
+		CoreAotNeedsSelfContained                 = "Build.Core.Aot nécessite que Build.Core.SelfContained soit `$true."
+		CoreTrimModeNeedsTrimmed                  = "Build.Core.TrimMode nécessite que Build.Core.Trimmed soit `$true."
+		CoreTargetOsNotWindows                    = "Les applications fenêtrées et conhost ne sont prises en charge qu'avec une cible Windows."
+		CombinedArg_ConHost_NoConsole             = "-App @{ConHost=`$true} ne peut pas être utilisé avec -App @{Windowed=`$true}."
 		UnknownPragma                             = "Pragma inconnu : {0}."
 		PragmaForbiddenInGuestMode                = "Pragma {0} ignoré : non autorisé en mode Sandbox."
 		UnknownPragmaBadParameterType             = "Pragma inconnu : {0}, impossible d’analyser le type {1}."

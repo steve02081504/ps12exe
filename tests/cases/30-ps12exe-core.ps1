@@ -308,3 +308,41 @@ Add-Test @{
 		Assert-Equal $expected ([System.IO.Path]::GetFullPath("$captured")) '重定向时 stdout 应只输出 exe 路径'
 	}
 }
+
+Add-Test @{
+	Name  = 'ps12exe.target.core-explicit-tfm'
+	Group = 'ps12exe'
+	Deps  = $deps
+	Build = @{
+		Name      = 'coretfm'
+		InputText = "Get-Date | Out-Null; Write-Output 'core-tfm-ok'"
+		Params    = @{ Build = @{ Target = 'Core'; Core = @{ TargetFramework = "net$([System.Environment]::Version.Major).$([System.Environment]::Version.Minor)" } } }
+		Output    = 'core-tfm.exe'
+	}
+	Run   = {
+		param($ctx)
+		if (-not (Get-Command dotnet -ErrorAction Ignore)) { throw 'Core 目标需要 .NET SDK（dotnet）' }
+		Assert-FileExists $ctx.Builds['coretfm'] '显式 TargetFramework 的 Core 编译未产出'
+		$r = Invoke-ExeCaptureMergedOutput -ExePath $ctx.Builds['coretfm']
+		Assert-Match $r.Output 'core-tfm-ok' "显式 TargetFramework 的 Core 输出不符：$($r.Output)"
+	}
+}
+
+Add-Test @{
+	Name  = 'ps12exe.target.core-bundled-const'
+	Group = 'ps12exe'
+	Deps  = $deps
+	Build = @{
+		Name      = 'corebundle'
+		InputText = "'bundled-const-ok'"
+		Params    = @{ Build = @{ Target = 'Core'; Core = @{ Backend = 'Bundled' } } }
+		Output    = 'core-bundle.exe'
+	}
+	Run   = {
+		param($ctx)
+		if (-not (Get-Command dotnet -ErrorAction Ignore)) { throw 'Core 目标需要 .NET SDK（dotnet）' }
+		Assert-FileExists $ctx.Builds['corebundle'] 'Bundled 后端常量编译未产出'
+		$r = Invoke-ExeCaptureMergedOutput -ExePath $ctx.Builds['corebundle']
+		Assert-Match $r.Output 'bundled-const-ok' "Bundled 常量输出不符：$($r.Output)"
+	}
+}

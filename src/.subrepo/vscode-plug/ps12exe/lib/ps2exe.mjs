@@ -1,27 +1,35 @@
 // 编辑器层面的 PS2EXE -> ps12exe 迁移：把一次 PS2EXE 调用重写成 ps12exe 的对象式 API（改名 + 参数映射）。
 //
 // 映射与 `src/.subrepo/PS2EXE2ps12exe/PS2EXE2ps12exe.psm1` 的 `Invoke-ps2exe` 保持一致（那里组装 `$psParams` / `$app` /
-// `$os` / `$build` / `$resources`）；改动那边时必须同步这里。ps12exe 没有等价能力（`conHost` / `embedFiles`）、调用用了
+// `$os` / `$build` / `$resources`）；改动那边时必须同步这里。ps12exe 没有等价能力（`embedFiles`）、调用用了
 // splatting，或参数无法静态确定时返回 `null`——宁可不提供改写，也不生成错误或语义不同的调用。
 
 // 需要取值的 PS2EXE 参数（小写）。
 const VALUE_PARAMS = new Set([
 	'inputfile', 'outputfile', 'iconfile', 'title', 'description', 'company',
-	'product', 'copyright', 'trademark', 'version', 'lcid', 'embedfiles'
+	'product', 'copyright', 'trademark', 'version', 'lcid', 'embedfiles',
+	'targetos', 'targetframework', 'powershellversion', 'trimmode'
 ])
 
 // 开关型 PS2EXE 参数（小写）。
 const SWITCH_PARAMS = new Set([
-	'preparedebug', 'runtime20', 'runtime40', 'x86', 'x64', 'sta', 'mta', 'nested',
+	'preparedebug', 'runtime20', 'runtime40', 'x86', 'x64', 'arm', 'sta', 'mta', 'nested',
 	'noconsole', 'conhost', 'unicodeencoding', 'credentialgui', 'configfile', 'noconfigfile',
 	'nooutput', 'noerror', 'novisualstyles', 'exitoncancel', 'dpiaware', 'winformsdpiaware',
-	'requireadmin', 'supportos', 'virtualize', 'longpaths'
+	'requireadmin', 'supportos', 'virtualize', 'longpaths',
+	'core', 'selfcontained', 'publishsinglefile', 'trimmed', 'readytorun', 'invariantglobalization', 'aot', 'quiet'
 ])
 
 // 兼容层直接忽略的占位参数。
 const IGNORED_PARAMS = new Set(['nested', 'noconfigfile'])
 // 无法映射为 ps12exe 参数的参数（兼容层在编译期改写脚本来模拟，编辑器层面无法等价改写）。
-const UNSUPPORTED_PARAMS = new Set(['conhost', 'embedfiles'])
+const UNSUPPORTED_PARAMS = new Set(['embedfiles'])
+
+// PS2EXE.Core 的 Core 专属参数（小写）：必须配合 -Core 使用。
+const CORE_ONLY_PARAMS = new Set([
+	'arm', 'targetos', 'targetframework', 'powershellversion', 'selfcontained',
+	'publishsinglefile', 'trimmed', 'trimmode', 'readytorun', 'invariantglobalization', 'aot'
+])
 
 /**
  * 判断一行在语法上是否完整（引号与括号都闭合，且不以续行反引号结尾）。不完整时调用可能跨行，无法静态改写。
@@ -265,6 +273,7 @@ export function convertPs2exeInvocation(line, token) {
 		if (has('exitoncancel')) app.push(['ExitOnCancel', boolLiteral(bool('exitoncancel'))])
 		if (has('dpiaware')) app.push(['DpiAware', boolLiteral(bool('dpiaware'))])
 		if (has('winformsdpiaware')) app.push(['WinFormsDpiAware', boolLiteral(bool('winformsdpiaware'))])
+		if (has('conhost')) app.push(['ConHost', boolLiteral(bool('conhost'))])
 		const silence = []
 		if (has('nooutput') && bool('nooutput')) silence.push('Output', 'Verbose')
 		if (has('noerror') && bool('noerror')) silence.push('Error', 'Warning', 'Debug')
@@ -282,12 +291,33 @@ export function convertPs2exeInvocation(line, token) {
 		if (has('x86') && has('x64')) return null
 		if (has('x86')) build.push(['Platform', '\'x86\''])
 		if (has('x64')) build.push(['Platform', '\'x64\''])
+		if (has('arm') && (has('x86') || has('x64'))) return null
+		if (has('arm')) build.push(['Platform', '\'arm64\''])
 		if (has('sta') && has('mta')) return null
 		if (has('sta')) build.push(['Apartment', '\'STA\''])
 		if (has('mta')) build.push(['Apartment', '\'MTA\''])
 		if (has('runtime20') && has('runtime40')) return null
 		if (has('runtime20')) build.push(['Target', '\'Framework2.0\''])
 		if (has('runtime40')) build.push(['Target', '\'Framework4.0\''])
+		if (has('core') && (has('runtime20') || has('runtime40'))) return null
+		if (has('core')) build.push(['Target', '\'Core\''])
+		// PS2EXE.Core 的 Core 专属参数：缺少 -Core 时不改写（兼容层会报错）。
+		for (const name of CORE_ONLY_PARAMS)
+			if (has(name) && !has('core')) return null
+		if (has('aot') && !has('selfcontained')) return null
+		if (has('trimmode') && !has('trimmed')) return null
+		const coreOptions = []
+		if (has('targetos')) coreOptions.push(['TargetOs', toLiteral(value('targetos'))])
+		if (has('targetframework')) coreOptions.push(['TargetFramework', toLiteral(value('targetframework'))])
+		if (has('powershellversion')) coreOptions.push(['PowerShellVersion', toLiteral(value('powershellversion'))])
+		if (has('selfcontained')) coreOptions.push(['SelfContained', boolLiteral(bool('selfcontained'))])
+		if (has('publishsinglefile')) coreOptions.push(['SingleFile', boolLiteral(bool('publishsinglefile'))])
+		if (has('trimmed')) coreOptions.push(['Trimmed', boolLiteral(bool('trimmed'))])
+		if (has('trimmode')) coreOptions.push(['TrimMode', toLiteral(value('trimmode'))])
+		if (has('readytorun')) coreOptions.push(['ReadyToRun', boolLiteral(bool('readytorun'))])
+		if (has('invariantglobalization')) coreOptions.push(['InvariantGlobalization', boolLiteral(bool('invariantglobalization'))])
+		if (has('aot')) coreOptions.push(['Aot', boolLiteral(bool('aot'))])
+		if (coreOptions.length) build.push(['Core', hashtable(coreOptions)])
 
 		const resources = []
 		const resourceMap = [
@@ -305,6 +335,7 @@ export function convertPs2exeInvocation(line, token) {
 			if (entries.length) parts.push(flag, hashtable(entries))
 
 		if (has('configfile') && bool('configfile')) parts.push('-ConfigFile')
+		if (has('quiet') && bool('quiet')) parts.push('-Quiet')
 
 		return { end, text: parts.join(' ') }
 	}

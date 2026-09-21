@@ -40,7 +40,8 @@
 ### Core 工程缓存（`cache\core`）
 
 - 按「TFM/RID/选项/程序集名」缓存生成的 dotnet 工程，命中即 `dotnet publish/build --no-restore`（省一次 NuGet 还原）。
-- 改 `CoreCompiler.ps1` 的工程结构时同步 bump 其中的 `corecache-vN` 标记。
+- `Build.Core.Backend` 决定用哪个后端：`Shared`（默认）走 `CoreCompiler.ps1`，从目标机 `$PSHOME` 解析 SMA，键带 `corecache-vN` 标记；`Bundled` 走 `CoreBundledCompiler.ps1`，打包 `Microsoft.PowerShell.SDK`（键带 `corebundle-vN`），支持 `SelfContained`/`Trimmed`/`ReadyToRun`/`InvariantGlobalization`/`Aot` 与 `PowerShellVersion`。改这两个编译器的工程结构时同步 bump 各自标记。
+- 两者共用 `Get-CacheRoot 'core'` 目录与 `Clear-StaleCache`；`SingleFile=$false` 时发布整个目录并拷到 `outputFile` 所在目录。
 
 <a id="codedom-cache"></a>
 

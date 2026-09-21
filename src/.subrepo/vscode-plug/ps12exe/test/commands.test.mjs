@@ -52,11 +52,33 @@ suite('ps12exe command warnings', () => {
 	})
 
 	test('does not rewrite calls that cannot be mapped statically', () => {
-		// conHost / embedFiles 在 ps12exe 没有等价能力，splatting 与跨行调用也无法静态展开。
-		assert.strictEqual(analyzeCommandUsage('ps2exe -conHost a.ps1')[0].replacement, undefined)
+		// embedFiles 在 ps12exe 没有等价能力，splatting 与跨行调用也无法静态展开。（conHost 已可映射为 App.ConHost。）
+		assert.strictEqual(analyzeCommandUsage('ps2exe -embedFiles @{ \'a\' = \'b\' } a.ps1')[0].replacement, undefined)
 		assert.strictEqual(analyzeCommandUsage('ps2exe @params')[0].replacement, undefined)
 		assert.strictEqual(analyzeCommandUsage('ps2exe -inputFile a.ps1 `')[0].replacement, undefined)
 		assert.strictEqual(analyzeCommandUsage('ps2exe -unknownParam a.ps1')[0].replacement, undefined)
+	})
+
+	test('rewrites PS2EXE.Core arguments to the object API', () => {
+		assert.strictEqual(
+			analyzeCommandUsage('ps2exe -conHost a.ps1')[0].replacement,
+			'ps12exe -InputFile a.ps1 -App @{ ConHost = $true }'
+		)
+		assert.strictEqual(
+			analyzeCommandUsage('ps2exe -Core -ARM -SelfContained -PublishSingleFile:$false a.ps1')[0].replacement,
+			'ps12exe -InputFile a.ps1 -Build @{ Platform = \'arm64\'; Target = \'Core\'; Core = @{ SelfContained = $true; SingleFile = $false } }'
+		)
+		assert.strictEqual(
+			analyzeCommandUsage('ps2exe -Core -TargetOS Linux -TargetFramework net8.0 -PowerShellVersion 7.4.0 -Trimmed -TrimMode full a.ps1')[0].replacement,
+			'ps12exe -InputFile a.ps1 -Build @{ Target = \'Core\'; Core = @{ TargetOs = \'Linux\'; TargetFramework = \'net8.0\'; PowerShellVersion = \'7.4.0\'; Trimmed = $true; TrimMode = \'full\' } }'
+		)
+		assert.strictEqual(
+			analyzeCommandUsage('ps2exe -Core -TargetOS Linux a.ps1')[0].replacement,
+			'ps12exe -InputFile a.ps1 -Build @{ Target = \'Core\'; Core = @{ TargetOs = \'Linux\' } }'
+		)
+		// Core 专属参数缺少 -Core 时不改写。
+		assert.strictEqual(analyzeCommandUsage('ps2exe -TargetOS Linux a.ps1')[0].replacement, undefined)
+		assert.strictEqual(analyzeCommandUsage('ps2exe -Quiet a.ps1')[0].replacement, 'ps12exe -InputFile a.ps1 -Quiet')
 	})
 
 	test('flags module-management commands only in files that use the preprocessor', () => {

@@ -141,14 +141,15 @@ help       : Affiche cette aide.
 ```powershell
 [input |] ps12exe [[-inputFile] '<nom_de_fichier|url>' | -Content '<script>'] [-outputFile '<nom_de_fichier>']
         [-App @{Windowed=$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default'; VisualStyles=$true;
-        ExitOnCancel=$true; CredentialGUI=$true; DpiAware=$true; WinFormsDpiAware=$true}]
+        ExitOnCancel=$true; CredentialGUI=$true; DpiAware=$true; WinFormsDpiAware=$true; ConHost=$true}]
         [-Os @{Admin=$true; ModernOS=$true; LongPaths=$true; Virtualize=$true}]
-        [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'; Apartment='STA'|'MTA';
-        Culture='<culture>'; Options='<options>'; KeepSource=$true; Minify={<scriptblock>}; TempDir='<dossier>'}]
+        [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
+        Culture='<culture>'; Options='<options>'; KeepSource=$true; Minify={<scriptblock>}; TempDir='<dossier>';
+        Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>'; SingleFile=$true; SelfContained=$true; Trimmed=$true; TrimMode='partial'|'full'; ReadyToRun=$true; InvariantGlobalization=$true; Aot=$true}}]
         [-Resources @{Icon='<nom_de_fichier|url>'; Title='<titre>'; Description='<description>'; Company='<société>';
         Product='<produit>'; Copyright='<copyright>'; Trademark='<marque_déposée>'; Version='<version>'}]
         [-Signing @{Certificate='<chemin du fichier PFX>'; Password='<mot de passe PFX>'; Thumbprint='<empreinte du certificat>'; Timestamp='<serveur d'horodatage>'}]
-        [-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<code_de_langue>'] [-ConfigFile] [-help]
+        [-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Quiet] [-Locale '<code_de_langue>'] [-ConfigFile] [-help]
 ```
 
 ```text
@@ -165,6 +166,7 @@ App              : Table de hachage décrivant le comportement de l'application 
                    CredentialGUI    : Utilise une invite GUI pour les informations d'identification en mode console.
                    DpiAware         : Marque le fichier exécutable compilé comme compatible DPI.
                    WinFormsDpiAware : Laisse WinForms utiliser la mise à l'échelle DPI (nécessite Windows 10 et .Net 4.7 ou supérieur).
+                   ConHost          : Force une console conhost au lieu de Windows Terminal ; désactive la redirection des entrées/sorties/erreurs.
 Os               : Table de hachage des options d'intégration au système d'exploitation. Clés prises en charge :
                    Admin            : Si UAC est activé, l'exécutable compilé ne peut s'exécuter que dans un contexte élevé (une boîte de dialogue UAC apparaîtra si nécessaire).
                    ModernOS         : Utilise les fonctionnalités de la dernière version de Windows (exécutez [Environment]::OSVersion pour voir la différence).
@@ -172,19 +174,32 @@ Os               : Table de hachage des options d'intégration au système d'exp
                    Virtualize       : La virtualisation de l'application est activée (force le runtime x86).
 Build            : Table de hachage des options de compilation/chaîne d'outils. Clés prises en charge :
                    Target           : Version du runtime cible, par défaut 'Framework4.0', prend également en charge 'Framework2.0' et 'Core'. 'Core' produit un exécutable PowerShell Core (.NET) (nécessite PowerShell Core et .NET sur les machines de compilation et cible ; le résultat est bien plus volumineux).
-                   Platform         : Compile uniquement pour un runtime spécifique. Les valeurs possibles sont 'AnyCpu', 'x64' et 'x86'.
+                   Platform         : Compile uniquement pour un runtime spécifique. Les valeurs possibles sont 'AnyCpu', 'x64', 'x86' et 'arm64' (arm64 n'est valide que pour 'Core').
                    Apartment        : Mode 'Appartement à un seul thread' ou 'Appartement à plusieurs threads'.
                    Culture          : Culture du fichier exécutable compilé. Si non spécifié, la culture de l'utilisateur actuel sera utilisée.
                    Options          : Options de compilation supplémentaires (voir https://msdn.microsoft.com/en-us/library/78f4aasd.aspx).
                    KeepSource       : Crée des informations utiles pour le débogage.
                    Minify           : Bloc de script pour réduire la taille du script avant la compilation.
                    TempDir          : Répertoire pour stocker les fichiers temporaires (par défaut un répertoire temporaire aléatoire généré dans %temp%).
+                   Core             : Options pour les builds de la cible 'Core'. Clés prises en charge :
+                                      Backend                : 'Shared' (par défaut) résout PowerShell depuis l'installation pwsh de la machine cible et garde la sortie petite ; 'Bundled' embarque le SDK PowerShell (Microsoft.PowerShell.SDK) pour que la machine cible n'ait pas besoin de pwsh et que SelfContained/Trimmed/ReadyToRun/InvariantGlobalization/Aot deviennent disponibles, au prix d'une sortie beaucoup plus volumineuse.
+                                      TargetOs               : Système d'exploitation cible : 'Windows', 'Linux' ou 'MacOS' (par défaut : l'OS de la machine de compilation). La sortie GUI/fenêtrée nécessite 'Windows'.
+                                      TargetFramework        : Moniker de framework .NET cible (par exemple 'net8.0'). Par défaut, le runtime de la machine de compilation (Shared) ou le framework associé à PowerShellVersion (Bundled).
+                                      PowerShellVersion      : Version du SDK PowerShell embarqué (Bundled uniquement). Par défaut, la version de PowerShell de la machine de compilation.
+                                      SingleFile             : Publie un exécutable à fichier unique (par défaut $true). Si $false, l'exécutable et ses dépendances sont écrits sous forme de dossier.
+                                      SelfContained          : Inclut le runtime .NET (Bundled uniquement ; par défaut $false). Beaucoup plus volumineux mais ne nécessite aucun runtime installé.
+                                      Trimmed                : Active le découpage IL pour réduire la taille (Bundled uniquement ; par défaut $false).
+                                      TrimMode               : Agressivité du découpage lorsque Trimmed est défini : 'partial' (par défaut, sûr) ou 'full' (agressif, peut casser la réflexion).
+                                      ReadyToRun             : Précompile les assemblys pour un démarrage plus rapide (Bundled uniquement).
+                                      InvariantGlobalization : Utilise la globalisation invariante, en supprimant les bibliothèques ICU des builds autonomes (Bundled uniquement).
+                                      Aot                    : Compilation Native AOT expérimentale (Bundled uniquement ; nécessite SelfContained). La réflexion intensive utilisée par PowerShell peut casser certains scripts.
 Resources        : Table de hachage des ressources de version intégrées à l'exécutable (Icon, Title, Description, Company, Product, Copyright, Trademark, Version). Icon peut être un chemin de fichier ou une URL. Pour un .exe/.dll, ajoutez ,<index> pour choisir une icône de ressource (0 par défaut), par ex. shell32.dll,3.
 Signing          : Table de hachage des options de signature de code (Certificate, Password, Thumbprint, Timestamp). Vous devez spécifier Certificate ou Thumbprint.
 PreprocessOnly   : Prétraite le script d'entrée et le retourne sans compilation.
 Golf             : Activer le mode golf, ajoute des abreviations et des fonctions courantes au script.
 Sandbox          : Compile le script avec une protection supplémentaire, évite l'accès aux fichiers natifs.
 NoUpdateCheck    : Ignore la vérification de la nouvelle version de ps12exe.
+Quiet            : Supprime la sortie d'information (hôte) pendant la compilation ; les erreurs et avertissements restent affichés.
 Locale           : Spécifie la langue de localisation.
 ConfigFile       : Écrit un fichier de configuration (<fichier_de_sortie>.exe.config).
 Help             : Affiche cette aide.

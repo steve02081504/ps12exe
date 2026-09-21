@@ -53,7 +53,8 @@ function Write-I18n {
 			Write-Error -Exception $Exception -Message $value -Category $Category -ErrorId $errId -TargetObject $TargetObject -ErrorAction SilentlyContinue
 		}
 		'Debug' { Write-Debug $value }
-		'Host' { Write-Host $value -ForegroundColor $ForegroundColor }
+		# -Quiet 只压制面向用户的信息流（Host）；Error/Warning/Output 等仍照常输出。$Quiet 由调用方按名传入（动态作用域）。
+		'Host' { if (-not $Quiet) { Write-Host $value -ForegroundColor $ForegroundColor } }
 		'Output' { $value }
 		'Verbose' { Write-Verbose $value }
 	}

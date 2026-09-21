@@ -45,7 +45,32 @@ You might want to pipe your output to Out-String to prevent a message box for ev
 (example: dir C:\ | Out-String)
 .PARAMETER conHost
 force start with conhost as console instead of Windows Terminal. If necessary a new console window
-will appear. ps12exe has no native equivalent, so PS2EXE2ps12exe restarts the executable inside conhost.
+will appear. Mapped to ps12exe's ``-App @{ConHost=`$true}`` (native conhost support).
+.PARAMETER core
+compile the script with the .NET SDK to a PowerShell Core executable (ps12exe ``-Build @{Target='Core'}``).
+See the PS2EXE.Core parameters below; they are forwarded to ps12exe's ``-Build @{Core=@{...}}``.
+.PARAMETER TargetOS
+target operating system for a Core executable ('Windows', 'Linux' or 'MacOS').
+.PARAMETER TargetFramework
+target .NET framework moniker for a Core executable (for example 'net8.0').
+.PARAMETER PowerShellVersion
+version of the PowerShell SDK bundled when using the Bundled backend.
+.PARAMETER SelfContained
+bundle the .NET runtime into a Core executable (Bundled backend).
+.PARAMETER PublishSingleFile
+publish a Core executable as a single file (default true).
+.PARAMETER Trimmed
+enable IL trimming for a Core executable (Bundled backend).
+.PARAMETER TrimMode
+trimming aggressiveness: 'partial' (default) or 'full'.
+.PARAMETER ReadyToRun
+pre-compile assemblies for faster startup (Bundled backend).
+.PARAMETER InvariantGlobalization
+use invariant globalization for a Core executable (Bundled backend).
+.PARAMETER AOT
+experimental Native AOT compilation; requires -SelfContained (Bundled backend).
+.PARAMETER Quiet
+suppress informational output during compilation.
 .PARAMETER UNICODEEncoding
 encode output as UNICODE in console mode, useful to display special encoded chars
 .PARAMETER credentialGUI
@@ -110,11 +135,16 @@ Start graphical front end to Invoke-ps2exe
 #>
 function Invoke-ps2exe {
 	[CmdletBinding()]
-	Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [SWITCH]$prepareDebug, [SWITCH]$runtime20, [SWITCH]$runtime40, [SWITCH]$x86, [SWITCH]$x64, [int]$lcid,
+	Param([STRING]$inputFile = $NULL, [STRING]$outputFile = $NULL, [SWITCH]$prepareDebug, [SWITCH]$runtime20, [SWITCH]$runtime40, [SWITCH]$x86, [SWITCH]$x64, [SWITCH]$ARM, [int]$lcid,
 		[SWITCH]$STA, [SWITCH]$MTA, [SWITCH]$nested, [SWITCH]$noConsole, [SWITCH]$conHost, [SWITCH]$UNICODEEncoding, [SWITCH]$credentialGUI, [STRING]$iconFile = $NULL,
 		[Hashtable]$embedFiles = @{}, [STRING]$title, [STRING]$description, [STRING]$company, [STRING]$product, [STRING]$copyright, [STRING]$trademark, [STRING]$version,
 		[SWITCH]$configFile, [SWITCH]$noConfigFile, [SWITCH]$noOutput, [SWITCH]$noError, [SWITCH]$noVisualStyles, [SWITCH]$exitOnCancel,
-		[SWITCH]$DPIAware, [SWITCH]$winFormsDPIAware, [SWITCH]$requireAdmin, [SWITCH]$supportOS, [SWITCH]$virtualize, [SWITCH]$longPaths)
+		[SWITCH]$DPIAware, [SWITCH]$winFormsDPIAware, [SWITCH]$requireAdmin, [SWITCH]$supportOS, [SWITCH]$virtualize, [SWITCH]$longPaths,
+		# PS2EXE.Core 新增的 Core 目标参数
+		[SWITCH]$Core, [ValidateSet('Windows', 'Linux', 'MacOS')][STRING]$TargetOS, [ValidateSet('net6.0', 'net7.0', 'net8.0', 'net9.0', 'net10.0', 'net11.0')][STRING]$TargetFramework,
+		[STRING]$PowerShellVersion, [SWITCH]$SelfContained, [SWITCH]$PublishSingleFile, [SWITCH]$Trimmed, [ValidateSet('partial', 'full')][STRING]$TrimMode,
+		[SWITCH]$ReadyToRun, [SWITCH]$InvariantGlobalization, [SWITCH]$AOT,
+		[SWITCH]$Quiet)
 
 	# 复刻 PS2EXE 的参数校验
 	if ($x86 -and $x64) { throw "-x86 can't be combined with -x64." }
@@ -124,6 +154,17 @@ function Invoke-ps2exe {
 	if ($runtime20 -and $runtime40) { throw "-runtime20 can't be combined with -runtime40." }
 	if ($runtime20 -and $longPaths) { throw "Long paths are only available with .NET 4 or above." }
 	if ($runtime20 -and $winFormsDPIAware) { throw "DPI awareness is only available with .NET 4 or above." }
+
+	# PS2EXE.Core 的 Core 校验
+	if ($x86 -and $ARM) { throw "-x86 can't be combined with -ARM." }
+	if ($x64 -and $ARM) { throw "-x64 can't be combined with -ARM." }
+	if ($Core -and ($runtime20 -or $runtime40)) { throw "-Core can't be combined with -runtime20/-runtime40." }
+	$coreOnlyParams = @('TargetOS', 'TargetFramework', 'PowerShellVersion', 'SelfContained', 'PublishSingleFile', 'Trimmed', 'TrimMode', 'ReadyToRun', 'InvariantGlobalization', 'AOT')
+	$coreOnlySet = @($coreOnlyParams | Where-Object { $PSBoundParameters.ContainsKey($_) })
+	if ($ARM) { $coreOnlySet = @('ARM') + $coreOnlySet }
+	if (-not $Core -and $coreOnlySet.Count) { throw "-Core is required for: $($coreOnlySet -join ', ')." }
+	if ($AOT -and -not $SelfContained) { throw "-AOT requires -SelfContained." }
+	if ($PSBoundParameters.ContainsKey('TrimMode') -and -not $Trimmed) { throw "-TrimMode requires -Trimmed." }
 
 	if (!(Get-Module -Name ps12exe -ListAvailable)) {
 		Install-Module -Name ps12exe -Scope CurrentUser -Force
@@ -144,6 +185,7 @@ function Invoke-ps2exe {
 	if ($PSBoundParameters.ContainsKey('exitOnCancel')) { $app.ExitOnCancel = [bool]$exitOnCancel }
 	if ($PSBoundParameters.ContainsKey('DPIAware')) { $app.DpiAware = [bool]$DPIAware }
 	if ($PSBoundParameters.ContainsKey('winFormsDPIAware')) { $app.WinFormsDpiAware = [bool]$winFormsDPIAware }
+	if ($PSBoundParameters.ContainsKey('conHost')) { $app.ConHost = [bool]$conHost }
 	$silence = @()
 	if ($noOutput) { $silence += @('Output', 'Verbose') }
 	if ($noError) { $silence += @('Error', 'Warning', 'Debug') }
@@ -162,10 +204,26 @@ function Invoke-ps2exe {
 	if ($PSBoundParameters.ContainsKey('lcid')) { $build.Culture = "$lcid" }
 	if ($x86) { $build.Platform = 'x86' }
 	elseif ($x64) { $build.Platform = 'x64' }
+	elseif ($ARM) { $build.Platform = 'arm64' }
 	if ($STA) { $build.Apartment = 'STA' }
 	elseif ($MTA) { $build.Apartment = 'MTA' }
 	if ($runtime20) { $build.Target = 'Framework2.0' }
 	elseif ($runtime40) { $build.Target = 'Framework4.0' }
+	if ($Core) { $build.Target = 'Core' }
+	# PS2EXE.Core 的 Core 专属参数 → Build.Core 嵌套对象（仅显式给出时写入）
+	$coreOpt = @{}
+	if ($PSBoundParameters.ContainsKey('TargetOS')) { $coreOpt.TargetOs = $TargetOS }
+	if ($PSBoundParameters.ContainsKey('TargetFramework')) { $coreOpt.TargetFramework = $TargetFramework }
+	if ($PSBoundParameters.ContainsKey('PowerShellVersion')) { $coreOpt.PowerShellVersion = "$PowerShellVersion" }
+	if ($PSBoundParameters.ContainsKey('SelfContained')) { $coreOpt.SelfContained = [bool]$SelfContained }
+	if ($PSBoundParameters.ContainsKey('PublishSingleFile')) { $coreOpt.SingleFile = [bool]$PublishSingleFile }
+	if ($PSBoundParameters.ContainsKey('Trimmed')) { $coreOpt.Trimmed = [bool]$Trimmed }
+	if ($PSBoundParameters.ContainsKey('TrimMode')) { $coreOpt.TrimMode = $TrimMode }
+	if ($PSBoundParameters.ContainsKey('ReadyToRun')) { $coreOpt.ReadyToRun = [bool]$ReadyToRun }
+	if ($PSBoundParameters.ContainsKey('InvariantGlobalization')) { $coreOpt.InvariantGlobalization = [bool]$InvariantGlobalization }
+	if ($PSBoundParameters.ContainsKey('AOT')) { $coreOpt.Aot = [bool]$AOT }
+	if ($coreOpt.Count) { $build.Core = $coreOpt }
+	if ($PSBoundParameters.ContainsKey('Quiet')) { $psParams.Quiet = [bool]$Quiet }
 	# noConfigFile 是 PS2EXE 的兼容占位参数，直接忽略
 
 	# 资源参数合并为 Resources 哈希表
@@ -192,11 +250,10 @@ function Invoke-ps2exe {
 		}
 	}
 
-	# ps12exe 缺少 conHost / embedFiles，且不提供 PS2EXE 的 $ScriptRoot；用 minifyer 在预处理后注入。
-	# 需要转写时总会走这里，未命中任何注入点时原样返回。
+	# ps12exe 缺少 embedFiles，且不提供 PS2EXE 的 $ScriptRoot；用 minifyer 在预处理后注入。
+	# 需要转写时总会走这里，未命中任何注入点时原样返回。（conHost 已由 ps12exe 原生 App.ConHost 支持。）
 	$rewriteState = @{
-		ConHost = [bool]$conHost
-		Embeds  = $embedEntries
+		Embeds = $embedEntries
 	}
 	$build.Minify = {
 		$text = $_
@@ -207,17 +264,6 @@ function Invoke-ps2exe {
 		if (-not $ast) { return $text }
 
 		$inject = [System.Collections.Generic.List[string]]::new()
-		if ($rewriteState.ConHost) {
-			$inject.Add(@'
-& {
-	if (-not $env:__PSEXE_CONHOST__) {
-		$env:__PSEXE_CONHOST__ = '1'
-		$PSEXEProcess = Start-Process conhost.exe -ArgumentList @('cmd', '/c', [System.Environment]::CommandLine) -PassThru -Wait
-		exit $PSEXEProcess.ExitCode
-	}
-}
-'@)
-		}
 		foreach ($embed in $rewriteState.Embeds) {
 			$targetLiteral = $embed.Target.Replace("'", "''")
 			$inject.Add(@"

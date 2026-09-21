@@ -44,8 +44,14 @@ $isPwsh20Sma = $smaRef -and [Reflection.AssemblyName]::GetAssemblyName($smaRef).
 
 # 目标框架版本供 constexpr.cs / default.cs 的 $TargetFramework 替换使用。
 if ($isCoreTarget) {
-	$Info = [System.Environment]::Version
-	$TargetFramework = ".NETCore,Version=v$($Info.Major).$($Info.Minor)"
+	if ($coreTargetFramework -match '^net(\d+)\.(\d+)$') {
+		# 显式指定的 Core TFM（Build.Core.TargetFramework，如 net8.0）。
+		$TargetFramework = ".NETCore,Version=v$($Matches[1]).$($Matches[2])"
+	}
+	else {
+		$Info = [System.Environment]::Version
+		$TargetFramework = ".NETCore,Version=v$($Info.Major).$($Info.Minor)"
+	}
 }
 elseif ($isPwsh20Sma) {
 	$TargetFramework = ".NETFramework,Version=v2.0"
@@ -97,6 +103,7 @@ if ($resourceParams.Count) { $Constants += "Resources" }
 if ($credentialGUI) { $Constants += "credentialGUI" }
 if ($noVisualStyles) { $Constants += "noVisualStyles" }
 if ($exitOnCancel) { $Constants += "exitOnCancel" }
+if ($conHost) { $Constants += "conHost" }
 if ($UNICODEEncoding) { $Constants += "UNICODEEncoding" }
 if ($UTF8Encoding) { $Constants += "UTF8Encoding" }
 if ($winFormsDPIAware) { $Constants += "winFormsDPIAware" }

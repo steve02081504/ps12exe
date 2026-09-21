@@ -32,14 +32,16 @@
 		title      = "使用方法："
 		Usage      = "[input |] ps12exe [[-inputFile] '<ファイル名|url>' | -Content '<スクリプト>'] [-outputFile '<ファイル名>']
 	[-App @{Windowed=`$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default';
-	VisualStyles=`$true; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true}]
+	VisualStyles=`$true; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true; ConHost=`$true}]
 	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
-	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'; Apartment='STA'|'MTA';
-	Culture='<カルチャ>'; Options='<オプション>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<ディレクトリ>'}]
+	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
+	Culture='<カルチャ>'; Options='<オプション>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<ディレクトリ>';
+	Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>';
+	SingleFile=`$true; SelfContained=`$true; Trimmed=`$true; TrimMode='partial'|'full'; ReadyToRun=`$true; InvariantGlobalization=`$true; Aot=`$true}}]
 	[-Resources @{Icon='<ファイル名|url>'; Title='<タイトル>'; Description='<説明>'; Company='<会社>';
 	Product='<製品>'; Copyright='<著作権>'; Trademark='<商標>'; Version='<バージョン>'}]
 	[-Signing @{Certificate='<PFXファイルパス>'; Password='<PFXパスワード>'; Thumbprint='<証明書指紋>'; Timestamp='<時刻同期サーバー>'}]
-	[-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<言語コード>'] [-ConfigFile] [-help]"
+	[-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Quiet] [-Locale '<言語コード>'] [-ConfigFile] [-help]"
 		PrarmsData = [ordered]@{
 			input          = "PowerShell スクリプトファイルの内容の文字列で、``-Content`` と同じです"
 			inputFile      = "変換元の PowerShell スクリプトのパスまたは URL（ファイルは UTF-8 または UTF-16 エンコードである必要があります）。"
@@ -54,6 +56,7 @@
 				CredentialGUI    = "コンソールモードで GUI プロンプトを使用して資格情報を求めます。"
 				DpiAware         = "コンパイルされた実行可能ファイルを DPI 対応としてマークします。"
 				WinFormsDpiAware = "WinForms で DPI スケーリングを使用します（Windows 10 および .Net 4.7 以上が必要）。"
+				ConHost          = "Windows Terminal ではなく conhost コンソールを強制します（コンパイル済み実行可能ファイルはウィンドウ プロセスとして起動し、自身でコンソールを割り当てます）。入力/出力/エラーのリダイレクトが無効になります。"
 			}
 			Os             = [ordered]@{
 				Admin      = "UAC が有効になっている場合、コンパイルされた実行可能ファイルは昇格されたコンテキストでのみ実行可能です（必要に応じて UAC ダイアログが表示されます）。"
@@ -63,13 +66,26 @@
 			}
 			Build          = [ordered]@{
 				Target     = "ターゲット ランタイム バージョン、既定値は ``'Framework4.0'``、``'Framework2.0'`` と ``'Core'`` がサポートされています。``'Core'`` は PowerShell Core (.NET) 実行可能ファイルを生成します（コンパイル機とターゲット機の両方に PowerShell Core と .NET が必要で、成果物は大幅に大きくなります）。"
-				Platform   = "特定のランタイムのみのコンパイル。可能な値は ``'AnyCpu'``、``'x64'``、``'x86'`` です。"
+				Platform   = "特定のランタイムのみのコンパイル。可能な値は ``'AnyCpu'``、``'x64'``、``'x86'``、``'arm64'`` です（arm64 は ``'Core'`` でのみ有効）。"
 				Apartment  = "``'STA'``（シングルスレッドアパートメント）または ``'MTA'``（マルチスレッドアパートメント）モード。"
 				Culture    = "コンパイルされた実行可能ファイルのカルチャ。指定されていない場合は、現在のユーザーのカルチャです。"
 				Options    = "追加のコンパイラオプション（参照： ``https://msdn.microsoft.com/en-us/library/78f4aasd.aspx``）。"
 				KeepSource = "デバッグに役立つ情報を作成します。"
 				Minify     = "コンパイル前にスクリプトを縮小するスクリプトブロック。"
 				TempDir    = "一時ファイルを保存するディレクトリ（デフォルトは ``%temp%`` にランダムに生成される一時ディレクトリ）。"
+				Core       = [ordered]@{
+					Backend                = "Core 実行可能ファイルが PowerShell を取得する方法。``'Shared'``（既定）はターゲット マシンの pwsh インストールから解決し、出力を小さく保ちます。``'Bundled'`` は PowerShell SDK（``Microsoft.PowerShell.SDK``）を同梱するため、ターゲット マシンに pwsh は不要になり、SelfContained/Trimmed/ReadyToRun/InvariantGlobalization/Aot が利用可能になりますが、出力は大幅に大きくなります。"
+					TargetOs               = "Core 実行可能ファイルのターゲット オペレーティング システム：``'Windows'``、``'Linux'``、``'MacOS'``（既定はビルド マシンの OS）。GUI/ウィンドウ出力は ``'Windows'`` でのみ可能です。"
+					TargetFramework        = "Core 実行可能ファイルのターゲット .NET フレームワーク モニカー（例：``'net8.0'``）。既定はビルド マシンのランタイム（Shared）または ``PowerShellVersion`` にマップされたフレームワーク（Bundled）。"
+					PowerShellVersion      = "同梱する PowerShell SDK のバージョン（Bundled バックエンドのみ）。既定はビルド マシンの PowerShell バージョン。"
+					SingleFile             = "単一ファイルの実行可能ファイルを発行します（既定 `` `$true ``）。`` `$false `` の場合、実行可能ファイルとその依存関係はフォルダーとして書き出されます。"
+					SelfContained          = "出力に .NET ランタイムを含めます（Bundled バックエンドのみ、既定 `` `$false ``）。サイズが大幅に増えますが、ランタイムのインストールが不要になります。"
+					Trimmed                = "IL トリミングを有効にして出力サイズを縮小します（Bundled バックエンドのみ、既定 `` `$false ``）。"
+					TrimMode               = "``Trimmed`` 設定時のトリミングの強度：``'partial'``（既定、安全）または ``'full'``（積極的、リフレクションを壊す可能性あり）。"
+					ReadyToRun             = "起動を高速化するためにアセンブリを事前コンパイルします（Bundled バックエンドのみ、出力はわずかに大きくなります）。"
+					InvariantGlobalization = "インバリアント グローバリゼーションを使用し、自己完結型ビルドから ICU ライブラリを削除します（Bundled バックエンドのみ）。カルチャ固有の書式が壊れる可能性があります。"
+					Aot                    = "実験的な Native AOT コンパイルで JIT 不要のバイナリを生成します（Bundled バックエンドのみ、``SelfContained`` が必要）。PowerShell が多用するリフレクションにより一部のスクリプトが壊れる可能性があります。"
+				}
 			}
 			Resources      = [ordered]@{
 				Icon        = "実行可能ファイルのアイコン。アイコンファイルのパスまたは URL にできます。.exe/.dll の場合は ,<index> でリソースアイコンを指定できます（既定 0、例：shell32.dll,3）。"
@@ -91,6 +107,7 @@
 			Golf           = "golf モードを有効にします、略語と一般的な関数を追加します"
 			Sandbox        = "ネイティブ ファイルへのアクセスを防ぐために、スクリプトをコンパイルする際に保護を追加します"
 			NoUpdateCheck  = "ps12exe の新しいバージョンの確認をスキップします。"
+			Quiet          = "コンパイル中の情報（ホスト）出力を抑制します。エラーと警告は引き続き表示されます。"
 			Locale         = "使用する言語コード"
 			ConfigFile     = "設定ファイル（``<outputfile>.exe.config``）を書き込みます"
 			Help           = "このヘルプ情報を表示します"
@@ -225,6 +242,20 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Locale '<言語コー�
 		ConstEvalThrowErrorFallback               = "定数の評価中にエラーが発生しました。通常のプログラムフレームにフォールバックします"
 		ConstEvalNotConstFallback                 = "スクリプトが非定数であると宣言されたため、通常のプログラムフレームにフォールバックします"
 		InvalidArchitecture                       = "無効なプラットフォーム {0} です。AnyCpu を使用します"
+		InvalidBuildPlatform                      = "無効なプラットフォーム {0} です。AnyCpu を使用します。"
+		InvalidBuildTarget                        = "無効なターゲット ランタイム {0} です。Framework4.0 を使用します。"
+		InvalidCoreBackend                        = "無効な Build.Core.Backend {0} です。Shared を使用します。"
+		InvalidCoreTargetOs                       = "無効な Build.Core.TargetOs {0} です。ビルド マシンの OS を使用します。"
+		InvalidCoreTargetFramework                = "無効な Build.Core.TargetFramework {0} です。無視します。"
+		InvalidCorePowerShellVersion              = "無効な PowerShell バージョン {0} です。"
+		CoreVersionNoMapping                      = "PowerShell {0} に対応する .NET フレームワーク マッピングがありません。{1} を使用します。"
+		CoreTargetFrameworkTooLow                 = "ターゲット フレームワーク {0} は、選択した PowerShell バージョンが必要とする {1} より低いです。"
+		CoreOptionsIgnoredNotCore                 = "Build.Target が 'Core' でない限り、Build.Core オプションは無視されます。"
+		CoreAdvancedRequiresBundled               = "これらのオプションには -Build @{{Core=@{{Backend='Bundled'}}}} が必要です：{0}"
+		CoreAotNeedsSelfContained                 = "Build.Core.Aot には Build.Core.SelfContained が `$true である必要があります。"
+		CoreTrimModeNeedsTrimmed                  = "Build.Core.TrimMode には Build.Core.Trimmed が `$true である必要があります。"
+		CoreTargetOsNotWindows                    = "ウィンドウ アプリケーションと conhost は Windows ターゲットでのみサポートされます。"
+		CombinedArg_ConHost_NoConsole             = "-App @{ConHost=`$true} は -App @{Windowed=`$true} と組み合わせることはできません。"
 		UnknownPragma                             = "未知の pragma：{0}"
 		PragmaForbiddenInGuestMode                = "pragma {0} を無視します。Sandbox モードでは許可されていません。"
 		UnknownPragmaBadParameterType             = "未知の pragma：{0}。型 {1} は解析できません。"

@@ -22,11 +22,23 @@ if ($unsupported.Count) {
 	throw 'ps12exe:core-unsupported'
 }
 
-# 目标框架版本跟随当前 PowerShell 所用的 .NET 运行时。
-$runtimeVersion = [System.Environment]::Version
-$tfm = "net$($runtimeVersion.Major).$($runtimeVersion.Minor)"
-if ($noConsole) { $tfm += '-windows' }
+# 目标框架版本：显式 Build.Core.TargetFramework 优先，否则跟随当前 PowerShell 所用的 .NET 运行时。
+if ($coreTargetFramework) {
+	$tfm = $coreTargetFramework
+}
+else {
+	$runtimeVersion = [System.Environment]::Version
+	$tfm = "net$($runtimeVersion.Major).$($runtimeVersion.Minor)"
+}
+if ($noConsole -and $tfm -notmatch '-windows$') { $tfm += '-windows' }
 
+# 目标平台：Build.Core.TargetOs 优先，否则用宿主 OS；架构来自 Build.Platform。
+$ridOs = switch ($coreTargetOs) {
+	'Windows' { 'win' }
+	'Linux' { 'linux' }
+	'MacOS' { 'osx' }
+	default { if ($IsWindows) { 'win' } elseif ($IsMacOS) { 'osx' } else { 'linux' } }
+}
 $ridArch = $architecture
 if ($ridArch -eq 'anycpu') {
 	$ridArch = switch ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture) {
@@ -36,8 +48,10 @@ if ($ridArch -eq 'anycpu') {
 		default { 'x64' }
 	}
 }
-$ridOs = if ($IsWindows) { 'win' } elseif ($IsMacOS) { 'osx' } else { 'linux' }
+# 32 位运行时只在 Windows 目标上提供。
 if ($ridOs -ne 'win' -and $ridArch -eq 'x86') { $ridArch = 'x64' }
+# 非 Windows 目标不支持 conhost / 窗口化（已在 ps12exe.ps1 校验，这里防御）。
+if ($ridOs -ne 'win' -and $conHost) { throw 'ps12exe:conhost-not-windows' }
 $rid = "$ridOs-$ridArch"
 
 $assemblyName = [System.IO.Path]::GetFileNameWithoutExtension($outputFile)
@@ -45,7 +59,9 @@ $assemblyName = ($assemblyName -replace '[^\w\.\-]', '_')
 if (-not $assemblyName) { $assemblyName = 'output' }
 
 $isConst = $AstAnalyzeResult.IsConst
-$outputType = if ($noConsole) { 'WinExe' } else { 'Exe' }
+# conHost 只对非常量帧有意义（pack.cs 的 launcher 负责重启）；常量产物是无交互的预计算结果，忽略它。
+$launcherWinExe = $noConsole -or ($conHost -and -not $isConst)
+$outputType = if ($launcherWinExe) { 'WinExe' } else { 'Exe' }
 $debugType = if ($prepareDebug) { 'portable' } else { 'none' }
 $iconElement = if ($iconFile) { "<ApplicationIcon>$([System.Security.SecurityElement]::Escape($iconFile))</ApplicationIcon>" } else { '' }
 $winForms = if ($noConsole) { '<UseWindowsForms>true</UseWindowsForms>' } else { '' }
@@ -71,13 +87,19 @@ $versionElements = if ($resourceParams.version) {
 }
 else { '' }
 
+# Bundled 后端：打包 PowerShell SDK，可 self-contained/trim/AOT，产物更大且目标机无需安装 pwsh。
+if ($coreBackend -eq 'Bundled') {
+	. $PSScriptRoot\CoreBundledCompiler.ps1
+	return
+}
+
 # 常量帧与 launcher 两个发布项目共用的属性；DefineConstants 由调用处替换。
 $publishedProps = @"
 		<OutputType>$outputType</OutputType>
 		<TargetFramework>$tfm</TargetFramework>
 		<RuntimeIdentifier>$rid</RuntimeIdentifier>
 		<SelfContained>false</SelfContained>
-		<PublishSingleFile>true</PublishSingleFile>
+		<PublishSingleFile>$($singleFile.ToString().ToLowerInvariant())</PublishSingleFile>
 		<NoWarn>`$(NoWarn);CA1416;IL3000;CS8073</NoWarn>
 		<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
 		<AssemblyName>$assemblyName</AssemblyName>
@@ -103,12 +125,13 @@ $payloadDefineConstants = (($coreConstants + 'CoreHost') | Sort-Object -Unique) 
 # 叠加 --no-restore，可省掉每次约 0.8~0.9s 的还原。用命名互斥量串行化同一 key 的并发编译。
 $smaPath = Join-Path $PSHOME 'System.Management.Automation.dll'
 $coreInvariant = @(
-	'corecache-v1'
+	'corecache-v2'
 	"tfm=$tfm", "rid=$rid", "outputType=$outputType", "debugType=$debugType"
 	"assemblyName=$assemblyName", "winForms=$winForms", "icon=$iconElement"
 	"resources=$resourceElements", "version=$versionElements"
 	"define=$defineConstants"
 	"payloadDefine=$payloadDefineConstants", "isConst=$isConst"
+	"singleFile=$singleFile", "conHost=$conHost"
 	"sma=$smaPath", "edition=$($PSVersionTable.PSEdition)", "psver=$($PSVersionTable.PSVersion)"
 ) -join "`n"
 $sha = [System.Security.Cryptography.SHA256]::Create()
@@ -254,8 +277,10 @@ $($publishedProps.Replace('__DefineConstants__', [System.Security.SecurityElemen
 		$launcherSource = $launcherSource.Replace('[System.STAThread]', $threadingAttr)
 		[System.IO.File]::WriteAllText((Join-Path $projectDir 'launcher.cs'), $launcherSource, [System.Text.UTF8Encoding]::new($false))
 
-		# launcher 需要 noConsole，CoreHost 才能用 MessageBox 报错而不是写不存在的控制台。
-		$launcherDefineConstants = if ($noConsole) { 'CoreHost;noConsole' } else { 'CoreHost' }
+		# launcher 需要 noConsole，CoreHost 才能用 MessageBox 报错而不是写不存在的控制台；conHost 让 pack.cs 走 conhost 重启。
+		$launcherDefineConstants = 'CoreHost'
+		if ($noConsole) { $launcherDefineConstants += ';noConsole' }
+		if ($conHost) { $launcherDefineConstants += ';conHost' }
 		$launcherCsproj = @"
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
@@ -281,7 +306,19 @@ $($publishedProps.Replace('__DefineConstants__', $launcherDefineConstants))
 		Write-I18n Error OutputFileNotWritten -Category WriteError
 		throw 'ps12exe:core-no-output'
 	}
-	Copy-Item -LiteralPath $publishedExe -Destination $outputFile -Force
+	if ($singleFile) {
+		Copy-Item -LiteralPath $publishedExe -Destination $outputFile -Force
+	}
+	else {
+		# 非单文件：把整个 publish 目录（exe + deps/runtimeconfig 等）拷到 outputFile 所在目录。
+		$outDir = Split-Path -Parent $outputFile
+		New-Item -ItemType Directory -Path $outDir -Force | Out-Null
+		Copy-Item -Path (Join-Path $publishDir '*') -Destination $outDir -Recurse -Force
+		$copiedExe = Join-Path $outDir "$assemblyName.exe"
+		if ([System.IO.Path]::GetFullPath($copiedExe) -ne [System.IO.Path]::GetFullPath($outputFile)) {
+			Move-Item -LiteralPath $copiedExe -Destination $outputFile -Force
+		}
+	}
 
 	if ($prepareDebug) {
 		$publishedPdb = Join-Path $publishDir "$assemblyName.pdb"

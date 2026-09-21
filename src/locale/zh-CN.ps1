@@ -37,14 +37,16 @@
 		title      = "用法："
 		Usage      = "[input |] ps12exe [[-inputFile] '<文件名|url>' | -Content '<脚本>'] [-outputFile '<文件名>']
 	[-App @{Windowed=`$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default';
-	VisualStyles=`$true; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true}]
+	VisualStyles=`$true; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true; ConHost=`$true}]
 	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
-	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'; Apartment='STA'|'MTA';
-	Culture='<区域>'; Options='<选项>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<文件夹>'}]
+	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
+	Culture='<区域>'; Options='<选项>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<文件夹>';
+	Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>';
+	SingleFile=`$true; SelfContained=`$true; Trimmed=`$true; TrimMode='partial'|'full'; ReadyToRun=`$true; InvariantGlobalization=`$true; Aot=`$true}}]
 	[-Resources @{Icon='<文件名|url>'; Title='<标题>'; Description='<简介>'; Company='<公司>';
 	Product='<产品>'; Copyright='<版权>'; Trademark='<水印>'; Version='<版本>'}]
 	[-Signing @{Certificate='<PFX文件路径>'; Password='<PFX密码>'; Thumbprint='<证书指纹>'; Timestamp='<时间戳服务器>'}]
-	[-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<语言代码>'] [-ConfigFile] [-help]"
+	[-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Quiet] [-Locale '<语言代码>'] [-ConfigFile] [-help]"
 		PrarmsData = [ordered]@{
 			input          = "PowerShell 脚本文件内容的字符串，与 ``-Content`` 相同。"
 			inputFile      = "要转换为可执行文件的 PowerShell 脚本路径或 URL（文件须为 UTF-8 或 UTF-16 编码）。"
@@ -59,6 +61,7 @@
 				CredentialGUI    = "在控制台模式下使用 GUI 提示凭据。"
 				DpiAware         = "将编译的可执行文件标记为 DPI 感知。"
 				WinFormsDpiAware = "让 WinForms 使用 DPI 缩放（需要 Windows 10 和 .Net 4.7 或更高版本）。"
+				ConHost          = "强制使用 conhost 控制台而非 Windows 终端（编译产物以窗口进程启动并自行分配控制台）。会禁用输入/输出/错误重定向。"
 			}
 			Os             = [ordered]@{
 				Admin      = "如果启用了 UAC，编译的可执行文件只能在提升的上下文中运行（如果需要，会出现 UAC 对话框）。"
@@ -68,13 +71,26 @@
 			}
 			Build          = [ordered]@{
 				Target     = "目标运行时版本，默认为 ``'Framework4.0'``，支持 ``'Framework2.0'`` 与 ``'Core'``；``'Core'`` 编译为 PowerShell Core (.NET) 可执行程序（需要编译机与目标机都装有 PowerShell Core 与 .NET，且产物体积大很多）。"
-				Platform   = "仅为特定运行时编译。可能的值为 ``'AnyCpu'``、``'x64'`` 和 ``'x86'``。"
+				Platform   = "仅为特定运行时编译。可能的值为 ``'AnyCpu'``、``'x64'``、``'x86'`` 和 ``'arm64'``（arm64 仅对 ``'Core'`` 有效）。"
 				Apartment  = "``'STA'``（单线程单元）或 ``'MTA'``（多线程单元）模式。"
 				Culture    = "编译的可执行文件的文化。如果未指定，则为当前用户文化。"
 				Options    = "额外的编译器选项（参见 ``https://msdn.microsoft.com/en-us/library/78f4aasd.aspx``）。"
 				KeepSource = "创建有助于调试的信息。"
 				Minify     = "在编译之前缩小脚本的脚本块。"
 				TempDir    = "存储临时文件的目录（默认为 ``%temp%`` 中随机生成的临时目录）。"
+				Core       = [ordered]@{
+					Backend                = "Core 可执行文件获取 PowerShell 的方式。``'Shared'``（默认）从目标机的 pwsh 安装中解析，产物很小；``'Bundled'`` 会打包 PowerShell SDK（``Microsoft.PowerShell.SDK``），目标机无需 pwsh，并可使用 SelfContained/Trimmed/ReadyToRun/InvariantGlobalization/Aot，代价是产物体积大很多。"
+					TargetOs               = "Core 可执行文件的目标操作系统：``'Windows'``、``'Linux'`` 或 ``'MacOS'``（默认为构建机所在系统）。GUI/窗口化输出仅在 ``'Windows'`` 下实现。"
+					TargetFramework        = "Core 可执行文件的目标 .NET 框架名字对象（例如 ``'net8.0'``）。默认为构建机的运行时（Shared）或映射到 ``PowerShellVersion`` 的框架（Bundled）。"
+					PowerShellVersion      = "打包的 PowerShell SDK 版本（仅 Bundled 后端）。默认为构建机的 PowerShell 版本。"
+					SingleFile             = "发布单文件可执行程序（默认 `` `$true ``）。为 `` `$false `` 时，可执行文件及其依赖会以文件夹形式写出。"
+					SelfContained          = "在产物中包含 .NET 运行时（仅 Bundled 后端；默认 `` `$false ``）。会大幅增大体积，但无需目标机安装运行时。"
+					Trimmed                = "启用 IL 裁剪以减小产物体积（仅 Bundled 后端；默认 `` `$false ``）。"
+					TrimMode               = "设置 ``Trimmed`` 时的裁剪力度：``'partial'``（默认，安全）或 ``'full'``（激进，可能破坏反射）。"
+					ReadyToRun             = "预编译程序集以加快启动（仅 Bundled 后端；产物略大）。"
+					InvariantGlobalization = "使用固定区域设置，从自包含构建中移除 ICU 库（仅 Bundled 后端）。依赖特定区域的格式可能失效。"
+					Aot                    = "实验性的 Native AOT 编译，生成无 JIT 的二进制（仅 Bundled 后端；需要 ``SelfContained``）。PowerShell 使用的大量反射可能破坏部分脚本。"
+				}
 			}
 			Resources      = [ordered]@{
 				Icon        = "可执行文件的图标；可以是图标文件路径或 URL。对 .exe/.dll 可用 ,<索引> 选择资源图标（默认 0），如 shell32.dll,3。"
@@ -96,6 +112,7 @@
 			Golf           = "启用golf模式，添加缩写和常用函数"
 			Sandbox        = "在额外保护下编译脚本，阻止访问本机文件。"
 			NoUpdateCheck  = "跳过ps12exe的新版本检查"
+			Quiet          = "编译期间抑制信息性（主机）输出；错误和警告仍会显示。"
 			Locale         = "界面与消息所使用的语言代码。"
 			ConfigFile     = "写一个配置文件（``<outputfile>.exe.config``）"
 			Help           = "显示此帮助信息"
@@ -191,6 +208,20 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Locale '<语言代码>'] [-UIMode 'Da
 		CombinedArg_NoConfigFile_winFormsDPIAware = "强制生成配置文件，因为选项 -App @{WinFormsDpiAware=`$true} 需要此配置文件"
 		InvalidResourceParam                      = "参数 -Resources 的无效Key：{0}"
 		InvalidArchitecture                       = "无效的平台 {0}，使用 AnyCpu"
+		InvalidBuildPlatform                      = "无效的平台 {0}，使用 AnyCpu。"
+		InvalidBuildTarget                        = "无效的目标运行时 {0}，使用 Framework4.0。"
+		InvalidCoreBackend                        = "无效的 Build.Core.Backend {0}，使用 Shared。"
+		InvalidCoreTargetOs                       = "无效的 Build.Core.TargetOs {0}，使用构建机所在系统。"
+		InvalidCoreTargetFramework                = "无效的 Build.Core.TargetFramework {0}，忽略它。"
+		InvalidCorePowerShellVersion              = "无效的 PowerShell 版本 {0}。"
+		CoreVersionNoMapping                      = "PowerShell {0} 没有对应的 .NET 框架映射；使用 {1}。"
+		CoreTargetFrameworkTooLow                 = "目标框架 {0} 低于所选 PowerShell 版本要求的 {1}。"
+		CoreOptionsIgnoredNotCore                 = "除非 Build.Target 为 'Core'，否则会忽略 Build.Core 选项。"
+		CoreAdvancedRequiresBundled               = "这些选项需要 -Build @{{Core=@{{Backend='Bundled'}}}}：{0}"
+		CoreAotNeedsSelfContained                 = "Build.Core.Aot 需要 Build.Core.SelfContained 为 `$true。"
+		CoreTrimModeNeedsTrimmed                  = "Build.Core.TrimMode 需要 Build.Core.Trimmed 为 `$true。"
+		CoreTargetOsNotWindows                    = "窗口化应用程序和 conhost 仅支持 Windows 目标。"
+		CombinedArg_ConHost_NoConsole             = "-App @{ConHost=`$true} 不能与 -App @{Windowed=`$true} 一起使用。"
 		# 语法与文件
 		InputSyntaxError                          = "脚本语法错误！"
 		SyntaxErrorLineStart                      = "第{0}行 第{1}列："

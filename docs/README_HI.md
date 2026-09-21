@@ -141,14 +141,15 @@ help       : इस मदद सूचना को दिखाएँ।
 ```powershell
 [input |] ps12exe [[-inputFile] '<फ़ाइल नाम|url>' | -Content '<स्क्रिप्ट>'] [-outputFile '<फ़ाइल नाम>']
         [-App @{Windowed=$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default'; VisualStyles=$true;
-        ExitOnCancel=$true; CredentialGUI=$true; DpiAware=$true; WinFormsDpiAware=$true}]
+        ExitOnCancel=$true; CredentialGUI=$true; DpiAware=$true; WinFormsDpiAware=$true; ConHost=$true}]
         [-Os @{Admin=$true; ModernOS=$true; LongPaths=$true; Virtualize=$true}]
-        [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'; Apartment='STA'|'MTA';
-        Culture='<संस्कृति>'; Options='<विकल्प>'; KeepSource=$true; Minify={<स्क्रिप्टब्लॉक>}; TempDir='<फ़ोल्डर>'}]
+        [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
+        Culture='<संस्कृति>'; Options='<विकल्प>'; KeepSource=$true; Minify={<स्क्रिप्टब्लॉक>}; TempDir='<फ़ोल्डर>';
+        Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>'; SingleFile=$true; SelfContained=$true; Trimmed=$true; TrimMode='partial'|'full'; ReadyToRun=$true; InvariantGlobalization=$true; Aot=$true}}]
         [-Resources @{Icon='<फ़ाइल नाम|url>'; Title='<शीर्षक>'; Description='<सारांश>'; Company='<कंपनी>';
         Product='<उत्पाद>'; Copyright='<कॉपीराइट>'; Trademark='<नामकरण>'; Version='<संस्करण>'}]
         [-Signing @{Certificate='<PFX फ़ाइल पथ>'; Password='<PFX पासवर्ड>'; Thumbprint='<प्रमाणपत्र फ़िंगरप्रिंट>'; Timestamp='<समय चिह्न सर्वर>'}]
-        [-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<भाषा कोड>'] [-ConfigFile] [-help]
+        [-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Quiet] [-Locale '<भाषा कोड>'] [-ConfigFile] [-help]
 ```
 
 ```text
@@ -165,6 +166,7 @@ App              : उत्पन्न एप्लिकेशन के व�
                    CredentialGUI    : कंसोल मोड में क्रेडेंशल के लिए GUI का उपयोग करें।
                    DpiAware         : संकलित एक्सीक्यूटेबल फ़ाइल को DPI aware के रूप में चिह्नित करें।
                    WinFormsDpiAware : WinForms को DPI स्केलिंग का उपयोग करने दें (Windows 10 और .Net 4.7 या इससे ऊपर की आवश्यकता है)।
+                   ConHost          : Windows Terminal के बजाय conhost कंसोल को बाध्य करें; इनपुट/आउटपुट/त्रुटि रीडायरेक्शन अक्षम हो जाता है।
 Os               : ऑपरेटिंग सिस्टम एकीकरण विकल्पों की हैश तालिका। समर्थित कुंजियाँ:
                    Admin            : अगर UAC सक्षम है, तो कॉम्पाइल की गई एक्सीक्यूटेबल फ़ाइल को सिर्फ उच्चाधिकार कांटेक्स्ट में चलाया जा सकेगा (आवश्यकता होने पर, UAC संवाद बॉक्स प्रकट होगा)।
                    ModernOS         : नवीनतम Windows संस्करण की विशेषताओं का उपयोग करें (विभिन्नता देखने के लिए [Environment]::OSVersion का चालन करें)।
@@ -172,19 +174,32 @@ Os               : ऑपरेटिंग सिस्टम एकीकर�
                    Virtualize       : ऐप्लिकेशन वर्चुअलाईजेशन सक्रिय कर दिया गया है (एक्स86 रनटाइम को प्रयोगशाला माना)।
 Build            : बिल्ड/टूलचेन विकल्पों की हैश तालिका। समर्थित कुंजियाँ:
                    Target           : लक्ष्य रनटाइम संस्करण, डिफ़ॉल्ट रूप से 'Framework4.0', 'Framework2.0' और 'Core' समर्थित हैं। 'Core' PowerShell Core (.NET) निष्पादन योग्य बनाता है (कंपाइल और लक्ष्य मशीन दोनों पर PowerShell Core और .NET आवश्यक; आउटपुट बहुत बड़ा होता है)।
-                   Platform         : केवल विशेष रनटाइम के लिए कॉम्पाइल करें। संभावित मान हैं 'AnyCpu', 'x64' और 'x86'।
+                   Platform         : केवल विशेष रनटाइम के लिए कॉम्पाइल करें। संभावित मान हैं 'AnyCpu', 'x64', 'x86' और 'arm64' (arm64 केवल 'Core' के लिए मान्य है)।
                    Apartment        : 'STA' या 'MTA' मॉडल।
                    Culture          : संकलित एक्सीक्यूटेबल फ़ाइल की संस्कृति। अगर निर्दिष्ट नहीं किया गया है, तो वर्तमान उपयोगकर्ता संस्कृति कोड होगा।
                    Options          : अतिरिक्त कंपाइलर विकल्प (देखें https://msdn.microsoft.com/en-us/library/78f4aasd.aspx)।
                    KeepSource       : डीबगिंग के लिए मददगार जानकारी बनाएं।
                    Minify           : कॉम्पाइल से पहले स्क्रिप्ट को कम करने के लिए स्क्रिप्ट ब्लॉक।
                    TempDir          : सामयिक फ़ाइलें संग्रहित करने के लिए फ़ोल्डर (डिफ़ॉल्ट रूप से %temp% में रैंडम फ़ोल्डर)।
+                   Core             : 'Core' लक्ष्य बिल्ड के लिए विकल्प। समर्थित कुंजियाँ:
+                                      Backend                : 'Shared' (डिफ़ॉल्ट) लक्ष्य मशीन की pwsh स्थापना से PowerShell प्राप्त करता है और आउटपुट छोटा रखता है; 'Bundled' PowerShell SDK (Microsoft.PowerShell.SDK) को बंडल करता है, इसलिए लक्ष्य मशीन को pwsh की आवश्यकता नहीं होती और SelfContained/Trimmed/ReadyToRun/InvariantGlobalization/Aot उपलब्ध हो जाते हैं, पर आउटपुट बहुत बड़ा हो जाता है।
+                                      TargetOs               : लक्ष्य ऑपरेटिंग सिस्टम: 'Windows', 'Linux' या 'MacOS' (डिफ़ॉल्ट: बिल्ड मशीन का OS)। GUI/विंडो आउटपुट के लिए 'Windows' आवश्यक है।
+                                      TargetFramework        : लक्ष्य .NET फ्रेमवर्क मॉनिकर (उदाहरण 'net8.0')। डिफ़ॉल्ट रूप से बिल्ड मशीन का रनटाइम (Shared) या PowerShellVersion से मैप किया गया फ्रेमवर्क (Bundled)।
+                                      PowerShellVersion      : बंडल किए गए PowerShell SDK का संस्करण (केवल Bundled)। डिफ़ॉल्ट रूप से बिल्ड मशीन का PowerShell संस्करण।
+                                      SingleFile             : एकल-फ़ाइल एक्सीक्यूटेबल प्रकाशित करें (डिफ़ॉल्ट $true)। $false होने पर, एक्सीक्यूटेबल और उसकी निर्भरताएँ एक फ़ोल्डर के रूप में लिखी जाती हैं।
+                                      SelfContained          : .NET रनटाइम शामिल करें (केवल Bundled; डिफ़ॉल्ट $false)। बहुत बड़ा हो जाता है लेकिन स्थापित रनटाइम की आवश्यकता नहीं होती।
+                                      Trimmed                : आकार घटाने के लिए IL ट्रिमिंग सक्षम करें (केवल Bundled; डिफ़ॉल्ट $false)।
+                                      TrimMode               : Trimmed सेट होने पर ट्रिमिंग की तीव्रता: 'partial' (डिफ़ॉल्ट, सुरक्षित) या 'full' (आक्रामक, प्रतिबिंब तोड़ सकता है)।
+                                      ReadyToRun             : तेज़ स्टार्टअप के लिए असेंबली पूर्व-संकलित करें (केवल Bundled)।
+                                      InvariantGlobalization : इनवेरिएंट ग्लोबलाइज़ेशन का उपयोग करें, स्व-निहित बिल्ड से ICU लाइब्रेरी हटाएँ (केवल Bundled)।
+                                      Aot                    : प्रायोगिक Native AOT संकलन (केवल Bundled; SelfContained आवश्यक)। PowerShell द्वारा उपयोग किया जाने वाला भारी प्रतिबिंब कुछ स्क्रिप्ट तोड़ सकता है।
 Resources        : संकलित एक्सीक्यूटेबल फ़ाइल में एम्बेड की गई संस्करण संसाधनों की हैश तालिका (Icon, Title, Description, Company, Product, Copyright, Trademark, Version)। Icon एक आइकन फ़ाइल पथ या URL हो सकता है। .exe/.dll के लिए ,<index> जोड़कर संसाधन आइकन चुनें (डिफ़ॉल्ट 0), जैसे shell32.dll,3।
 Signing          : कोड साइनिंग विकल्पों की हैश तालिका (Certificate, Password, Thumbprint, Timestamp)। Certificate या Thumbprint में से एक निर्दिष्ट करना आवश्यक है।
 PreprocessOnly   : इनपुट स्क्रिप्ट को प्रीप्रोसेस करें और इसे संकलित किए बिना वापस करें।
 Golf             : गोल्फ मोड सक्षम करें, अधिकतम संख्या और सामान्य फंक्शनों को जोड़ें।
 Sandbox          : एक्सट्रा सुरक्षा के साथ स्क्रिप्ट को कॉम्पाइल करें, स्थानीय फ़ाइलों की पहुँच को टालें।
 NoUpdateCheck    : ps12exe के नए संस्करण की जाँच छोड़ें।
+Quiet            : संकलन के दौरान सूचनात्मक (होस्ट) आउटपुट दबाएँ; त्रुटियाँ और चेतावनियाँ अभी भी दिखाई देंगी।
 Locale           : स्थानीयकरण भाषा कोड की निर्दिष्टि करें।
 ConfigFile       : एक कॉन्फ़िगरेशन फ़ाइल लिखें (<outputfile>.exe.config)।
 Help             : इस मदद सूचना को दिखाएँ।

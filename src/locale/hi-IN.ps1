@@ -32,14 +32,16 @@
 		title      = "उपयोग:"
 		Usage      = "[input |] ps12exe [[-inputFile] '<फ़ाइल नाम|url>' | -Content '<स्क्रिप्ट>'] [-outputFile '<फ़ाइल नाम>']
 	[-App @{Windowed=`$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default';
-	VisualStyles=`$true; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true}]
+	VisualStyles=`$true; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true; ConHost=`$true}]
 	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
-	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'; Apartment='STA'|'MTA';
-	Culture='<संस्कृति>'; Options='<विकल्प>'; KeepSource=`$true; Minify={<स्क्रिप्टब्लॉक>}; TempDir='<फ़ोल्डर>'}]
+	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
+	Culture='<संस्कृति>'; Options='<विकल्प>'; KeepSource=`$true; Minify={<स्क्रिप्टब्लॉक>}; TempDir='<फ़ोल्डर>';
+	Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>';
+	SingleFile=`$true; SelfContained=`$true; Trimmed=`$true; TrimMode='partial'|'full'; ReadyToRun=`$true; InvariantGlobalization=`$true; Aot=`$true}}]
 	[-Resources @{Icon='<फ़ाइल नाम|url>'; Title='<शीर्षक>'; Description='<सारांश>'; Company='<कंपनी>';
 	Product='<उत्पाद>'; Copyright='<कॉपीराइट>'; Trademark='<नामकरण>'; Version='<संस्करण>'}]
 	[-Signing @{Certificate='<PFX फ़ाइल पथ>'; Password='<PFX पासवर्ड>'; Thumbprint='<प्रमाणपत्र फ़िंगरप्रिंट>'; Timestamp='<समय चिह्न सर्वर>'}]
-	[-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Locale '<भाषा कोड>'] [-ConfigFile] [-help]"
+	[-PreprocessOnly] [-Golf] [-Sandbox] [-NoUpdateCheck] [-Quiet] [-Locale '<भाषा कोड>'] [-ConfigFile] [-help]"
 		PrarmsData = [ordered]@{
 			input          = "PowerShell स्क्रिप्ट फ़ाइल की सामग्री का स्ट्रिंग, ``-Content`` के समान"
 			inputFile      = "परिवर्तित करने के लिए PowerShell स्क्रिप्ट का पथ या URL (फ़ाइल UTF-8 या UTF-16 एन्कोड होनी चाहिए)।"
@@ -54,6 +56,7 @@
 				CredentialGUI    = "कंसोल मोड में क्रेडेंशल के लिए GUI का उपयोग करें।"
 				DpiAware         = "संकलित एक्सीक्यूटेबल फ़ाइल को DPI aware के रूप में चिह्नित करें।"
 				WinFormsDpiAware = "WinForms को DPI स्केलिंग का उपयोग करने दें (Windows 10 और .Net 4.7 या इससे ऊपर की आवश्यकता है)।"
+				ConHost          = "Windows Terminal के बजाय conhost कंसोल को बाध्य करें (संकलित एक्सीक्यूटेबल एक विंडो प्रक्रिया के रूप में शुरू होता है और स्वयं कंसोल आवंटित करता है)। इनपुट/आउटपुट/त्रुटि रीडायरेक्शन अक्षम हो जाता है।"
 			}
 			Os             = [ordered]@{
 				Admin      = "अगर UAC सक्षम है, तो कॉम्पाइल की गई एक्सीक्यूटेबल फ़ाइल को सिर्फ उच्चाधिकार कांटेक्स्ट में चलाया जा सकेगा (आवश्यकता होने पर, UAC संवाद बॉक्स प्रकट होगा)।"
@@ -63,13 +66,26 @@
 			}
 			Build          = [ordered]@{
 				Target     = "लक्ष्य रनटाइम संस्करण, डिफ़ॉल्ट रूप से ``'Framework4.0'``; ``'Framework2.0'`` और ``'Core'`` समर्थित हैं। ``'Core'`` PowerShell Core (.NET) निष्पादन योग्य बनाता है (कंपाइल और लक्ष्य मशीन दोनों पर PowerShell Core और .NET आवश्यक; आउटपुट बहुत बड़ा होता है)।"
-				Platform   = "केवल विशेष रनटाइम के लिए कॉम्पाइल करें। संभावित मान हैं ``'AnyCpu'``, ``'x64'`` और ``'x86'``।"
+				Platform   = "केवल विशेष रनटाइम के लिए कॉम्पाइल करें। संभावित मान हैं ``'AnyCpu'``, ``'x64'``, ``'x86'`` और ``'arm64'`` (arm64 केवल ``'Core'`` के लिए मान्य है)।"
 				Apartment  = "``'STA'`` या ``'MTA'`` मॉडल।"
 				Culture    = "संकलित एक्सीक्यूटेबल फ़ाइल की संस्कृति। अगर निर्दिष्ट नहीं किया गया है, तो वर्तमान उपयोगकर्ता संस्कृति होगी।"
 				Options    = "अतिरिक्त कंपाइलर विकल्प (देखें ``https://msdn.microsoft.com/en-us/library/78f4aasd.aspx``)।"
 				KeepSource = "डीबगिंग के लिए मददगार जानकारी बनाएं।"
 				Minify     = "कॉम्पाइल से पहले स्क्रिप्ट को छोटा करने के लिए स्क्रिप्ट ब्लॉक।"
 				TempDir    = "अस्थायी फ़ाइलें संग्रहित करने का फ़ोल्डर (डिफ़ॉल्ट रूप से ``%temp%`` में यादृच्छिक फ़ोल्डर)।"
+				Core       = [ordered]@{
+					Backend                = "Core एक्सीक्यूटेबल PowerShell कैसे प्राप्त करता है। ``'Shared'`` (डिफ़ॉल्ट) इसे लक्ष्य मशीन की pwsh स्थापना से हल करता है और आउटपुट को छोटा रखता है; ``'Bundled'`` PowerShell SDK (``Microsoft.PowerShell.SDK``) को बंडल करता है, इसलिए लक्ष्य मशीन को pwsh की आवश्यकता नहीं होती और SelfContained/Trimmed/ReadyToRun/InvariantGlobalization/Aot उपलब्ध हो जाते हैं, पर आउटपुट बहुत बड़ा हो जाता है।"
+					TargetOs               = "Core एक्सीक्यूटेबल के लिए लक्ष्य ऑपरेटिंग सिस्टम: ``'Windows'``, ``'Linux'`` या ``'MacOS'`` (डिफ़ॉल्ट: बिल्ड मशीन का OS)। GUI/विंडो आउटपुट केवल ``'Windows'`` के साथ संभव है।"
+					TargetFramework        = "Core एक्सीक्यूटेबल के लिए लक्ष्य .NET फ्रेमवर्क मॉनिकर (उदाहरण ``'net8.0'``)। डिफ़ॉल्ट रूप से बिल्ड मशीन का रनटाइम (Shared) या ``PowerShellVersion`` से मैप किया गया फ्रेमवर्क (Bundled)।"
+					PowerShellVersion      = "बंडल किए गए PowerShell SDK का संस्करण (केवल Bundled बैकएंड)। डिफ़ॉल्ट रूप से बिल्ड मशीन का PowerShell संस्करण।"
+					SingleFile             = "एकल-फ़ाइल एक्सीक्यूटेबल प्रकाशित करें (डिफ़ॉल्ट `` `$true ``)। `` `$false `` होने पर, एक्सीक्यूटेबल और उसकी निर्भरताएँ एक फ़ोल्डर के रूप में लिखी जाती हैं।"
+					SelfContained          = "आउटपुट में .NET रनटाइम शामिल करें (केवल Bundled बैकएंड; डिफ़ॉल्ट `` `$false ``)। आकार बहुत बढ़ाता है लेकिन स्थापित रनटाइम की आवश्यकता समाप्त करता है।"
+					Trimmed                = "आउटपुट आकार घटाने के लिए IL ट्रिमिंग सक्षम करें (केवल Bundled बैकएंड; डिफ़ॉल्ट `` `$false ``)।"
+					TrimMode               = "``Trimmed`` सेट होने पर ट्रिमिंग की तीव्रता: ``'partial'`` (डिफ़ॉल्ट, सुरक्षित) या ``'full'`` (आक्रामक, प्रतिबिंब तोड़ सकता है)।"
+					ReadyToRun             = "तेज़ स्टार्टअप के लिए असेंबली पूर्व-संकलित करें (केवल Bundled बैकएंड; आउटपुट थोड़ा बड़ा)।"
+					InvariantGlobalization = "इनवेरिएंट ग्लोबलाइज़ेशन का उपयोग करें, स्व-निहित बिल्ड से ICU लाइब्रेरी हटाएँ (केवल Bundled बैकएंड)। संस्कृति-विशिष्ट स्वरूपण टूट सकता है।"
+					Aot                    = "JIT-रहित बाइनरी के लिए प्रायोगिक Native AOT संकलन (केवल Bundled बैकएंड; ``SelfContained`` आवश्यक)। PowerShell द्वारा उपयोग किया जाने वाला भारी प्रतिबिंब कुछ स्क्रिप्ट तोड़ सकता है।"
+				}
 			}
 			Resources      = [ordered]@{
 				Icon        = "एक्सीक्यूटेबल का आइकन; एक फ़ाइल पथ या URL हो सकता है। .exe/.dll के लिए ,<index> जोड़कर संसाधन आइकन चुनें (डिफ़ॉल्ट 0), जैसे shell32.dll,3।"
@@ -91,6 +107,7 @@
 			Golf           = "गॉल्फ मोड सक्षम करें, संक्षिप्त रूप और सामान्य फ़ंक्शन जोड़ें"
 			Sandbox        = "एक्सट्रा सुरक्षा के साथ स्क्रिप्ट को कॉम्पाइल करें, स्थानीय फ़ाइलों की पहुँच को टालें"
 			NoUpdateCheck  = "ps12exe के नए संस्करण की जाँच छोड़ें"
+			Quiet          = "संकलन के दौरान सूचनात्मक (होस्ट) आउटपुट दबाएँ; त्रुटियाँ और चेतावनियाँ अभी भी दिखाई देंगी।"
 			Locale         = "संदेशों के लिए भाषा कोड।"
 			ConfigFile     = "एक कॉन्फ़िगरेशन फ़ाइल लिखें (``<आउटपुटफ़ाइल>.exe.config``)"
 			Help           = "इस मदद सूचना को दिखाएँ"
@@ -225,6 +242,20 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Locale '<
 		ConstEvalThrowErrorFallback               = "स्थिरांक परिणाम में एक त्रुटि आई, सामान्य प्रोग्राम फ्रेम पर वापस आ रहा है"
 		ConstEvalNotConstFallback                 = "स्क्रिप्ट ने स्वयं को स्थिरांक नहीं घोषित किया, सामान्य प्रोग्राम फ्रेम पर वापस जा रहे हैं"
 		InvalidArchitecture                       = "अमान्य प्लेटफ़ॉर्म {0}, AnyCpu का उपयोग करके"
+		InvalidBuildPlatform                      = "अमान्य प्लेटफ़ॉर्म {0}, AnyCpu का उपयोग करके।"
+		InvalidBuildTarget                        = "अमान्य लक्ष्य रनटाइम {0}, Framework4.0 का उपयोग करके।"
+		InvalidCoreBackend                        = "अमान्य Build.Core.Backend {0}, Shared का उपयोग करके।"
+		InvalidCoreTargetOs                       = "अमान्य Build.Core.TargetOs {0}, बिल्ड मशीन का OS उपयोग करके।"
+		InvalidCoreTargetFramework                = "अमान्य Build.Core.TargetFramework {0}, इसे अनदेखा किया जा रहा है।"
+		InvalidCorePowerShellVersion              = "अमान्य PowerShell संस्करण {0}।"
+		CoreVersionNoMapping                      = "PowerShell {0} के लिए कोई .NET फ्रेमवर्क मैपिंग नहीं; {1} का उपयोग करके।"
+		CoreTargetFrameworkTooLow                 = "लक्ष्य फ्रेमवर्क {0}, चयनित PowerShell संस्करण द्वारा आवश्यक {1} से कम है।"
+		CoreOptionsIgnoredNotCore                 = "Build.Core विकल्प अनदेखे किए जाते हैं जब तक Build.Target 'Core' न हो।"
+		CoreAdvancedRequiresBundled               = "इन विकल्पों के लिए -Build @{{Core=@{{Backend='Bundled'}}}} आवश्यक है: {0}"
+		CoreAotNeedsSelfContained                 = "Build.Core.Aot के लिए Build.Core.SelfContained का `$true होना आवश्यक है।"
+		CoreTrimModeNeedsTrimmed                  = "Build.Core.TrimMode के लिए Build.Core.Trimmed का `$true होना आवश्यक है।"
+		CoreTargetOsNotWindows                    = "विंडो एप्लिकेशन और conhost केवल Windows लक्ष्य के साथ समर्थित हैं।"
+		CombinedArg_ConHost_NoConsole             = "-App @{ConHost=`$true} का उपयोग -App @{Windowed=`$true} के साथ नहीं किया जा सकता।"
 		UnknownPragma                             = "अज्ञात pragma: {0}"
 		PragmaForbiddenInGuestMode                = "pragma {0} को अनदेखा किया जा रहा है: Sandbox मोड में अनुमति नहीं है।"
 		UnknownPragmaBadParameterType             = "अज्ञात pragma: {0}, प्रकार {1} का विश्लेषण नहीं किया जा सकता है।"

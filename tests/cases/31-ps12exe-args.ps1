@@ -445,3 +445,55 @@ Add-Test @{
 		Assert-True (Test-Path -LiteralPath $marker) '#_pragma Build.Minify 未在编译期执行'
 	}
 }
+
+Add-Test @{
+	Name  = 'ps12exe.args.core-validation'
+	Group = 'ps12exe'
+	Deps  = $deps
+	Run   = {
+		param($ctx)
+		$src = Join-Path $ctx.WorkDir 'core-val.ps1'
+		[System.IO.File]::WriteAllText($src, "'ok'", [System.Text.UTF8Encoding]::new($true))
+		$run = {
+			param($extra)
+			$out = Join-Path $ctx.WorkDir ('core-val-' + [guid]::NewGuid().ToString('N') + '.exe')
+			$global:LastExitCode = 0
+			& ps12exe -inputFile $src -outputFile $out -NoUpdateCheck @extra *> $null
+			[pscustomobject]@{ Exit = $global:LastExitCode; Exists = (Test-Path -LiteralPath $out) }
+		}
+		# 高级 Core 选项必须搭配 Backend='Bundled'
+		$r = & $run @{ Build = @{ Target = 'Core'; Core = @{ SelfContained = $true } } }
+		Assert-Equal 2 $r.Exit 'Shared 后端下的 SelfContained 应报调用错误'
+		Assert-False $r.Exists '校验失败不应产出文件'
+		# Aot 需要 SelfContained
+		$r = & $run @{ Build = @{ Target = 'Core'; Core = @{ Backend = 'Bundled'; Aot = $true } } }
+		Assert-Equal 2 $r.Exit 'Aot 缺少 SelfContained 应报调用错误'
+		# TrimMode 需要 Trimmed
+		$r = & $run @{ Build = @{ Target = 'Core'; Core = @{ Backend = 'Bundled'; TrimMode = 'full' } } }
+		Assert-Equal 2 $r.Exit 'TrimMode 缺少 Trimmed 应报调用错误'
+		# ConHost 与 Windowed 互斥
+		$r = & $run @{ App = @{ Windowed = $true; ConHost = $true } }
+		Assert-Equal 2 $r.Exit 'ConHost 与 Windowed 不能共存'
+		# Build.Core 在非 Core 目标下被忽略且不报错
+		$r = & $run @{ Build = @{ Core = @{ TargetOs = 'Linux' } } }
+		Assert-Equal 0 $r.Exit '非 Core 目标的 Build.Core 应被忽略'
+		Assert-True $r.Exists '非 Core 目标应正常产出'
+	}
+}
+
+Add-Test @{
+	Name  = 'ps12exe.args.quiet'
+	Group = 'ps12exe'
+	Deps  = $deps
+	Run   = {
+		param($ctx)
+		$src = Join-Path $ctx.WorkDir 'quiet.ps1'
+		[System.IO.File]::WriteAllText($src, "Get-Date | Out-Null; 'quiet-ok'", [System.Text.UTF8Encoding]::new($true))
+		$o1 = Join-Path $ctx.WorkDir 'quiet-normal.exe'
+		$o2 = Join-Path $ctx.WorkDir 'quiet-quiet.exe'
+		$normal = (& ps12exe -inputFile $src -outputFile $o1 -NoUpdateCheck *>&1 | Out-String)
+		$quiet = (& ps12exe -inputFile $src -outputFile $o2 -NoUpdateCheck -Quiet *>&1 | Out-String)
+		Assert-True (Test-Path -LiteralPath $o2) '-Quiet 编译未产出'
+		Assert-True ($quiet.Trim().Length -lt $normal.Trim().Length) "-Quiet 未减少信息输出（normal=$($normal.Trim().Length) quiet=$($quiet.Trim().Length)）"
+	}
+}

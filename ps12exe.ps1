@@ -115,7 +115,7 @@ Param(
 	[String]$outputFile = $NULL,
 	[ArgumentCompleter({
 		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-		$validKeys = @('Windowed', 'Silence', 'OutputEncoding', 'VisualStyles', 'ExitOnCancel', 'CredentialGUI', 'DpiAware', 'WinFormsDpiAware')
+		$validKeys = @('Windowed', 'Silence', 'OutputEncoding', 'VisualStyles', 'ExitOnCancel', 'CredentialGUI', 'DpiAware', 'WinFormsDpiAware', 'ConHost')
 		if (-not $wordToComplete) { return "@{}" }
 		$wordToComplete = $wordToComplete.Trim('"', "'", ' ', '`t', '{', '}')
 		if ($wordToComplete -match '=') { return }
@@ -133,7 +133,7 @@ Param(
 	[HashTable]$Os = @{},
 	[ArgumentCompleter({
 		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-		$validKeys = @('Target', 'Platform', 'Apartment', 'Culture', 'Options', 'KeepSource', 'Minify', 'TempDir')
+		$validKeys = @('Target', 'Platform', 'Apartment', 'Culture', 'Options', 'KeepSource', 'Minify', 'TempDir', 'ConstEval', 'Core')
 		if (-not $wordToComplete) { return "@{}" }
 		$wordToComplete = $wordToComplete.Trim('"', "'", ' ', '`t', '{', '}')
 		if ($wordToComplete -match '=') { return }
@@ -162,6 +162,7 @@ Param(
 	[Switch]$Golf,
 	[Switch]$Sandbox,
 	[Switch]$NoUpdateCheck,
+	[Switch]$Quiet,
 	#_if PSScript
 		[ArgumentCompleter({
 			Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
@@ -186,6 +187,8 @@ $Debug = $DebugPreference -ne 'SilentlyContinue'
 $UICultureBackup = [cultureinfo]::CurrentUICulture
 function RollUp {
 	param ($num = 1, [switch]$InVerbose)
+	# -Quiet 下 Write-I18n Host 不再输出，回退光标会把上一行吃掉，故同样跳过。
+	if ($Quiet) { return }
 	if (-not ($Verbose -or $InVerbose -or $Debug)) {
 		if ($Host.UI.SupportsVirtualTerminal) {
 			Write-Host $([char]27 + '[' + $num + 'A') -NoNewline
@@ -417,6 +420,8 @@ $exitOnCancel = ConvertTo-OptBool (Get-Opt $App 'ExitOnCancel' $false) $false
 $credentialGUI = ConvertTo-OptBool (Get-Opt $App 'CredentialGUI' $false) $false
 $DPIAware = ConvertTo-OptBool (Get-Opt $App 'DpiAware' $false) $false
 $winFormsDPIAware = ConvertTo-OptBool (Get-Opt $App 'WinFormsDpiAware' $false) $false
+# ConHost：强制经 conhost.exe 启动（而非 Windows Terminal），代价是禁用输入/输出/错误重定向。
+$conHost = ConvertTo-OptBool (Get-Opt $App 'ConHost' $false) $false
 
 # Os
 $requireAdmin = ConvertTo-OptBool (Get-Opt $Os 'Admin' $false) $false
@@ -443,10 +448,52 @@ if (Get-Opt $Build 'DllExports' $null) {
 }
 $StartupTiming = ConvertTo-OptBool (Get-Opt $Build 'StartupTiming' $false) $false
 
+# Build.Core：仅 Target='Core' 生效的 .NET/PowerShell Core 打包选项（键存在性用于区分「显式设置」与「默认」）。
+$coreOption = Get-Opt $Build 'Core' $null
+$coreOptionSet = @($coreOption -is [System.Collections.IDictionary] -and $coreOption.Count -gt 0)
+$coreBackend = "$(Get-Opt $coreOption 'Backend' 'Shared')"
+$coreTargetOs = "$(Get-Opt $coreOption 'TargetOs' '')"
+$coreTargetFramework = "$(Get-Opt $coreOption 'TargetFramework' '')"
+$powerShellVersion = "$(Get-Opt $coreOption 'PowerShellVersion' '')"
+$singleFile = ConvertTo-OptBool (Get-Opt $coreOption 'SingleFile' $true) $true
+$selfContained = ConvertTo-OptBool (Get-Opt $coreOption 'SelfContained' $false) $false
+$trimmed = ConvertTo-OptBool (Get-Opt $coreOption 'Trimmed' $false) $false
+$trimModeSet = [bool]($coreOption -is [System.Collections.IDictionary] -and $coreOption.Contains('TrimMode'))
+$trimMode = "$(Get-Opt $coreOption 'TrimMode' 'partial')"
+$readyToRun = ConvertTo-OptBool (Get-Opt $coreOption 'ReadyToRun' $false) $false
+$invariantGlobalization = ConvertTo-OptBool (Get-Opt $coreOption 'InvariantGlobalization' $false) $false
+$aot = ConvertTo-OptBool (Get-Opt $coreOption 'Aot' $false) $false
+# Backend：'Shared'（默认，复用目标机 PowerShell）或 'Bundled'（打包 PowerShell SDK）；'Sdk' 作为 'Bundled' 的别名。
+switch -Regex ($coreBackend) {
+	'(?i)^shared$' { $coreBackend = 'Shared' }
+	'(?i)^(bundled|sdk)$' { $coreBackend = 'Bundled' }
+	default {
+		Write-I18n Warning InvalidCoreBackend $coreBackend
+		$coreBackend = 'Shared'
+	}
+}
+# TargetOs 归一化；空值在编译器中按宿主 OS 推导。
+switch -Regex ($coreTargetOs) {
+	'(?i)^windows$' { $coreTargetOs = 'Windows' }
+	'(?i)^linux$' { $coreTargetOs = 'Linux' }
+	'(?i)^macos$' { $coreTargetOs = 'MacOS' }
+	'(?i)^$' { }
+	default {
+		Write-I18n Warning InvalidCoreTargetOs $coreTargetOs
+		$coreTargetOs = ''
+	}
+}
+if ($coreTargetFramework -and $coreTargetFramework -notmatch '^net\d+\.\d+$') {
+	Write-I18n Warning InvalidCoreTargetFramework $coreTargetFramework
+	$coreTargetFramework = ''
+}
+if ($trimMode -ine 'full') { $trimMode = 'partial' }
+
 # 归一化枚举大小写，保证下游比较与取值一致
 switch -Regex ($architecture) {
 	'(?i)^x64$' { $architecture = 'x64' }
 	'(?i)^x86$' { $architecture = 'x86' }
+	'(?i)^arm64$' { $architecture = 'arm64' }
 	'(?i)^anycpu$' { $architecture = 'anycpu' }
 	default {
 		Write-I18n Warning InvalidBuildPlatform $architecture
@@ -464,6 +511,66 @@ switch -Regex ($targetRuntime) {
 	}
 }
 $isCoreTarget = $targetRuntime -eq 'Core'
+
+# Build.Core.* 校验（对象已在上方解析；此处依赖 $isCoreTarget / $noConsole / $conHost）。
+if (-not $isCoreTarget) {
+	if ($coreOptionSet) { Write-I18n Warning CoreOptionsIgnoredNotCore }
+	if ($architecture -eq 'arm64') {
+		Write-I18n Warning InvalidBuildPlatform $architecture
+		$architecture = 'anycpu'
+	}
+}
+else {
+	if ($GuestMode -and ($coreBackend -eq 'Bundled' -or $powerShellVersion)) {
+		# 访客模式不允许触发 NuGet 还原；降级回 Shared 后端并忽略版本选项。
+		Write-I18n Warning PragmaForbiddenInGuestMode 'Build.Core.Backend'
+		$coreBackend = 'Shared'
+		$powerShellVersion = ''
+		$selfContained = $false
+		$trimmed = $false
+		$readyToRun = $false
+		$invariantGlobalization = $false
+		$aot = $false
+	}
+	$advancedCoreOptions = @()
+	if ($powerShellVersion) { $advancedCoreOptions += 'PowerShellVersion' }
+	if ($selfContained) { $advancedCoreOptions += 'SelfContained' }
+	if ($trimmed) { $advancedCoreOptions += 'Trimmed' }
+	if ($trimModeSet -and $trimMode -ne 'partial') { $advancedCoreOptions += 'TrimMode' }
+	if ($readyToRun) { $advancedCoreOptions += 'ReadyToRun' }
+	if ($invariantGlobalization) { $advancedCoreOptions += 'InvariantGlobalization' }
+	if ($aot) { $advancedCoreOptions += 'Aot' }
+	if ($coreBackend -ne 'Bundled' -and $advancedCoreOptions.Count) {
+		Write-I18n Error CoreAdvancedRequiresBundled ($advancedCoreOptions -join ', ') -Category InvalidArgument
+		$global:LastExitCode = 2 # 调用格式错误
+		return
+	}
+	if ($aot -and -not $selfContained) {
+		Write-I18n Error CoreAotNeedsSelfContained -Category InvalidArgument
+		$global:LastExitCode = 2
+		return
+	}
+	if ($trimModeSet -and $trimMode -ne 'partial' -and -not $trimmed) {
+		Write-I18n Error CoreTrimModeNeedsTrimmed -Category InvalidArgument
+		$global:LastExitCode = 2
+		return
+	}
+	if ($coreTargetOs -and $coreTargetOs -ne 'Windows' -and ($noConsole -or $conHost)) {
+		Write-I18n Error CoreTargetOsNotWindows -Category InvalidArgument
+		$global:LastExitCode = 2
+		return
+	}
+	if ($conHost -and $coreTargetOs -and $coreTargetOs -ne 'Windows') {
+		Write-I18n Error CoreTargetOsNotWindows -Category InvalidArgument
+		$global:LastExitCode = 2
+		return
+	}
+}
+if ($conHost -and $noConsole) {
+	Write-I18n Error CombinedArg_ConHost_NoConsole -Category InvalidArgument
+	$global:LastExitCode = 2 # 调用格式错误
+	return
+}
 
 # App.Silence：静音流，细分到每个 PowerShell 流
 $SilenceStreams = @(Get-Opt $App 'Silence' @())

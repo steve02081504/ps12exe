@@ -219,6 +219,10 @@ if ($packEnabled) {
 	# pack.cs 保持纯 C#；把帧里的标记替换为资源/版本属性片段，由 launcher 携带这些元数据。
 	$launcherSource = $launcherSource.Replace($assemblyAttributesMarker, $resourceAttributes)
 	[string[]]$LauncherCompilerOptions = $CompilerOptions
+	# conHost 要求 launcher 以 winexe 启动（无控制台），再经 conhost.exe 重启，避免挂到 Windows Terminal。
+	if ($conHost) {
+		$LauncherCompilerOptions = $LauncherCompilerOptions -replace '/target:exe', '/target:winexe'
+	}
 	if (-not $manifestParam) {
 		# 没有自定义清单需求时，launcher 也不需要默认清单。
 		$LauncherCompilerOptions += "/nowin32manifest"
