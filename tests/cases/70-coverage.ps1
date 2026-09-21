@@ -323,12 +323,8 @@ Add-Test @{
 	Run    = {
 		param($ctx)
 		$key = 'Registry::HKEY_CURRENT_USER\Software\Classes\*\shell\ps12exeCompile'
-		$wasEnabled = [bool](Test-Path -LiteralPath $key)
-		$skillDir = Join-Path $HOME '.agents/skills/ps12exe'
-		$skillFile = Join-Path $skillDir 'SKILL.md'
-		$skillBackup = Join-Path $ctx.WorkDir 'skill-backup'
-		$hadSkill = Test-Path -LiteralPath $skillFile
-		if ($hadSkill) { Copy-Item -LiteralPath $skillDir -Destination $skillBackup -Recurse -Force }
+		$skillFile = Join-Path $HOME '.agents/skills/ps12exe/SKILL.md'
+		Save-IntegrationSnapshot -CacheRoot $ctx.CacheDir
 		try {
 			Set-ps12exeIntegration -action disable -Skip VSCodeExtension
 			Set-ps12exeIntegration -action disable -Skip VSCodeExtension
@@ -344,19 +340,14 @@ Add-Test @{
 			Assert-True (Test-Path -LiteralPath $key) '跳过 ContextMenu 时不应移除右键菜单'
 			Set-ps12exeIntegration -action enable -Skip ContextMenu, VSCodeExtension
 			Assert-True (Test-Path -LiteralPath $skillFile) '-Skip ContextMenu,VSCodeExtension 的 enable 应只写入 agent skill'
-			Set-ps12exeIntegration -action disable -Skip ContextMenu
+			Set-ps12exeIntegration -action disable -Skip ContextMenu, VSCodeExtension
 			Assert-False (Test-Path -LiteralPath $skillFile) '跳过 ContextMenu 时 disable 应移除 skill'
 			Assert-True (Test-Path -LiteralPath $key) '跳过 ContextMenu 时 disable 不应移除右键菜单'
 			Set-ps12exeIntegration -action disable -Skip VSCodeExtension
 			Assert-False (Test-Path -LiteralPath $key) '再次 disable 应移除右键菜单'
 		}
 		finally {
-			if ($wasEnabled) { Set-ps12exeIntegration -action enable -Skip VSCodeExtension }
-			else { Set-ps12exeIntegration -action disable -Skip VSCodeExtension }
-			if ($hadSkill) {
-				New-Item -ItemType Directory -Path $skillDir -Force | Out-Null
-				Copy-Item -Path (Join-Path $skillBackup '*') -Destination $skillDir -Recurse -Force
-			}
+			Restore-IntegrationSnapshot -CacheRoot $ctx.CacheDir
 		}
 	}
 }

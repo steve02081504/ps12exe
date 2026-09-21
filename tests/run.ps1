@@ -297,25 +297,33 @@ function Convert-TestResults {
 }
 
 $testResults = @()
-if ($testJobs.Count) {
-	Write-Host "== 测试阶段：$($testJobs.Count) 个用例（并行度 $throttle）=="
-	$testResults += Convert-TestResults (Invoke-WorkerJobs -Jobs $testJobs -Throttle $throttle)
-}
+try {
+	if ($testJobs.Count) {
+		Write-Host "== 测试阶段：$($testJobs.Count) 个用例（并行度 $throttle）=="
+		$testResults += Convert-TestResults (Invoke-WorkerJobs -Jobs $testJobs -Throttle $throttle)
+	}
 
-# 串行用例（会改动共享环境，如注册表），在并行批次之后独占执行。
-foreach ($sc in $serialCases) {
-	$c = $sc.Case
-	$safe = $c.Name -replace '[^\w\.\-]', '_'
-	$workDir = Join-Path $workRoot "$safe-$([guid]::NewGuid().ToString('N').Substring(0,8))"
-	$files = New-JobFiles -Prefix "test-$safe"
-	Write-JsonFile -Path $files.JobFile -Object @{ Name = $c.Name; WorkDir = $workDir; CacheDir = $cacheRoot; Builds = $sc.Builds }
-	$files.Mode = 'Test'
-	$files.Label = "test $($c.Name) [serial]"
-	$files.Timeout = if ($TimeoutSeconds -gt 0) { $TimeoutSeconds } else { $c.Timeout }
-	$files.Case = $c
-	$files.WorkDir = $workDir
-	Write-Host "== 串行用例：$($c.Name) =="
-	$testResults += Convert-TestResults (Invoke-WorkerJobs -Jobs @($files) -Throttle 1)
+	# 串行用例（会改动共享环境，如注册表），在并行批次之后独占执行。
+	foreach ($sc in $serialCases) {
+		$c = $sc.Case
+		$safe = $c.Name -replace '[^\w\.\-]', '_'
+		$workDir = Join-Path $workRoot "$safe-$([guid]::NewGuid().ToString('N').Substring(0,8))"
+		$files = New-JobFiles -Prefix "test-$safe"
+		Write-JsonFile -Path $files.JobFile -Object @{ Name = $c.Name; WorkDir = $workDir; CacheDir = $cacheRoot; Builds = $sc.Builds }
+		$files.Mode = 'Test'
+		$files.Label = "test $($c.Name) [serial]"
+		$files.Timeout = if ($TimeoutSeconds -gt 0) { $TimeoutSeconds } else { $c.Timeout }
+		$files.Case = $c
+		$files.WorkDir = $workDir
+		Write-Host "== 串行用例：$($c.Name) =="
+		$testResults += Convert-TestResults (Invoke-WorkerJobs -Jobs @($files) -Throttle 1)
+	}
+}
+finally {
+	# worker 超时被强杀时其内部 finally 不会执行，这里凭残留快照兜底还原集成环境。
+	if (Restore-IntegrationSnapshot -CacheRoot $cacheRoot) {
+		Write-Host '== 已凭集成快照还原右键菜单 / Agent Skill =='
+	}
 }
 
 # ---- 汇总 ----
