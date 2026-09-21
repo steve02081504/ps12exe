@@ -76,7 +76,7 @@
 - 占位桶按 64B 粒度（`Get-CacheBucket`）。粒度决定模板里托管资源槽的大小：csc 会把资源槽按 `FileAlignment`（512）对齐进 `.text`，槽比实际资源大多少，产物就白多多少，64B 粒度把额外体积压到 <64B；脚本变大自动换更大桶的模板，超 64MB 放弃缓存直编。键哈希了全部编译输入，任何输入变化都会生成新模板，因此不需要版本号/version.txt。
 - **坑**：凡返回字节数组都必须加前置逗号（`return ,$bytes`），`Get-CachedBytes` 与 `Set-FrameResource` 都踩过——否则 PowerShell 会把 `byte[]` 展开成 `Object[]`，大脚本逐字节装箱会明显变慢（原地写的那份仍正确，只是慢）。
 - 结论：这缓存只省掉两次 csc，小脚本收益在噪声内、大脚本与直编持平；当前 CodeDom 编译瓶颈是 ExeSinker 每次 `Add-Type` 加载 AsmResolver，想再提速优先从那里下手。
-- **不要用空 `.res`（csc `/win32res` 指向空资源）绕过 ExeSinker**——已试过并回退：「编译快 ~0.2s」换「产物更大 + 多维护一份易错的 PE 字节补丁」。AsmResolver 的 `Resources = $null` 重建 PE 会连整段 `.rsrc` 一起丢掉，而纯字节补丁只能断开资源树、`.rsrc` 仍在（产物反而大 1KB 上下）；且清 `DynamicBase` 也归 ExeSinker 管，复刻它要求 `Cache.ps1` 自解析可选头/资源根目录，还会让 `ExeSinker` 里 `-band -not`（逻辑取反，会把 `0x8540` 整个清零、连 `NX_COMPAT` 一起丢）的历史 bug 换个地方重现。
+- **不要用空 `.res`（csc `/win32res` 指向空资源）绕过 ExeSinker**（已试过并回退）：只快 ~0.2s，却要额外维护一份易错的 PE 字节补丁，产物反而更大（AsmResolver 重建 PE 会丢整段 `.rsrc`，纯字节补丁只能断开资源树、`.rsrc` 仍在）。
 
 <a id="cmd-availability"></a>
 
@@ -86,7 +86,7 @@
   - `Alias`/`Function`/`Filter`/`Cmdlet`：会话内命令，静默通过；
   - `Application`/`ExternalScript`（PATH 上的程序与外部脚本）：记 `$FoundCmdlets`，打 `Warning.SomeCmdletsMayNotAvailable`——「现在能跑，但编译出的 exe 在目标机上未必还有」；
   - 解析不到且名字不含 `]::`：记 `$NotFoundCmdlets`，打 `Warning.SomeNotFoundCmdlets`；含 `]::` 的成员调用跳过（静态解析 Add-Type 太复杂）。
-- **坑**：无参 `Get-Command` 只枚举 `Alias`/`Function`/`Filter`/`Cmdlet`，**不含** PATH 上的 `Application`/`ExternalScript`（`deno`/`cmd`/`node` 都属后者）。所以「`Get-Command <name>` 能解析」≠「该名字在 `(Get-Command).Name` 里」。曾据此把 `$FoundCmdlets` 当死代码连同 `SomeCmdletsMayNotAvailable` 一起删掉，会让 `deno` 这类外部依赖不再有任何提醒。判断类别务必看解析结果的 `.CommandType`。
+- **坑**：无参 `Get-Command` 只枚举 `Alias`/`Function`/`Filter`/`Cmdlet`，**不含** PATH 上的 `Application`/`ExternalScript`（`deno`/`cmd`/`node` 都属后者）。所以「`Get-Command <name>` 能解析」≠「该名字在 `(Get-Command).Name` 里」；判断类别务必看解析结果的 `.CommandType`，别把 `$FoundCmdlets` 当死代码删（否则 `deno` 这类外部依赖不再有任何提醒）。
 
 <a id="asmresolver-trim"></a>
 

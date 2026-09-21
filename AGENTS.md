@@ -4,7 +4,7 @@
 
 - `ps12exe.ps1`：CLI 入口与参数解析；公开的对象式参数在此适配为内部规范变量。
 - `src/`：编译器与运行时（`CoreCompiler.ps1`、`CodeDomCompiler.ps1`、`TinySharpCompiler.ps1`、`BuildFrame.ps1`、`programFrames/*.cs`）、GUI、WebServer、Interact、locale。
-- `src/Integration/`：右键菜单 / Agent Skill / VS Code 扩展三套集成。三者为独立脚本 `Set-ps12exeContextMenu.ps1`、`Set-ps12exeAgentSkill.ps1`、`Set-ps12exeVSCodeExtension.ps1`（不导出为命令），唯一导出的总函数 `Set-ps12exeIntegration` 直接调用它们，平台特定实现各留各的文件。
+- `src/Integration/`：右键菜单 / Agent Skill / VS Code 扩展三套集成，各为独立脚本（均不导出为命令），仅导出总入口 `Set-ps12exeIntegration` 直接调用它们。
 - `src/AgentSkill/SKILL.md`：安装到 `~/.agents/skills/ps12exe/` 的通用 Agent Skill 模板，也是 VS Code 扩展内置 skill 的唯一源（扩展构建/测试前由 `src/.subrepo/vscode-plug/ps12exe/scripts/sync-skill.mjs` 复制过去，扩展内那份已 gitignore）。
 - `src/locale/<lang>.ps1`：各语言界面文案与帮助数据。
 - `src/.subrepo/`：内置子项目（`PS2EXE2ps12exe` 兼容层、`vscode-plug` 扩展、在线 Web 版）。
@@ -30,7 +30,7 @@
 ## 预处理与反编译
 
 - `#_!!` 的剥离顺序与 exe21sp 往返流程（含各步骤的函数与推导规则）：见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#preprocessing-roundtrip)。
-- 原生 DLL 导出（`#_DllExport` / 编程式 `Build.DllExports`）：仅 Framework4.0 + x86/x64，输出默认 `.dll`，走 `default.cs`+`DllExport.cs` 双源库编译 + ildasm/ilasm 注入 `.export`，工具链随模块内置在 `src/bin/ILAsm`；实现与坑见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#dllexport)。
+- 原生 DLL 导出（`#_DllExport` / 编程式 `Build.DllExports`，仅 Framework4.0 + x86/x64，输出默认 `.dll`）：见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#dllexport)。
 - 访客（Sandbox）模式的 URL/重定向/图标/env 限制、已知残余风险与验证方式：见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#sandbox-guest)。
 
 ## 编译期诊断
