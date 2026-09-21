@@ -443,7 +443,7 @@ if (-not $TempDir) { $TempDir = $NULL }
 $ConstEvalOption = Get-Opt $Build 'ConstEval' $null
 $noConstEval = -not (ConvertTo-OptBool (Get-Opt $ConstEvalOption 'Enabled' $true) $true)
 $constEvalTimeout = ConvertTo-OptBool (Get-Opt $ConstEvalOption 'Timeout' $false) $false
-# 原生 DLL 导出（#_DllExport 的编程式等价物）。访客模式下禁用：需要下载并执行 ilasm/ildasm。
+# 原生 DLL 导出（#_DllExport 的编程式等价物）。访客模式下禁用：会用 AsmResolver 重写托管程序集的 PE 导出表。
 if (Get-Opt $Build 'DllExports' $null) {
 	[System.Collections.ArrayList]$DllExportList = @(Get-Opt $Build 'DllExports' $null)
 }
@@ -954,7 +954,7 @@ try {
 	}
 	else {
 		#_if PSScript
-			# DLL 导出产物已由 ilasm 生成导出表/重定位，不要再让 ExeSinker 用 AsmResolver 重建 PE。
+			# DLL 导出产物已由 AsmResolver 写出带导出表/CLR 引导桩的 PE，不要再让 ExeSinker 重建一遍。
 			if (-not $TinySharpSuccess -and -not $isCoreTarget -and -not $hasDllExports) {
 				Write-TaskbarProgress -Percent 75
 				& $PSScriptRoot\src\ExeSinker.ps1 $outputFile -removeResources:$(

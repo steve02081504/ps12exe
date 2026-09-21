@@ -6,7 +6,7 @@ using System.Management.Automation.Runspaces;
 
 // 原生 DLL 导出层：与 default.cs 的 PSRunnerEntry 组成同一个 partial 类。
 // 工具（src/DllExportCompiler.ps1）会把每个 #_DllExport 声明生成一个包装方法，并注入到本文件末尾的
-// 导出方法标记处；编译成类库后再经 ildasm/ilasm 注入原生导出表。
+// 导出方法标记处；编译成类库后再由 AsmResolver 给这些方法设置 UnmanagedExportInfo，写出原生导出表。
 namespace PSRunnerNS {
 	static partial class PSRunnerEntry {
 		private static readonly object _dllLock = new object();

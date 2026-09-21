@@ -414,7 +414,7 @@ function DoSomething($value) { ... }
 
 `#_DllExport` 会把脚本编译成原生 Win32 DLL 而非 exe，并把列出的函数导出，让 native 调用方可以直接用 `LoadLibrary`/`GetProcAddress`（或 `DllImport`）调用。每个导出函数转发到同名的 PowerShell 函数：参数以数组形式传入，函数输出作为返回值。返回类型与参数类型按 C# 语法书写；省略返回类型时默认为 `void`，参数不写类型时按 `string` 处理。
 
-原生导出要求 .NET Framework 4.0 目标与 `x86`/`x64` 平台（`AnyCPU` 会自动按宿主位数选择），输出默认 `.dll`。访客/沙箱模式下不可用。工具链（ILAsm/ILDasm）随模块内置在 `src/bin/ILAsm`，无需额外安装。
+原生导出要求 .NET Framework 4.0 目标与 `x86`/`x64` 平台（`AnyCPU` 会自动按宿主位数选择），输出默认 `.dll`。访客/沙箱模式下不可用。原生导出由内置的 AsmResolver 在进程内直接写出，无需额外工具链。
 
 #### `#_balus`
 

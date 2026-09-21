@@ -414,7 +414,7 @@ function DoSomething($value) { ... }
 
 `#_DllExport` compila el script en una DLL nativa de Win32 en lugar de un ejecutable, exportando las funciones indicadas para que los clientes nativos puedan llamarlas directamente con `LoadLibrary`/`GetProcAddress` (o `DllImport`). Cada función exportada reenvía a la función de PowerShell del mismo nombre: los argumentos se pasan como una matriz y la salida de la función se convierte en el valor de retorno. Los tipos de retorno y de los parámetros se escriben con sintaxis de C#; si se omite el tipo de retorno se usa `void`, y un parámetro sin tipo se trata como `string`.
 
-La exportación nativa requiere el destino .NET Framework 4.0 y una plataforma `x86`/`x64` (`AnyCPU` se resuelve automáticamente a la arquitectura del host), y la salida predeterminada es `.dll`. La función no está disponible en el modo invitado (sandbox). La cadena de herramientas ILAsm/ILDasm se incluye con el módulo en `src/bin/ILAsm`.
+La exportación nativa requiere el destino .NET Framework 4.0 y una plataforma `x86`/`x64` (`AnyCPU` se resuelve automáticamente a la arquitectura del host), y la salida predeterminada es `.dll`. La función no está disponible en el modo invitado (sandbox). La exportación nativa se emite en proceso con el AsmResolver incluido; no se necesita ninguna cadena de herramientas externa.
 
 #### `#_balus`
 

@@ -24,9 +24,10 @@
 - 仅支持 Framework4.0 + x86/x64：`AnyCPU` 会自动选宿主位数并告警；`arm64`/`Framework2.0`/`Core` 直接报错；访客模式忽略该指令（避免编译期联网下载并执行工具）。
 - 实现（`src/DllExportCompiler.ps1` + `src/programFrames/DllExport.cs`）：
   1. CodeDom 把 `default.cs` 与 `DllExport.cs` 两个源文件（同一个 `PSRunnerEntry` partial 类）按 `/target:library` 编译成普通类库；每个导出声明生成一个 `PS12ExeDllExport<i>` 包装方法，首次调用时 `DllInitChecker` 惰性建宿主并以点源方式在全局作用域运行脚本（函数定义在 `PSEXEMainFunction` 体内是局部的，导出必须走顶层/点源）。
-  2. `ildasm` 反汇编，在每个包装方法体开头插入 ILAsm 的 `.export [序号] as '导出名'` 指令，再 `ilasm` 汇编回 DLL；导出桩与 CLR vtable fixup 由 ilasm 生成（与 DllExport 项目同机制）。导出名用单引号包裹以容纳 `-` 等字符。
-  3. 该路径跳过 pack 与 `ExeSinker`（后者重建 PE 会干扰 ilasm 生成的导出表/重定位），也不写产物缓存。
-- 工具链：官方 `runtime.win-x64.Microsoft.NETCore.ILAsm`/`ILDAsm`（MIT），随模块内置在 `src/bin/ILAsm`；x64 工具经 `/x64`/`/32bit` 即可产出两种位数。**别改用 3F ILAsm 包里的 ilasm**：其 x64 输出生成的 CLR 引导桩会让 exe 挂起。
+  2. 用 AsmResolver 读取该类库，给每个包装方法设 `MethodDefinition.ExportInfo = new UnmanagedExportInfo(名字, VTableFromUnmanaged | (x86 ? VTable32Bit : VTable64Bit))`，清掉 module 的 `ILOnly` 标志后 `ModuleDefinition.Write` 重写：AsmResolver 的托管 PE 写出器据此生成 native 导出桩、`mscoree.dll!_CorDllMain` 引导桩与 CLR vtable fixup（与 ilasm 对 `.export` 的处理同机制），位数由 vtable 项的 32/64 位区分。
+  3. 该路径跳过 pack 与 `ExeSinker`（后者重建 PE 会覆盖刚生成的导出表/引导桩），也不写产物缓存。
+- 必须清 `DotNetDirectoryFlags.ILOnly`，否则不写 CLR 引导桩、`LoadLibrary` 起不来 CLR。`src/bin/AsmResolver` 目前是含上游修复（[Washi1337/AsmResolver#793](https://github.com/Washi1337/AsmResolver/pull/793)：导出名指针表按名排序）的本地构建；若换回不含该修复的版本，`New-DllExportMethods` 必须按导出名有序生成包装方法，否则 `GetProcAddress` 按名解析会漏掉部分导出。
+- 用到的 AsmResolver.DotNet 写出器 API 需镜像在 `tools/AsmResolver/Root.cs`，否则会被 illink 裁掉（见 `#asmresolver-trim`）。
 - 导出包装方法把异常挡在 native 边界内：出错写 stderr 并返回默认值（托管异常穿过 native 边界会变成进程级崩溃）。
 
 <a id="sandbox-guest"></a>
@@ -92,8 +93,11 @@
 
 ## AsmResolver 裁剪
 
-`src/bin/AsmResolver` 里的 DLL 是 **illink 裁剪过的**（`tools/AsmResolver/Update-AsmResolver.ps1`：拉完整 NuGet → 以 `Root.cs` + 运行时编译的 `TinySharp.cs`/`exe21sp.cs` 为根跑 illink）。
+`src/bin/AsmResolver` 里的 DLL 是 **illink 裁剪过的**（`tools/AsmResolver/Update-AsmResolver.ps1`：拉一份完整 AsmResolver → 以 `Root.cs` + 运行时编译的 `TinySharp.cs`/`exe21sp.cs` 为根跑 illink）。
 
+- 来源用 `-Source` 选：`NuGet`（默认，`-Version` 指定版本）、`Ci`（`-Ref` 分支最近一次成功的 `build-artifacts`）、`Pr`（`-Pr <n>` 的构建产物）、`Source`（git 取 `-Ref`/PR head 源码本地 `dotnet build`）；`-RunId` 可直接指定某次 CI run。CI 产物保留 7 天、fork PR 的 workflow 常需维护者批准，故 Ci/Pr 在产物缺失或过期时自动回退到 `Source`。
+- 当前 `src/bin/AsmResolver` 是用 `-Source Source -Pr 793` 产出的本地构建（含导出名排序修复，上游 PR 未合并）；上游合并后应改回 `./Update-AsmResolver.ps1 -Source NuGet` 重跑。
 - 运行期要用到任何**新的** AsmResolver API（例如托管资源写入 `ModuleDefinition.FromFile` / `ManifestResource.EmbeddedDataSegment` setter / `DataSegment`），必须先在 `tools/AsmResolver/Root.cs` 里镜像一段该用法，再重跑 `./tools/AsmResolver/Update-AsmResolver.ps1 -Version 6.0.1`，否则对应成员会被裁掉、运行期 `Add-Type` 后调用报 MissingMethod/TypeLoad。
 - 裁剪版必须保留 netstandard2.0 引用以兼容 WinPS 5.1 与 pwsh 7。
+- 从 PowerShell 驱动 AsmResolver.DotNet 的两个坑：`MethodDefinition.Name`/`TypeDefinition.Name` 是 `Utf8String`，用 `-eq 'X'` 比较会失败（PS 会把它当字符枚举），要写 `$_.Name.ToString() -eq 'X'`；`[Flags]` 枚举的 `-bor`/`-bnot` 在本仓库的 StrictMode 下会抛 InvalidCastException，位运算前先 `[int]` 转换再用 `[枚举类型](...)` 转回。
 - 该工具会在 `tools/AsmResolver/{bin,obj}` 留下无 BOM 的生成 `.cs`，`Get-RepoFiles` 已排除 `bin|obj`。

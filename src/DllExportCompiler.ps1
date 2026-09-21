@@ -1,25 +1,26 @@
 ﻿# 原生 DLL 导出（#_DllExport / Build.DllExports）实现。
 #
-# 机制：先用 CodeDom 把程序帧编译成普通 .NET 类库，再用 ildasm 反汇编、在每个导出方法体开头插入
-# ILAsm 的 `.export [ordinal] as '名字'` 指令，最后用 ilasm 重新汇编。ilasm 会为该指令生成
-# native 导出桩 + CLR vtable fixup，使产物可被 native 的 LoadLibrary/GetProcAddress 直接加载。
-# 这正是 RGiesecke.DllExport / 3F DllExport 的做法（不用它们自己的 MSBuild 任务，避免依赖完整工程）。
+# 机制：先用 CodeDom 把程序帧编译成普通 .NET 类库，再用 AsmResolver 给每个导出包装方法设置
+# UnmanagedExportInfo，由 AsmResolver 的托管 PE 写出器生成 native 导出桩 + CLR vtable fixup
+# （VTableFromUnmanaged），使产物可被 native 的 LoadLibrary/GetProcAddress 直接加载。
+# 这正是 ilasm 对 `.export` 指令所做的事，但省掉了 ildasm→文本→ilasm 的往返与外部进程。
 #
-# 工具链（ilasm.exe/ildasm.exe）随模块内置在 src/bin/ILAsm：官方 Microsoft.NETCore.ILAsm/ILDAsm
-# 的 win-x64 运行时包（MIT），同一份 x64 工具即可产出 x64 与 x86 产物（靠 /x64 或 /32bit 切换）。
-# 注意：不要改用 3F ILAsm 包里的 ilasm——它在 x64 上生成的 CLR 引导桩有问题（exe 会挂起）。
+# AsmResolver 与 ExeSinker 共用 src/bin/AsmResolver 下 illink 裁剪过的程序集；本路径额外用到
+# DotNet 层的 module 写出器，相关 API 必须镜像在 tools/AsmResolver/Root.cs 中（见该文件）。
 
-$script:DllExportToolDir = Join-Path $PSScriptRoot 'bin/ILAsm'
-
-# 定位内置的原生导出工具链；返回 @{ IlAsm; IlDasm }。
-function Get-DllExportToolchain {
-	$ilasmPath = Join-Path $script:DllExportToolDir 'ilasm.exe'
-	$ildasmPath = Join-Path $script:DllExportToolDir 'ildasm.exe'
-	if (-not ((Test-Path -LiteralPath $ilasmPath) -and (Test-Path -LiteralPath $ildasmPath))) {
-		Write-I18n Error DllExportToolchainFailed $script:DllExportToolDir -Category NotInstalled
-		throw "native export toolchain is missing: $script:DllExportToolDir"
+# 惰性加载 AsmResolver（含 DotNet 层）。返回是否可用。
+function Import-DllExportAssemblies {
+	if ('AsmResolver.DotNet.ModuleDefinition' -as [type]) { return $true }
+	Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'bin/AsmResolver') -Recurse -Filter *.dll | ForEach-Object {
+		try {
+			Add-Type -LiteralPath $_.FullName -ErrorVariable $null
+		}
+		catch {
+			$_.Exception.LoaderExceptions | Out-String | Write-Verbose
+			$Error.Remove($_)
+		}
 	}
-	return @{ IlAsm = $ilasmPath; IlDasm = $ildasmPath }
+	return [bool]('AsmResolver.DotNet.ModuleDefinition' -as [type])
 }
 
 function Get-DllExportField {
@@ -37,7 +38,7 @@ function Get-DllExportField {
 	return $Default
 }
 
-# 由导出声明生成 C# 包装方法源码；返回 @{ Code; Map }，Map 为 @(@{ Method; Export }) 供 IL 注入。
+# 由导出声明生成 C# 包装方法源码；返回 @{ Code; Map }，Map 为 @(@{ Method; Export }) 供 AsmResolver 注入。
 function New-DllExportMethods {
 	param([object[]]$Exports)
 	$sb = [System.Text.StringBuilder]::new()
@@ -83,59 +84,51 @@ function New-DllExportMethods {
 	return @{ Code = $sb.ToString(); Map = $map }
 }
 
-# 在 IL 文本里给指定方法体开头插入 .export 指令（返回新的行数组）。
-function Add-DllExportDirective {
-	param([string[]]$Lines, [string]$MethodName, [string]$ExportName)
-	$namePattern = '\b' + [regex]::Escape($MethodName) + '\b'
-	for ($i = 0; $i -lt $Lines.Count; $i++) {
-		if ($Lines[$i] -notmatch '^\s*\.method\b') { continue }
-		# .method 头可能跨多行；名字与方法体起始的 `{` 之间收集为一个头。
-		$j = $i
-		while ($j -lt $Lines.Count -and $Lines[$j] -notmatch '\{') { $j++ }
-		if ($j -ge $Lines.Count) { break }
-		$header = $Lines[$i..$j] -join "`n"
-		if ($header -match $namePattern) {
-			$result = [System.Collections.Generic.List[string]]::new()
-			for ($k = 0; $k -le $j; $k++) { $result.Add($Lines[$k]) }
-			$result.Add("`t`t.export $ExportName")
-			for ($k = $j + 1; $k -lt $Lines.Count; $k++) { $result.Add($Lines[$k]) }
-			return $result.ToArray()
+# 在所有类型（含嵌套）里按名字找方法定义。
+function Get-DllExportMethodDefinition {
+	param($Module, [string]$MethodName)
+	foreach ($type in $Module.GetAllTypes()) {
+		foreach ($method in $type.Methods) {
+			if ($method.Name.ToString() -eq $MethodName) { return $method }
 		}
-		$i = $j
 	}
-	Write-I18n Error DllExportMethodNotFound $MethodName -Category InvalidData
-	throw "export method not found in IL: $MethodName"
+	return $null
 }
 
-# 对已编译的托管类库做 IL 往返，注入原生导出。$Exports 为 New-DllExportMethods 的 Map。
+# 给已编译的托管类库注入原生导出。$Exports 为 New-DllExportMethods 的 Map。
 function Add-DllExportsToAssembly {
 	param([string]$AssemblyPath, [object[]]$Exports, [string]$Architecture)
-	$tool = Get-DllExportToolchain
-	$work = Join-Path ([System.IO.Path]::GetDirectoryName($AssemblyPath)) ('ps12exe-dllx-' + [Guid]::NewGuid().ToString('N'))
-	New-Item -ItemType Directory -Force -Path $work | Out-Null
-	try {
-		$ilBase = Join-Path $work 'assembly'
-		$ilPath = "$ilBase.il"
-		$ilasmOut = Join-Path $work 'out.dll'
+	if (-not (Import-DllExportAssemblies)) {
+		Write-I18n Error DllExportToolchainFailed 'src/bin/AsmResolver' -Category NotInstalled
+		throw "AsmResolver is unavailable: $PSScriptRoot\bin\AsmResolver"
+	}
 
-		& $tool.IlDasm "/out:$ilPath" $AssemblyPath | Out-Null
-		if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $ilPath)) { throw "ildasm failed ($LASTEXITCODE)" }
+	$module = [AsmResolver.DotNet.ModuleDefinition]::FromFile($AssemblyPath)
+	# x86 用 32 位 vtable 项，x64 用 64 位；二者都配 COR_VTABLE_FROM_UNMANAGED 让 CLR 生成 native 入口桩。
+	$vtableEnum = [AsmResolver.PE.DotNet.VTableFixups.VTableType]
+	$bitValue = if ($Architecture -eq 'x86') { [int]$vtableEnum::VTable32Bit } else { [int]$vtableEnum::VTable64Bit }
+	$vtableType = [AsmResolver.PE.DotNet.VTableFixups.VTableType]($bitValue -bor [int]$vtableEnum::VTableFromUnmanaged)
 
-		$lines = [System.IO.File]::ReadAllLines($ilPath)
-		for ($i = 0; $i -lt $Exports.Count; $i++) {
-			$exportName = "'" + "$($Exports[$i].Export)".Replace("'", "''") + "'"
-			$lines = Add-DllExportDirective -Lines $lines -MethodName $Exports[$i].Method -ExportName ("[$($i + 1)] as $exportName")
+	foreach ($export in $Exports) {
+		$method = Get-DllExportMethodDefinition -Module $module -MethodName $export.Method
+		if (-not $method) {
+			Write-I18n Error DllExportMethodNotFound $export.Method -Category InvalidData
+			throw "export method not found in assembly: $($export.Method)"
 		}
-		[System.IO.File]::WriteAllLines($ilPath, $lines, [System.Text.UTF8Encoding]::new($false))
+		$method.ExportInfo = [AsmResolver.DotNet.UnmanagedExportInfo]::new("$($export.Export)", $vtableType)
+	}
 
-		$bitness = if ($Architecture -eq 'x86') { '/32bit' } else { '/x64' }
-		& $tool.IlAsm /nologo /dll $bitness "/output:$ilasmOut" $ilPath | Out-Null
-		if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $ilasmOut)) { throw "ilasm failed ($LASTEXITCODE)" }
+	# 原生导出依赖 mscoree 的 CLR 引导桩：必须去掉 ILOnly，否则 AsmResolver 不会写出 _CorDllMain 导入。
+	$ilOnly = [int][AsmResolver.PE.DotNet.DotNetDirectoryFlags]::ILOnly
+	$module.Attributes = [AsmResolver.PE.DotNet.DotNetDirectoryFlags](([int]$module.Attributes) -band (-bnot $ilOnly))
 
+	$tmp = $AssemblyPath + '.asmresolver.tmp'
+	try {
+		$module.Write($tmp)
 		Remove-Item -LiteralPath $AssemblyPath -Force
-		Move-Item -LiteralPath $ilasmOut -Destination $AssemblyPath -Force
+		Move-Item -LiteralPath $tmp -Destination $AssemblyPath -Force
 	}
 	finally {
-		Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction Ignore
+		Remove-Item -LiteralPath $tmp -Force -ErrorAction Ignore
 	}
 }

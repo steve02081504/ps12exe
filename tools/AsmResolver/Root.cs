@@ -1,6 +1,9 @@
 ﻿// IL Linker 的根程序集。它针对完整的 AsmResolver 编译，但从不运行；illink 把可达成员作为 ps12exe 所需的 AsmResolver API 集合。
+using AsmResolver.DotNet;
 using AsmResolver.PE;
 using AsmResolver.PE.Builder;
+using AsmResolver.PE.DotNet;
+using AsmResolver.PE.DotNet.VTableFixups;
 using AsmResolver.PE.File;
 using AsmResolver.PE.Win32Resources;
 
@@ -27,6 +30,27 @@ internal static class EntryPoint
 
 		// src/ExeSinker.ps1 直接从 PowerShell 驱动 AsmResolver；这些成员无法从上方 C# 使用方到达，故在此镜像。
 		RootExeSinkerUsage();
+
+		// src/DllExportCompiler.ps1 从 PowerShell 驱动 AsmResolver.DotNet 的 module 写出器注入原生导出。
+		RootDllExportUsage();
+	}
+
+	static void RootDllExportUsage()
+	{
+		var module = ModuleDefinition.FromFile("input.dll");
+		var vtableType = VTableType.VTable64Bit | VTableType.VTableFromUnmanaged;
+		foreach (var type in module.GetAllTypes())
+		{
+			foreach (var method in type.Methods)
+			{
+				_ = method.Name.ToString();
+				method.ExportInfo = new UnmanagedExportInfo("name", vtableType);
+			}
+		}
+		_ = VTableType.VTable32Bit;
+		module.Attributes &= ~DotNetDirectoryFlags.ILOnly;
+		_ = module.TopLevelTypes;
+		module.Write("output.dll");
 	}
 
 	static void RootExeSinkerUsage()

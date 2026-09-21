@@ -377,7 +377,7 @@ function Preprocessor($Content, $FilePath) {
 		}
 		if ($callsign) {
 			if ($GuestMode) {
-				# 访客模式需要联网下载并在编译期执行 ilasm/ildasm，直接忽略该指令（产物退化为普通 exe）。
+				# 访客模式会用 AsmResolver 重写托管程序集的 PE 导出表，直接忽略该指令（产物退化为普通 exe）。
 				Write-I18n Warning PragmaForbiddenInGuestMode '#_DllExport'
 			}
 			else {
