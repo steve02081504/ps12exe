@@ -54,7 +54,8 @@
 - 语法自检：`[System.Management.Automation.Language.Parser]::ParseFile($f,[ref]$null,[ref]$e)`，`$e.Count` 应为 0（`static.powershell-parses` 用例已覆盖）。
 - 帮助渲染：`. .\src\HelpShower.ps1 -HelpData (& .\src\locale\zh-CN.ps1).ConsoleHelpData | Write-Host`。
 - 新增/修改用例后记得本地跑一次相关 `-Filter`，并在提交前 `pwsh tests/run.ps1 -All` 过一遍。
-- 基准测试：`pwsh -File tools/Benchmark/Compare-Compilers.ps1 -Compile -IncludeCore` 输出 README 用的体积/启动/编译耗时 markdown；`-Content`/`-Script` 指定被测内容，`-Runs` 控制运行时热运行次数、`-CompileRuns` 控制编译取样数（第 0 次为冷编译，其余取中位数）。PS2EXE 行只在 Windows PowerShell 下能发现本地已安装模块。
+- 基准测试：`pwsh -File tools/Benchmark/Compare-Compilers.ps1 -Compile -IncludeCore` 输出 README 用的体积/启动/编译耗时 markdown，另含原生 DLL 导出（`#_DllExport`）的产物体积/编译耗时表；`-Content`/`-Script` 指定被测内容，`-Runs` 控制运行时热运行次数、`-CompileRuns` 控制编译取样数（第 0 次为冷编译，其余取中位数，默认 5）。PS2EXE 行取本地安装的最新版本（pwsh 下会补查 Windows PowerShell 的每用户模块目录 `Documents\WindowsPowerShell\Modules`），找不到就跳过其行。
+- README 的编译器包体积（解压/压缩）：按 `Publish.ps1` 的删除规则把仓库清成发布包，用 Windows PowerShell 5.1 的 `Publish-Module` 发到本地文件仓库得到 nupkg——展开 nupkg 的总字节数为「解压」，nupkg 文件本身为「压缩」；PS2EXE 用 PSGallery 的 nupkg（`Save-Module`/直接下载）同样测量。pwsh 下的 PowerShellGet 2.x `Publish-Module` 会报 `NupkgPath` 绑定错误，故用 5.1。
 - 运行时编译缓存统一挂在 `%TEMP%\ps12exe\`（`src/Cache.ps1` 提供 `Get-TempRoot`/`Get-CacheRoot <name>`/`Clear-StaleCache`；更新检查的 txt 在根下 `version.txt`）：Core 工程在 `cache\core`、CodeDom 帧模板在 `cache\codedom`、产物结果在 `cache\output`。各缓存的键与坑见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#compile-caches)。
 - Framework 编译后台预热 `ExeSinker`/AsmResolver（`src/AsmWarmup.ps1` 的 `Start-AsmWarmup`）。**别为省掉 ExeSinker 给 csc 传空 `/win32res`**（已试过并回退，理由见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#codedom-cache)）。
 - AsmResolver 被 illink 裁剪，运行期新增 API 用法需先镜像到 `tools/AsmResolver/Root.cs` 再重跑更新脚本：见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#asmresolver-trim)。

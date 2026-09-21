@@ -252,7 +252,7 @@ ps12exeGUI [[-PS1File] '<PS1 file>'] [-Locale '<language code>'] [-UIMode 'Dark'
 		InvalidCoreBackend                        = "Invalid Build.Core.Backend {0}, using Shared."
 		InvalidCoreTargetOs                       = "Invalid Build.Core.TargetOs {0}, using the build machine's OS."
 		InvalidCoreTargetFramework                = "Invalid Build.Core.TargetFramework {0}, ignoring it."
-		InvalidCorePowerShellVersion             = "Invalid PowerShell version {0}."
+		InvalidCorePowerShellVersion              = "Invalid PowerShell version {0}."
 		CoreVersionNoMapping                      = "No .NET framework mapping for PowerShell {0}; using {1}."
 		CoreTargetFrameworkTooLow                 = "Target framework {0} is lower than {1}, required by the selected PowerShell version."
 		CoreOptionsIgnoredNotCore                 = "Build.Core options are ignored unless Build.Target is 'Core'."

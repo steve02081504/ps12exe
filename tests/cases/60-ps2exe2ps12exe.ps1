@@ -158,11 +158,11 @@ Add-Test @{
 	Group = 'ps2exe2ps12exe'
 	Deps  = $script:PS2EXEDeps
 	Build = @{
-		Name     = 'corefwd'
-		Compiler = 'ps2exe'
+		Name      = 'corefwd'
+		Compiler  = 'ps2exe'
 		InputFile = $helloFixture
-		Params   = @{ Core = $true; Quiet = $true; TargetFramework = "net$([System.Environment]::Version.Major).$([System.Environment]::Version.Minor)" }
-		Output   = 'core-fwd.exe'
+		Params    = @{ Core = $true; Quiet = $true; TargetFramework = "net$([System.Environment]::Version.Major).$([System.Environment]::Version.Minor)" }
+		Output    = 'core-fwd.exe'
 	}
 	Run   = {
 		param($ctx)

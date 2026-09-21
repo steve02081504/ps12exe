@@ -174,7 +174,7 @@ Os               : Una tabla hash de opciones de integración con el sistema ope
                    ModernOS         : Usar las características de las últimas versiones de Windows (ejecutar [Environment]::OSVersion para ver las diferencias).
                    LongPaths        : Habilitar las rutas largas (> 260 caracteres) si están habilitadas en el sistema operativo (sólo para Windows 10 o superior).
                    Virtualize       : Se ha activado la virtualización de aplicaciones (se fuerza el tiempo de ejecución x86).
-Build            : Una tabla hash de opciones de compilación/cadena de herramientas. Claves admitidas:
+Build            : Una tabla hash de opciones de compilación. Claves admitidas:
                    Target           : Versión de tiempo de ejecución de destino, 'Framework4.0' por defecto; se admiten 'Framework2.0' y 'Core'. 'Core' genera un ejecutable de PowerShell Core (.NET) (requiere PowerShell Core y .NET en las máquinas de compilación y de destino; el resultado es mucho mayor).
                    Platform         : Compilar sólo para un tiempo de ejecución específico. Los valores posibles son 'AnyCpu', 'x64', 'x86' y 'arm64' (arm64 sólo es válido para 'Core').
                    Apartment        : Modo 'apartamento de un solo hilo' o 'apartamento de varios hilos'.
@@ -414,7 +414,7 @@ function DoSomething($value) { ... }
 
 `#_DllExport` compila el script en una DLL nativa de Win32 en lugar de un ejecutable, exportando las funciones indicadas para que los clientes nativos puedan llamarlas directamente con `LoadLibrary`/`GetProcAddress` (o `DllImport`). Cada función exportada reenvía a la función de PowerShell del mismo nombre: los argumentos se pasan como una matriz y la salida de la función se convierte en el valor de retorno. Los tipos de retorno y de los parámetros se escriben con sintaxis de C#; si se omite el tipo de retorno se usa `void`, y un parámetro sin tipo se trata como `string`.
 
-La exportación nativa requiere el destino .NET Framework 4.0 y una plataforma `x86`/`x64` (`AnyCPU` se resuelve automáticamente a la arquitectura del host), y la salida predeterminada es `.dll`. La función no está disponible en el modo invitado (sandbox). La exportación nativa se emite en proceso con el AsmResolver incluido; no se necesita ninguna cadena de herramientas externa.
+La exportación nativa requiere el destino .NET Framework 4.0 y una plataforma `x86`/`x64` (`AnyCPU` se resuelve automáticamente a la arquitectura del host), y la salida predeterminada es `.dll`. La función no está disponible en el modo invitado (sandbox). Las llamadas se serializan y la primera inicia el espacio de ejecución de PowerShell. Un error del script se escribe en stderr y la llamada devuelve el valor predeterminado del tipo declarado en lugar de dejar que la excepción cruce el límite nativo.
 
 #### `#_balus`
 
@@ -516,7 +516,7 @@ Por ejemplo, si el script llama a `[Console]::In.ReadToEnd()` y nunca usa `$inpu
 
 ### Evaluación de constantes
 
-Para scripts que solo contienen constantes y no tienen efectos secundarios, ps12exe los evalúa en tiempo de compilación e integra el resultado directamente en un exe diminuto (la ruta TinySharp, normalmente alrededor de 1 KB); vuelve a la compilación normal cuando la evaluación agota el tiempo de espera (7 segundos por defecto) o el resultado es demasiado largo. Si el entorno de evaluación difiere del de ejecución, o simplemente quiere el host completo de PowerShell, añada cualquiera de los siguientes pragmas para renunciar explícitamente a esa optimización:
+Para scripts que solo contienen constantes y no tienen efectos secundarios, ps12exe los evalúa en tiempo de compilación e integra el resultado directamente en un exe diminuto (normalmente alrededor de 1 KB); vuelve a la compilación normal cuando la evaluación agota el tiempo de espera (7 segundos por defecto) o el resultado es demasiado largo. Si el entorno de evaluación difiere del de ejecución, o simplemente quiere el host completo de PowerShell, añada cualquiera de los siguientes pragmas para renunciar explícitamente a esa optimización:
 
 - `#_pragma Build.ConstEval.Enabled 0`: declara que este script no es una constante; omite la evaluación de constantes.
 - `#_pragma Build.ConstEval.Timeout 1`: declara que esta evaluación de constantes ya agotó el tiempo; aplica el mismo retroceso que en caso de tiempo de espera.
@@ -550,30 +550,30 @@ Medido en Windows 11 con PowerShell 7.6.6 (.NET 10) y Windows PowerShell 5.1, 20
 
 | Compilación                                              | Tamaño de salida | Arranque en caliente |
 | -------------------------------------------------------- | ---------------- | -------------------- |
-| Windows PowerShell 5.1 ejecutando el script directamente | —                | ~330 ms              |
-| ps12exe · constante · Framework4.0                       | 1024 bytes       | ~43 ms               |
-| ps12exe · no constante · Framework4.0                    | 14848 bytes      | ~254 ms              |
-| PS2EXE 1.0.18 · no constante                             | 25088 bytes      | ~223 ms              |
+| Windows PowerShell 5.1 ejecutando el script directamente | —                | ~406 ms              |
+| ps12exe · constante · Framework4.0                       | 1024 bytes       | ~54 ms               |
+| ps12exe · no constante · Framework4.0                    | 14848 bytes      | ~365 ms              |
+| PS2EXE 1.0.18 · no constante                             | 25088 bytes      | ~398 ms              |
 | -------------------------------------------------------- | ---------------- | -------------------- |
-| pwsh 7 ejecutando el script directamente                 | —                | ~640 ms              |
-| ps12exe · constante · Core                               | ~165 KB          | ~80 ms               |
-| ps12exe · no constante · Core                            | ~181 KB          | ~500 ms              |
+| pwsh 7 ejecutando el script directamente                 | —                | ~676 ms              |
+| ps12exe · constante · Core                               | ~165 KB          | ~104 ms              |
+| ps12exe · no constante · Core                            | ~181 KB          | ~621 ms              |
 | PS2EXE 1.0.18 · no constante · Core                      | no compatible    | no compatible        |
 
 Un script constante se evalúa en tiempo de compilación, por lo que su exe pesa 1 KB y nunca inicia PowerShell: es unas 24× más pequeño y 6× más rápido de lanzar que un hello world de PS2EXE. Los exe no constantes son ~40 % más pequeños que los de PS2EXE y, para scripts con muchas variables de ámbito global, también se ejecutan más rápido, porque el script se ejecuta dentro de una función (ámbito local) en lugar del ámbito global.
 
 ### Velocidad de compilación ⏱️
 
-Medido con la misma herramienta (`-Compile -IncludeCore`). Cada muestra es un proceso anfitrión nuevo (Windows PowerShell 5.1 para Framework/PS2EXE, pwsh 7 para Core); «en caliente» es la mediana de 5 compilaciones después de la primera. Los datos de PS2EXE usan la versión instalada localmente (1.0.13 en este entorno).
+Medido con la misma herramienta (`-Compile -IncludeCore`). Cada muestra es un proceso anfitrión nuevo (Windows PowerShell 5.1 para Framework/PS2EXE, pwsh 7 para Core); «en caliente» es la mediana de 5 compilaciones después de la primera. Los datos de PS2EXE usan la versión instalada localmente (1.0.18 en este entorno).
 
 | Compilación                           | Compilación en caliente |
 | ------------------------------------- | ----------------------- |
-| ps12exe · constante · Framework4.0    | ~2,6 s                  |
-| ps12exe · no constante · Framework4.0 | ~1,4 s                  |
-| PS2EXE · no constante                 | ~1,0 s                  |
+| ps12exe · constante · Framework4.0    | ~2,3 s                  |
+| ps12exe · no constante · Framework4.0 | ~1,3 s                  |
+| PS2EXE · no constante                 | ~0,9 s                  |
 | ------------------------------------- | ----------------------- |
-| ps12exe · constante · Core            | ~4,3 s                  |
-| ps12exe · no constante · Core         | ~3,8 s                  |
+| ps12exe · constante · Core            | ~4,2 s                  |
+| ps12exe · no constante · Core         | ~5,7 s                  |
 | PS2EXE · no constante · Core          | no compatible           |
 
 PS2EXE compila un hello world más rápido porque no es más que una fina envoltura del compilador de .NET Framework integrado en Windows: realiza una sola pasada de CodeDom y nada más. ps12exe además ejecuta una comprobación de sintaxis, clasifica el script y (para scripts constantes) lo evalúa, y empaqueta el marco del programa como carga útil dentro de un lanzador, por lo que su compilación no constante es ~1,4× la de PS2EXE. La contrapartida se ve en la salida: ps12exe genera 1024 / 14848 bytes donde PS2EXE genera 25088, y los programas constantes se lanzan unas 6× más rápido. La compilación Core está dominada por `dotnet publish`; la primera compilación de una configuración también restaura los paquetes NuGet, tras lo cual ps12exe reutiliza el directorio de proyecto generado y ejecuta `dotnet publish --no-restore`.
@@ -582,10 +582,19 @@ El compilador en sí se distribuye como módulo de PowerShell:
 
 | Paquete del compilador  | Descomprimido | Comprimido |
 | ----------------------- | ------------- | ---------- |
-| ps12exe (master actual) | ~1,86 MB      | ~765 KB    |
+| ps12exe (master actual) | ~1,64 MB      | ~629 KB    |
 | PS2EXE 1.0.18           | ~171 KB       | ~46 KB     |
 
-El módulo de ps12exe es más grande porque es un compilador de script puro y sin dependencias que incluye binarios [AsmResolver](https://github.com/Washi1337/AsmResolver) recortados (usados para emitir los exe constantes de 1 KB y desempaquetar las cargas), 7 localizaciones y una GUI de script puro; PS2EXE casi no incluye nada y se apoya en el compilador de .NET Framework integrado en Windows.
+El módulo de ps12exe es más grande porque es un compilador de script puro y sin dependencias que incluye binarios [AsmResolver](https://github.com/Washi1337/AsmResolver) recortados, 7 localizaciones y una GUI de script puro; PS2EXE casi no incluye nada y se apoya en el compilador de .NET Framework integrado en Windows.
+
+### Exportación nativa a DLL 🧩
+
+Un script con `#_DllExport` se compila en una DLL Win32 invocable mediante `LoadLibrary`/`GetProcAddress` (solo Framework4.0 + x86/x64; PS2EXE no tiene equivalente). Script fijo de dos exportaciones (`Add`, `Greet`):
+
+| Compilación                              | Tamaño de salida | Compilación en caliente |
+| ---------------------------------------- | ---------------- | ----------------------- |
+| ps12exe · exportación DLL · Framework4.0 | 28160 bytes      | ~2,8 s                  |
+| PS2EXE 1.0.18 · exportación DLL          | no compatible    | no compatible           |
 
 ### Comportamiento en tiempo de ejecución de los EXE compilados 🖥️
 

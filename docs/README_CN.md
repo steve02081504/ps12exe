@@ -174,7 +174,7 @@ Os               : 操作系统集成选项的哈希表。支持的键：
                    ModernOS         : 使用最新Windows版本的功能（执行[Environment]::OSVersion以查看差异）。
                    LongPaths        : 如果在OS上启用，启用长路径（> 260个字符）（仅适用于Windows 10或更高版本）。
                    Virtualize       : 已激活应用程序虚拟化（强制x86运行时）。
-Build            : 构建/工具链选项的哈希表。支持的键：
+Build            : 构建选项的哈希表。支持的键：
                    Target           : 目标运行时版本，默认为 'Framework4.0'，支持 'Framework2.0' 与 'Core'；'Core' 编译为 PowerShell Core (.NET) 可执行程序（需要编译机与目标机都装有 PowerShell Core 与 .NET，且产物体积大很多）。
                    Platform         : 仅为特定运行时编译。可能的值为 'AnyCpu'、'x64'、'x86' 和 'arm64'（arm64 仅对 'Core' 有效）。
                    Apartment        : 'STA'（单线程单元）或 'MTA'（多线程单元）模式。
@@ -414,7 +414,7 @@ function DoSomething($value) { ... }
 
 `#_DllExport` 会把脚本编译成原生 Win32 DLL 而非 exe，并把列出的函数导出，让 native 调用方可以直接用 `LoadLibrary`/`GetProcAddress`（或 `DllImport`）调用。每个导出函数转发到同名的 PowerShell 函数：参数以数组形式传入，函数输出作为返回值。返回类型与参数类型按 C# 语法书写；省略返回类型时默认为 `void`，参数不写类型时按 `string` 处理。
 
-原生导出要求 .NET Framework 4.0 目标与 `x86`/`x64` 平台（`AnyCPU` 会自动按宿主位数选择），输出默认 `.dll`。访客/沙箱模式下不可用。原生导出由内置的 AsmResolver 在进程内直接写出，无需额外工具链。
+原生导出要求 .NET Framework 4.0 目标与 `x86`/`x64` 平台（`AnyCPU` 会自动按宿主位数选择），输出默认 `.dll`。访客/沙箱模式下不可用。导出调用会被串行化，首次调用会启动 PowerShell 运行空间。脚本出错时错误写到 stderr，调用返回所声明类型的默认值，而不是让异常穿过原生边界。
 
 #### `#_balus`
 
@@ -516,7 +516,7 @@ $Host.UI.RawUI.FlushInputBuffer()
 
 ### 常量求值
 
-对于只含常量、无副作用的脚本，ps12exe 会在编译期求值，并把结果直接编进极小的 exe（TinySharp 路径，通常 1KB 上下）；超时（默认 7 秒）或结果过长时会退回普通编译。如果求值环境与运行期不一致，或你本来就想要完整的 PowerShell 宿主，可以在脚本里加下面任一 pragma 显式放弃该优化：
+对于只含常量、无副作用的脚本，ps12exe 会在编译期求值，并把结果直接编进极小的 exe（通常 1KB 上下）；超时（默认 7 秒）或结果过长时会退回普通编译。如果求值环境与运行期不一致，或你本来就想要完整的 PowerShell 宿主，可以在脚本里加下面任一 pragma 显式放弃该优化：
 
 - `#_pragma Build.ConstEval.Enabled 0`：声明本脚本不是常量，跳过常量求值。
 - `#_pragma Build.ConstEval.Timeout 1`：声明本次常量求值已超时，直接按超时回退。
@@ -550,30 +550,30 @@ ps12exe 的开发者不借本项目宣扬政治、DEI 或其他意识形态立�
 
 | 构建                                     | 输出体积   | 预热启动 |
 | ---------------------------------------- | ---------- | -------- |
-| 直接用 Windows PowerShell 5.1 运行该脚本 | —          | ~330 ms  |
-| ps12exe · 常量 · Framework4.0            | 1024 字节  | ~43 ms   |
-| ps12exe · 非常量 · Framework4.0          | 14848 字节 | ~254 ms  |
-| PS2EXE 1.0.18 · 非常量                   | 25088 字节 | ~223 ms  |
+| 直接用 Windows PowerShell 5.1 运行该脚本 | —          | ~406 ms  |
+| ps12exe · 常量 · Framework4.0            | 1024 字节  | ~54 ms   |
+| ps12exe · 非常量 · Framework4.0          | 14848 字节 | ~365 ms  |
+| PS2EXE 1.0.18 · 非常量                   | 25088 字节 | ~398 ms  |
 | ---------------------------------------- | ---------- | -------- |
-| 直接用 pwsh 7 运行该脚本                 | —          | ~640 ms  |
-| ps12exe · 常量 · Core                    | ~165 KB    | ~80 ms   |
-| ps12exe · 非常量 · Core                  | ~181 KB    | ~500 ms  |
+| 直接用 pwsh 7 运行该脚本                 | —          | ~676 ms  |
+| ps12exe · 常量 · Core                    | ~165 KB    | ~104 ms  |
+| ps12exe · 非常量 · Core                  | ~181 KB    | ~621 ms  |
 | PS2EXE 1.0.18 · 非常量 · Core            | 不支持     | 不支持   |
 
 常量脚本在编译期求值，得到的 exe 仅 1 KB 且完全不启动 PowerShell——相比 PS2EXE 的 hello world 约小 24 倍、启动快 6 倍。非常量 exe 比 PS2EXE 小约 40%；对于大量使用顶层变量的脚本，由于脚本运行在函数内（局部作用域）而非全局作用域，执行还更快。
 
 ### 编译速度 ⏱️
 
-使用同一工具测量（`-Compile -IncludeCore`）。每个样本都运行在全新的宿主进程中（Framework/PS2EXE 用 Windows PowerShell 5.1，Core 用 pwsh 7）；“预热”为首次编译之后 5 次编译的中位数。PS2EXE 数据取自本地已安装的版本（本环境中为 1.0.13）。
+使用同一工具测量（`-Compile -IncludeCore`）。每个样本都运行在全新的宿主进程中（Framework/PS2EXE 用 Windows PowerShell 5.1，Core 用 pwsh 7）；“预热”为首次编译之后 5 次编译的中位数。PS2EXE 数据取自本地已安装的版本（本环境中为 1.0.18）。
 
 | 构建                            | 预热编译 |
 | ------------------------------- | -------- |
-| ps12exe · 常量 · Framework4.0   | ~2.6 s   |
-| ps12exe · 非常量 · Framework4.0 | ~1.4 s   |
-| PS2EXE · 非常量                 | ~1.0 s   |
+| ps12exe · 常量 · Framework4.0   | ~2.3 s   |
+| ps12exe · 非常量 · Framework4.0 | ~1.3 s   |
+| PS2EXE · 非常量                 | ~0.9 s   |
 | ------------------------------- | -------- |
-| ps12exe · 常量 · Core           | ~4.3 s   |
-| ps12exe · 非常量 · Core         | ~3.8 s   |
+| ps12exe · 常量 · Core           | ~4.2 s   |
+| ps12exe · 非常量 · Core         | ~5.7 s   |
 | PS2EXE · 非常量 · Core          | 不支持   |
 
 PS2EXE 编译 hello world 更快，因为它只是 Windows 内置 .NET Framework 编译器的一层薄封装：只做一次 CodeDom 编译，别无其他。ps12exe 还会额外执行语法检查、对脚本分类，并对常量脚本求值，再把程序帧作为负载打包进启动器，因此其非常量编译约为 PS2EXE 的 1.4 倍。代价体现在产物上：ps12exe 输出 1024 / 14848 字节，而 PS2EXE 输出 25088 字节，且常量程序启动约快 6 倍。Core 编译主要耗时于 `dotnet publish`；某个配置的首次编译还会还原 NuGet 包，之后 ps12exe 复用已生成的工程目录并运行 `dotnet publish --no-restore`。
@@ -582,10 +582,19 @@ PS2EXE 编译 hello world 更快，因为它只是 Windows 内置 .NET Framework
 
 | 编译器包               | 解压后   | 压缩后  |
 | ---------------------- | -------- | ------- |
-| ps12exe（当前 master） | ~1.86 MB | ~765 KB |
+| ps12exe（当前 master） | ~1.64 MB | ~629 KB |
 | PS2EXE 1.0.18          | ~171 KB  | ~46 KB  |
 
-ps12exe 的模块更大，因为它是无外部依赖的纯脚本编译器，随附精简过的 [AsmResolver](https://github.com/Washi1337/AsmResolver) 二进制（用于生成 1 KB 常量 exe 与解包负载）、7 种本地化以及纯脚本 GUI；而 PS2EXE 几乎不带任何东西，直接复用 Windows 内置的 .NET Framework 编译器。
+ps12exe 的模块更大，因为它是无外部依赖的纯脚本编译器，随附精简过的 [AsmResolver](https://github.com/Washi1337/AsmResolver) 二进制、7 种本地化以及纯脚本 GUI；而 PS2EXE 几乎不带任何东西，直接复用 Windows 内置的 .NET Framework 编译器。
+
+### 原生 DLL 导出 🧩
+
+带有 `#_DllExport` 的脚本会被编译成可通过 `LoadLibrary`/`GetProcAddress` 调用的 Win32 DLL（仅 Framework4.0 + x86/x64；PS2EXE 无对应功能）。固定两导出脚本（`Add`、`Greet`）：
+
+| 构建                              | 输出体积   | 预热编译 |
+| --------------------------------- | ---------- | -------- |
+| ps12exe · DLL 导出 · Framework4.0 | 28160 字节 | ~2.8 s   |
+| PS2EXE 1.0.18 · DLL 导出          | 不支持     | 不支持   |
 
 ### 编译产物的运行期行为 🖥️
 
