@@ -14,6 +14,7 @@
 import { analyze, computeSkipMask, exeLineMask } from './preprocessor.mjs'
 import { convertPs2exeInvocation } from './ps2exe.mjs'
 import { requireModules } from './require.mjs'
+import { skipString } from './tokens.mjs'
 
 /** 英文源字符串；它们同时也是 l10n bundle 的键。 */
 export const COMMAND_MESSAGES = Object.freeze({
@@ -61,53 +62,6 @@ export const MODULE_ALIASES = Object.freeze({
 	inmo: 'Install-Module'
 })
 
-/**
- * 按行切分文档。
- *
- * @param {string} text - 文档全文
- * @returns {string[]} 行数组
- */
-function splitLines(text) {
-	return String(text).split(/\r\n|\n|\r/)
-}
-
-/**
- * 计算一行中属于代码的字符位置（字符串内容与 `#` 注释为 false）。用于避免把字符串或注释里的命令名当成调用。
- *
- * @param {string} line - 待扫描的行
- * @returns {boolean[]} 逐字符的代码标记
- */
-function codeMask(line) {
-	const mask = new Array(line.length).fill(true)
-	let state = 'code'
-	for (let i = 0; i < line.length; i++) {
-		const char = line[i]
-		if (state === 'single') {
-			mask[i] = false
-			if (char === '\'')
-				if (line[i + 1] === '\'') { mask[i + 1] = false; i++ }
-				else state = 'code'
-			continue
-		}
-		if (state === 'double') {
-			mask[i] = false
-			if (char === '`') {
-				if (i + 1 < line.length) { mask[i + 1] = false; i++ }
-				continue
-			}
-			if (char === '"') state = 'code'
-			continue
-		}
-		if (char === '#') {
-			for (let j = i; j < line.length; j++) mask[j] = false
-			break
-		}
-		if (char === '\'') state = 'single'
-		else if (char === '"') state = 'double'
-	}
-	return mask
-}
-
 // 命令名可含连字符、点与下划线（`Get-Module`、`ps2exe.ps1`）。
 const COMMAND_NAME_RE = /^[A-Za-z_][A-Za-z0-9_.-]*/
 
@@ -119,15 +73,13 @@ const COMMAND_NAME_RE = /^[A-Za-z_][A-Za-z0-9_.-]*/
  * @returns {Array<{ name: string, start: number, end: number }>} 命令位置的 token
  */
 function commandTokens(line) {
-	const mask = codeMask(line)
 	const tokens = []
 	let expectCommand = true
 	for (let i = 0; i < line.length; i++) {
-		if (!mask[i]) { expectCommand = false; continue }
 		const char = line[i]
-		if (char === ' ' || char === '\t') continue
 		if (expectCommand) {
-			if (char === '&' || char === '.' || char === '{' || char === '(' || char === ';' || char === '|') continue
+			if (char === ' ' || char === '\t' || char === '&' || char === '.' || char === '{' || char === '(' || char === ';' || char === '|') continue
+			if (char === '\'' || char === '"') break // 命令名位置上出现字符串：这一行不是调用
 			const match = COMMAND_NAME_RE.exec(line.slice(i))
 			if (match) {
 				tokens.push({ name: match[0], start: i, end: i + match[0].length })
@@ -136,6 +88,9 @@ function commandTokens(line) {
 			expectCommand = false
 			continue
 		}
+		if (char === '#') break
+		if (char === '\'' || char === '"') { i = skipString(line, i) - 1; continue }
+		if (char === '`') { i++; continue }
 		if (char === ';' || char === '|' || char === '(' || char === '{' || char === '=') expectCommand = true
 	}
 	return tokens
@@ -252,7 +207,7 @@ function requireFixForLine(raw) {
  * @returns {Array<{ line: number, severity: 'warning', message: string, args: string[], code: string, start: number, end: number, replacement?: string }>} 诊断列表
  */
 export function analyzeCommandUsage(text, aliasMap = MODULE_ALIASES) {
-	const lines = splitLines(text)
+	const lines = String(text).split(/\r\n|\n|\r/)
 	const skip = computeSkipMask(lines)
 	const ignored = computeIgnoredMask(lines)
 	const moduleAliases = moduleAliasSet(aliasMap)

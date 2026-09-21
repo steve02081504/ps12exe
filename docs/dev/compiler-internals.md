@@ -54,13 +54,13 @@
 
 - 按「TFM/RID/选项/程序集名」缓存生成的 dotnet 工程，命中即 `dotnet publish/build --no-restore`（省一次 NuGet 还原）。
 - `Build.Core.Backend` 决定用哪个后端：`Shared`（默认）走 `CoreCompiler.ps1`，从目标机 `$PSHOME` 解析 SMA，键带 `corecache-vN` 标记；`Bundled` 走 `CoreBundledCompiler.ps1`，打包 `Microsoft.PowerShell.SDK`（键带 `corebundle-vN`），支持 `SelfContained`/`Trimmed`/`ReadyToRun`/`InvariantGlobalization`/`Aot` 与 `PowerShellVersion`。改这两个编译器的工程结构时同步 bump 各自标记。
-- 两者共用 `Get-CacheRoot 'core'` 目录与 `Clear-StaleCache`；`SingleFile=$false` 时发布整个目录并拷到 `outputFile` 所在目录。
+- 两者共用 `Get-CacheRoot 'core'` 目录与 `Clear-StaleCache`：`src/CoreProject.ps1` 提供 `Get-CoreDotnet`/`Get-CoreBuildKey`/`Enter-CoreProject`（缓存工程目录 + 命名互斥量 + stale 清理）/`Invoke-CoreDotnet`（`--no-restore` 与失败重试）/`Copy-CorePublishOutput`（`SingleFile=$false` 时发布整个目录并拷到 `outputFile` 所在目录）与 `Get-GuiFrameworkUsage`。
 
 <a id="core-gui-and-addtype"></a>
 
 ## Core 目标的 GUI 框架与 Add-Type
 
-- **WinForms/WPF**：console 应用默认不引用 WindowsDesktop 框架。`src/InitCompileThings.ps1` 的 `Get-GuiFrameworkUsage` 从预处理后的脚本文本粗判（宁可多开也不漏，误判只让产物多带框架引用）：
+- **WinForms/WPF**：console 应用默认不引用 WindowsDesktop 框架。`src/CoreProject.ps1` 的 `Get-GuiFrameworkUsage` 从预处理后的脚本文本粗判（宁可多开也不漏，误判只让产物多带框架引用）：
   - 命中 `System.Windows.Forms`/`System.Drawing` → `UseWindowsForms`。仅 `Bundled` 需要（Shared 下 WinForms 由 CoreHost 从 `$PSHOME` 解析，不额外依赖 Desktop 共享运行时）；`noConsole` 本来就用。
   - 命中 `System.Windows.*`/`PresentationFramework`/`PresentationCore`/`WindowsBase` → `UseWPF`（Shared/Bundled 都需要）。否则 `Add-Type -AssemblyName PresentationFramework` 会解析到 .NET Framework 的 GAC 版本，`[System.Windows.Window]` 找不到。`UseWPF` 要求 TFM 带 `-windows`。
 - **Add-Type**：`AddTypeCommand` 的静态初始化器把「入口程序集目录 `\ref`」当引用程序集目录（`Shared` 的宿主应用里入口程序集是用户的 exe，单文件下其 `Location` 还为空，会直接 `ArgumentNullException`）。`CoreCompiler.ps1` 在脚本命中 `Add-Type` 且 `$PSHOME\ref` 存在时，把 `$PSHOME\ref\*.dll` 作为 `Content` 随 launcher 发布，单文件下再加 `IncludeAllContentForSelfExtract`（自解压后入口程序集 `Location` 指向解压目录、ref 就在旁边）。没用 Add-Type 就不带（ref 约 6MB，Shared 的卖点是小）。`Bundled` 后端由 SDK 自带 ref；缓存键相应含 `needsRef`。详见 PS2EXE.Core #6/#24。

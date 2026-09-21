@@ -3,10 +3,11 @@
 # 直接编进产物，因此目标机无需安装 pwsh，且可以 SelfContained / Trimmed / ReadyToRun / InvariantGlobalization / AOT。
 # 产物显著更大（几十 MB 起步）。常量脚本不依赖 PowerShell，仍用 constexpr.cs 且不引用 SDK，只是套用发布属性。
 #
-# 调用方（CoreCompiler.ps1）已提供：$tfm / $rid / $assemblyName / $isConst / $programFrame / $outputFile /
-# $TempDir / $resourceElements / $versionElements / $iconElement / $defineConstants / $debugType /
-# $prepareDebug / $noConsole / $conHost / $coreTargetFramework / $powerShellVersion / $selfContained /
-# $trimmed / $trimMode / $readyToRun / $invariantGlobalization / $aot / $singleFile / $dotnet。
+# 由 CoreCompiler.ps1 点源调用（那里已备好 $dotnet 与工程辅助），调用方提供：$tfm / $rid / $assemblyName /
+# $isConst / $programFrame / $outputFile / $TempDir / $resourceElements / $versionElements / $iconElement /
+# $defineConstants / $debugType / $prepareDebug / $noConsole / $conHost / $coreTargetFramework /
+# $powerShellVersion / $selfContained / $trimmed / $trimMode / $readyToRun / $invariantGlobalization /
+# $aot / $singleFile。
 
 # PowerShell 版本 → 最低 .NET TFM（只按 major.minor 匹配）。
 $psDotnetMap = @{
@@ -64,6 +65,8 @@ $aotStr = $aot.ToString().ToLowerInvariant()
 
 $bundleTrimItems = ''
 if ($trimmed) {
+	# TrimMode 只在启用裁剪时才写入；AOT 会隐式裁剪。
+	$trimModeElement = "<TrimMode>$trimMode</TrimMode>"
 	$bundleTrimItems = @"
 		<TrimmerRootAssembly Include="System.Management.Automation" />
 		<TrimmerRootAssembly Include="Microsoft.PowerShell.Commands.Diagnostics" />
@@ -74,6 +77,7 @@ if ($trimmed) {
 		<TrimmerRootAssembly Include="Microsoft.WSMan.Management" />
 "@
 }
+else { $trimModeElement = '' }
 $bundleAotItems = ''
 if ($aot -and $tfmBase -match '^net(\d+)\.' -and [int]$Matches[1] -ge 8) {
 	$bundleAotItems = '		<PackageReference Include="System.Formats.Nrbf" Version="10.*" />'
@@ -91,46 +95,16 @@ $bundleInvariant = @(
 	"define=$bundleConstants", "isConst=$isConst", "sdk=$smaVersion"
 	"selfContained=$selfContainedStr", "singleFile=$singleFileStr", "trimmed=$trimmedStr"
 	"trimMode=$trimMode", "r2r=$r2rStr", "invariant=$invariantStr", "aot=$aotStr"
-) -join "`n"
-$sha = [System.Security.Cryptography.SHA256]::Create()
-try {
-	$bundleBuildKey = [System.BitConverter]::ToString($sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($bundleInvariant))).Replace('-', '').Substring(0, 24)
-}
-finally { $sha.Dispose() }
+)
+$bundleBuildKey = Get-CoreBuildKey $bundleInvariant
 
-$cacheRoot = Get-CacheRoot 'core'
-$projectDir = Join-Path $cacheRoot $bundleBuildKey
-if (Test-Path -LiteralPath $projectDir) { (Get-Item -LiteralPath $projectDir).LastWriteTimeUtc = [DateTime]::UtcNow }
-Clear-StaleCache $cacheRoot
-
-$bundleMutex = $null
-$bundleLocked = $false
-try {
-	$bundleMutex = [System.Threading.Mutex]::new($false, "ps12exe-corebundle-$bundleBuildKey")
-	$bundleLocked = $bundleMutex.WaitOne(300000)
-}
-catch { $bundleMutex = $null; $bundleLocked = $false }
-if (-not $bundleLocked) {
-	$projectDir = Join-Path $TempDir "corebundle-$([Guid]::NewGuid().ToString('N'))"
-	Remove-Item -LiteralPath $projectDir -Recurse -Force -ErrorAction Ignore
-}
-New-Item -ItemType Directory -Path $projectDir -Force | Out-Null
+$bundleProject = Enter-CoreProject -CacheTag 'corebundle' -BuildKey $bundleBuildKey -TempDir $TempDir
+$projectDir = $bundleProject.ProjectDir
 
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $env:DOTNET_NOLOGO = '1'
 
 $publishDir = Join-Path $projectDir 'publish'
-
-function Invoke-BundleDotnet([string[]]$DotnetArgs, [string]$AssetsPath) {
-	$useNoRestore = Test-Path -LiteralPath $AssetsPath
-	$effective = if ($useNoRestore) { $DotnetArgs + '--no-restore' } else { $DotnetArgs }
-	$output = & $dotnet.Source @effective --nologo -v quiet 2>&1
-	if ($LASTEXITCODE -ne 0 -and $useNoRestore) {
-		$output = & $dotnet.Source @DotnetArgs --nologo -v quiet 2>&1
-	}
-	if ($LASTEXITCODE -ne 0) { throw ($output -join "`n") }
-	return $output
-}
 
 try {
 	[System.IO.File]::WriteAllText((Join-Path $projectDir 'frame.cs'), $programFrame, [System.Text.UTF8Encoding]::new($false))
@@ -138,8 +112,7 @@ try {
 		Copy-Item -LiteralPath (Join-Path $TempDir 'main.ps1') -Destination (Join-Path $projectDir 'main.ps1') -Force
 	}
 
-	# TrimMode 只在启用裁剪时才写入；AOT 会隐式裁剪。
-	$trimModeElement = if ($trimmed) { "<TrimMode>$trimMode</TrimMode>" } else { '' }
+	# TrimMode 与裁剪根项一起写入（裁剪器根项必须保留，故并入同一个条件块）。
 	$bundleCsproj = @"
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
@@ -187,36 +160,10 @@ $bundleScriptItem
 	Write-I18n Host CoreCompilePublishing
 	Write-Debug "Core bundled compiler: dotnet publish (tfm=$tfm, rid=$rid, sdk=$psSdkVersion, selfContained=$selfContainedStr, aot=$aotStr)"
 	Remove-Item -LiteralPath $publishDir -Recurse -Force -ErrorAction Ignore
-	$null = Invoke-BundleDotnet @('publish', (Join-Path $projectDir 'bundle.csproj'), '-c', 'Release', '-o', $publishDir) (Join-Path $projectDir 'obj/project.assets.json')
+	$null = Invoke-CoreDotnet -DotnetArgs @('publish', (Join-Path $projectDir 'bundle.csproj'), '-c', 'Release', '-o', $publishDir) -AssetsPath (Join-Path $projectDir 'obj/project.assets.json') -DotnetPath $dotnet.Source
 
-	$publishedExe = Join-Path $publishDir "$assemblyName.exe"
-	if (-not (Test-Path -LiteralPath $publishedExe)) {
-		Write-I18n Error OutputFileNotWritten -Category WriteError
-		throw 'ps12exe:core-bundled-no-output'
-	}
-	if ($singleFile) {
-		Copy-Item -LiteralPath $publishedExe -Destination $outputFile -Force
-	}
-	else {
-		$outDir = Split-Path -Parent $outputFile
-		New-Item -ItemType Directory -Path $outDir -Force | Out-Null
-		Copy-Item -Path (Join-Path $publishDir '*') -Destination $outDir -Recurse -Force
-		$copiedExe = Join-Path $outDir "$assemblyName.exe"
-		if ([System.IO.Path]::GetFullPath($copiedExe) -ne [System.IO.Path]::GetFullPath($outputFile)) {
-			Move-Item -LiteralPath $copiedExe -Destination $outputFile -Force
-		}
-	}
-
-	if ($prepareDebug) {
-		$publishedPdb = Join-Path $publishDir "$assemblyName.pdb"
-		if (Test-Path -LiteralPath $publishedPdb) {
-			Copy-Item -LiteralPath $publishedPdb -Destination ($outputFile -replace '\.exe$', '.pdb') -Force
-		}
-	}
+	Copy-CorePublishOutput -PublishDir $publishDir -AssemblyName $assemblyName -OutputFile $outputFile -SingleFile $singleFile -PrepareDebug $prepareDebug
 }
 finally {
-	if ($bundleMutex) {
-		try { if ($bundleLocked) { $bundleMutex.ReleaseMutex() } } catch {}
-		$bundleMutex.Dispose()
-	}
+	Exit-CoreProject $bundleProject
 }

@@ -7,7 +7,9 @@
 // `#_!!` 行会被 ps12exe 去掉标记变成真实代码，所以照常解析。调用可以跨多行（`@{ … }` 展开），
 // 因此这里按整个文档扫描，而不是逐行。
 
+import { canonicalGroupName } from './pragma.mjs'
 import { computeSkipMask } from './preprocessor.mjs'
+import { readValueToken, skipString } from './tokens.mjs'
 
 /** 英文源字符串；它们同时也是 l10n bundle 的键。 */
 export const CLI_MESSAGES = Object.freeze({
@@ -39,68 +41,22 @@ const BANG_RE = /^([\t ]*)#_!! ?/
  * 把文档逐行复制一份，here-string/块注释整行替换为等长空格，并抹掉 `#_!!` 标记，使字符偏移与原文一致、解析时不会被它们干扰。
  *
  * @param {string} text - 文档全文
- * @returns {string} 用于扫描的文本（换行统一为 `\n`，行长不变）
+ * @returns {{ masked: string, lineStarts: number[] }} 用于扫描的文本（换行统一为 `\n`，行长不变）与每行起始偏移
  */
 function maskText(text) {
 	const lines = String(text).split(/\r\n|\n|\r/)
 	const skip = computeSkipMask(lines)
-	return lines.map((line, index) => {
+	const masked = lines.map((line, index) => {
 		if (skip[index]) return ' '.repeat(line.length)
 		const bang = BANG_RE.exec(line)
 		if (bang) return ' '.repeat(bang[0].length) + line.slice(bang[0].length)
 		return line
 	}).join('\n')
-}
 
-/**
- * 跳过一段字符串字面量（`'…'` 或 `"…"`），双引号内的反引号转义与单引号的双写都会正确处理。跨行（未闭合）时停在行尾。
- *
- * @param {string} text - 待扫描的文本
- * @param {number} start - 起始引号所在列
- * @returns {number} 结束引号之后（或行尾）的列
- */
-function skipString(text, start) {
-	const quote = text[start]
-	let i = start + 1
-	while (i < text.length) {
-		const char = text[i]
-		if (quote === '"' && char === '`') { i += 2; continue }
-		if (char === quote) {
-			if (text[i + 1] === quote) { i += 2; continue }
-			return i + 1
-		}
-		if (char === '\n') return i
-		i++
-	}
-	return i
-}
-
-/**
- * 从 `start` 起读取一个值 token（字符串、`@{…}`/`@(…)`/`$(…)`/`[…]`/`(…)`/`{…}` 字面量或裸词），返回其结束列。
- * 括号层级内的空白不打断 token，因此 `@{a='b c'}` 与 `$(Get-Item 'x y')` 都算一个 token。
- *
- * @param {string} text - 待扫描的文本
- * @param {number} start - token 起始列
- * @returns {number} token 结束列（不含）
- */
-function readValueToken(text, start) {
-	let i = start
-	let depth = 0
-	while (i < text.length) {
-		const char = text[i]
-		if (char === '`') { i += 2; continue }
-		if (char === '\'' || char === '"') { i = skipString(text, i); continue }
-		if (char === '(' || char === '[' || char === '{') { depth++; i++; continue }
-		if (char === ')' || char === ']' || char === '}') {
-			if (depth === 0) break
-			depth--
-			i++
-			continue
-		}
-		if (depth === 0 && (char === ' ' || char === '\t' || char === '\r' || char === '\n' || char === ';' || char === '|')) break
-		i++
-	}
-	return i
+	const lineStarts = [0]
+	for (let i = 0; i < masked.length; i++)
+		if (masked[i] === '\n') lineStarts.push(i + 1)
+	return { masked, lineStarts }
 }
 
 /**
@@ -231,6 +187,10 @@ function locate(lineStarts, index) {
 	return { line: low, column: index - lineStarts[low] }
 }
 
+/** 上一次扫描的文档与其结果；`cliTokenAt` 随光标移动反复取用，缓存避免每次重扫整个文档。 */
+let cachedText = null
+let cachedEntries = null
+
 /**
  * 扫描文档中所有 ps12exe 调用的参数名与哈希表成员键，返回带绝对偏移、行列与路径的条目。
  *
@@ -238,10 +198,8 @@ function locate(lineStarts, index) {
  * @returns {Array<{ kind: 'param'|'member', name: string, path: string, start: number, end: number, line: number, startColumn: number, endColumn: number }>} 条目列表
  */
 export function scanCliInvocations(text) {
-	const masked = maskText(text)
-	const lineStarts = [0]
-	for (let i = 0; i < masked.length; i++)
-		if (masked[i] === '\n') lineStarts.push(i + 1)
+	if (text === cachedText) return cachedEntries
+	const { masked, lineStarts } = maskText(text)
 
 	const found = []
 	let i = 0
@@ -279,7 +237,7 @@ export function scanCliInvocations(text) {
 		i++
 	}
 
-	return found.map((entry) => {
+	cachedEntries = found.map((entry) => {
 		const start = locate(lineStarts, entry.start)
 		const end = locate(lineStarts, entry.end)
 		return {
@@ -289,6 +247,8 @@ export function scanCliInvocations(text) {
 			endColumn: end.column
 		}
 	})
+	cachedText = text
+	return cachedEntries
 }
 
 /**
@@ -366,7 +326,7 @@ export function analyzeCliUsage(text, data) {
 			line: entry.line,
 			severity: /** @type {'error'} */ 'error',
 			message: CLI_MESSAGES.unknownMember,
-			args: [entry.name, `-${canonicalGroup(data, group)}`],
+			args: [entry.name, `-${canonicalGroupName(data, group)}`],
 			code: CLI_MEMBER_DIAGNOSTIC,
 			start: entry.startColumn,
 			end: entry.endColumn
@@ -374,18 +334,4 @@ export function analyzeCliUsage(text, data) {
 	}
 
 	return diagnostics
-}
-
-/**
- * 用某个后代键的规范大小写还原分组名（`app` -> `App`、`build.core` -> `Build.Core`）。
- *
- * @param {Map<string, { name: string, description: string }>} data - 扁平化后的说明数据
- * @param {string} lowerGroup - 分组的点号路径（小写）
- * @returns {string} 分组显示名；找不到后代时原样返回
- */
-function canonicalGroup(data, lowerGroup) {
-	const prefix = `${lowerGroup}.`
-	for (const [key, entry] of data)
-		if (key.startsWith(prefix)) return entry.name.slice(0, lowerGroup.length)
-	return lowerGroup
 }

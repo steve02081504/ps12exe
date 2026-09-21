@@ -157,7 +157,7 @@ function directChildNames(data, lowerName) {
  * @param {string} lowerName - 分组的点号路径（小写）
  * @returns {string} 分组的显示名；找不到后代时原样返回
  */
-function canonicalGroupName(data, lowerName) {
+export function canonicalGroupName(data, lowerName) {
 	const prefix = `${lowerName}.`
 	for (const [key, entry] of data)
 		if (key.startsWith(prefix)) return entry.name.slice(0, lowerName.length)

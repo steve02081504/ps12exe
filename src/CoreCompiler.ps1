@@ -6,11 +6,9 @@ if ($PSVersionTable.PSEdition -ne 'Core') {
 	throw 'ps12exe:core-host'
 }
 
-$dotnet = Get-Command dotnet -ErrorAction Ignore
-if (-not $dotnet) {
-	Write-I18n Error CoreCompileNeedDotnet -Category NotInstalled
-	throw 'ps12exe:core-need-dotnet'
-}
+. $PSScriptRoot\CoreProject.ps1
+
+$dotnet = Get-CoreDotnet
 
 $unsupported = @()
 foreach ($a in @('requireAdmin', 'DPIAware', 'supportOS', 'longPaths', 'virtualize', 'winFormsDPIAware')) {
@@ -138,7 +136,7 @@ $payloadDefineConstants = (($coreConstants + 'CoreHost') | Sort-Object -Unique) 
 # 与脚本文本无关。把工程目录按「还原输入」缓存下来，后续编译只重编 frame.cs/main.ps1 并
 # 叠加 --no-restore，可省掉每次约 0.8~0.9s 的还原。用命名互斥量串行化同一 key 的并发编译。
 $smaPath = Join-Path $PSHOME 'System.Management.Automation.dll'
-$coreInvariant = @(
+$coreBuildKey = Get-CoreBuildKey @(
 	'corecache-v2'
 	"tfm=$tfm", "rid=$rid", "outputType=$outputType", "debugType=$debugType"
 	"assemblyName=$assemblyName", "winForms=$winForms", "icon=$iconElement"
@@ -147,50 +145,14 @@ $coreInvariant = @(
 	"payloadDefine=$payloadDefineConstants", "isConst=$isConst"
 	"singleFile=$singleFile", "conHost=$conHost", "needsRef=$needsRefAssemblies"
 	"sma=$smaPath", "edition=$($PSVersionTable.PSEdition)", "psver=$($PSVersionTable.PSVersion)"
-) -join "`n"
-$sha = [System.Security.Cryptography.SHA256]::Create()
-try {
-	$coreBuildKey = [System.BitConverter]::ToString($sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($coreInvariant))).Replace('-', '').Substring(0, 24)
-}
-finally { $sha.Dispose() }
-
-$cacheRoot = Get-CacheRoot 'core'
-$projectDir = Join-Path $cacheRoot $coreBuildKey
-if (Test-Path -LiteralPath $projectDir) { (Get-Item -LiteralPath $projectDir).LastWriteTimeUtc = [DateTime]::UtcNow }
-# 清理长期未用的工程（活跃工程刚被 touch，不会命中）。
-Clear-StaleCache $cacheRoot
-
-$coreMutex = $null
-$coreLocked = $false
-try {
-	$coreMutex = [System.Threading.Mutex]::new($false, "ps12exe-core-$coreBuildKey")
-	$coreLocked = $coreMutex.WaitOne(180000)
-}
-catch { $coreMutex = $null; $coreLocked = $false }
-if (-not $coreLocked) {
-	# 拿不到锁（超时/平台不支持）就退化为本次独占临时目录，牺牲复用换取正确性。
-	$projectDir = Join-Path $TempDir "coreproj-$([Guid]::NewGuid().ToString('N'))"
-	Remove-Item -LiteralPath $projectDir -Recurse -Force -ErrorAction Ignore
-}
-New-Item -ItemType Directory -Path $projectDir -Force | Out-Null
+)
+$coreProject = Enter-CoreProject -CacheTag 'core' -BuildKey $coreBuildKey -TempDir $TempDir -MutexTimeoutMs 180000
+$projectDir = $coreProject.ProjectDir
 
 $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
 $env:DOTNET_NOLOGO = '1'
 
 $publishDir = Join-Path $projectDir 'publish'
-
-# 统一的 dotnet 调用：若 obj/project.assets.json 已存在（缓存命中）则加 --no-restore；
-# 若 --no-restore 失败（obj 损坏 / SDK 升级）再退回完整还原重试一次。
-function Invoke-CoreDotnet([string[]]$DotnetArgs, [string]$AssetsPath) {
-	$useNoRestore = Test-Path -LiteralPath $AssetsPath
-	$effective = if ($useNoRestore) { $DotnetArgs + '--no-restore' } else { $DotnetArgs }
-	$output = & $dotnet.Source @effective --nologo -v quiet 2>&1
-	if ($LASTEXITCODE -ne 0 -and $useNoRestore) {
-		$output = & $dotnet.Source @DotnetArgs --nologo -v quiet 2>&1
-	}
-	if ($LASTEXITCODE -ne 0) { throw ($output -join "`n") }
-	return $output
-}
 
 try {
 	if ($isConst) {
@@ -210,7 +172,7 @@ $($publishedProps.Replace('__DefineConstants__', [System.Security.SecurityElemen
 		Write-I18n Host CoreCompilePublishing
 		Write-Debug "Core compiler: dotnet publish const frame (tfm=$tfm, rid=$rid)"
 		Remove-Item -LiteralPath $publishDir -Recurse -Force -ErrorAction Ignore
-		$null = Invoke-CoreDotnet @('publish', (Join-Path $projectDir 'const.csproj'), '-c', 'Release', '-o', $publishDir) (Join-Path $projectDir 'obj/project.assets.json')
+		$null = Invoke-CoreDotnet -DotnetArgs @('publish', (Join-Path $projectDir 'const.csproj'), '-c', 'Release', '-o', $publishDir) -AssetsPath (Join-Path $projectDir 'obj/project.assets.json') -DotnetPath $dotnet.Source
 	}
 	else {
 		# ---------- 非常量：payload 程序集 → Brotli → launcher ----------
@@ -255,7 +217,7 @@ $($publishedProps.Replace('__DefineConstants__', [System.Security.SecurityElemen
 		$payloadOut = Join-Path $projectDir 'payloadout'
 		Write-Debug "Core compiler: dotnet build payload (tfm=$tfm, rid=$rid)"
 		Remove-Item -LiteralPath $payloadOut -Recurse -Force -ErrorAction Ignore
-		$buildOutput = Invoke-CoreDotnet @('build', (Join-Path $payloadDir 'payload.csproj'), '-c', 'Release', '-o', $payloadOut) (Join-Path $payloadDir 'obj/project.assets.json')
+		$buildOutput = Invoke-CoreDotnet -DotnetArgs @('build', (Join-Path $payloadDir 'payload.csproj'), '-c', 'Release', '-o', $payloadOut) -AssetsPath (Join-Path $payloadDir 'obj/project.assets.json') -DotnetPath $dotnet.Source
 		$payloadDll = Join-Path $payloadOut "$assemblyName.dll"
 		if (-not (Test-Path -LiteralPath $payloadDll)) {
 			throw "ps12exe: core payload not built: $payloadDll`n$($buildOutput -join "`n")"
@@ -323,38 +285,11 @@ $refContentItem
 		Write-I18n Host CoreCompilePublishing
 		Write-Debug "Core compiler: dotnet publish launcher (tfm=$tfm, rid=$rid)"
 		Remove-Item -LiteralPath $publishDir -Recurse -Force -ErrorAction Ignore
-		$null = Invoke-CoreDotnet @('publish', (Join-Path $projectDir 'launcher.csproj'), '-c', 'Release', '-o', $publishDir) (Join-Path $projectDir 'obj/project.assets.json')
+		$null = Invoke-CoreDotnet -DotnetArgs @('publish', (Join-Path $projectDir 'launcher.csproj'), '-c', 'Release', '-o', $publishDir) -AssetsPath (Join-Path $projectDir 'obj/project.assets.json') -DotnetPath $dotnet.Source
 	}
 
-	$publishedExe = Join-Path $publishDir "$assemblyName.exe"
-	if (-not (Test-Path -LiteralPath $publishedExe)) {
-		Write-I18n Error OutputFileNotWritten -Category WriteError
-		throw 'ps12exe:core-no-output'
-	}
-	if ($singleFile) {
-		Copy-Item -LiteralPath $publishedExe -Destination $outputFile -Force
-	}
-	else {
-		# 非单文件：把整个 publish 目录（exe + deps/runtimeconfig 等）拷到 outputFile 所在目录。
-		$outDir = Split-Path -Parent $outputFile
-		New-Item -ItemType Directory -Path $outDir -Force | Out-Null
-		Copy-Item -Path (Join-Path $publishDir '*') -Destination $outDir -Recurse -Force
-		$copiedExe = Join-Path $outDir "$assemblyName.exe"
-		if ([System.IO.Path]::GetFullPath($copiedExe) -ne [System.IO.Path]::GetFullPath($outputFile)) {
-			Move-Item -LiteralPath $copiedExe -Destination $outputFile -Force
-		}
-	}
-
-	if ($prepareDebug) {
-		$publishedPdb = Join-Path $publishDir "$assemblyName.pdb"
-		if (Test-Path -LiteralPath $publishedPdb) {
-			Copy-Item -LiteralPath $publishedPdb -Destination ($outputFile -replace '\.exe$', '.pdb') -Force
-		}
-	}
+	Copy-CorePublishOutput -PublishDir $publishDir -AssemblyName $assemblyName -OutputFile $outputFile -SingleFile $singleFile -PrepareDebug $prepareDebug
 }
 finally {
-	if ($coreMutex) {
-		try { if ($coreLocked) { $coreMutex.ReleaseMutex() } } catch {}
-		$coreMutex.Dispose()
-	}
+	Exit-CoreProject $coreProject
 }

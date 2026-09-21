@@ -4,6 +4,8 @@
 // `$os` / `$build` / `$resources`）；改动那边时必须同步这里。ps12exe 没有等价能力（`embedFiles`）、调用用了
 // splatting，或参数无法静态确定时返回 `null`——宁可不提供改写，也不生成错误或语义不同的调用。
 
+import { isCompleteLine, readValueToken } from './tokens.mjs'
+
 // 需要取值的 PS2EXE 参数（小写）。
 const VALUE_PARAMS = new Set([
 	'inputfile', 'outputfile', 'iconfile', 'title', 'description', 'company',
@@ -30,82 +32,6 @@ const CORE_ONLY_PARAMS = new Set([
 	'arm', 'targetos', 'targetframework', 'powershellversion', 'selfcontained',
 	'publishsinglefile', 'trimmed', 'trimmode', 'readytorun', 'invariantglobalization', 'aot'
 ])
-
-/**
- * 判断一行在语法上是否完整（引号与括号都闭合，且不以续行反引号结尾）。不完整时调用可能跨行，无法静态改写。
- *
- * @param {string} text - 待检查的行
- * @returns {boolean} 行在语法上完整时为 true
- */
-function isCompleteLine(text) {
-	let depth = 0
-	let state = 'code'
-	for (let i = 0; i < text.length; i++) {
-		const char = text[i]
-		if (state === 'single') {
-			if (char === '\'')
-				if (text[i + 1] === '\'') i++
-				else state = 'code'
-			continue
-		}
-		if (state === 'double') {
-			if (char === '`') { i++; continue }
-			if (char === '"') state = 'code'
-			continue
-		}
-		if (char === '\'') { state = 'single'; continue }
-		if (char === '"') { state = 'double'; continue }
-		if (char === '`' && i === text.length - 1) return false
-		if (char === '#' && (i === 0 || /[\s;|({]/.test(text[i - 1]))) break
-		if (char === '(' || char === '{' || char === '[') depth++
-		else if (char === ')' || char === '}' || char === ']') depth--
-	}
-	return state === 'code' && depth <= 0
-}
-
-/**
- * 跳过一个参数 token：保留引号与成对括号内的空白，因此 `"a b"`、`@{a='b c'}`、`$(Get-Item 'x y')` 都算一个 token。
- *
- * @param {string} text - 待扫描的行
- * @param {number} start - token 起始列
- * @returns {number} token 结束列（不含）
- */
-function readArgumentToken(text, start) {
-	let i = start
-	let depth = 0
-	while (i < text.length) {
-		const char = text[i]
-		if (char === '`') { i += 2; continue }
-		if (char === '\'') {
-			i++
-			while (i < text.length)
-				if (text[i] === '\'')
-					if (text[i + 1] === '\'') i += 2
-					else { i++; break }
-				else i++
-			continue
-		}
-		if (char === '"') {
-			i++
-			while (i < text.length) {
-				if (text[i] === '`') { i += 2; continue }
-				if (text[i] === '"') { i++; break }
-				i++
-			}
-			continue
-		}
-		if (char === '(' || char === '{' || char === '[') { depth++; i++; continue }
-		if (char === ')' || char === '}' || char === ']') {
-			if (depth === 0) break
-			depth--
-			i++
-			continue
-		}
-		if (depth === 0 && (char === ' ' || char === '\t' || char === ';' || char === '|')) break
-		i++
-	}
-	return i
-}
 
 /**
  * 跳过空白。
@@ -200,7 +126,7 @@ export function convertPs2exeInvocation(line, token) {
 			const char = line[i]
 			if (char === ' ' || char === '\t') { i++; continue }
 			if (char === '#' || char === ';' || char === '|' || char === ')' || char === '}') break
-			const stop = readArgumentToken(line, i)
+			const stop = readValueToken(line, i)
 			if (stop <= i) return null
 			const raw = line.slice(i, stop)
 			end = stop
@@ -224,7 +150,7 @@ export function convertPs2exeInvocation(line, token) {
 			if (VALUE_PARAMS.has(name) && value === undefined) {
 				const valueStart = skipSpaces(line, i)
 				if (valueStart >= line.length) return null
-				const valueStop = readArgumentToken(line, valueStart)
+				const valueStop = readValueToken(line, valueStart)
 				const candidate = line.slice(valueStart, valueStop)
 				// 下一个 token 是另一个已知参数时说明取值缺失，不臆测。
 				const asParam = /^-([A-Za-z_][A-Za-z0-9_]*)/.exec(candidate)
