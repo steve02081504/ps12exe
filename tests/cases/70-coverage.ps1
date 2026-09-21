@@ -339,10 +339,10 @@ Add-Test @{
 			Assert-True (Test-Path -LiteralPath $skillFile) '启用后应写入 agent skill'
 			$skillContent = [System.IO.File]::ReadAllText($skillFile, [System.Text.Encoding]::UTF8)
 			Assert-Match $skillContent '(?m)^name:\s*ps12exe\s*$' 'agent skill 的 frontmatter 缺少 name: ps12exe'
-			Set-ps12exeIntegration -action disable -Skip ContextMenu,VSCodeExtension
+			Set-ps12exeIntegration -action disable -Skip ContextMenu, VSCodeExtension
 			Assert-False (Test-Path -LiteralPath $skillFile) '-Skip ContextMenu,VSCodeExtension 的 disable 应只移除 agent skill'
 			Assert-True (Test-Path -LiteralPath $key) '跳过 ContextMenu 时不应移除右键菜单'
-			Set-ps12exeIntegration -action enable -Skip ContextMenu,VSCodeExtension
+			Set-ps12exeIntegration -action enable -Skip ContextMenu, VSCodeExtension
 			Assert-True (Test-Path -LiteralPath $skillFile) '-Skip ContextMenu,VSCodeExtension 的 enable 应只写入 agent skill'
 			Set-ps12exeIntegration -action disable -Skip ContextMenu
 			Assert-False (Test-Path -LiteralPath $skillFile) '跳过 ContextMenu 时 disable 应移除 skill'
