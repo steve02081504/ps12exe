@@ -115,14 +115,15 @@ suite('ps12exe pragma names', () => {
 		assert.strictEqual(pragmaNameAt('Write-Output "#_pragma App"', 3), null)
 	})
 
-	test('resolves a pragma description, including the no prefix', () => {
+	test('resolves a pragma description', () => {
 		const data = new Map([
 			['app.windowed', { name: 'App.Windowed', description: 'windowed' }],
 			['golf', { name: 'Golf', description: 'golf' }]
 		])
-		assert.deepStrictEqual(lookupPragma(data, 'App.Windowed'), { name: 'App.Windowed', description: 'windowed', negated: false })
-		assert.deepStrictEqual(lookupPragma(data, 'app.windowed'), { name: 'App.Windowed', description: 'windowed', negated: false })
-		assert.deepStrictEqual(lookupPragma(data, 'noGolf'), { name: 'Golf', description: 'golf', negated: true })
+		assert.deepStrictEqual(lookupPragma(data, 'App.Windowed'), { name: 'App.Windowed', description: 'windowed' })
+		assert.deepStrictEqual(lookupPragma(data, 'app.windowed'), { name: 'App.Windowed', description: 'windowed' })
+		// `no` 前缀不再回退到基名：`noGolf` 是未知的 pragma 名。
+		assert.strictEqual(lookupPragma(data, 'noGolf'), null)
 		assert.strictEqual(lookupPragma(data, 'Unknown'), null)
 	})
 
@@ -166,14 +167,14 @@ suite('ps12exe pragma names', () => {
 			['golf', { name: 'Golf', description: 'golf' }]
 		])
 		assert.deepStrictEqual(lookupPragma(data, 'Build.Core'), {
-			name: 'Build.Core', description: '', negated: false, isGroup: true, children: ['Aot', 'Backend', 'Publish']
+			name: 'Build.Core', description: '', isGroup: true, children: ['Aot', 'Backend', 'Publish']
 		})
 		assert.deepStrictEqual(lookupPragma(data, 'build'), {
-			name: 'Build', description: '', negated: false, isGroup: true, children: ['Core', 'Target']
+			name: 'Build', description: '', isGroup: true, children: ['Core', 'Target']
 		})
-		// 叶子仍按原样解析；分组判定不会把 `no` 前缀或未知名字误判为分组。
+		// 叶子仍按原样解析；分组判定不会把未知名字误判为分组。
 		assert.strictEqual(lookupPragma(data, 'Build.Core.Publish.Deep').description, 'deep')
-		assert.strictEqual(lookupPragma(data, 'noGolf').negated, true)
+		assert.strictEqual(lookupPragma(data, 'noGolf'), null)
 		assert.strictEqual(lookupPragma(data, 'Unknown'), null)
 	})
 })

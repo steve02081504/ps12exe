@@ -151,23 +151,21 @@ function canonicalGroupName(data, lowerName) {
 }
 
 /**
- * 在扁平数据中查找一个 pragma 名。`no` 前缀（如 `#_pragma noGolf`）会回退到其基名。
+ * 在扁平数据中查找一个 pragma 名。
  *
  * 分组名（`App`、`Build.Core` 等）没有标量值，命中时返回带 `isGroup`/`children` 的条目，
  * 由调用方拼出「支持哪些子键」的说明。
  *
  * @param {Map<string, { name: string, description: string }>} data - 扁平化后的说明数据
  * @param {string} name - 待查找的 pragma 名
- * @returns {{ name: string, description: string, negated: boolean, isGroup?: boolean, children?: string[] } | null} 查到的说明与是否取反，未找到时为 null
+ * @returns {{ name: string, description: string, isGroup?: boolean, children?: string[] } | null} 查到的说明，未找到时为 null
  */
 export function lookupPragma(data, name) {
 	const lower = name.toLowerCase()
 	const exact = data.get(lower)
-	if (exact) return { ...exact, negated: false }
-	const base = data.get(lower.startsWith('no') ? lower.slice(2) : '')
-	if (base) return { ...base, negated: true }
+	if (exact) return exact
 	const children = directChildNames(data, lower)
-	if (children.length) return { name: canonicalGroupName(data, lower), description: '', negated: false, isGroup: true, children }
+	if (children.length) return { name: canonicalGroupName(data, lower), description: '', isGroup: true, children }
 	return null
 }
 

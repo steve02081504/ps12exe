@@ -34,12 +34,14 @@ Add-Test @{
 		$script:GuestMode = $false
 		$script:Params = @{}
 		$script:ParamList = @{
-			App        = @{ ParameterType = [hashtable] }
-			Os         = @{ ParameterType = [hashtable] }
-			Build      = @{ ParameterType = [hashtable] }
-			Resources  = @{ ParameterType = [hashtable] }
-			Signing    = @{ ParameterType = [hashtable] }
-			outputFile = @{ ParameterType = [string] }
+			App           = @{ ParameterType = [hashtable] }
+			Os            = @{ ParameterType = [hashtable] }
+			Build         = @{ ParameterType = [hashtable] }
+			Resources     = @{ ParameterType = [hashtable] }
+			Signing       = @{ ParameterType = [hashtable] }
+			outputFile    = @{ ParameterType = [string] }
+			Golf          = @{ ParameterType = [switch] }
+			NoUpdateCheck = @{ ParameterType = [switch] }
 		}
 		$script:i18nWarnings = [System.Collections.Generic.List[string]]::new()
 		function Write-I18n {
@@ -119,6 +121,29 @@ Add-Test @{
 		$script:Params = @{}
 		[void](Preprocessor @('#_pragma notTable.key value') "C:\compiled\main.ps1")
 		Assert-True ($script:i18nWarnings -contains 'UnknownPragma') "非哈希表根的嵌套 pragma 未告警：$($script:i18nWarnings -join ',')"
+
+		# 开关用真实参数名：`#_pragma Golf 0` 关闭、`#_pragma NoUpdateCheck` 开启。
+		$script:Params = @{}
+		[void](Preprocessor @('#_pragma Golf') "C:\compiled\main.ps1")
+		Assert-Equal $true ([bool]$script:Params.Golf) '`#_pragma Golf` 未开启开关'
+		$script:Params = @{}
+		[void](Preprocessor @('#_pragma Golf 0') "C:\compiled\main.ps1")
+		Assert-Equal $false ([bool]$script:Params.Golf) '`#_pragma Golf 0` 未关闭开关'
+		$script:Params = @{}
+		[void](Preprocessor @('#_pragma NoUpdateCheck') "C:\compiled\main.ps1")
+		Assert-Equal $true ([bool]$script:Params.NoUpdateCheck) '`#_pragma NoUpdateCheck` 未开启开关'
+
+		# 不再支持 `no` 前缀：`#_pragma noGolf` 是未知 pragma，也不会改写 Golf / 映射到 NoUpdateCheck。
+		$script:i18nWarnings.Clear()
+		$script:Params = @{}
+		[void](Preprocessor @('#_pragma noGolf') "C:\compiled\main.ps1")
+		Assert-True ($script:i18nWarnings -contains 'UnknownPragma') "`#_pragma noGolf` 未报未知 pragma：$($script:i18nWarnings -join ',')"
+		Assert-False $script:Params.ContainsKey('Golf') '`#_pragma noGolf` 不应修改 Golf'
+		$script:i18nWarnings.Clear()
+		$script:Params = @{}
+		[void](Preprocessor @('#_pragma UpdateCheck 0') "C:\compiled\main.ps1")
+		Assert-True ($script:i18nWarnings -contains 'UnknownPragma') "`#_pragma UpdateCheck 0` 未报未知 pragma：$($script:i18nWarnings -join ',')"
+		Assert-False $script:Params.ContainsKey('NoUpdateCheck') '`#_pragma UpdateCheck 0` 不应映射到 NoUpdateCheck'
 		Remove-Item Env:\PRAGMA_SECRET -ErrorAction SilentlyContinue
 	}
 }

@@ -294,22 +294,13 @@ function Preprocessor($Content, $FilePath) {
 		$_ # 对于#_pragma，我们不在预处理时移除它：考虑到它可能被用于$PSEXEscript中
 		if ($_ -match "^\s*#_pragma\s+(?<pragmaname>[a-zA-Z_][a-zA-Z_0-9]*(?:\.[a-zA-Z_][a-zA-Z_0-9]*)*)\s*(?!#.*)$") {
 			$pragmaname = $Matches["pragmaname"]
-			$value = $true
 			if ($pragmaname.Contains('.')) {
 				# 无值嵌套 pragma（如 #_pragma App.Windowed）等同于打开对应键
 				Set-NestedPragma $pragmaname $true | Out-Null
 				return
 			}
-			if ($pragmaname.StartsWith("no")) {
-				$pragmaname = $pragmaname.Substring(2)
-				$value = $false
-			}
 			if ($ParamList[$pragmaname].ParameterType -eq [Switch]) {
-				$Params[$pragmaname] = [Switch]$value
-				return
-			}
-			if ($ParamList["no$pragmaname"].ParameterType -eq [Switch]) {
-				$Params["no$pragmaname"] = [Switch]-not $value
+				$Params[$pragmaname] = [Switch]$true
 				return
 			}
 			Write-I18n Warning UnknownPragma $($Matches["pragmaname"])
@@ -322,7 +313,7 @@ function Preprocessor($Content, $FilePath) {
 				Set-NestedPragma $pragmaname $value | Out-Null
 				return
 			}
-			if ($ParamList[$pragmaname].ParameterType -eq [Switch] -or $ParamList["no$pragmaname"].ParameterType -eq [Switch]) {
+			if ($ParamList[$pragmaname].ParameterType -eq [Switch]) {
 				if ($value.IndexOf("#") -ge 0) {
 					$value = $value.Substring(0, $value.IndexOf("#"))
 				}
@@ -337,16 +328,7 @@ function Preprocessor($Content, $FilePath) {
 					Write-I18n Warning UnknownPragmaBoolValue $value
 					return
 				}
-				if ($pragmaname.StartsWith("no")) {
-					$pragmaname = $pragmaname.Substring(2)
-					$value = -not $value
-				}
-				if ($ParamList[$pragmaname].ParameterType -eq [Switch]) {
-					$Params[$pragmaname] = [Switch]$value
-				}
-				if ($ParamList["no$pragmaname"].ParameterType -eq [Switch]) {
-					$Params["no$pragmaname"] = [Switch]-not $value
-				}
+				$Params[$pragmaname] = [Switch]$value
 			}
 			elseif ($ParamList[$pragmaname].ParameterType -eq [string] -or $ParamList[$pragmaname + "File"].ParameterType -eq [string]) {
 				if ($GuestMode -and ($GuestForbiddenPragmas -contains $pragmaname)) {
