@@ -54,7 +54,7 @@
 ### Core 工程缓存（`cache\core`）
 
 - 按「TFM/RID/选项/程序集名」缓存生成的 dotnet 工程，命中即 `dotnet publish/build --no-restore`（省一次 NuGet 还原）。
-- `Build.Core.Backend` 决定用哪个后端：`Shared`（默认）走 `CoreCompiler.ps1`，从目标机 `$PSHOME` 解析 SMA；`Bundled` 走 `CoreBundledCompiler.ps1`，打包 `Microsoft.PowerShell.SDK`（键带 `corebundle-vN`），支持 `SelfContained`/`Trimmed`/`ReadyToRun`/`InvariantGlobalization`/`Aot` 与 `PowerShellVersion`。改这两个编译器的工程结构时同步 bump 各自标记。
+- `Build.Core.Backend` 决定用哪个后端：`Shared`（默认）走 `CoreCompiler.ps1`，从目标机 `$PSHOME` 解析 SMA；`Bundled` 走 `CoreBundledCompiler.ps1`，打包 `Microsoft.PowerShell.SDK`，支持 `SelfContained`/`Trimmed`/`ReadyToRun`/`InvariantGlobalization`/`Aot` 与 `PowerShellVersion`。两个后端的工程文件每次编译都会重写，缓存键只收录还原输入，且 `--no-restore` 失败会自动退回完整还原，因此无需手动 bump 版本标记。
 - 两者共用 `Get-CacheRoot 'core'` 目录与 `Clear-StaleCache`：`src/CoreProject.ps1` 提供 `Get-CoreDotnet`/`Get-CoreBuildKey`/`Enter-CoreProject`（缓存工程目录 + 命名互斥量 + stale 清理）/`Invoke-CoreDotnet`（`--no-restore` 与失败重试）/`Copy-CorePublishOutput`（`SingleFile=$false` 时发布整个目录并拷到 `outputFile` 所在目录）与 `Get-GuiFrameworkUsage`。
 
 <a id="core-gui-and-addtype"></a>

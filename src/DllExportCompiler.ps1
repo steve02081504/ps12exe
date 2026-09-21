@@ -23,18 +23,13 @@ function Import-DllExportAssemblies {
 	return [bool]('AsmResolver.DotNet.ModuleDefinition' -as [type])
 }
 
+# 取导出声明里的字段（哈希表与 PSCustomObject 都支持；两者查找都不区分大小写）。
 function Get-DllExportField {
-	param($Entry, [string]$Name, [string]$AltName, $Default)
+	param($Entry, [string]$Name, $Default)
 	if ($Entry -is [System.Collections.IDictionary]) {
 		if ($Entry.Contains($Name)) { return $Entry[$Name] }
-		if ($AltName -and $Entry.Contains($AltName)) { return $Entry[$AltName] }
 	}
-	else {
-		foreach ($n in @($Name, $AltName)) {
-			if (-not $n) { continue }
-			if ($Entry.PSObject.Properties.Match($n).Count) { return $Entry.$n }
-		}
-	}
+	elseif ($Entry.PSObject.Properties.Match($Name).Count) { return $Entry.$Name }
 	return $Default
 }
 
@@ -45,18 +40,18 @@ function New-DllExportMethods {
 	$map = @()
 	for ($i = 0; $i -lt $Exports.Count; $i++) {
 		$entry = $Exports[$i]
-		$returnType = "$(Get-DllExportField $entry 'returntype' 'returnType' 'void')".Trim()
-		$funcName = "$(Get-DllExportField $entry 'funcname' 'funcName' '')".Trim()
+		$returnType = "$(Get-DllExportField $entry 'returntype' 'void')".Trim()
+		$funcName = "$(Get-DllExportField $entry 'funcname' '')".Trim()
 		if (-not $funcName) { throw "第 $($i + 1) 个导出缺少函数名" }
 		if ($returnType -match '[\r\n";{}]' -or $funcName -match '[\r\n''"]') { throw "非法的导出声明：$returnType $funcName" }
 
-		$params = @(Get-DllExportField $entry 'params' 'Params' @())
+		$params = @(Get-DllExportField $entry 'params' @())
 		$csParams = @()
 		$csArgs = @()
 		for ($p = 0; $p -lt $params.Count; $p++) {
 			$paramEntry = $params[$p]
-			$pType = "$(Get-DllExportField $paramEntry 'type' 'Type' 'string')".Trim()
-			$pName = "$(Get-DllExportField $paramEntry 'name' 'Name' "arg$p")".Trim()
+			$pType = "$(Get-DllExportField $paramEntry 'type' 'string')".Trim()
+			$pName = "$(Get-DllExportField $paramEntry 'name' "arg$p")".Trim()
 			if ($pName -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') { $pName = "arg$p" }
 			if ($pType -match '[\r\n";{}]') { throw "非法的参数类型：$pType" }
 			$csParams += "$pType $pName"

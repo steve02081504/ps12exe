@@ -184,16 +184,14 @@ function Resolve-CiRun {
 
 	if ($Pr) {
 		$sha = Invoke-Gh -Arguments @('api', "repos/$Repo/pulls/$Pr", '--jq', '.head.sha')
-		$runs = Invoke-Gh -Arguments @('run', 'list', '--repo', $Repo, '--commit', $sha, '--limit', '1', '--json', 'databaseId,headSha,headBranch,conclusion') | ConvertFrom-Json
-		$what = "PR #$Pr ($sha)"
+		$runs = @(Invoke-Gh -Arguments @('run', 'list', '--repo', $Repo, '--commit', $sha, '--limit', '1', '--json', 'databaseId,headSha,headBranch,conclusion') | ConvertFrom-Json)
+		if (-not $runs.Count) { throw "No GitHub Actions run found for PR #$Pr ($sha) in $Repo. Pass -RunId to target a specific run." }
 	}
 	else {
-		$runs = Invoke-Gh -Arguments @('run', 'list', '--repo', $Repo, '--workflow', 'test-and-publish.yml', '--branch', $Ref, '--status', 'success', '--limit', '1', '--json', 'databaseId,headSha,headBranch,conclusion') | ConvertFrom-Json
-		$what = "branch '$Ref'"
+		$runs = @(Invoke-Gh -Arguments @('run', 'list', '--repo', $Repo, '--workflow', 'test-and-publish.yml', '--branch', $Ref, '--status', 'success', '--limit', '1', '--json', 'databaseId,headSha,headBranch,conclusion') | ConvertFrom-Json)
+		if (-not $runs.Count) { throw "No GitHub Actions run found for branch '$Ref' in $Repo. Pass -RunId to target a specific run." }
 	}
 
-	$runs = @($runs)
-	if (-not $runs.Count) { throw "No GitHub Actions run found for $what in $Repo. Pass -RunId to target a specific run." }
 	return $runs[0]
 }
 
@@ -212,8 +210,7 @@ function Get-CiAsmResolverLibDirectory {
 	if (-not $Force -and (Test-Path -LiteralPath (Join-Path $libDir 'AsmResolver.DotNet.dll'))) { return $libDir }
 
 	# 预检产物是否存在/过期：产物保留 7 天，过期或缺失时给出可操作的错误而不是让 gh 反复重试。
-	$jq = '.artifacts[] | select(.name=="' + $ArtifactName + '") | .expired'
-	$expired = Invoke-Gh -Arguments @('api', "repos/$Repo/actions/runs/$RunId/artifacts", '--jq', $jq)
+	$expired = Invoke-Gh -Arguments @('api', "repos/$Repo/actions/runs/$RunId/artifacts", '--jq', ".artifacts[] | select(.name==`"$ArtifactName`") | .expired")
 	if (-not $expired) { throw "Run $RunId has no artifact named '$ArtifactName'." }
 	if ($expired -eq 'true') { throw "Artifact '$ArtifactName' of run $RunId has expired (GitHub keeps artifacts for 7 days)." }
 
@@ -227,15 +224,13 @@ function Get-CiAsmResolverLibDirectory {
 	$packages = @(Get-ChildItem -LiteralPath $downloadDir -Recurse -File -Filter *.nupkg)
 	if (-not $packages.Count) { throw "No .nupkg found in artifact '$ArtifactName' of run $RunId." }
 
-	$expanded = 0
 	foreach ($package in $packages) {
-		try {
-			Expand-PackageEntry -PackagePath $package.FullName -Prefix 'lib/netstandard2.0/' -Destination $libDir
-			$expanded++
-		}
+		try { Expand-PackageEntry -PackagePath $package.FullName -Prefix 'lib/netstandard2.0/' -Destination $libDir }
 		catch { Write-Verbose "Skipping $($package.Name): $($_.Exception.Message)" }
 	}
-	if (-not $expanded) { throw "No netstandard2.0 assemblies found in artifact '$ArtifactName' of run $RunId." }
+	if (-not (Test-Path -LiteralPath (Join-Path $libDir 'AsmResolver.DotNet.dll'))) {
+		throw "No netstandard2.0 assemblies found in artifact '$ArtifactName' of run $RunId."
+	}
 	return $libDir
 }
 
@@ -365,8 +360,6 @@ function New-LinkerRootDescriptor {
 
 # ---- 解析来源 ----
 $CiRun = $null
-$PrRef = 0
-$SourceRef = $null
 if ($Source -eq 'NuGet') {
 	if (-not $Version) {
 		$Version = Get-LatestStableVersion -PackageId 'asmresolver'
@@ -376,13 +369,11 @@ if ($Source -eq 'NuGet') {
 }
 elseif ($Source -eq 'Source') {
 	if (-not (Get-Command git -ErrorAction Ignore)) { throw '-Source Source requires git on PATH.' }
-	$PrRef = $Pr
-	if (-not $PrRef -and -not $Ref) { $Ref = 'master' }
-	$sha = Get-CommitSha -Repo $Repo -Ref $Ref -Pr $PrRef
+	if (-not $Pr -and -not $Ref) { $Ref = 'master' }
+	$sha = Get-CommitSha -Repo $Repo -Ref $Ref -Pr $Pr
 	if ($sha.Length -gt 8) { $sha = $sha.Substring(0, 8) }
-	$SourceRef = $Ref
-	$cacheKey = if ($PrRef) { "src-pr-$PrRef-$sha" } else { "src-$Ref-$sha" }
-	Write-Host "Source: git $Repo ($(if ($PrRef) { "PR #$PrRef" } else { $Ref }) @ $sha)"
+	$cacheKey = if ($Pr) { "src-pr-$Pr-$sha" } else { "src-$Ref-$sha" }
+	Write-Host "Source: git $Repo ($(if ($Pr) { "PR #$Pr" } else { $Ref }) @ $sha)"
 }
 else {
 	if ($Source -eq 'Pr' -and -not $Pr) { throw "-Source Pr requires -Pr <number>." }
@@ -405,7 +396,7 @@ $libDir = if ($Source -eq 'NuGet') {
 	Get-AsmResolverLibDirectory -Version $Version -WorkDirectory $WorkDirectory -Force:$Force
 }
 elseif ($Source -eq 'Source') {
-	Get-SourceAsmResolverLibDirectory -Repo $Repo -Ref $SourceRef -Pr $PrRef -CacheKey $cacheKey -WorkDirectory $WorkDirectory -Force:$Force
+	Get-SourceAsmResolverLibDirectory -Repo $Repo -Ref $Ref -Pr $Pr -CacheKey $cacheKey -WorkDirectory $WorkDirectory -Force:$Force
 }
 else {
 	try {
@@ -415,8 +406,8 @@ else {
 		Write-Warning "Could not use CI artifact: $($_.Exception.Message)"
 		Write-Warning 'Falling back to building AsmResolver from source.'
 		$fallbackPr = if ($Source -eq 'Pr') { $Pr } else { 0 }
-		$fallbackRef = if ($Source -eq 'Pr') { $null } else { if ($Ref) { $Ref } else { $CiRun.headBranch } }
-		$fallbackKey = if ($Source -eq 'Pr') { "src-pr-$Pr-$sha" } else { "src-$fallbackRef-$sha" }
+		$fallbackRef = if ($fallbackPr) { $null } else { $Ref }
+		$fallbackKey = if ($fallbackPr) { "src-pr-$fallbackPr-$sha" } else { "src-$fallbackRef-$sha" }
 		Get-SourceAsmResolverLibDirectory -Repo $Repo -Ref $fallbackRef -Pr $fallbackPr -CacheKey $fallbackKey -WorkDirectory $WorkDirectory -Force:$Force
 	}
 }

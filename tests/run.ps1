@@ -39,6 +39,7 @@ if ($PrintFingerprint) {
 . (Join-Path $libDir 'exec.ps1')
 . (Join-Path $libDir 'assert.ps1')
 . (Join-Path $libDir 'framework.ps1')
+. (Join-Path $libDir 'integration.ps1')
 
 $repoRoot = Get-TestRepoRoot
 $env:REPO_ROOT = $repoRoot

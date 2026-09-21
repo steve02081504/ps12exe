@@ -88,7 +88,6 @@ $bundleScriptItem = if ($isConst) { '' } else { '		<EmbeddedResource Include="ma
 # ---------- 工程缓存 ----------
 $smaVersion = if ($isConst) { 'const' } else { $psSdkVersion }
 $bundleInvariant = @(
-	'corebundle-v1'
 	"tfm=$tfm", "tfmBase=$tfmBase", "rid=$rid", "outputType=$bundleOutputType", "debugType=$debugType"
 	"assemblyName=$assemblyName", "winForms=$bundleWinForms", "icon=$iconElement"
 	"resources=$resourceElements", "version=$versionElements"

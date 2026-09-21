@@ -10,6 +10,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'exec.ps1')
 . (Join-Path $PSScriptRoot 'assert.ps1')
 . (Join-Path $PSScriptRoot 'framework.ps1')
+. (Join-Path $PSScriptRoot 'integration.ps1')
 
 $repoRoot = $script:RepoRoot
 $job = ConvertTo-HashtableDeep (Read-JsonFile -Path $JobFile)
