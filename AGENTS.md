@@ -55,7 +55,7 @@
 - 新增/修改用例后记得本地跑一次相关 `-Filter`，并在提交前 `pwsh tests/run.ps1 -All` 过一遍。
 - 基准测试：`pwsh -File tools/Benchmark/Compare-Compilers.ps1 -Compile -IncludeCore` 输出 README 用的体积/启动/编译耗时 markdown；`-Content`/`-Script` 指定被测内容，`-Runs` 控制运行时热运行次数、`-CompileRuns` 控制编译取样数（第 0 次为冷编译，其余取中位数）。PS2EXE 行只在 Windows PowerShell 下能发现本地已安装模块。
 - 运行时编译缓存统一挂在 `%TEMP%\ps12exe\`（`src/Cache.ps1` 提供 `Get-TempRoot`/`Get-CacheRoot <name>`/`Clear-StaleCache`；更新检查的 txt 在根下 `version.txt`）：Core 工程在 `cache\core`、CodeDom 帧模板在 `cache\codedom`、产物结果在 `cache\output`。各缓存的键与坑见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#compile-caches)。
-- Framework 编译后台预热 `ExeSinker`/AsmResolver（`src/AsmWarmup.ps1` 的 `Start-AsmWarmup`）。**别为省掉 ExeSinker 给 csc 传空 `/win32res`**（已试过并回退，理由见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#codedom-cache)）。改 `CoreCompiler.ps1` 工程结构时同步 bump `corecache-vN`。
+- Framework 编译后台预热 `ExeSinker`/AsmResolver（`src/AsmWarmup.ps1` 的 `Start-AsmWarmup`）。**别为省掉 ExeSinker 给 csc 传空 `/win32res`**（已试过并回退，理由见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#codedom-cache)）。
 - AsmResolver 被 illink 裁剪，运行期新增 API 用法需先镜像到 `tools/AsmResolver/Root.cs` 再重跑更新脚本：见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#asmresolver-trim)。
 - JS/TS/HTML 静态检查用仓库根的 `eslint.config.mjs`，它 `import` 的是 https 远程配置；Node 默认 ESM loader 不支持 `https:`，所以**直接运行全局 `eslint .`**（deno 安装，支持 https import），不要用 `npx eslint`（会拉一份纯 Node 的 eslint 并以 `ERR_UNSUPPORTED_ESM_URL_SCHEME` 失败）。只看错误时加 `-quiet`。
 - VS Code 扩展：在 `src/.subrepo/vscode-plug/ps12exe` 下运行 `npm test`。

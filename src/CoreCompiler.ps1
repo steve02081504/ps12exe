@@ -137,7 +137,6 @@ $payloadDefineConstants = (($coreConstants + 'CoreHost') | Sort-Object -Unique) 
 # 叠加 --no-restore，可省掉每次约 0.8~0.9s 的还原。用命名互斥量串行化同一 key 的并发编译。
 $smaPath = Join-Path $PSHOME 'System.Management.Automation.dll'
 $coreBuildKey = Get-CoreBuildKey @(
-	'corecache-v2'
 	"tfm=$tfm", "rid=$rid", "outputType=$outputType", "debugType=$debugType"
 	"assemblyName=$assemblyName", "winForms=$winForms", "icon=$iconElement"
 	"resources=$resourceElements", "version=$versionElements"
