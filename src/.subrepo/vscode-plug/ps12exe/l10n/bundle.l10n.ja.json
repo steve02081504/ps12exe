@@ -59,5 +59,7 @@
 	"Module-management command \"{0}\"; declare module dependencies with #_require so the compiled executable sets them up.": "モジュール管理コマンド \"{0}\"：コンパイル後の実行ファイルが準備できるよう、モジュールの依存関係は #_require で宣言してください。",
 	"Use ps12exe": "ps12exe を使用",
 	"Use #_require": "#_require を使用",
-	"Ignore this warning": "この警告を無視"
+	"Ignore this warning": "この警告を無視",
+	"Unknown ps12exe parameter \"{0}\".": "不明な ps12exe パラメーター \"{0}\" です。",
+	"Unknown key \"{0}\" for the ps12exe parameter {1}.": "ps12exe パラメーター {1} に不明なキー \"{0}\" があります。"
 }

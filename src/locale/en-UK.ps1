@@ -36,6 +36,7 @@
 	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
 	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
 	Culture='<culture>'; Options='<options>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<directory>';
+	ConstEval=@{Enabled=`$true; Timeout=`$true};
 	Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>';
 	SingleFile=`$true; SelfContained=`$true; Trimmed=`$true; TrimMode='partial'|'full'; ReadyToRun=`$true; InvariantGlobalization=`$true; Aot=`$true}}]
 	[-Resources @{Icon='<filename|url>'; Title='<title>'; Description='<description>'; Company='<company>';
@@ -73,6 +74,10 @@
 				KeepSource = "Create helpful information for debugging."
 				Minify     = "Scriptblock to minify the script before compiling."
 				TempDir    = "Directory for storing temporary files (default is a randomly generated temp directory in ``%temp%``)."
+				ConstEval  = [ordered]@{
+					Enabled = "Declare this script is not a constant; skip constant evaluation."
+					Timeout = "Declare constant evaluation already timed out; fall back as if it had timed out."
+				}
 				Core       = [ordered]@{
 					Backend                = "How the Core executable obtains PowerShell. ``'Shared'`` (default) resolves it from the target machine's pwsh installation and keeps the output small; ``'Bundled'`` bundles the PowerShell SDK (``Microsoft.PowerShell.SDK``), so the target machine needs no pwsh and SelfContained/Trimmed/ReadyToRun/InvariantGlobalization/Aot become available, at the cost of a much larger output."
 					TargetOs               = "Target operating system for the Core executable: ``'Windows'``, ``'Linux'`` or ``'MacOS'`` (default: the build machine's OS). GUI/windowed output is only possible with ``'Windows'``."

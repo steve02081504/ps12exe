@@ -36,6 +36,7 @@
 	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
 	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
 	Culture='<culture>'; Options='<options>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<dossier>';
+	ConstEval=@{Enabled=`$true; Timeout=`$true};
 	Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>';
 	SingleFile=`$true; SelfContained=`$true; Trimmed=`$true; TrimMode='partial'|'full'; ReadyToRun=`$true; InvariantGlobalization=`$true; Aot=`$true}}]
 	[-Resources @{Icon='<nom_de_fichier|url>'; Title='<titre>'; Description='<description>'; Company='<société>';
@@ -73,6 +74,10 @@
 				KeepSource = "Crée des informations utiles pour le débogage."
 				Minify     = "Bloc de script pour réduire la taille du script avant la compilation."
 				TempDir    = "Répertoire pour stocker les fichiers temporaires (par défaut un répertoire temporaire aléatoire généré dans ``%temp%``)."
+				ConstEval  = [ordered]@{
+					Enabled = "Déclare que ce script n'est pas une constante ; ignore l'évaluation des constantes."
+					Timeout = "Déclare que cette évaluation de constante a déjà expiré ; applique le même repli qu'en cas de délai dépassé."
+				}
 				Core       = [ordered]@{
 					Backend                = "Comment l'exécutable Core obtient PowerShell. ``'Shared'`` (par défaut) le résout depuis l'installation pwsh de la machine cible et garde la sortie petite ; ``'Bundled'`` embarque le SDK PowerShell (``Microsoft.PowerShell.SDK``), donc la machine cible n'a pas besoin de pwsh et SelfContained/Trimmed/ReadyToRun/InvariantGlobalization/Aot deviennent disponibles, au prix d'une sortie beaucoup plus volumineuse."
 					TargetOs               = "Système d'exploitation cible pour l'exécutable Core : ``'Windows'``, ``'Linux'`` ou ``'MacOS'`` (par défaut : l'OS de la machine de compilation). La sortie GUI/fenêtrée n'est possible qu'avec ``'Windows'``."

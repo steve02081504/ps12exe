@@ -138,6 +138,8 @@ help       : Mostrar esta información de ayuda.
 
 ### Parámetros de la consola
 
+<a id="console-parameters"></a>
+
 ```powershell
 [input |] ps12exe [[-inputFile] '<nombre de archivo|url>' | -Content '<script>'] [-outputFile '<nombre de archivo>']
         [-App @{Windowed=$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default'; VisualStyles=$true;

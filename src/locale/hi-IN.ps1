@@ -36,6 +36,7 @@
 	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
 	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
 	Culture='<संस्कृति>'; Options='<विकल्प>'; KeepSource=`$true; Minify={<स्क्रिप्टब्लॉक>}; TempDir='<फ़ोल्डर>';
+	ConstEval=@{Enabled=`$true; Timeout=`$true};
 	Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>';
 	SingleFile=`$true; SelfContained=`$true; Trimmed=`$true; TrimMode='partial'|'full'; ReadyToRun=`$true; InvariantGlobalization=`$true; Aot=`$true}}]
 	[-Resources @{Icon='<फ़ाइल नाम|url>'; Title='<शीर्षक>'; Description='<सारांश>'; Company='<कंपनी>';
@@ -73,6 +74,10 @@
 				KeepSource = "डीबगिंग के लिए मददगार जानकारी बनाएं।"
 				Minify     = "कॉम्पाइल से पहले स्क्रिप्ट को छोटा करने के लिए स्क्रिप्ट ब्लॉक।"
 				TempDir    = "अस्थायी फ़ाइलें संग्रहित करने का फ़ोल्डर (डिफ़ॉल्ट रूप से ``%temp%`` में यादृच्छिक फ़ोल्डर)।"
+				ConstEval  = [ordered]@{
+					Enabled = "घोषित करता है कि यह स्क्रिप्ट स्थिरांक नहीं है; स्थिरांक मूल्यांकन छोड़ें।"
+					Timeout = "घोषित करता है कि यह स्थिरांक मूल्यांकन का समय पहले ही समाप्त हो चुका है; समय समाप्त होने की स्थिति जैसा ही फ़ॉलबैक लागू करें।"
+				}
 				Core       = [ordered]@{
 					Backend                = "Core एक्सीक्यूटेबल PowerShell कैसे प्राप्त करता है। ``'Shared'`` (डिफ़ॉल्ट) इसे लक्ष्य मशीन की pwsh स्थापना से हल करता है और आउटपुट को छोटा रखता है; ``'Bundled'`` PowerShell SDK (``Microsoft.PowerShell.SDK``) को बंडल करता है, इसलिए लक्ष्य मशीन को pwsh की आवश्यकता नहीं होती और SelfContained/Trimmed/ReadyToRun/InvariantGlobalization/Aot उपलब्ध हो जाते हैं, पर आउटपुट बहुत बड़ा हो जाता है।"
 					TargetOs               = "Core एक्सीक्यूटेबल के लिए लक्ष्य ऑपरेटिंग सिस्टम: ``'Windows'``, ``'Linux'`` या ``'MacOS'`` (डिफ़ॉल्ट: बिल्ड मशीन का OS)। GUI/विंडो आउटपुट केवल ``'Windows'`` के साथ संभव है।"

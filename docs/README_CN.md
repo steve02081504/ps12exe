@@ -138,6 +138,8 @@ help       : 显示此帮助信息。
 
 ### 控制台参数
 
+<a id="console-parameters"></a>
+
 ```powershell
 [input |] ps12exe [[-inputFile] '<文件名|url>' | -Content '<脚本>'] [-outputFile '<文件名>']
         [-App @{Windowed=$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default'; VisualStyles=$true;

@@ -59,5 +59,7 @@
 	"Module-management command \"{0}\"; declare module dependencies with #_require so the compiled executable sets them up.": "模块管理命令 \"{0}\"；请用 #_require 声明模块依赖，让编译后的可执行文件负责准备它们。",
 	"Use ps12exe": "使用 ps12exe",
 	"Use #_require": "使用 #_require",
-	"Ignore this warning": "忽略此警告"
+	"Ignore this warning": "忽略此警告",
+	"Unknown ps12exe parameter \"{0}\".": "未知的 ps12exe 参数 \"{0}\"。",
+	"Unknown key \"{0}\" for the ps12exe parameter {1}.": "ps12exe 参数 {1} 没有键 \"{0}\"。"
 }

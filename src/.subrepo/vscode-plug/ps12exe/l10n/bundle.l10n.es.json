@@ -59,5 +59,7 @@
 	"Module-management command \"{0}\"; declare module dependencies with #_require so the compiled executable sets them up.": "Comando de gestión de módulos \"{0}\"; declare las dependencias de módulos con #_require para que el ejecutable compilado las prepare.",
 	"Use ps12exe": "Usar ps12exe",
 	"Use #_require": "Usar #_require",
-	"Ignore this warning": "Ignorar esta advertencia"
+	"Ignore this warning": "Ignorar esta advertencia",
+	"Unknown ps12exe parameter \"{0}\".": "Parámetro de ps12exe desconocido «{0}».",
+	"Unknown key \"{0}\" for the ps12exe parameter {1}.": "Clave desconocida «{0}» para el parámetro de ps12exe {1}."
 }

@@ -4,6 +4,7 @@ import path from 'node:path'
 import * as vscode from 'vscode'
 
 import { currentAliasMap, loadAliasMap } from './lib/aliases.mjs'
+import { analyzeCliUsage, cliTokenAt, CLI_PARAMETER_DIAGNOSTIC, CLI_MEMBER_DIAGNOSTIC } from './lib/cli.mjs'
 import { analyzeCommandUsage, computeIgnoredMask, IGNORE_DIRECTIVE, PS2EXE_DIAGNOSTIC, PS2EXE_REQUIRE_DIAGNOSTIC, MODULE_DIAGNOSTIC } from './lib/commands.mjs'
 import { resolveDirectivePath } from './lib/definition.mjs'
 import { buildDirectiveCandidates, directiveAvailability, directivePrefixAt, ifConditionPrefixAt, buildConditionCandidates } from './lib/directives.mjs'
@@ -15,7 +16,7 @@ import { resolveIconAt, getIconPreview } from './lib/icon.mjs'
 import { toPs12exeLocale } from './lib/locale.mjs'
 import { POWER_SHELL_EXTENSION_ID, isPowerShellExtensionInstalled, getOfficialEdits, applyTextEdits } from './lib/officialFormatter.mjs'
 import { resolvePowerShell, compileScript, syncModule, launchGUI } from './lib/powershell.mjs'
-import { pragmaNameAt, getPragmaData, lookupPragma, buildPragmaCandidates, clearPragmaCache } from './lib/pragma.mjs'
+import { pragmaNameAt, getPragmaData, peekPragmaData, lookupPragma, buildPragmaCandidates, clearPragmaCache } from './lib/pragma.mjs'
 import { analyze, endifAutoClose, isBalanced, foldingRanges, toggleBangLines, computeSkipMask } from './lib/preprocessor.mjs'
 import { requireModulesAt } from './lib/require.mjs'
 
@@ -126,6 +127,7 @@ async function requireHost() {
 	if (result.status === 'installed' || result.status === 'updated') {
 		const refreshed = await resolvePowerShell(true)
 		clearPragmaCache()
+		cliDataRequested.clear()
 		if (refreshed && refreshed.moduleVersion) {
 			if (result.status === 'installed') vscode.window.showInformationMessage(t('ps12exe {0} has been installed.', result.version || ''))
 			return refreshed
@@ -158,6 +160,7 @@ async function autoUpdateModule(context) {
 	if (result.status === 'installed' || result.status === 'updated') {
 		await resolvePowerShell(true)
 		clearPragmaCache()
+		cliDataRequested.clear()
 		if (result.status === 'installed') vscode.window.showInformationMessage(t('ps12exe {0} has been installed.', result.version || ''))
 		else vscode.window.showInformationMessage(t('ps12exe has been updated to {0}.', result.version || ''))
 	}
@@ -314,6 +317,24 @@ function ensureAliasMap() {
 	})
 }
 
+/** 已请求过加载 pragma 数据的区域；避免每次诊断刷新都去启动 PowerShell。`clearPragmaCache` 后重置。 */
+const cliDataRequested = new Set()
+
+/**
+ * 首次需要命令行参数诊断时，在后台按当前区域加载编译参数数据（与 `#_pragma` 同一来源），就绪后刷新所有文档。
+ * 数据未就绪时命令行诊断为空，不会阻塞其他诊断。
+ *
+ * @param {string | undefined} locale - 当前区域标识，未知时为 undefined
+ */
+function ensureCliData(locale) {
+	if (peekPragmaData(locale) || cliDataRequested.has(locale || 'en-UK')) return
+	cliDataRequested.add(locale || 'en-UK')
+	getPragmaData(locale).then(
+		() => vscode.workspace.textDocuments.forEach(updateDiagnostics),
+		() => { /* 模块未安装或读取失败：不缓存失败，等模块更新后重试。 */ }
+	)
+}
+
 /**
  * 刷新指定文档的诊断信息。包含预处理块结构诊断与 PS2EXE / 模块管理命令诊断；被 `# use_ps12exe:ignore` 抑制的行不发布。
  *
@@ -325,9 +346,14 @@ function updateDiagnostics(document) {
 	const text = document.getText()
 	const lines = text.split(/\r\n|\n|\r/)
 	const ignored = computeIgnoredMask(lines)
+	const locale = toPs12exeLocale(vscode.env.language)
+	const cliData = peekPragmaData(locale)
+	if (!cliData) ensureCliData(locale)
+	const cliDiagnostics = cliData ? analyzeCliUsage(text, cliData) : []
 	const found = [
 		...analyze(text).diagnostics,
-		...analyzeCommandUsage(text, currentAliasMap())
+		...analyzeCommandUsage(text, currentAliasMap()),
+		...cliDiagnostics
 	]
 
 	const items = found
@@ -605,6 +631,34 @@ async function createPragmaHover(line, pragma, locale) {
 }
 
 /**
+ * 为 ps12exe 命令行调用中的参数名或哈希表成员键构造悬浮提示：说明同样来自当前安装的模块，并链接到 README 的控制台参数小节。
+ * 名字在数据里找不到（未知参数/成员）时返回 null，由诊断负责提示。
+ *
+ * @param {{ kind: 'param'|'member', name: string, path: string, startColumn: number, endColumn: number }} cli - 识别到的参数或成员
+ * @param {number} line - 悬浮提示所在行号
+ * @param {string | undefined} locale - 当前区域标识，未知时为 undefined
+ * @returns {Promise<vscode.Hover | null>} 构造好的悬浮提示，名字未知时为 null
+ */
+async function createCliHover(cli, line, locale) {
+	let entry
+	try {
+		const data = await getPragmaData(locale)
+		entry = lookupPragma(data, cli.path)
+	}
+	catch {
+		return null
+	}
+	if (!entry) return null
+
+	const description = entry.isGroup ? t(HOVER_MESSAGES.pragmaGroup, entry.children.join(', ')) : entry.description
+	const header = cli.kind === 'param' ? `-${entry.name}` : entry.name
+	const contents = new vscode.MarkdownString()
+	contents.appendMarkdown(`\`${header}\`\n\n${description}`)
+	contents.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${documentationUrl(locale, 'cli')})`)
+	return new vscode.Hover(contents, new vscode.Range(line, cli.startColumn, line, cli.endColumn))
+}
+
+/**
  * 为 preprocessor 指令或 `#_if` 条件关键字构造悬浮提示：本地化说明加指向当前区域 README 对应小节的链接。
  *
  * @param {number} line - 悬浮提示所在行号
@@ -700,9 +754,9 @@ async function createIconHover(line, icon, locale) {
 const hoverProvider = {
 	/**
 	 * 在 preprocessor 指令、`#_if` 条件关键字（`PSEXE`/`PSScript`）、`#_pragma` 变量名、`#_pragma Resources.Icon`
-	 * 的图标路径，以及 `#_require` 的模块名上显示提示：指令与条件链接到当前区域 README 中对应的小节，图标路径
-	 * 内联预览图标内容，模块名则展示 PowerShell Gallery 上的图标、简介与 tags，并给出仓库与图库页面链接。
-	 * here-string 函数体和块注释内的 `#_…` 不是指令，因此不提示。
+	 * 的图标路径、`#_require` 的模块名，以及 ps12exe 命令行调用的参数/哈希表成员键上显示提示：指令与条件链接到
+	 * 当前区域 README 中对应的小节，图标路径内联预览图标内容，模块名展示 PowerShell Gallery 上的图标、简介与
+	 * tags，命令行参数则展示其本地化说明。here-string 函数体和块注释内的 `#_…` 不是指令，因此不提示。
 	 *
 	 * @param {vscode.TextDocument} document - 当前文本文档
 	 * @param {vscode.Position} position - 光标位置
@@ -718,12 +772,14 @@ const hoverProvider = {
 		const pragma = icon ? null : pragmaNameAt(line, position.character)
 		const required = icon || pragma ? null : requireModulesAt(line, position.character)
 		const token = icon || pragma || required ? null : conditionAt(line, position.character) || directiveAt(line, position.character)
-		if (!icon && !pragma && !required && !token) return null
+		const cli = icon || pragma || required || token ? null : cliTokenAt(document.getText(), position.line, position.character)
+		if (!icon && !pragma && !required && !token && !cli) return null
 		if (computeSkipMask(document.getText().split(/\r\n|\n|\r/))[position.line]) return null
 
 		if (icon) return createIconHover(position.line, icon, locale)
 		if (pragma) return createPragmaHover(position.line, pragma, locale)
 		if (required) return createRequireHover(position.line, required, locale)
+		if (cli) return createCliHover(cli, position.line, locale)
 		return createDirectiveHover(position.line, token, locale)
 	}
 }
@@ -913,7 +969,8 @@ const codeActionProvider = {
 				add(action, `require-ps2exe:${line}:${replacement}`)
 			}
 
-			if (diagnostic.code === PS2EXE_DIAGNOSTIC || diagnostic.code === PS2EXE_REQUIRE_DIAGNOSTIC || diagnostic.code === MODULE_DIAGNOSTIC) {
+			if (diagnostic.code === PS2EXE_DIAGNOSTIC || diagnostic.code === PS2EXE_REQUIRE_DIAGNOSTIC || diagnostic.code === MODULE_DIAGNOSTIC
+				|| diagnostic.code === CLI_PARAMETER_DIAGNOSTIC || diagnostic.code === CLI_MEMBER_DIAGNOSTIC) {
 				const indent = (document.lineAt(line).text.match(/^[\t ]*/) || [''])[0]
 				const eol = document.eol === vscode.EndOfLine.CRLF ? '\r\n' : '\n'
 				const action = new vscode.CodeAction(t('Ignore this warning'), vscode.CodeActionKind.QuickFix)

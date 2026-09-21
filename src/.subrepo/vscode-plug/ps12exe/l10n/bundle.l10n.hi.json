@@ -59,5 +59,7 @@
 	"Module-management command \"{0}\"; declare module dependencies with #_require so the compiled executable sets them up.": "मॉड्यूल प्रबंधन कमांड \"{0}\"; मॉड्यूल निर्भरताएँ #_require से घोषित करें ताकि संकलित निष्पादन योग्य उन्हें तैयार कर सके।",
 	"Use ps12exe": "ps12exe का उपयोग करें",
 	"Use #_require": "#_require का उपयोग करें",
-	"Ignore this warning": "इस चेतावनी को अनदेखा करें"
+	"Ignore this warning": "इस चेतावनी को अनदेखा करें",
+	"Unknown ps12exe parameter \"{0}\".": "अज्ञात ps12exe पैरामीटर \"{0}\"।",
+	"Unknown key \"{0}\" for the ps12exe parameter {1}.": "ps12exe पैरामीटर {1} के लिए अज्ञात कुंजी \"{0}\"।"
 }

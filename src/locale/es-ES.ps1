@@ -36,6 +36,7 @@
 	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
 	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
 	Culture='<cultura>'; Options='<opciones>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<carpeta>';
+	ConstEval=@{Enabled=`$true; Timeout=`$true};
 	Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>';
 	SingleFile=`$true; SelfContained=`$true; Trimmed=`$true; TrimMode='partial'|'full'; ReadyToRun=`$true; InvariantGlobalization=`$true; Aot=`$true}}]
 	[-Resources @{Icon='<nombre de archivo|url>'; Title='<título>'; Description='<descripción>'; Company='<compañía>';
@@ -73,6 +74,10 @@
 				KeepSource = "Crear información que ayude a la depuración."
 				Minify     = "Bloque de script que reduce el tamaño del script antes de la compilación."
 				TempDir    = "El directorio donde se almacenan los archivos temporales (por defecto es un directorio temporal generado aleatoriamente en ``%temp%``)."
+				ConstEval  = [ordered]@{
+					Enabled = "Declara que este script no es una constante; omite la evaluación de constantes."
+					Timeout = "Declara que esta evaluación de constantes ya agotó el tiempo; aplica el mismo retroceso que en caso de tiempo de espera."
+				}
 				Core       = [ordered]@{
 					Backend                = "Cómo obtiene PowerShell el ejecutable Core. ``'Shared'`` (por defecto) lo resuelve desde la instalación de pwsh de la máquina de destino y mantiene la salida pequeña; ``'Bundled'`` incluye el SDK de PowerShell (``Microsoft.PowerShell.SDK``), por lo que la máquina de destino no necesita pwsh y SelfContained/Trimmed/ReadyToRun/InvariantGlobalization/Aot pasan a estar disponibles, a costa de una salida mucho mayor."
 					TargetOs               = "Sistema operativo de destino del ejecutable Core: ``'Windows'``, ``'Linux'`` o ``'MacOS'`` (por defecto: el SO de la máquina de compilación). La salida GUI/con ventana sólo es posible con ``'Windows'``."

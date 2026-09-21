@@ -36,6 +36,7 @@
 	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
 	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
 	Culture='<カルチャ>'; Options='<オプション>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<ディレクトリ>';
+	ConstEval=@{Enabled=`$true; Timeout=`$true};
 	Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>';
 	SingleFile=`$true; SelfContained=`$true; Trimmed=`$true; TrimMode='partial'|'full'; ReadyToRun=`$true; InvariantGlobalization=`$true; Aot=`$true}}]
 	[-Resources @{Icon='<ファイル名|url>'; Title='<タイトル>'; Description='<説明>'; Company='<会社>';
@@ -73,6 +74,10 @@
 				KeepSource = "デバッグに役立つ情報を作成します。"
 				Minify     = "コンパイル前にスクリプトを縮小するスクリプトブロック。"
 				TempDir    = "一時ファイルを保存するディレクトリ（デフォルトは ``%temp%`` にランダムに生成される一時ディレクトリ）。"
+				ConstEval  = [ordered]@{
+					Enabled = "このスクリプトは定数ではないと宣言し、定数評価をスキップします。"
+					Timeout = "今回の定数評価はタイムアウト済みと宣言し、タイムアウト時と同じフォールバックを行います。"
+				}
 				Core       = [ordered]@{
 					Backend                = "Core 実行可能ファイルが PowerShell を取得する方法。``'Shared'``（既定）はターゲット マシンの pwsh インストールから解決し、出力を小さく保ちます。``'Bundled'`` は PowerShell SDK（``Microsoft.PowerShell.SDK``）を同梱するため、ターゲット マシンに pwsh は不要になり、SelfContained/Trimmed/ReadyToRun/InvariantGlobalization/Aot が利用可能になりますが、出力は大幅に大きくなります。"
 					TargetOs               = "Core 実行可能ファイルのターゲット オペレーティング システム：``'Windows'``、``'Linux'``、``'MacOS'``（既定はビルド マシンの OS）。GUI/ウィンドウ出力は ``'Windows'`` でのみ可能です。"

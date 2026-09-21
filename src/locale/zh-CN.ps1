@@ -41,6 +41,7 @@
 	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
 	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
 	Culture='<区域>'; Options='<选项>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<文件夹>';
+	ConstEval=@{Enabled=`$true; Timeout=`$true};
 	Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>';
 	SingleFile=`$true; SelfContained=`$true; Trimmed=`$true; TrimMode='partial'|'full'; ReadyToRun=`$true; InvariantGlobalization=`$true; Aot=`$true}}]
 	[-Resources @{Icon='<文件名|url>'; Title='<标题>'; Description='<简介>'; Company='<公司>';
@@ -78,6 +79,10 @@
 				KeepSource = "创建有助于调试的信息。"
 				Minify     = "在编译之前缩小脚本的脚本块。"
 				TempDir    = "存储临时文件的目录（默认为 ``%temp%`` 中随机生成的临时目录）。"
+				ConstEval  = [ordered]@{
+					Enabled = "声明本脚本不是常量，跳过常量求值。"
+					Timeout = "声明本次常量求值已超时，直接按超时回退。"
+				}
 				Core       = [ordered]@{
 					Backend                = "Core 可执行文件获取 PowerShell 的方式。``'Shared'``（默认）从目标机的 pwsh 安装中解析，产物很小；``'Bundled'`` 会打包 PowerShell SDK（``Microsoft.PowerShell.SDK``），目标机无需 pwsh，并可使用 SelfContained/Trimmed/ReadyToRun/InvariantGlobalization/Aot，代价是产物体积大很多。"
 					TargetOs               = "Core 可执行文件的目标操作系统：``'Windows'``、``'Linux'`` 或 ``'MacOS'``（默认为构建机所在系统）。GUI/窗口化输出仅在 ``'Windows'`` 下实现。"

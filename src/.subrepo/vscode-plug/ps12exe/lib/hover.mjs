@@ -27,7 +27,8 @@ const SECTION_ANCHORS = Object.freeze({
 	balus: 'preprocessing-balus',
 	psexe: 'preprocessing-if',
 	psscript: 'preprocessing-if',
-	dllExport: 'preprocessing-overview'
+	dllExport: 'preprocessing-overview',
+	cli: 'console-parameters'
 })
 
 /** 指令名（小写）-> README 小节键（同时也是 `HOVER_MESSAGES` 的键）。 */

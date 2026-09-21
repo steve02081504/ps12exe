@@ -12,6 +12,8 @@ const PRAGMA_NAME_RE = /^([\t ]*)#_pragma[\t ]+([A-Z_a-z]\w*(?:\.[A-Z_a-z]\w*)*)
 
 /** @type {Map<string, Promise<Map<string, { name: string, description: string }>>>} */
 const cache = new Map()
+/** 已成功解析的数据（区域 -> 压平后的映射），供同步取用（诊断需要）。 */
+const resolved = new Map()
 
 /**
  * 返回 `line` 上 `character` 列处 `#_pragma` 变量名的名称与区间。光标不在变量名上时返回 `null`。
@@ -103,12 +105,24 @@ export async function getPragmaData(locale) {
 		pending = (async () => {
 			const host = await resolvePowerShell()
 			if (!host || !host.moduleVersion) throw new Error('ps12exe module is not available')
-			return flattenPragmaData(await fetchPragmaData(host, key))
+			const data = flattenPragmaData(await fetchPragmaData(host, key))
+			resolved.set(key, data)
+			return data
 		})()
 		pending.catch(() => cache.delete(key))
 		cache.set(key, pending)
 	}
 	return pending
+}
+
+/**
+ * 同步返回已成功解析（并缓存）的区域数据；尚未就绪时返回 undefined。
+ *
+ * @param {string} [locale] ps12exe 区域代码（见 `lib/locale.mjs#toPs12exeLocale`）
+ * @returns {Map<string, { name: string, description: string }> | undefined} 已解析的映射，未就绪时为 undefined
+ */
+export function peekPragmaData(locale) {
+	return resolved.get(locale || 'en-UK')
 }
 
 /**
@@ -220,4 +234,5 @@ export function buildPragmaCandidates(data, prefix) {
 /** 清空缓存；模块更新后调用，使说明文字立即跟随新版本。 */
 export function clearPragmaCache() {
 	cache.clear()
+	resolved.clear()
 }
