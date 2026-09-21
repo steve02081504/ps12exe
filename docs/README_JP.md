@@ -36,7 +36,7 @@ ps12exe は、PowerShell スクリプト（.ps1）から実行可能ファイル
 
 ```powershell
 Install-Module ps12exe # ps12exe モジュールをインストールする
-Set-ps12exeContextMenu # 右クリックメニューを設定する
+Set-ps12exeIntegration # 右クリックメニュー、Agent Skill、VS Code 拡張機能を設定する
 ```
 
 (リポジトリをクローンして `.\ps12exe.ps1` を実行することもできます)
@@ -54,7 +54,7 @@ Install-Module PS2EXE2ps12exe
 
 ### 右クリックメニュー
 
-`Set-ps12exeContextMenu` を一度実行すれば、任意の ps1 ファイルを右クリックして、exe への変換や ps12exeGUI の起動が可能になります。  
+`Set-ps12exeIntegration` を一度実行すれば、任意の ps1 ファイルを右クリックして、exe への変換や ps12exeGUI の起動が可能になります。  
 ![image](https://github.com/steve02081504/ps12exe/assets/31927825/24e7caf7-2bd8-46aa-8e1d-ee6da44c2dcc)
 
 ### GUI モード
@@ -112,7 +112,11 @@ Start-ps12exeWebServer
 
 ![image](https://github.com/user-attachments/assets/5cace798-2737-479a-8d1e-882484f26f31)
 
-`Set-ps12exeContextMenu` が自動でインストールします。`steve02081504.ps12exe` を手動でインストールすることもできます。
+`Set-ps12exeIntegration` が自動でインストールします。`steve02081504.ps12exe` を手動でインストールすることもできます。
+
+### Agent Skill
+
+`Set-ps12exeIntegration` は `~/.agents/skills` に `ps12exe` の Agent Skill も書き込みます。これにより、Agent Skill 対応のコーディングエージェント（opencode、Codex、Cursor、GitHub Copilot など）は、PowerShell スクリプトを実行ファイルへコンパイルする際に ps12exe を使うようになります。`Set-ps12exeIntegration -action disable` で削除でき、`Set-ps12exeIntegration -Skip AgentSkill` でスキップできます。
 
 ## パラメータ
 

@@ -36,7 +36,7 @@ ps12exe एक PowerShell मॉड्यूल है जो आपको .ps1 
 
 ```powershell
 Install-Module ps12exe #ps12exe मॉड्यूल इंस्टॉल करें
-Set-ps12exeContextMenu #राइट-क्लिक मेनू सेट करें
+Set-ps12exeIntegration #राइट-क्लिक मेनू, Agent Skill और VS Code एक्सटेंशन सेट करें
 ```
 
 (आप इस रिपॉजिटरी को क्लोन भी कर सकते हैं और सीधे `.\ps12exe.ps1` चला सकते हैं)
@@ -54,7 +54,7 @@ Install-Module PS2EXE2ps12exe
 
 ### मेनू पर राइट-क्लिक करें
 
-एक बार जब आप `Set-ps12exeContextMenu` सेट कर लेते हैं, तो आप किसी भी ps1 फ़ाइल को राइट-क्लिक करके जल्दी से exe में संकलित कर सकते हैं या इस फ़ाइल के लिए ps12exeGUI खोल सकते हैं।  
+एक बार जब आप `Set-ps12exeIntegration` चला लेते हैं, तो आप किसी भी ps1 फ़ाइल को राइट-क्लिक करके जल्दी से exe में संकलित कर सकते हैं या इस फ़ाइल के लिए ps12exeGUI खोल सकते हैं।  
 ![चित्र](https://github.com/steve02081504/ps12exe/assets/31927825/24e7caf7-2bd8-46aa-8e1d-ee6da44c2dcc)
 
 ### जीयूआई मोड
@@ -112,7 +112,11 @@ exe21sp -inputFile .\target.exe -outputFile .\target.ps1
 
 ![image](https://github.com/user-attachments/assets/5cace798-2737-479a-8d1e-882484f26f31)
 
-`Set-ps12exeContextMenu` इसे स्वतः इंस्टॉल कर देता है; आप `steve02081504.ps12exe` को मैन्युअल रूप से भी इंस्टॉल कर सकते हैं।
+`Set-ps12exeIntegration` इसे स्वतः इंस्टॉल कर देता है; आप `steve02081504.ps12exe` को मैन्युअल रूप से भी इंस्टॉल कर सकते हैं।
+
+### Agent Skill
+
+`Set-ps12exeIntegration` `~/.agents/skills` में `ps12exe` का Agent Skill भी लिखता है, ताकि Agent Skill समर्थित कोडिंग एजेंट (opencode, Codex, Cursor, GitHub Copilot, …) PowerShell स्क्रिप्ट को एक्ज़ीक्यूटेबल में कंपाइल करने के लिए ps12exe का उपयोग करें। `Set-ps12exeIntegration -action disable` इसे हटा देता है, और `Set-ps12exeIntegration -Skip AgentSkill` इसे छोड़ देता है।
 
 ## पैरामीटर्स
 

@@ -104,7 +104,7 @@ param(
 	#_pragma Resources.title ps12exeGUI
 	#_pragma Resources.description 'A super cool GUI for compile powershell scripts'
 	#_!!if (!(Test-Path -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\ps12exeGUI.psccfg")){
-	#_!!	Set-ps12exeContextMenu 1
+	#_!!	Set-ps12exeIntegration 1
 	#_!!}
 	#_!!ps12exeGUI @PSBoundParameters
 #_endif

@@ -9,6 +9,10 @@
 	VSCodeExtensionInstallFailed   = "Impossible d'installer l'extension ps12exe pour {0} (elle n'est peut-être pas encore publiée) : {1}"
 	VSCodeExtensionUninstalling    = "Désinstallation de l'extension ps12exe pour {0}..."
 	VSCodeExtensionUninstallFailed = "Impossible de désinstaller l'extension ps12exe pour {0} : {1}"
+	AgentSkillInstalling           = "Installation du Agent Skill ps12exe dans {0}..."
+	AgentSkillInstallFailed        = "Impossible d'installer le Agent Skill ps12exe dans {0} : {1}"
+	AgentSkillUninstalling         = "Suppression du Agent Skill ps12exe de {0}..."
+	AgentSkillUninstallFailed      = "Impossible de supprimer le Agent Skill ps12exe de {0} : {1}"
 	# Web Server
 	ErrorHead                      = "Erreur :"
 	CompileResult                  = "Résultat de la compilation"
@@ -107,14 +111,14 @@ ps12exeGUI [[-PS1File] '<fichier_de_script>'] [-Locale '<code_de_langue>'] [-UIM
 			help       = "Affiche cette aide."
 		}
 	}
-	SetContextMenuHelpData         = @{
-		title      = "Utilisation :"
-		Usage      = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Locale '<code_de_langue>'] [-SkipEditorExtension] [-help]"
+	IntegrationHelpData            = @{
+		title      = "Utilisation :"
+		Usage      = "Set-ps12exeIntegration [[-action] 'enable'|'disable'|'reset'] [-Locale '<code_de_langue>'] [-Skip <'ContextMenu'|'AgentSkill'|'VSCodeExtension'>] [-help]"
 		PrarmsData = [ordered]@{
-			action              = "Action à exécuter."
-			Locale              = "Code de langue à utiliser."
-			SkipEditorExtension	= "Ignore l'installation ou la désinstallation de l'extension ps12exe VS Code dans les éditeurs détectés."
-			help                = "Affiche cette aide."
+			action = "Action à exécuter."
+			Locale = "Code de langue à utiliser."
+			Skip   = "Éléments d'intégration à ignorer ; 'ContextMenu', 'AgentSkill' et/ou 'VSCodeExtension'."
+			help   = "Affiche cette aide."
 		}
 	}
 	WebServerHelpData              = @{

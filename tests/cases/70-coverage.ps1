@@ -4,16 +4,20 @@ $deps = $script:CoreCompileDeps
 Add-Test @{
 	Name  = 'modules.exports'
 	Group = 'coverage'
-	Deps  = @('ps12exe.psm1', 'ps12exe.psd1', 'src/GUI/', 'src/WebServer/', 'src/Interact/')
+	Deps  = @('ps12exe.psm1', 'ps12exe.psd1', 'src/GUI/', 'src/Integration/', 'src/WebServer/', 'src/Interact/')
 	Run   = {
 		param($ctx)
 		$mod = Import-Module (Join-Path $ctx.RepoRoot 'ps12exe.psd1') -Force -PassThru
-		$expected = @('ps12exe', 'ps12exeGUI', 'Set-ps12exeContextMenu', 'Start-ps12exeWebServer', 'Enter-ps12exeInteract', 'exe21sp')
+		$expected = @('ps12exe', 'ps12exeGUI', 'Set-ps12exeIntegration', 'Start-ps12exeWebServer', 'Enter-ps12exeInteract', 'exe21sp')
 		foreach ($fn in $expected) {
 			Assert-True ($null -ne (Get-Command $fn -ErrorAction Ignore)) "模块未导出命令 $fn"
 		}
 		$exported = @($mod.ExportedFunctions.Keys)
 		foreach ($fn in $expected) { Assert-True ($exported -contains $fn) "声明导出的函数缺少 $fn" }
+		foreach ($fn in @('Set-ps12exeContextMenu', 'Set-ps12exeAgentSkill', 'Set-ps12exeVSCodeExtension')) {
+			Assert-False ($exported -contains $fn) "$fn 是内部实现，不应导出"
+			Assert-True ($null -eq (Get-Command $fn -Module ps12exe -ErrorAction Ignore)) "$fn 不应对外可见"
+		}
 	}
 }
 
@@ -312,26 +316,62 @@ Add-Test @{
 }
 
 Add-Test @{
-	Name   = 'contextmenu.toggle'
+	Name   = 'integration.toggle'
 	Group  = 'coverage'
 	Serial = $true
-	Deps   = @('src/GUI/ContextMenuAdder.ps1', 'ps12exe.psm1')
+	Deps   = @('src/Integration/', 'src/AgentSkill/SKILL.md', 'ps12exe.psm1')
 	Run    = {
 		param($ctx)
 		$key = 'Registry::HKEY_CURRENT_USER\Software\Classes\*\shell\ps12exeCompile'
 		$wasEnabled = [bool](Test-Path -LiteralPath $key)
+		$skillDir = Join-Path $HOME '.agents/skills/ps12exe'
+		$skillFile = Join-Path $skillDir 'SKILL.md'
+		$skillBackup = Join-Path $ctx.WorkDir 'skill-backup'
+		$hadSkill = Test-Path -LiteralPath $skillFile
+		if ($hadSkill) { Copy-Item -LiteralPath $skillDir -Destination $skillBackup -Recurse -Force }
 		try {
-			Set-ps12exeContextMenu -action disable -SkipEditorExtension
-			Set-ps12exeContextMenu -action disable -SkipEditorExtension
-			Assert-False (Test-Path -LiteralPath $key) '未启用时禁用右键菜单应不报错且保持不存在'
-			Set-ps12exeContextMenu -action enable -SkipEditorExtension
+			Set-ps12exeIntegration -action disable -Skip VSCodeExtension
+			Set-ps12exeIntegration -action disable -Skip VSCodeExtension
+			Assert-False (Test-Path -LiteralPath $key) '未启用时禁用集成应不报错且保持不存在'
+			Assert-False (Test-Path -LiteralPath $skillFile) '禁用后不应留下 agent skill'
+			Set-ps12exeIntegration -action enable -Skip VSCodeExtension
 			Assert-True (Test-Path -LiteralPath $key) '启用后右键菜单应存在'
-			Set-ps12exeContextMenu -action disable -SkipEditorExtension
-			Assert-False (Test-Path -LiteralPath $key) '禁用后右键菜单应不存在'
+			Assert-True (Test-Path -LiteralPath $skillFile) '启用后应写入 agent skill'
+			$skillContent = [System.IO.File]::ReadAllText($skillFile, [System.Text.Encoding]::UTF8)
+			Assert-Match $skillContent '(?m)^name:\s*ps12exe\s*$' 'agent skill 的 frontmatter 缺少 name: ps12exe'
+			Set-ps12exeIntegration -action disable -Skip ContextMenu,VSCodeExtension
+			Assert-False (Test-Path -LiteralPath $skillFile) '-Skip ContextMenu,VSCodeExtension 的 disable 应只移除 agent skill'
+			Assert-True (Test-Path -LiteralPath $key) '跳过 ContextMenu 时不应移除右键菜单'
+			Set-ps12exeIntegration -action enable -Skip ContextMenu,VSCodeExtension
+			Assert-True (Test-Path -LiteralPath $skillFile) '-Skip ContextMenu,VSCodeExtension 的 enable 应只写入 agent skill'
+			Set-ps12exeIntegration -action disable -Skip ContextMenu
+			Assert-False (Test-Path -LiteralPath $skillFile) '跳过 ContextMenu 时 disable 应移除 skill'
+			Assert-True (Test-Path -LiteralPath $key) '跳过 ContextMenu 时 disable 不应移除右键菜单'
+			Set-ps12exeIntegration -action disable -Skip VSCodeExtension
+			Assert-False (Test-Path -LiteralPath $key) '再次 disable 应移除右键菜单'
 		}
 		finally {
-			if ($wasEnabled) { Set-ps12exeContextMenu -action enable -SkipEditorExtension }
-			else { Set-ps12exeContextMenu -action disable -SkipEditorExtension }
+			if ($wasEnabled) { Set-ps12exeIntegration -action enable -Skip VSCodeExtension }
+			else { Set-ps12exeIntegration -action disable -Skip VSCodeExtension }
+			if ($hadSkill) {
+				New-Item -ItemType Directory -Path $skillDir -Force | Out-Null
+				Copy-Item -Path (Join-Path $skillBackup '*') -Destination $skillDir -Recurse -Force
+			}
+		}
+	}
+}
+
+Add-Test @{
+	Name  = 'integration.help-renders'
+	Group = 'coverage'
+	Deps  = @('src/Integration/', 'src/locale/', 'src/HelpShower.ps1')
+	Run   = {
+		param($ctx)
+		$out = Set-ps12exeIntegration -help -Locale 'en-US' 6>&1 | Out-String
+		Assert-Match $out 'Set-ps12exeIntegration' 'Set-ps12exeIntegration -help 未渲染自身用法'
+		Assert-Match $out 'Skip' 'Set-ps12exeIntegration -help 缺少 Skip 参数'
+		foreach ($item in @('ContextMenu', 'AgentSkill', 'VSCodeExtension')) {
+			Assert-Match $out $item "Set-ps12exeIntegration -help 缺少可跳过的 $item"
 		}
 	}
 }

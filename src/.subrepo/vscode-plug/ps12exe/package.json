@@ -192,6 +192,7 @@
 		}
 	},
 	"scripts": {
+		"pretest": "node scripts/sync-skill.mjs",
 		"test": "vscode-test",
 		"build": "node scripts/build.mjs",
 		"package": "node scripts/build.mjs --no-install"

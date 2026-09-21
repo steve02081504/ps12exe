@@ -2,3 +2,5 @@
 /package-lock.json
 /.vscode-test
 /*.vsix
+# 由 scripts/sync-skill.mjs 从 ps12exe 仓库的 src/AgentSkill/SKILL.md 生成
+/skills/ps12exe/SKILL.md

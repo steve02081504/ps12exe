@@ -9,6 +9,10 @@
 	VSCodeExtensionInstallFailed   = "{0} के लिए ps12exe एक्सटेंशन इंस्टॉल नहीं हो सका (हो सकता है यह अभी प्रकाशित न हुआ हो): {1}"
 	VSCodeExtensionUninstalling    = "{0} के लिए ps12exe एक्सटेंशन अनइंस्टॉल किया जा रहा है..."
 	VSCodeExtensionUninstallFailed = "{0} के लिए ps12exe एक्सटेंशन अनइंस्टॉल नहीं हो सका: {1}"
+	AgentSkillInstalling           = "{0} में ps12exe Agent Skill इंस्टॉल किया जा रहा है..."
+	AgentSkillInstallFailed        = "{0} में ps12exe Agent Skill इंस्टॉल नहीं हो सका: {1}"
+	AgentSkillUninstalling         = "{0} से ps12exe Agent Skill हटाया जा रहा है..."
+	AgentSkillUninstallFailed      = "{0} से ps12exe Agent Skill हटाया नहीं जा सका: {1}"
 	# Web Server
 	ErrorHead                      = "त्रुटि:"
 	CompileResult                  = "कॉम्पाइल परिणाम"
@@ -107,14 +111,14 @@ ps12exeGUI [[-PS1File] '<स्क्रिप्ट फाइल>'] [-Locale '<
 			help       = "इस मदद सूचना को दिखाएँ।"
 		}
 	}
-	SetContextMenuHelpData         = @{
+	IntegrationHelpData            = @{
 		title      = "उपयोग:"
-		Usage      = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Locale '<भाषा कोड>'] [-SkipEditorExtension] [-help]"
+		Usage      = "Set-ps12exeIntegration [[-action] 'enable'|'disable'|'reset'] [-Locale '<भाषा कोड>'] [-Skip <'ContextMenu'|'AgentSkill'|'VSCodeExtension'>] [-help]"
 		PrarmsData = [ordered]@{
-			action              = "क्रिया का कार्यान्वयन।"
-			Locale              = "उपयोग किए जाने वाले भाषा कोड।"
-			SkipEditorExtension	= "पहचाने गए संपादकों में ps12exe VS Code एक्सटेंशन को इंस्टॉल या अनइंस्टॉल करना छोड़ें।"
-			help                = "इस मदद सूचना को दिखाएँ।"
+			action = "क्रिया का कार्यान्वयन।"
+			Locale = "उपयोग किए जाने वाले भाषा कोड।"
+			Skip   = "छोड़े जाने वाले एकीकरण आइटम; ContextMenu, AgentSkill, VSCodeExtension में से कोई भी।"
+			help   = "इस मदद सूचना को दिखाएँ।"
 		}
 	}
 	WebServerHelpData              = @{

@@ -12,6 +12,8 @@ import { fileURLToPath } from 'node:url'
 
 import { execFile, where_command } from '@steve02081504/exec'
 
+import { syncSkill } from './sync-skill.mjs'
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const flags = new Set(process.argv.slice(2))
 const shouldInstall = !flags.has('--no-install')
@@ -165,6 +167,7 @@ async function installExtension(vsix) {
  * @returns {Promise<void>} 执行完成，无返回值
  */
 async function main() {
+	syncSkill()
 	if (shouldTest) {
 		console.log('Running the test suite...\n')
 		const cli = path.join(root, 'node_modules', '@vscode', 'test-cli', 'out', 'bin.mjs')

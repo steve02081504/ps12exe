@@ -11,9 +11,11 @@ $RefKeyOrder = @(
 	'CompileTitle', 'OpenInGUI', 'GUICfgFileDesc',
 	'VSCodeExtensionInstalling', 'VSCodeExtensionInstallFailed',
 	'VSCodeExtensionUninstalling', 'VSCodeExtensionUninstallFailed',
+	'AgentSkillInstalling', 'AgentSkillInstallFailed',
+	'AgentSkillUninstalling', 'AgentSkillUninstallFailed',
 	'ErrorHead', 'CompileResult', 'DefaultResult', 'AskSaveCfg', 'AskSaveCfgTitle', 'CfgFileLabelHead',
 	'ServerStarted', 'ServerStopped', 'ServerStartFailed', 'TryRunAsRoot', 'ServerListening', 'ExitServerTip',
-	'ConsoleHelpData', 'GUIHelpData', 'SetContextMenuHelpData', 'WebServerHelpData', 'exe21spHelpData',
+	'ConsoleHelpData', 'GUIHelpData', 'IntegrationHelpData', 'WebServerHelpData', 'exe21spHelpData',
 	'CompilingI18nData', 'WebServerI18nData', 'InteractI18nData', 'exe21spInteractI18nData', 'exe21spI18nData'
 )
 $RefKeySet = [System.Collections.Generic.HashSet[string]]::new([string[]]$RefKeyOrder)

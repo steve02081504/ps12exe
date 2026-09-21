@@ -9,6 +9,10 @@
 	VSCodeExtensionInstallFailed   = "{0} 用の ps12exe 拡張機能をインストールできませんでした（まだ公開されていない可能性があります）: {1}"
 	VSCodeExtensionUninstalling    = "{0} 用の ps12exe 拡張機能をアンインストールしています..."
 	VSCodeExtensionUninstallFailed = "{0} 用の ps12exe 拡張機能をアンインストールできませんでした: {1}"
+	AgentSkillInstalling           = "{0} に ps12exe Agent Skill をインストールしています..."
+	AgentSkillInstallFailed        = "{0} に ps12exe Agent Skill をインストールできませんでした: {1}"
+	AgentSkillUninstalling         = "{0} から ps12exe Agent Skill を削除しています..."
+	AgentSkillUninstallFailed      = "{0} から ps12exe Agent Skill を削除できませんでした: {1}"
 	# Web サーバー
 	ErrorHead                      = "エラー："
 	CompileResult                  = "コンパイル結果"
@@ -107,14 +111,14 @@ ps12exeGUI [[-PS1File] '<スクリプトファイル>'] [-Locale '<言語コー�
 			help       = "このヘルプ情報を表示します。"
 		}
 	}
-	SetContextMenuHelpData         = @{
+	IntegrationHelpData            = @{
 		title      = "使用方法："
-		Usage      = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Locale '<言語コード>'] [-SkipEditorExtension] [-help]"
+		Usage      = "Set-ps12exeIntegration [[-action] 'enable'|'disable'|'reset'] [-Locale '<言語コード>'] [-Skip <'ContextMenu'|'AgentSkill'|'VSCodeExtension'>] [-help]"
 		PrarmsData = [ordered]@{
-			action              = "実行するアクション。"
-			Locale              = "使用する言語コード。"
-			SkipEditorExtension	= "検出されたエディターへの ps12exe VS Code 拡張機能のインストールまたはアンインストールをスキップします。"
-			help                = "このヘルプ情報を表示します。"
+			action = "実行するアクション。"
+			Locale = "使用する言語コード。"
+			Skip   = "スキップする統合項目。ContextMenu、AgentSkill、VSCodeExtension のいずれかを指定できます。"
+			help   = "このヘルプ情報を表示します。"
 		}
 	}
 	WebServerHelpData              = @{

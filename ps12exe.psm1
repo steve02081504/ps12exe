@@ -15,7 +15,7 @@ function LoadFileAsFunction($File, $FunctionName) {
 
 . $(LoadFileAsFunction $PSScriptRoot/ps12exe.ps1 ps12exe)
 . $(LoadFileAsFunction $PSScriptRoot/src/GUI/Main.ps1 ps12exeGUI)
-. $(LoadFileAsFunction $PSScriptRoot/src/GUI/ContextMenuAdder.ps1 Set-ps12exeContextMenu)
+. $(LoadFileAsFunction $PSScriptRoot/src/Integration/Set-ps12exeIntegration.ps1 Set-ps12exeIntegration)
 . $(LoadFileAsFunction $PSScriptRoot/src/WebServer/main.ps1 Start-ps12exeWebServer)
 . $(LoadFileAsFunction $PSScriptRoot/src/Interact/main.ps1 Enter-ps12exeInteract)
 . $(LoadFileAsFunction $PSScriptRoot/exe21sp.ps1 exe21sp)

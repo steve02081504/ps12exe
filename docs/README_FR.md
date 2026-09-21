@@ -36,7 +36,7 @@ ps12exe est un module PowerShell qui vous permet de créer des fichiers exécuta
 
 ```powershell
 Install-Module ps12exe # Installer le module ps12exe
-Set-ps12exeContextMenu # Définir le menu contextuel du clic droit
+Set-ps12exeIntegration # Configurer le menu contextuel, l'Agent Skill et l'extension VS Code
 ```
 
 (Vous pouvez également cloner ce référentiel et exécuter directement `.\ps12exe.ps1`)
@@ -54,7 +54,7 @@ Install-Module PS2EXE2ps12exe
 
 ### Menu contextuel
 
-Une fois que vous avez défini `Set-ps12exeContextMenu`, vous pouvez cliquer avec le bouton droit sur n'importe quel fichier ps1 pour le compiler rapidement en exe ou ouvrir ps12exeGUI pour ce fichier.  
+Une fois que vous avez exécuté `Set-ps12exeIntegration`, vous pouvez cliquer avec le bouton droit sur n'importe quel fichier ps1 pour le compiler rapidement en exe ou ouvrir ps12exeGUI pour ce fichier.  
 ![Image](https://github.com/steve02081504/ps12exe/assets/31927825/24e7caf7-2bd8-46aa-8e1d-ee6da44c2dcc)
 
 ### Mode GUI
@@ -112,7 +112,11 @@ L'[extension ps12exe pour VS Code](https://marketplace.visualstudio.com/items?it
 
 ![image](https://github.com/user-attachments/assets/5cace798-2737-479a-8d1e-882484f26f31)
 
-`Set-ps12exeContextMenu` l'installe automatiquement ; vous pouvez aussi installer `steve02081504.ps12exe` manuellement.
+`Set-ps12exeIntegration` l'installe automatiquement ; vous pouvez aussi installer `steve02081504.ps12exe` manuellement.
+
+### Agent Skill
+
+`Set-ps12exeIntegration` écrit également un Agent Skill `ps12exe` dans `~/.agents/skills`, afin que les agents de codage compatibles (opencode, Codex, Cursor, GitHub Copilot, …) sachent utiliser ps12exe lorsqu'on leur demande de compiler un script PowerShell en exécutable. `Set-ps12exeIntegration -action disable` le supprime, et `Set-ps12exeIntegration -Skip AgentSkill` l'ignore.
 
 ## Paramètres
 

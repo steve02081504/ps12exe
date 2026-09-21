@@ -25,7 +25,7 @@
 better pwsh code 2 exe repo:
 - Use `ps12exe a.ps1` to convert `a.ps1` into `a.exe`;
 - Use `ps12exeGUI` for a graphical interface that simplifies compilation;
-- Use `Set-ps12exeContextMenu` to add a context menu item for quick compilation or GUI access on `.ps1` files;
+- Use `Set-ps12exeIntegration` to set up the right-click menu, the Agent Skill and the VS Code extension in one go (use `-Skip` to leave any of them out);
 - Use `Start-ps12exeWebServer` to launch a web server that allows users to compile scripts online;
 - Use `Enter-ps12exeInteract` to enter an interactive mode for compiling scripts without parameters;
 - Use `exe21sp` to extract the PowerShell script from a ps12exe-generated executable back into a `.ps1` script.
@@ -69,7 +69,7 @@ All commands in this module support the `-help` option for detailed assistance i
 	# NestedModules = @()
 
 	# 从此模块导出的函数；为获得最佳性能，请勿使用通配符，也不要删除该项；如果没有要导出的函数，请使用空数组。
-	FunctionsToExport      = @('ps12exe', 'ps12exeGUI', 'Set-ps12exeContextMenu', 'Start-ps12exeWebServer', 'Enter-ps12exeInteract', 'exe21sp')
+	FunctionsToExport      = @('ps12exe', 'ps12exeGUI', 'Set-ps12exeIntegration', 'Start-ps12exeWebServer', 'Enter-ps12exeInteract', 'exe21sp')
 
 	# 从此模块导出的 Cmdlet；为获得最佳性能，请勿使用通配符，也不要删除该项；如果没有要导出的 Cmdlet，请使用空数组。
 	# CmdletsToExport = @()

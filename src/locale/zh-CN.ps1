@@ -11,6 +11,10 @@
 	VSCodeExtensionInstallFailed   = "无法为 {0} 安装 ps12exe 扩展（可能尚未发布）：{1}"
 	VSCodeExtensionUninstalling    = "正在为 {0} 卸载 ps12exe 扩展……"
 	VSCodeExtensionUninstallFailed = "无法为 {0} 卸载 ps12exe 扩展：{1}"
+	AgentSkillInstalling           = "正在向 {0} 安装 ps12exe Agent Skill……"
+	AgentSkillInstallFailed        = "无法向 {0} 安装 ps12exe Agent Skill：{1}"
+	AgentSkillUninstalling         = "正在从 {0} 移除 ps12exe Agent Skill……"
+	AgentSkillUninstallFailed      = "无法从 {0} 移除 ps12exe Agent Skill：{1}"
 
 	# GUI 通用
 	ErrorHead                      = "错误："
@@ -115,15 +119,15 @@ ps12exeGUI [[-PS1File] '<脚本文件>'] [-Locale '<语言代码>'] [-UIMode 'Da
 		}
 	}
 
-	# 控制台帮助 - 右键菜单
-	SetContextMenuHelpData         = @{
+	# 控制台帮助 - 全部集成
+	IntegrationHelpData            = @{
 		title      = "用法："
-		Usage      = "Set-ps12exeContextMenu [[-action] 'enable'|'disable'|'reset'] [-Locale '<语言代码>'] [-SkipEditorExtension] [-help]"
+		Usage      = "Set-ps12exeIntegration [[-action] 'enable'|'disable'|'reset'] [-Locale '<语言代码>'] [-Skip <'ContextMenu'|'AgentSkill'|'VSCodeExtension'>] [-help]"
 		PrarmsData = [ordered]@{
-			action              = "要执行的操作。"
-			Locale              = "要使用的语言代码。"
-			SkipEditorExtension	= "跳过向检测到的编辑器安装或卸载 ps12exe VS Code 扩展。"
-			help                = "显示此帮助信息。"
+			action = "要执行的操作。"
+			Locale = "要使用的语言代码。"
+			Skip   = "要跳过的集成项，可包含 ContextMenu、AgentSkill、VSCodeExtension 中的任意个。"
+			help   = "显示此帮助信息。"
 		}
 	}
 

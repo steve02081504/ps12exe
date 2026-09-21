@@ -36,7 +36,7 @@ ps12exe 是一个 PowerShell 模块，用于从 .ps1 脚本生成可执行文件
 
 ```powershell
 Install-Module ps12exe #安装ps12exe模块
-Set-ps12exeContextMenu #设置右键菜单
+Set-ps12exeIntegration #设置右键菜单、Agent Skill 与 VS Code 扩展
 ```
 
 （也可以克隆本仓库后直接运行 `.\ps12exe.ps1`。）
@@ -54,7 +54,7 @@ Install-Module PS2EXE2ps12exe
 
 ### 右键菜单
 
-运行 `Set-ps12exeContextMenu` 后，在任意 `.ps1` 文件上右键即可快速编译为 exe，或以此文件启动 ps12exeGUI。  
+运行 `Set-ps12exeIntegration` 后，在任意 `.ps1` 文件上右键即可快速编译为 exe，或以此文件启动 ps12exeGUI。  
 ![图片](https://github.com/steve02081504/ps12exe/assets/31927825/24e7caf7-2bd8-46aa-8e1d-ee6da44c2dcc)
 
 ### GUI 模式
@@ -112,7 +112,11 @@ Start-ps12exeWebServer
 
 ![image](https://github.com/user-attachments/assets/5cace798-2737-479a-8d1e-882484f26f31)
 
-`Set-ps12exeContextMenu` 会自动安装它，你也可以手动安装 `steve02081504.ps12exe`。
+`Set-ps12exeIntegration` 会自动安装它，你也可以手动安装 `steve02081504.ps12exe`。
+
+### Agent Skill
+
+`Set-ps12exeIntegration` 还会把 `ps12exe` 的 Agent Skill 写入 `~/.agents/skills`，让支持 Agent Skill 的编码 agent（opencode、Codex、Cursor、GitHub Copilot 等）在需要把 PowerShell 脚本编译为可执行文件时知道使用 ps12exe。执行 `Set-ps12exeIntegration -action disable` 会将其移除，`Set-ps12exeIntegration -Skip AgentSkill` 则跳过它。
 
 ## 参数
 
