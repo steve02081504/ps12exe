@@ -186,9 +186,10 @@ function Preprocessor($Content, $FilePath) {
 		}
 		$file
 	}
-	# 校验 pragma 子表达式是否只使用白名单内的 path 相关命令/变量。返回：$true 表示安全；否则返回一个含具体原因的字符串数组。
+	# 校验 pragma 子表达式是否只使用白名单内的安全命令/变量。返回：$true 表示安全；否则返回一个含具体原因的字符串数组。
+	# get-date 只读时钟、无 I/O 与代码执行，且常用于生成构建时间戳/年份，故放行（访客模式也放行：不触达原生文件）。
 	function Test-PragmaExpressionSafe([string]$Expr) {
-		$PragmaSafeCommands = @('gcm', 'get-command', 'join-path', 'split-path', 'resolve-path', 'convert-path', 'get-item', 'test-path', 'get-childitem')
+		$PragmaSafeCommands = @('gcm', 'get-command', 'join-path', 'split-path', 'resolve-path', 'convert-path', 'get-item', 'test-path', 'get-childitem', 'get-date')
 		if (-not $GuestMode) { $PragmaSafeCommands += 'get-content' }
 		$PragmaSafeVariables = @('PSScriptRoot', 'ScriptRoot', 'HOME', 'PWD', 'PSCommandPath')
 		# 预处理求值与 const 求值是两套安全等级：读 env 一定使脚本失去 const 资格，但非访客预处理允许读 env；

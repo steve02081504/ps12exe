@@ -90,6 +90,12 @@ Add-Test @{
 		Invoke-PragmaTest '#_pragma Resources.Title "prefix$(Split-Path $PSScriptRoot -Leaf)suffix"' $false 'prefixcompiledsuffix' 'Resources.Title'
 		Invoke-PragmaTest '#_pragma Signing.Certificate C:\cert.pfx' $false 'C:\cert.pfx' 'Signing.Certificate'
 		Invoke-PragmaTest '#_pragma Resources.meta.deep C:\deep\v' $false 'C:\deep\v' 'Resources.meta.deep'
+		# get-date 是白名单内的只读命令（生成构建时间戳/年份），访客模式同样放行。
+		$currentYear = Get-Date -Format yyyy
+		Invoke-PragmaTest '#_pragma Resources.Title "$(Get-Date -Format yyyy)"' $false $currentYear 'Resources.Title'
+		Invoke-PragmaTest '#_pragma Resources.Title "$(Get-Date -Format yyyy)"' $true $currentYear 'Resources.Title'
+		# 只放行 get-date 本身：与其它命令串联时仍被 AST 拦截。
+		Invoke-PragmaTest '#_pragma Resources.Icon "$(Get-Date -Format yyyy; Remove-Item C:\x -Recurse)"' $false 'REJECTED'
 
 		# 访客模式：禁止 pragma 改写 outputFile / Build.TempDir / Build.Minify（写入任意路径 / 注入编译期脚本）与 Signing.Certificate（读本地 PFX / 时间戳 SSRF）。
 		$script:i18nWarnings.Clear()
