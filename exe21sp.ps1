@@ -174,9 +174,13 @@ param(
 	}
 
 	# 从产物的 Win32 版本资源里取回资源参数，转成从产物补回的 #_pragma 行（同名旧行已在 Remove-DerivablePragmaLines 中先删除）。
+	# $Target 决定默认值语义：只有 Core（.NET SDK）会把未指定的标题/公司/产品默认成程序集名，需要按默认名过滤；
+	# Framework 目标未指定时这些字段为空，任何非空值都是用户显式配置，必须原样补回，否则显式设成产物同名的
+	# Product/Title 会在往返中被静默丢弃。
 	function Get-ResourcePragmaLines {
 		param(
-			[string]$ExePath
+			[string]$ExePath,
+			[string]$Target
 		)
 		$Lines = [System.Collections.Generic.List[string]]::new()
 		try { $VersionInfo = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($ExePath) }
@@ -195,10 +199,11 @@ param(
 		$DefaultNames = @($ExeBaseName, ($ExeBaseName -replace '[^\w\.\-]', '_')) |
 		Where-Object { $_ } | ForEach-Object { $_.ToLowerInvariant() }
 		$DefaultVersions = @('1.0.0.0', '1.0.0', '0.0.0.0')
+		$IsCore = $Target -eq 'Core'
 		foreach ($Key in $Map.Keys) {
 			$Value = $VersionInfo.($Map[$Key])
 			if ([string]::IsNullOrWhiteSpace($Value)) { continue }
-			if ($Key -in @('Resources.Title', 'Resources.Company', 'Resources.Product') -and $DefaultNames -contains $Value.ToLowerInvariant()) { continue }
+			if ($IsCore -and $Key -in @('Resources.Title', 'Resources.Company', 'Resources.Product') -and $DefaultNames -contains $Value.ToLowerInvariant()) { continue }
 			if ($Key -eq 'Resources.Version' -and $DefaultVersions -contains $Value) { continue }
 			$Lines.Add("#_pragma $Key '$(ConvertTo-PragmaValue $Value)'")
 		}
@@ -323,7 +328,7 @@ param(
 		if ([exe21sp.Extractor]::IsAdminExe($currentExe)) {
 			$PrefixLines.Add('#_pragma Os.Admin')
 		}
-		foreach ($Line in (Get-ResourcePragmaLines -ExePath $currentExe)) {
+		foreach ($Line in (Get-ResourcePragmaLines -ExePath $currentExe -Target $Target)) {
 			$PrefixLines.Add($Line)
 		}
 		$IconBytes = [exe21sp.Extractor]::ExtractIconFromExe($currentExe)

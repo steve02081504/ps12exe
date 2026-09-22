@@ -123,7 +123,7 @@ Add-Test @{
 		Name      = 'resource'
 		Output    = 'resource.exe'
 		InputText = "Get-Date | Out-Null; Write-Output 'resource-roundtrip'"
-		Params    = @{ Resources = @{ Title = 'RT Title'; Description = 'RT Desc'; Company = 'RT Co'; Version = '2.3.4.5'; Icon = $script:IconFixture } }
+		Params    = @{ Resources = @{ Title = 'RT Title'; Description = 'RT Desc'; Company = 'RT Co'; Product = 'resource'; Version = '2.3.4.5'; Icon = $script:IconFixture } }
 	}
 	Run   = {
 		param($ctx)
@@ -131,7 +131,7 @@ Add-Test @{
 		$extractOut = Join-Path $ctx.WorkDir 'resource.extracted.ps1'
 		exe21sp -inputFile $exe -outputFile $extractOut | Out-Null
 		$text = Get-Content -LiteralPath $extractOut -Raw -Encoding UTF8
-		foreach ($expected in @("#_pragma Resources.Title 'RT Title'", "#_pragma Resources.Description 'RT Desc'", "#_pragma Resources.Company 'RT Co'", "#_pragma Resources.Version '2.3.4.5'", '#_pragma Resources.Icon')) {
+		foreach ($expected in @("#_pragma Resources.Title 'RT Title'", "#_pragma Resources.Description 'RT Desc'", "#_pragma Resources.Company 'RT Co'", "#_pragma Resources.Product 'resource'", "#_pragma Resources.Version '2.3.4.5'", '#_pragma Resources.Icon')) {
 			Assert-True ($text -like "*$expected*") "exe21sp 资源往返缺少 [$expected]：$text"
 		}
 		$releasedIcon = Join-Path $ctx.WorkDir 'resource.extracted.ico'
@@ -142,6 +142,7 @@ Add-Test @{
 		$info = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($recompiled)
 		Assert-Equal 'RT Title' $info.FileDescription 'exe21sp 重编译标题丢失'
 		Assert-Equal 'RT Co' $info.CompanyName 'exe21sp 重编译公司丢失'
+		Assert-Equal 'resource' $info.ProductName 'exe21sp 重编译产品名丢失'
 		Assert-Equal '2.3.4.5' $info.FileVersion 'exe21sp 重编译版本丢失'
 		Assert-Match ((& $recompiled | Out-String)) 'resource-roundtrip' 'exe21sp 重编译运行输出不符'
 
@@ -149,6 +150,7 @@ Add-Test @{
 		exe21sp -inputFile $recompiled -outputFile $extractOut2 | Out-Null
 		$text2 = Get-Content -LiteralPath $extractOut2 -Raw -Encoding UTF8
 		Assert-Equal 1 ([regex]::Matches($text2, '(?m)^\s*#_pragma\s+Resources\.Title\b')).Count 'exe21sp 幂等性：Title pragma 重复'
+		Assert-Equal 1 ([regex]::Matches($text2, '(?m)^\s*#_pragma\s+Resources\.Product\b')).Count 'exe21sp 幂等性：Product pragma 重复'
 		Assert-Equal 1 ([regex]::Matches($text2, '(?m)^\s*#_pragma\s+Resources\.Icon\b')).Count 'exe21sp 幂等性：Icon pragma 重复'
 		Assert-NotMatch $text2 '(?m)#_!!#_pragma\s+Resources' "exe21sp 幂等性：资源 pragma 被转义累积：$text2"
 	}
