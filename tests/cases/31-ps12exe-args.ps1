@@ -96,6 +96,14 @@ Add-Test @{
 		Invoke-PragmaTest '#_pragma Resources.Title "$(Get-Date -Format yyyy)"' $true $currentYear 'Resources.Title'
 		# 只放行 get-date 本身：与其它命令串联时仍被 AST 拦截。
 		Invoke-PragmaTest '#_pragma Resources.Icon "$(Get-Date -Format yyyy; Remove-Item C:\x -Recurse)"' $false 'REJECTED'
+		# 裸 $env: 引用无需 $(...) 也走安全展开；访客模式仍按 env 白名单（非白名单被拒）。
+		Invoke-PragmaTest '#_pragma Resources.Icon $env:windir\foo.ico' $true $windirFoo
+		Invoke-PragmaTest '#_pragma Resources.Icon $env:USERPROFILE\foo.ico' $false $userProfileFoo
+		Invoke-PragmaTest '#_pragma Resources.Icon $env:USERPROFILE\foo.ico' $true 'REJECTED'
+		Invoke-PragmaTest '#_pragma Resources.Title $env:PRAGMA_SECRET' $false $secretFile 'Resources.Title'
+		Invoke-PragmaTest '#_pragma Resources.Icon "$env:USERPROFILE\foo.ico"' $false $userProfileFoo
+		# 单引号仍是字面量：可保留字面 $env:。
+		Invoke-PragmaTest '#_pragma Resources.Title ''$env:VERSION''' $false '$env:VERSION' 'Resources.Title'
 
 		# 访客模式：禁止 pragma 改写 outputFile / Build.TempDir / Build.Minify（写入任意路径 / 注入编译期脚本）与 Signing.Certificate（读本地 PFX / 时间戳 SSRF）。
 		$script:i18nWarnings.Clear()

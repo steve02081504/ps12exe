@@ -236,11 +236,14 @@ function Preprocessor($Content, $FilePath) {
 			$PSScriptRoot = $PSScriptRootBackup
 		}
 	}
-	# 解析 pragma 的字符串值：支持双/单引号、$() 白名单子表达式展开、$PSScriptRoot 替换。
+	# 解析 pragma 的字符串值：支持双/单引号、白名单子表达式展开、$PSScriptRoot 替换。
+	# 触发安全展开的条件：值含 $() 子表达式，或含裸 $env: 变量引用（二者都走 Expand-PragmaExpression 做 AST 白名单校验；
+	# 访客模式对 env 另有白名单）。单引号始终是字面量，可用于保留字面 $env:。
 	function ConvertFrom-PragmaStringValue([string]$Value, [string]$PragmaName) {
+		$NeedsExpand = $Value -match '\$\(' -or $Value -match '\$env:'
 		if ($Value -match '^\"(?<value>[^\"]*)\"\s*(?!#.*)') {
 			$Value = $Matches["value"]
-			if ($Value -match '\$\(') {
+			if ($NeedsExpand) {
 				$Value = Expand-PragmaExpression $Value $PragmaName
 			}
 			else {
@@ -251,7 +254,7 @@ function Preprocessor($Content, $FilePath) {
 			$Value = $Matches["value"]
 		}
 		else {
-			if ($Value -match '\$\(') {
+			if ($NeedsExpand) {
 				$Value = Expand-PragmaExpression $Value $PragmaName
 			}
 			else {
