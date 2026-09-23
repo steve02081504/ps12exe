@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<meta name="title" content="ps12exe Online" />
+<meta name="description" content="A super cool online compiler for powershell scripts" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta property="og:image" content="https://repository-images.githubusercontent.com/729678966/3ed3f02f-c7c9-4a18-b1f5-255e667643b6" />
+<meta property="og:image:alt" content="A super cool online compiler for powershell scripts" />
+<meta property="og:type" content="object" />
+<meta property="og:title" content="ps12exe Online" />
+<meta property="og:description" content="A super cool online compiler for powershell scripts" />
+<html lang="en">
+
+<head>
+	<title>ps12exe Online</title>
+	<link rel="icon" type="image/x-icon" href="favicon.ico" />
+	<script src="https://www.midijs.net/lib/midi.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/darkreader"></script>
+	<style>
+		body {
+			margin: 0;
+			padding: 1em;
+			font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+		}
+
+		textarea {
+			width: 98%;
+			height: 95vh;
+			display: block;
+			box-sizing: border-box;
+			font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+			line-height: 1.5;
+			tab-size: 4;
+		}
+
+		.toolbar {
+			display: flex;
+			align-items: center;
+			gap: .75em;
+			margin-top: .5em;
+			flex-wrap: wrap;
+		}
+
+		#status {
+			font-size: .9em;
+			opacity: .8;
+			white-space: pre-wrap;
+			word-break: break-word;
+		}
+
+		#status.error {
+			color: #cf222e;
+		}
+
+		.spinner {
+			display: inline-block;
+			width: 1em;
+			height: 1em;
+			vertical-align: -.15em;
+			border: 2px solid currentColor;
+			border-right-color: transparent;
+			border-radius: 50%;
+			animation: spin .8s linear infinite;
+		}
+
+		@keyframes spin {
+			to {
+				transform: rotate(360deg);
+			}
+		}
+	</style>
+	<script>
+		/* global DarkReader: readonly */
+		DarkReader.setFetchMethod(window.fetch)
+		DarkReader.enable()
+		let HighlightCode
+		/**
+		 * 根据明暗模式切换页面主题。
+		 *
+		 * @param {boolean} Set - 是否启用暗色主题
+		 */
+		function SetDarkMode(Set) {
+			if (Set) DarkReader.enable()
+			else DarkReader.disable()
+			if (HighlightCode) HighlightCode.useTheme(Set ? 'github-dark' : 'github')
+		}
+		(async ({ chrome, netscape }) => {
+			if (!chrome && !netscape) await import('https://cdn.jsdelivr.net/npm/@ungap/custom-elements')
+			HighlightCode = await import('https://cdn.jsdelivr.net/npm/highlighted-code/min.js').then(x => x.default)
+			const dark = window.matchMedia('(prefers-color-scheme: dark)')
+			SetDarkMode(dark.matches)
+			dark.addEventListener('change', event => {
+				SetDarkMode(event.matches)
+			})
+		})(self)
+	</script>
+</head>
+
+<body>
+	<form id="MainForm" onsubmit="return false">
+		<textarea style="width: 98%; height:95vh;" is="highlighted-code" language="powershell" tabSize="4" placeholder="#_pragma App.Windowed
+'Hello 世界！👾'
+" id="inputText">#_pragma App.Windowed
+'Hello 世界！👾'
+</textarea>
+	</form>
+	<div class="toolbar">
+		<button id="compileButton" type="button" onclick="compileCode()"></button>
+		<span id="status" role="status" aria-live="polite"></span>
+	</div>
+	<a id="downloadLink" download="a.exe" hidden></a>
+	<script type="text/javascript">
+		/* global MIDIjs: readonly */
+		const userInput = document.getElementById('inputText')
+		const status = document.getElementById('status')
+		const compileButton = document.getElementById('compileButton')
+		const a = document.getElementById('downloadLink')
+		let playing = false
+
+		userInput.addEventListener('focus', event => {
+			try {
+				if (playing) MIDIjs.resume()
+				else MIDIjs.play('./bgm.mid', true)
+				playing = true
+			}
+			catch (error) { /* 没装 MIDI 插件时忽略 */ }
+		})
+		userInput.addEventListener('blur', event => {
+			try { MIDIjs.pause() }
+			catch (error) { /* 忽略 */ }
+		})
+
+		const languageTextMap = {
+			'zh-CN': '编译',
+			'zh-TW': '編譯',
+			'zh-HK': '編譯',
+			'ru-RU': 'Скомпилировать',
+			'ja-JP': 'コンパイル',
+			'ko-KR': '컴파일',
+			'es-ES': 'Compilar',
+			'pt-PT': 'Compilar',
+			'fr-FR': 'Compiler',
+			'de-DE': 'Kompilieren',
+			'hi-IN': 'संकलित करें',
+			'en-UK': 'Compile',
+			'en-US': 'Compile'
+		}
+		for (const key of Object.keys(languageTextMap)) languageTextMap[key.split('-')[0]] ??= languageTextMap[key]
+
+		const errorMessages = {
+			'zh': {
+				emptyInput: '脚本内容为空。',
+				fileTooLarge: '脚本文件过大。',
+				tooManyRequests: '请求过于频繁，请稍后再试。',
+				serverBusy: '服务器繁忙，请稍后再试。',
+				timeout: '编译超时，请改用更小的脚本。',
+				cancelled: '请求已取消。',
+				compileFailed: '编译失败。',
+				requestFailed: '请求失败（{status}）。',
+				compiling: '正在编译…'
+			},
+			'zh-TW': {
+				emptyInput: '腳本內容為空。',
+				fileTooLarge: '腳本檔案過大。',
+				tooManyRequests: '請求過於頻繁，請稍後再試。',
+				serverBusy: '伺服器忙碌中，請稍後再試。',
+				timeout: '編譯逾時，請改用較小的腳本。',
+				cancelled: '請求已取消。',
+				compileFailed: '編譯失敗。',
+				requestFailed: '請求失敗（{status}）。',
+				compiling: '正在編譯…'
+			},
+			'ru': {
+				emptyInput: 'Скрипт пуст.',
+				fileTooLarge: 'Скрипт слишком большой.',
+				tooManyRequests: 'Слишком много запросов. Попробуйте позже.',
+				serverBusy: 'Сервер перегружен. Попробуйте позже.',
+				timeout: 'Время компиляции истекло. Попробуйте скрипт меньшего размера.',
+				cancelled: 'Запрос отменён.',
+				compileFailed: 'Не удалось выполнить компиляцию.',
+				requestFailed: 'Запрос не выполнен ({status}).',
+				compiling: 'Компиляция…'
+			},
+			'ja': {
+				emptyInput: 'スクリプトが空です。',
+				fileTooLarge: 'スクリプトが大きすぎます。',
+				tooManyRequests: 'リクエストが多すぎます。しばらくしてからお試しください。',
+				serverBusy: 'サーバーが混み合っています。しばらくしてからお試しください。',
+				timeout: 'コンパイルがタイムアウトしました。より小さいスクリプトをお試しください。',
+				cancelled: 'リクエストはキャンセルされました。',
+				compileFailed: 'コンパイルに失敗しました。',
+				requestFailed: 'リクエストに失敗しました（{status}）。',
+				compiling: 'コンパイル中…'
+			},
+			'ko': {
+				emptyInput: '스크립트가 비어 있습니다.',
+				fileTooLarge: '스크립트가 너무 큽니다.',
+				tooManyRequests: '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.',
+				serverBusy: '서버가 혼잡합니다. 잠시 후 다시 시도해 주세요.',
+				timeout: '컴파일 시간이 초과되었습니다. 더 작은 스크립트를 사용해 보세요.',
+				cancelled: '요청이 취소되었습니다.',
+				compileFailed: '컴파일하지 못했습니다.',
+				requestFailed: '요청에 실패했습니다({status}).',
+				compiling: '컴파일 중…'
+			},
+			'es': {
+				emptyInput: 'El script está vacío.',
+				fileTooLarge: 'El script es demasiado grande.',
+				tooManyRequests: 'Demasiadas solicitudes. Inténtalo de nuevo más tarde.',
+				serverBusy: 'El servidor está ocupado. Inténtalo de nuevo más tarde.',
+				timeout: 'Se agotó el tiempo de compilación. Prueba con un script más pequeño.',
+				cancelled: 'Se canceló la solicitud.',
+				compileFailed: 'No se pudo compilar.',
+				requestFailed: 'La solicitud falló ({status}).',
+				compiling: 'Compilando…'
+			},
+			'pt': {
+				emptyInput: 'O script está vazio.',
+				fileTooLarge: 'O script é demasiado grande.',
+				tooManyRequests: 'Demasiados pedidos. Tenta novamente mais tarde.',
+				serverBusy: 'O servidor está ocupado. Tenta novamente mais tarde.',
+				timeout: 'A compilação excedeu o tempo limite. Tenta um script mais pequeno.',
+				cancelled: 'O pedido foi cancelado.',
+				compileFailed: 'A compilação falhou.',
+				requestFailed: 'O pedido falhou ({status}).',
+				compiling: 'A compilar…'
+			},
+			'fr': {
+				emptyInput: 'Le script est vide.',
+				fileTooLarge: 'Le script est trop volumineux.',
+				tooManyRequests: 'Trop de requêtes. Réessaie plus tard.',
+				serverBusy: 'Le serveur est occupé. Réessaie plus tard.',
+				timeout: 'La compilation a expiré. Essaie un script plus court.',
+				cancelled: 'La requête a été annulée.',
+				compileFailed: 'Échec de la compilation.',
+				requestFailed: 'Échec de la requête ({status}).',
+				compiling: 'Compilation…'
+			},
+			'de': {
+				emptyInput: 'Das Skript ist leer.',
+				fileTooLarge: 'Das Skript ist zu groß.',
+				tooManyRequests: 'Zu viele Anfragen. Bitte später erneut versuchen.',
+				serverBusy: 'Der Server ist ausgelastet. Bitte später erneut versuchen.',
+				timeout: 'Zeitüberschreitung bei der Kompilierung. Bitte ein kleineres Skript verwenden.',
+				cancelled: 'Die Anfrage wurde abgebrochen.',
+				compileFailed: 'Kompilierung fehlgeschlagen.',
+				requestFailed: 'Anfrage fehlgeschlagen ({status}).',
+				compiling: 'Kompilierung läuft…'
+			},
+			'hi': {
+				emptyInput: 'स्क्रिप्ट खाली है।',
+				fileTooLarge: 'स्क्रिप्ट बहुत बड़ी है।',
+				tooManyRequests: 'बहुत ज़्यादा अनुरोध। कृपया थोड़ी देर बाद पुनः प्रयास करें।',
+				serverBusy: 'सर्वर व्यस्त है। कृपया थोड़ी देर बाद पुनः प्रयास करें।',
+				timeout: 'संकलन का समय समाप्त हो गया। कृपया छोटी स्क्रिप्ट आज़माएँ।',
+				cancelled: 'अनुरोध रद्द कर दिया गया।',
+				compileFailed: 'संकलन विफल रहा।',
+				requestFailed: 'अनुरोध विफल रहा ({status})।',
+				compiling: 'संकलन हो रहा है…'
+			},
+			'en': {
+				emptyInput: 'The script is empty.',
+				fileTooLarge: 'The script is too large.',
+				tooManyRequests: 'Too many requests. Please try again later.',
+				serverBusy: 'The server is busy. Please try again later.',
+				timeout: 'Compilation timed out. Please try a smaller script.',
+				cancelled: 'The request was cancelled.',
+				compileFailed: 'Compilation failed.',
+				requestFailed: 'Request failed ({status}).',
+				compiling: 'Compiling…'
+			}
+		}
+		errorMessages['zh-HK'] = errorMessages['zh-TW']
+		const errorCodes = {
+			EmptyInput: 'emptyInput',
+			FileTooLarge: 'fileTooLarge',
+			TooManyRequests: 'tooManyRequests',
+			ServerBusy: 'serverBusy',
+			Timeout: 'timeout',
+			Canceled: 'cancelled',
+			CompileFailed: 'compileFailed'
+		}
+
+		let language = navigator.language || navigator.userLanguage || 'en'
+		if (!languageTextMap[language]) language = language.split('-')[0]
+		if (!languageTextMap[language]) language = 'en'
+		const text = (key, vars) => {
+			const table = errorMessages[language] || errorMessages[language.split('-')[0]] || errorMessages.en
+			let message = table[key] || errorMessages.en[key] || key
+			for (const [name, value] of Object.entries(vars || {})) message = message.replace(`{${name}}`, value)
+			return message
+		}
+
+		compileButton.textContent = languageTextMap[language]
+		const setStatus = (message, isError, asHtml = false) => {
+			if (asHtml) status.innerHTML = message
+			else status.textContent = message
+			status.classList.toggle('error', Boolean(isError))
+		}
+
+		/**
+		 * 把输入框里的代码提交给服务端编译，成功后触发下载。
+		 *
+		 * @returns {void} 无返回值
+		 */
+		function compileCode() {
+			if (!userInput.value) return setStatus(text('emptyInput'), true)
+
+			compileButton.disabled = true
+			setStatus(`<span class="spinner"></span> ${text('compiling')}`, false, true)
+			fetch('./api/compile', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					content: userInput.value,
+					locale: language
+				})
+			})
+				.then(async response => {
+					if (!response.ok) {
+						let body = {}
+						try { body = await response.json() } catch (error) { /* 非 JSON 错误体 */ }
+						const key = errorCodes[body.error] || 'compileFailed'
+						setStatus(body.error === 'CompileFailed' && body.message ? body.message : text(key), true)
+						return
+					}
+					const blob = await response.blob()
+					a.href = window.URL.createObjectURL(blob)
+					a.click()
+					window.URL.revokeObjectURL(a.href)
+					setStatus('', false)
+				})
+				.catch(error => setStatus(text('requestFailed', { status: error.message }), true))
+				.finally(() => { compileButton.disabled = false })
+		}
+
+		userInput.addEventListener('keydown', event => {
+			if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+				event.preventDefault()
+				compileCode()
+			}
+		})
+	</script>
+</body>
+
+</html>

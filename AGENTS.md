@@ -7,7 +7,7 @@
 - `src/Integration/`：右键菜单 / Agent Skill / VS Code 扩展三套集成，各为独立脚本（均不导出为命令），仅导出总入口 `Set-ps12exeIntegration` 直接调用它们。
 - `src/AgentSkill/SKILL.md`：安装到 `~/.agents/skills/ps12exe/` 的通用 Agent Skill 模板，也是 VS Code 扩展内置 skill 的唯一源（扩展构建/测试前由 `src/.subrepo/vscode-plug/ps12exe/scripts/sync-skill.mjs` 复制过去，扩展内那份已 gitignore）。
 - `src/locale/<lang>.ps1`：各语言界面文案与帮助数据。
-- `src/.subrepo/`：内置子项目（`PS2EXE2ps12exe` 兼容层、`vscode-plug` 扩展、在线 Web 版）。
+- `src/.subrepo/`：内置子项目（`PS2EXE2ps12exe` 兼容层、`vscode-plug` 扩展、`ps12exeOnline` 在线 Web 版）。`ps12exeOnline` 是 ASP.NET Core（net10，仅 Windows 托管）应用，调用子进程 `powershell.exe` 跑 `scripts/compile.ps1`；本地 `dotnet run`，部署用 `pwsh src/.subrepo/ps12exeOnline/build.ps1 -Zip`（会把编译器一并打包进 `compiler/`），细节见该目录 `README.md`。它被测试框架的 `ExcludeRelPatterns` 排除。
 - `docs/README_*.md`：各语言文档；根 `README.md` 为英文主文档。
 - `docs/dev/compiler-internals.md`：需要时再查的实现细节（本文件只保留约定、入口与常用命令）。
 
