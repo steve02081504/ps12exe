@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Text;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Server.IIS;
@@ -31,7 +31,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 // 请求体上限：脚本大小上限 + JSON/编码开销；让 Kestrel 与 IIS 在读取前就拒绝超大请求。
 var maxScriptBytes = builder.Configuration.GetValue("Compiler:MaxScriptBytes", 2 * 1024 * 1024L);
-var maxRequestBodySize = maxScriptBytes * 4 + 64 * 1024;
+var maxRequestBodySize = (maxScriptBytes * 4) + (64 * 1024);
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = maxRequestBodySize);
 builder.Services.Configure<IISServerOptions>(options => options.MaxRequestBodySize = maxRequestBodySize);
 
