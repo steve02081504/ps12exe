@@ -10,16 +10,15 @@ $Refs = @(
 	'System.Core',
 	'netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51'
 )
-# 再补上 $PSScriptRoot\bin\AsmResolver 下的所有 dll
-Get-ChildItem $PSScriptRoot\bin\AsmResolver -Recurse -Filter *.dll | ForEach-Object {
-	$Refs += $_.FullName
-	try {
-		Add-Type -LiteralPath $_.FullName -ErrorVariable $null
-	}
-	catch {
-		$_.Exception.LoaderExceptions | Out-String | Write-Verbose
-		$Error.Remove($_)
-	}
+# 再补上合并后的 AsmResolver.dll 作为引用并加载
+$AsmResolverPath = Join-Path $PSScriptRoot 'bin/AsmResolver.dll'
+$Refs += $AsmResolverPath
+try {
+	Add-Type -LiteralPath $AsmResolverPath -ErrorVariable $null
+}
+catch {
+	$_.Exception.LoaderExceptions | Out-String | Write-Verbose
+	$Error.Remove($_)
 }
 
 # 添加c#代码

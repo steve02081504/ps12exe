@@ -5,20 +5,18 @@
 # （VTableFromUnmanaged），使产物可被 native 的 LoadLibrary/GetProcAddress 直接加载。
 # 这正是 ilasm 对 `.export` 指令所做的事，但省掉了 ildasm→文本→ilasm 的往返与外部进程。
 #
-# AsmResolver 与 ExeSinker 共用 src/bin/AsmResolver 下 illink 裁剪过的程序集；本路径额外用到
+# AsmResolver 与 ExeSinker 共用 src/bin 下 illink 裁剪并合并过的单个 AsmResolver.dll；本路径额外用到
 # DotNet 层的 module 写出器，相关 API 必须镜像在 tools/AsmResolver/Root.cs 中（见该文件）。
 
 # 惰性加载 AsmResolver（含 DotNet 层）。返回是否可用。
 function Import-DllExportAssemblies {
 	if ('AsmResolver.DotNet.ModuleDefinition' -as [type]) { return $true }
-	Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'bin/AsmResolver') -Recurse -Filter *.dll | ForEach-Object {
-		try {
-			Add-Type -LiteralPath $_.FullName -ErrorVariable $null
-		}
-		catch {
-			$_.Exception.LoaderExceptions | Out-String | Write-Verbose
-			$Error.Remove($_)
-		}
+	try {
+		Add-Type -LiteralPath (Join-Path $PSScriptRoot 'bin/AsmResolver.dll') -ErrorVariable $null
+	}
+	catch {
+		$_.Exception.LoaderExceptions | Out-String | Write-Verbose
+		$Error.Remove($_)
 	}
 	return [bool]('AsmResolver.DotNet.ModuleDefinition' -as [type])
 }
@@ -94,8 +92,8 @@ function Get-DllExportMethodDefinition {
 function Add-DllExportsToAssembly {
 	param([string]$AssemblyPath, [object[]]$Exports, [string]$Architecture)
 	if (-not (Import-DllExportAssemblies)) {
-		Write-I18n Error DllExportToolchainFailed 'src/bin/AsmResolver' -Category NotInstalled
-		throw "AsmResolver is unavailable: $PSScriptRoot\bin\AsmResolver"
+		Write-I18n Error DllExportToolchainFailed 'src/bin/AsmResolver.dll' -Category NotInstalled
+		throw "AsmResolver is unavailable: $PSScriptRoot\bin\AsmResolver.dll"
 	}
 
 	$module = [AsmResolver.DotNet.ModuleDefinition]::FromFile($AssemblyPath)

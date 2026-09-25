@@ -1,4 +1,4 @@
-// 本文件由 7-Zip LZMA SDK 19.00 的 C# 源码（public domain）整并而来：
+﻿// 本文件由 7-Zip LZMA SDK 19.00 的 C# 源码（public domain）整并而来：
 //   CS/7zip/ICoder.cs、Compress/RangeCoder/*.cs、Compress/LZ/LzOutWindow.cs、Compress/LZMA/LzmaBase.cs、LzmaDecoder.cs
 // 仅 LzmaCodec.Decompress 为 ps12exe 添加。SDK 原文见 https://www.7-zip.org/sdk.html
 using System;

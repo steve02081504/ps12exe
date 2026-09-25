@@ -13,8 +13,9 @@
 	  2. 取出 netstandard2.0 程序集（可从 Windows PowerShell 5.1 / .NET Framework 和 PowerShell 7 / .NET 两种运行时加载），
 	  3. 把 tools/AsmResolver（TinySharp + exe21sp + src/ExeSinker.ps1 + src/DllExportCompiler.ps1 用法）构建成一个根程序集，
 	  4. 用该根对 .NET IL Linker（illink）运行，使 ps12exe 永不触达的每个 AsmResolver 成员都被丢弃；对具有字面量（const/enum）字段的类型会保留所有字段，因为 Add-Type 会内联这些值，否则将无法重新编译 C# 源码，
-	  5. 把结果复制到 src/bin/AsmResolver。
-	裁剪后的程序集保留 netstandard2.0 引用，因此在两种运行时上都可用。之后请运行 CI 测试脚本验证结果。
+	  5. 用 ILRepack 把裁剪后的 5 个程序集合并成单个 AsmResolver.dll（省掉 4 份程序集清单/元数据表/重定位；原始字节 860 KB→763 KB，压缩后 nupkg 约小 30 KB），
+	  6. 把单个 AsmResolver.dll 复制到 src/bin（不再单独建子目录）。
+	合并与裁剪产物都保留 netstandard2.0 引用，因此在两种运行时上都可用。之后请运行 CI 测试脚本验证结果。
 .PARAMETER Source
 	AsmResolver 的来源：NuGet（默认）、Ci、Pr 或 Source。Ci/Pr 依赖已安装并登录的 gh CLI；Source 依赖 git 与 dotnet。
 .PARAMETER Version
@@ -32,7 +33,7 @@
 .PARAMETER TargetFramework
 	用于构建根程序集的 TFM。默认为最新安装的 .NET 引用包。
 .PARAMETER OutputDirectory
-	裁剪后程序集的写入位置。默认为 src/bin/AsmResolver。
+	合并后程序集（单个 AsmResolver.dll）的写入位置。默认为 src/bin。
 .PARAMETER WorkDirectory
 	下载/中间缓存。默认为 %TEMP%\ps12exe-asmresolver。
 .PARAMETER Force
@@ -58,7 +59,7 @@ param(
 	[Parameter()][string]$Repo = 'Washi1337/AsmResolver',
 	[Parameter()][string]$ArtifactName = 'build-artifacts',
 	[Parameter()][string]$TargetFramework,
-	[Parameter()][string]$OutputDirectory = (Join-Path $PSScriptRoot '..\..\src\bin\AsmResolver'),
+	[Parameter()][string]$OutputDirectory = (Join-Path $PSScriptRoot '..\..\src\bin'),
 	[Parameter()][string]$WorkDirectory = (Join-Path ([System.IO.Path]::GetTempPath()) 'ps12exe-asmresolver'),
 	[Parameter()][switch]$Force
 )
@@ -303,6 +304,23 @@ function Get-DefaultTargetFramework {
 	return 'net8.0'
 }
 
+# 安装（必要时）ILRepack 到工作目录下的私有 tool-path，返回 exe 路径。
+# ILRepack 把裁剪后的 5 个程序集合并成单个 AsmResolver.dll：省掉 4 份程序集清单 / 元数据表 / 重定位，
+# 原始字节 860 KB→763 KB、压缩后 nupkg 约小 30 KB（4.5%）。合并后类型仍在同一程序集，
+# AsmResolver 自身用 internal 跨程序集调用的部分不受影响；产物仍是 netstandard2.0，PS 5.1 与 PS 7 都能加载。
+function Get-ILRepackPath {
+	param([string]$WorkDirectory)
+	$toolDir = Join-Path $WorkDirectory 'tools\ilrepack'
+	$exe = Join-Path $toolDir 'ilrepack.exe'
+	if (Test-Path -LiteralPath $exe) { return $exe }
+	New-Item -ItemType Directory -Force -Path $toolDir | Out-Null
+	Write-Host 'Installing ILRepack (dotnet tool)'
+	& dotnet tool install --tool-path $toolDir dotnet-ilrepack --version 2.0.48
+	if ($LASTEXITCODE) { throw "dotnet tool install dotnet-ilrepack failed with exit code $LASTEXITCODE" }
+	if (-not (Test-Path -LiteralPath $exe)) { throw "ILRepack not found after install: $exe" }
+	return $exe
+}
+
 function Get-IllinkPath {
 	param([string]$ProjectFile, [string]$TargetFramework)
 	$output = & dotnet msbuild $ProjectFile -getProperty:ILLinkTasksAssembly -p:TargetFramework=$TargetFramework 2>&1 | Out-String
@@ -454,14 +472,47 @@ if ($LASTEXITCODE) { throw "illink failed with exit code $LASTEXITCODE" }
 New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
 $totalBefore = 0
 $totalAfter = 0
+
+# 合并：把裁剪后的 5 个程序集用 ILRepack 合成单个 AsmResolver.dll，直接写到 src/bin 下
+# （不再单独建子目录）。ps12exe 的加载点都是 `Get-ChildItem bin -Filter *.dll`，合并成一个文件后照常工作。
+Write-Host 'Merging trimmed assemblies into a single AsmResolver.dll'
+$ilrepack = Get-ILRepackPath -WorkDirectory $WorkDirectory
+$mergeOutput = Join-Path $trimRoot 'merged'
+New-Item -ItemType Directory -Force -Path $mergeOutput | Out-Null
+# 保留裁剪目录里全部输入（含重新写出的 mscorlib/netstandard 桩）供解析；主程序集用 AsmResolver.DotNet，
+# 它承载绝大多数类型与 public API 根。
+$mergePrimary = Join-Path $trimmedDir 'AsmResolver.DotNet.dll'
+$mergeOthers = @(
+	'AsmResolver.PE.Win32Resources.dll'
+	'AsmResolver.PE.dll'
+	'AsmResolver.PE.File.dll'
+	'AsmResolver.dll'
+) | ForEach-Object { Join-Path $trimmedDir $_ }
+$mergedOut = Join-Path $mergeOutput 'AsmResolver.dll'
+$ilrepackArgs = @(
+	"/out:$mergedOut"
+	"/lib:$trimmedDir"
+	'/ndebug'
+	'/allowduplicateresources'
+	'/target:library'
+	$mergePrimary
+) + $mergeOthers
+& $ilrepack @ilrepackArgs
+if ($LASTEXITCODE) { throw "ILRepack failed with exit code $LASTEXITCODE" }
+if (-not (Test-Path -LiteralPath $mergedOut)) { throw "Merged assembly missing: $mergedOut" }
+
+# 清掉上一版的残留（旧的 5 个分体 dll 或旧的 src/bin/AsmResolver 子目录），避免新旧混用。
+Remove-Item -Path (Join-Path $OutputDirectory 'AsmResolver*.dll') -Force -ErrorAction SilentlyContinue
+Remove-Item -LiteralPath (Join-Path $OutputDirectory 'AsmResolver') -Recurse -Force -ErrorAction SilentlyContinue
+Copy-Item -LiteralPath $mergedOut -Destination (Join-Path $OutputDirectory 'AsmResolver.dll') -Force
+
+# 合并前（5 个裁剪产物之和）与合并后（单文件）对比，便于脚本输出里核对收益。
 foreach ($name in $AssemblyNames) {
 	$trimmedAssembly = Join-Path $trimmedDir "$name.dll"
 	if (-not (Test-Path -LiteralPath $trimmedAssembly)) { throw "Trimmed assembly missing: $trimmedAssembly" }
-	$before = (Get-Item -LiteralPath (Join-Path $libDir "$name.dll")).Length
-	$after = (Get-Item -LiteralPath $trimmedAssembly).Length
-	$totalBefore += $before
-	$totalAfter += $after
-	Copy-Item -LiteralPath $trimmedAssembly -Destination (Join-Path $OutputDirectory "$name.dll") -Force
+	$totalBefore += (Get-Item -LiteralPath (Join-Path $libDir "$name.dll")).Length
+	$totalAfter += (Get-Item -LiteralPath $trimmedAssembly).Length
 }
-Write-Host ("AsmResolver {0}: {1:N0} KB -> {2:N0} KB ({3:P0} smaller) written to {4}" -f `
-	$cacheKey, ($totalBefore / 1KB), ($totalAfter / 1KB), (1 - $totalAfter / $totalBefore), (Resolve-Path -LiteralPath $OutputDirectory).Path)
+$mergedSize = (Get-Item -LiteralPath $mergedOut).Length
+Write-Host ("AsmResolver {0}: {1:N0} KB -> trimmed {2:N0} KB -> merged {3:N0} KB ({4:P0} smaller than original, {5:P0} smaller than trimmed set) written to {6}" -f `
+		$cacheKey, ($totalBefore / 1KB), ($totalAfter / 1KB), ($mergedSize / 1KB), (1 - $mergedSize / $totalBefore), (1 - $mergedSize / $totalAfter), (Resolve-Path -LiteralPath $OutputDirectory).Path)

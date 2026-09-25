@@ -5,14 +5,13 @@ param (
 	[switch]$removeVersionInfo
 )
 
-Get-ChildItem $PSScriptRoot\bin\AsmResolver -Recurse -Filter AsmResolver.PE*.dll | ForEach-Object {
-	try {
-		Add-Type -LiteralPath $_.FullName -ErrorVariable $null
-	}
-	catch {
-		$_.Exception.LoaderExceptions | Out-String | Write-Verbose
-		$Error.Remove($_)
-	}
+# AsmResolver 已由 Update-AsmResolver.ps1 裁剪并合并成单个 src/bin/AsmResolver.dll。
+try {
+	Add-Type -LiteralPath (Join-Path $PSScriptRoot 'bin/AsmResolver.dll') -ErrorVariable $null
+}
+catch {
+	$_.Exception.LoaderExceptions | Out-String | Write-Verbose
+	$Error.Remove($_)
 }
 
 $file = [AsmResolver.PE.PEImage]::FromFile($inputFile)

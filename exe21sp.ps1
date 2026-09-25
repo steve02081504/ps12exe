@@ -216,15 +216,15 @@ param(
 		'System.IO.Compression',
 		'netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51'
 	)
-	Get-ChildItem -LiteralPath $PSScriptRoot\src\bin\AsmResolver -Recurse -Filter *.dll | ForEach-Object {
-		$Refs += $_.FullName
-		try {
-			Add-Type -LiteralPath $_.FullName -ErrorVariable $null
-		}
-		catch {
-			$_.Exception.LoaderExceptions | Out-String | Write-Verbose
-			$Error.Remove($_)
-		}
+	# 合并后的 AsmResolver.dll：加入引用并加载。
+	$AsmResolverPath = Join-Path $PSScriptRoot 'src\bin\AsmResolver.dll'
+	$Refs += $AsmResolverPath
+	try {
+		Add-Type -LiteralPath $AsmResolverPath -ErrorVariable $null
+	}
+	catch {
+		$_.Exception.LoaderExceptions | Out-String | Write-Verbose
+		$Error.Remove($_)
 	}
 	# exe21sp.cs 用到 LzmaCodec（解压 LZMA 负载），与 LzmaDecode.cs 一起编译（多源文件用 -Path）。
 	Add-Type -Path @(

@@ -25,10 +25,13 @@
   </PropertyGroup>
 
   <!-- The root source is exactly the code ps12exe compiles at runtime (TinySharp) plus the
-       exe21sp extractor, so the trimmed API surface tracks ps12exe automatically. -->
+       exe21sp extractor, so the trimmed API surface tracks ps12exe automatically.
+       exe21sp.cs references LzmaCodec (its LZMA payload branch), so LzmaDecode.cs must be
+       compiled alongside it or the root assembly fails to build. -->
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)..\..\src\programFrames\TinySharp.cs" Link="extern\TinySharp.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)..\..\src\programFrames\exe21sp.cs" Link="extern\exe21sp.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)..\..\src\programFrames\LzmaDecode.cs" Link="extern\LzmaDecode.cs" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(AsmResolverLibDir)' != ''">

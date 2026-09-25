@@ -58,6 +58,6 @@
 - README 的编译器包体积（解压/压缩）：按 `Publish.ps1` 的删除规则把仓库清成发布包，用 Windows PowerShell 5.1 的 `Publish-Module` 发到本地文件仓库得到 nupkg——展开 nupkg 的总字节数为「解压」，nupkg 文件本身为「压缩」；PS2EXE 用 PSGallery 的 nupkg（`Save-Module`/直接下载）同样测量。pwsh 下的 PowerShellGet 2.x `Publish-Module` 会报 `NupkgPath` 绑定错误，故用 5.1。
 - 运行时编译缓存统一挂在 `%TEMP%\ps12exe\`（`src/Cache.ps1` 提供 `Get-TempRoot`/`Get-CacheRoot <name>`/`Clear-StaleCache`；更新检查的 txt 在根下 `version.txt`）：Core 工程在 `cache\core`、CodeDom 帧模板在 `cache\codedom`、打包用 LZMA 编码器 DLL 在 `cache\lzma`、产物结果在 `cache\output`。各缓存的键与坑见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#compile-caches)。
 - Framework 编译后台预热 `ExeSinker`/AsmResolver（`src/AsmWarmup.ps1` 的 `Start-AsmWarmup`）。**别为省掉 ExeSinker 给 csc 传空 `/win32res`**（已试过并回退，理由见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#codedom-cache)）。
-- AsmResolver 被 illink 裁剪，运行期新增 API 用法需先镜像到 `tools/AsmResolver/Root.cs` 再重跑更新脚本：见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#asmresolver-trim)。
+- `src/bin/AsmResolver.dll` 是**单个合并后的**程序集：illink 裁剪 5 个程序集后再用 ILRepack 合并（nupkg 约小 30 KB）。加载点统一 `Get-ChildItem src/bin -Filter *.dll`；运行期新增 API 用法需先镜像到 `tools/AsmResolver/Root.cs` 再重跑更新脚本：见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#asmresolver-trim)。
 - JS/TS/HTML 静态检查用仓库根的 `eslint.config.mjs`，它 `import` 的是 https 远程配置；Node 默认 ESM loader 不支持 `https:`，所以**直接运行全局 `eslint .`**（deno 安装，支持 https import），不要用 `npx eslint`（会拉一份纯 Node 的 eslint 并以 `ERR_UNSUPPORTED_ESM_URL_SCHEME` 失败）。只看错误时加 `-quiet`。
 - VS Code 扩展：在 `src/.subrepo/vscode-plug/ps12exe` 下运行 `npm test`。
