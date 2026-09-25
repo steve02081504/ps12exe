@@ -98,6 +98,12 @@ $constScript = New-Script 'bench_const.ps1' $baseContent
 $nonConstScript = New-Script 'bench_nonconst.ps1' ("#_pragma Build.ConstEval.Enabled 0`n" + $baseContent)
 $helloScript = New-Script 'bench.ps1' $baseContent
 
+# 大负载专用内容：长距重复远超 DEFLATE 的 32KB 窗口，ps12exe 会把负载改用 LZMA（见 docs/dev/compiler-internals.md#compile-caches）。
+# 用小号（~0.4MB）以缩短编译；填进 here-string 数据块，避免函数数量触发 PowerShell 的会话上限。
+$lzmaLines = 1..7000 | ForEach-Object { "the quick brown fox jumps over the lazy dog $_ gamma delta epsilon" }
+$largeContent = "#_pragma Build.ConstEval.Enabled 0`n`$data = @'`n" + ($lzmaLines -join "`n") + "`n'@`nWrite-Output `$data.Length`n"
+$largeScript = New-Script 'bench_large.ps1' $largeContent
+
 # --- ps12exe（本仓库）---
 Import-Module (Join-Path $repoRoot 'ps12exe.psd1') -Force
 $exe = Join-Path $tempDir 'const.exe'
@@ -108,6 +114,10 @@ $exe = Join-Path $tempDir 'nonconst.exe'
 ps12exe $nonConstScript $exe -NoUpdateCheck
 Measure-Exe 'ps12-nonconst-fw' 'ps12exe · non-constant · Framework4.0' $exe
 
+$exe = Join-Path $tempDir 'large_fw.exe'
+ps12exe $largeScript $exe -NoUpdateCheck
+Measure-Exe 'ps12-large-fw' 'ps12exe · non-constant · large script · Framework4.0' $exe
+
 if ($IncludeCore) {
 	if (-not (Get-Command dotnet -ErrorAction Ignore)) { throw '-IncludeCore requires the .NET SDK.' }
 	$exe = Join-Path $tempDir 'const_core.exe'
@@ -116,6 +126,9 @@ if ($IncludeCore) {
 	$exe = Join-Path $tempDir 'nonconst_core.exe'
 	ps12exe $nonConstScript $exe -Build @{Target = 'Core' } -NoUpdateCheck
 	Measure-Exe 'ps12-nonconst-core' 'ps12exe · non-constant · Core' $exe
+	$exe = Join-Path $tempDir 'large_core.exe'
+	ps12exe $largeScript $exe -Build @{Target = 'Core' } -NoUpdateCheck
+	Measure-Exe 'ps12-large-core' 'ps12exe · non-constant · large script · Core' $exe
 }
 
 # --- 原生 DLL 导出（ps12exe 独有：#_DllExport；PS2EXE 无此功能）---
@@ -165,6 +178,9 @@ if ($ps2exeAvailable) {
 	$exe = Join-Path $tempDir 'ps2exe.exe'
 	Invoke-ps2exe -inputFile $helloScript -outputFile $exe
 	Measure-Exe 'ps2exe-fw' "$ps2exeName · non-constant" $exe
+	$exe = Join-Path $tempDir 'ps2exe_large.exe'
+	Invoke-ps2exe -inputFile $largeScript -outputFile $exe
+	Measure-Exe 'ps2exe-large-fw' "$ps2exeName · non-constant · large script" $exe
 }
 else {
 	$ps2exeName = 'PS2EXE'
@@ -220,11 +236,16 @@ else {
 
 	Measure-Compile 'ps12-const-fw' 'ps12exe · constant · Framework4.0' 'ps12exe' '' $constScript
 	Measure-Compile 'ps12-nonconst-fw' 'ps12exe · non-constant · Framework4.0' 'ps12exe' '' $nonConstScript
+	Measure-Compile 'ps12-large-fw' 'ps12exe · non-constant · large script · Framework4.0' 'ps12exe' '' $largeScript
 	if ($null -ne $dllBytes) { Measure-Compile 'ps12-dll-fw' 'ps12exe · DLL export · Framework4.0' 'ps12exe' '' $dllScript '.dll' }
-	if ($ps2exeAvailable) { Measure-Compile 'ps2exe-fw' "$ps2exeName · non-constant" 'ps2exe' '' $helloScript }
+	if ($ps2exeAvailable) {
+		Measure-Compile 'ps2exe-fw' "$ps2exeName · non-constant" 'ps2exe' '' $helloScript
+		Measure-Compile 'ps2exe-large-fw' "$ps2exeName · non-constant · large script" 'ps2exe' '' $largeScript
+	}
 	if ($IncludeCore) {
 		Measure-Compile 'ps12-const-core' 'ps12exe · constant · Core' 'ps12exe' 'Core' $constScript
 		Measure-Compile 'ps12-nonconst-core' 'ps12exe · non-constant · Core' 'ps12exe' 'Core' $nonConstScript
+		Measure-Compile 'ps12-large-core' 'ps12exe · non-constant · large script · Core' 'ps12exe' 'Core' $largeScript
 	}
 }
 
@@ -246,11 +267,14 @@ Write-Host '| ----- | ----------- | ------------ |'
 Write-Row 'base-fw' 'Windows PowerShell 5.1 running the script directly'
 Write-Row 'ps12-const-fw' 'ps12exe · constant · Framework4.0'
 Write-Row 'ps12-nonconst-fw' 'ps12exe · non-constant · Framework4.0'
+Write-Row 'ps12-large-fw' 'ps12exe · non-constant · large script · Framework4.0'
 Write-Row 'ps2exe-fw' "$ps2exeName · non-constant"
+Write-Row 'ps2exe-large-fw' "$ps2exeName · non-constant · large script"
 Write-Host '| ----- | ----------- | ------------ |'
 Write-Row 'base-core' 'pwsh 7 running the script directly'
 Write-Row 'ps12-const-core' 'ps12exe · constant · Core'
 Write-Row 'ps12-nonconst-core' 'ps12exe · non-constant · Core'
+Write-Row 'ps12-large-core' 'ps12exe · non-constant · large script · Core'
 Write-Host ("| {0} · non-constant · Core | not support | not support |" -f $ps2exeName)
 if (-not $IncludeCore) { Write-Host ''; Write-Host '# Core rows require -IncludeCore.' }
 
@@ -273,10 +297,13 @@ if ($Compile) {
 	Write-Host '| ----- | ------------ | --------------------- |'
 	Write-CompileRow 'ps12-const-fw' 'ps12exe · constant · Framework4.0'
 	Write-CompileRow 'ps12-nonconst-fw' 'ps12exe · non-constant · Framework4.0'
+	Write-CompileRow 'ps12-large-fw' 'ps12exe · non-constant · large script · Framework4.0'
 	Write-CompileRow 'ps2exe-fw' "$ps2exeName · non-constant"
+	Write-CompileRow 'ps2exe-large-fw' "$ps2exeName · non-constant · large script"
 	Write-Host '| ----- | ------------ | --------------------- |'
 	Write-CompileRow 'ps12-const-core' 'ps12exe · constant · Core'
 	Write-CompileRow 'ps12-nonconst-core' 'ps12exe · non-constant · Core'
+	Write-CompileRow 'ps12-large-core' 'ps12exe · non-constant · large script · Core'
 	Write-Host ("| {0} · non-constant · Core | not support | not support |" -f $ps2exeName)
 	if (-not $IncludeCore) { Write-Host ''; Write-Host '# Core rows require -IncludeCore.' }
 }

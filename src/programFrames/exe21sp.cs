@@ -273,9 +273,12 @@ namespace exe21sp {
 		}
 
 		/// <summary>
-		/// 解压 launcher 的 "main" 负载：Windows PowerShell 构建是 gzip，Core 构建是 Brotli。BrotliStream 不在 .NET Framework 中，故用反射取；不可用时抛 <see cref="BrotliUnavailableException"/>，由 exe21sp 转交 pwsh 处理。
+		/// 解压 launcher 的 "main" 负载：大负载可能是 LZMA（ps12exe 自带魔数），Windows PowerShell 构建默认 gzip，Core 构建默认 Brotli。BrotliStream 不在 .NET Framework 中，故用反射取；不可用时抛 <see cref="BrotliUnavailableException"/>，由 exe21sp 转交 pwsh 处理。
 		/// </summary>
 		private static byte[] DecompressLauncherPayload(byte[] raw) {
+			// LZMA 走 ps12exe 自定义魔数（LzmaCodec 与本文件一起编入），无需依赖宿主。
+			if (LzmaCodec.HasMagic(raw))
+				return LzmaCodec.Extract(raw);
 			using (var ms = new MemoryStream(raw)) {
 				// gzip 流以 1F 8B 开头；否则视为 Brotli（Brotli 无固定魔数）。
 				Stream decompressor = raw.Length >= 2 && raw[0] == 0x1F && raw[1] == 0x8B

@@ -57,6 +57,14 @@
 - `Build.Core.Backend` 决定用哪个后端：`Shared`（默认）走 `CoreCompiler.ps1`，从目标机 `$PSHOME` 解析 SMA；`Bundled` 走 `CoreBundledCompiler.ps1`，打包 `Microsoft.PowerShell.SDK`，支持 `SelfContained`/`Trimmed`/`ReadyToRun`/`InvariantGlobalization`/`Aot` 与 `PowerShellVersion`。两个后端的工程文件每次编译都会重写，缓存键只收录还原输入，且 `--no-restore` 失败会自动退回完整还原，因此无需手动 bump 版本标记。
 - 两者共用 `Get-CacheRoot 'core'` 目录与 `Clear-StaleCache`：`src/CoreProject.ps1` 提供 `Get-CoreDotnet`/`Get-CoreBuildKey`/`Enter-CoreProject`（缓存工程目录 + 命名互斥量 + stale 清理）/`Invoke-CoreDotnet`（`--no-restore` 与失败重试）/`Copy-CorePublishOutput`（`SingleFile=$false` 时发布整个目录并拷到 `outputFile` 所在目录）与 `Get-GuiFrameworkUsage`。
 
+### 打包压缩与 LZMA（`cache\lzma`）
+
+- 非常量产物 = launcher（`src/programFrames/pack.cs`）+ 「main」资源（压缩后的 payload）。默认压缩是 Windows PowerShell（CodeDom）下 gzip、Core 下 Brotli。
+- 大脚本的长距重复会超出 gzip 的 32KB 窗口（Brotli 窗口大但仍逊于 LZMA 的大字典），因此打包时还会尝试 LZMA1：编码器来自 7-Zip LZMA SDK 19.00 的 C# 源码（public domain），整并成 `src/programFrames/LzmaDecode.cs`（解码器，随 launcher 编入）与 `src/programFrames/LzmaEncode.cs`（编码器，仅打包时用）。`src/Lzma.ps1` 把两者在宿主进程里按需 `Add-Type` 编译并缓存成 `cache\lzma` 下的 DLL（键含 PSEdition/版本/源码内容），跨进程复用；编译失败则回退默认压缩。
+- `pack.cs` 用 `#if CodecLzma` 选择 `LzmaCodec.DecompressStream`；负载容器是 `PS12LZMA` 魔数 + LZMA props + 未压缩长度 + 数据，`exe21sp.cs` 靠这个魔数识别（gzip 靠 `1F 8B`，否则按 Brotli 反射解压）。
+- 是否启用不是拍脑袋：CodeDom 会把 gzip/LZMA 两版 launcher 都生成出来、比最终字节数取小者（LZMA 自带约 14KB 解码器，小脚本必然回退 gzip）；Core 无帧模板可原地补丁、双次 `dotnet publish` 太贵，改用「LZMA 流 + 16KB 余量 < Brotli 流」的保守判据，保证不劣化。
+- 编码器类型名是 `LzmaPackCodec`（不是 `LzmaCodec`）：ps12exe 自身被编成 exe 且其 launcher 走 LZMA 时，产物里会带一个只有解码器的 `LzmaCodec`，按名字找编码器会误命中。
+
 <a id="core-gui-and-addtype"></a>
 
 ## Core 目标的 GUI 框架与 Add-Type

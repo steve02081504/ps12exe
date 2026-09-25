@@ -119,7 +119,7 @@ $script:CacheRoot = Get-CacheRoot 'codedom'
 Clear-StaleCache $script:CacheRoot
 # 取帧模板字节；缺失则在命名互斥量保护下用 csc 编一次并缓存。模板只含占位资源，生成后不再改动。
 # AssemblyName 决定 csc 的 assembly name（payload 与 launcher 都用固定名，不随输出名变化，以便跨输出名复用模板）。
-function Get-FrameTemplate([string]$Key, [int]$Bucket, [string[]]$Options, [string]$Source, [string]$ResourceName, [string]$AssemblyName) {
+function Get-FrameTemplate([string]$Key, [int]$Bucket, [string[]]$Options, [string[]]$Source, [string]$ResourceName, [string]$AssemblyName) {
 	$cachePath = Join-Path $script:CacheRoot "frame_$Key.exe"
 	$bytes = Get-CachedBytes $cachePath
 	if ($bytes) { return , $bytes }
@@ -219,14 +219,15 @@ if ($packEnabled) {
 	}
 	$payloadBytes = [System.IO.File]::ReadAllBytes($payloadPath)
 
-	# 负载整体 gzip 到内存（launcher 补丁需要其字节）。
+	# 负载压缩：默认 gzip；大负载（默认压缩对大文本的长距重复抓不住）再试 LZMA。是否采用不靠估算，
+	# 而是把两种流的 launcher 都生成出来、比实际产物大小取小者（LZMA 自带解码器，固定更重，小脚本必然不划算）。
 	$gzMs = New-Object System.IO.MemoryStream
 	$gzip = New-Object System.IO.Compression.GZipStream($gzMs, [System.IO.Compression.CompressionMode]::Compress, $true)
 	try { $gzip.Write($payloadBytes, 0, $payloadBytes.Length) }
 	finally { $gzip.Dispose() }
 	[byte[]]$gzBytes = $gzMs.ToArray()
 	$gzMs.Dispose()
-	$gzPath = Join-Path $TempDir 'main'
+	[byte[]]$lzmaBytes = if ($payloadBytes.Length -ge $LzmaPackMinBytes) { Compress-Lzma $payloadBytes } else { $null }
 
 	# 和 default.cs 一样：编译进 ps12exe.exe 时内嵌 pack.cs，脚本模式从磁盘读取。
 	#_if PSEXE
@@ -245,42 +246,58 @@ if ($packEnabled) {
 		# 没有自定义清单需求时，launcher 也不需要默认清单。
 		$LauncherCompilerOptions += "/nowin32manifest"
 	}
-	# launcher：同样优先用帧模板补丁（模板不随脚本内容失效；清单/图标走内容哈希入键）。
-	$launcherPatched = $false
-	$launcherBucket = Get-CacheBucket $gzBytes.Length
-	if ($launcherBucket) {
-		$iconHash = if ($iconFile -and (Test-Path -LiteralPath $iconFile)) { Get-Sha256Hex ([System.IO.File]::ReadAllBytes($iconFile)) } else { '' }
-		$manifestPath = $outputFile + '.win32manifest'
-		$manifestHash = if ($manifestParam -and (Test-Path -LiteralPath $manifestPath)) { Get-Sha256Hex ([System.IO.File]::ReadAllBytes($manifestPath)) } else { '' }
-		# 清单/图标路径随 outputFile 变化但不影响编译结果：键里抹掉路径、改用内容哈希。
-		$launcherOptionsForKey = ($LauncherCompilerOptions | ForEach-Object {
-			($_ -replace '(?i)(?<=/win32manifest:)[^"]*', '<m>') -replace '(?i)(?<=/win32icon:)[^"]*', '<i>'
-		}) -join "`n"
-		# 内部程序集名固定为 output，不随输出名变化：控制台下 $PSCommandPath 取自 exe 路径；
-		# 窗口化标题在运行期回退到 exe 文件名（见 default.cs），因此产物可跨输出名复用同一模板。
-		$launcherKey = Get-TextHash (@(
-				$launcherSource, $launcherOptionsForKey,
-				(($referenceAssembies | Where-Object { $_ }) -join ';'),
-				"m=$manifestHash", "i=$iconHash", "b=$launcherBucket"
-			) -join "`n")
-		try {
-			$template = Get-FrameTemplate $launcherKey $launcherBucket $LauncherCompilerOptions $launcherSource 'main' "output.exe"
-			$template = Set-FrameResource $template $gzBytes
-			[System.IO.File]::WriteAllBytes($outputFile, $template)
-			$launcherPatched = $true
+	# 生成指定编码的 launcher 镜像：优先用帧模板原地补丁（模板不随脚本内容失效；清单/图标走内容哈希入键），
+	# 模板不可用时退回直编。Gzip 走 pack.cs 原分支；Lzma 额外拼入解码器源码并定义 CodecLzma。
+	function Get-LauncherImage([string]$Codec, [byte[]]$Resource) {
+		[string[]]$sources = @($launcherSource)
+		[string[]]$options = $LauncherCompilerOptions
+		if ($Codec -eq 'Lzma') {
+			$sources = @($launcherSource, $lzmaDecodeSource)
+			$options = $LauncherCompilerOptions + '/define:CodecLzma'
 		}
-		catch { Write-Debug "CodeDom compiler: launcher frame template failed: $_" }
+		$bucket = Get-CacheBucket $Resource.Length
+		if ($bucket) {
+			$iconHash = if ($iconFile -and (Test-Path -LiteralPath $iconFile)) { Get-Sha256Hex ([System.IO.File]::ReadAllBytes($iconFile)) } else { '' }
+			$manifestPath = $outputFile + '.win32manifest'
+			$manifestHash = if ($manifestParam -and (Test-Path -LiteralPath $manifestPath)) { Get-Sha256Hex ([System.IO.File]::ReadAllBytes($manifestPath)) } else { '' }
+			# 清单/图标路径随 outputFile 变化但不影响编译结果：键里抹掉路径、改用内容哈希。
+			$optionsForKey = ($options | ForEach-Object {
+				($_ -replace '(?i)(?<=/win32manifest:)[^"]*', '<m>') -replace '(?i)(?<=/win32icon:)[^"]*', '<i>'
+			}) -join "`n"
+			# 内部程序集名固定为 output，不随输出名变化：控制台下 $PSCommandPath 取自 exe 路径；
+			# 窗口化标题在运行期回退到 exe 文件名（见 default.cs），因此产物可跨输出名复用同一模板。
+			$key = Get-TextHash (@(
+					($sources -join "`n"), $optionsForKey,
+					(($referenceAssembies | Where-Object { $_ }) -join ';'),
+					"m=$manifestHash", "i=$iconHash", "b=$bucket"
+				) -join "`n")
+			try {
+				$template = Get-FrameTemplate $key $bucket $options $sources 'main' "output.exe"
+				return , (Set-FrameResource $template $Resource)
+			}
+			catch { Write-Debug "CodeDom compiler: $Codec launcher frame template failed: $_" }
+		}
+		Write-Debug "CodeDom compiler: $Codec launcher frame template miss, compiling"
+		$variantDir = Join-Path $TempDir "launcher_$Codec"
+		New-Item -ItemType Directory -Path $variantDir -Force | Out-Null
+		$out = Join-Path $variantDir ([System.IO.Path]::GetFileName($outputFile))
+		$resPath = Join-Path $variantDir 'main'
+		[System.IO.File]::WriteAllBytes($resPath, $Resource)
+		$lcp = New-CompilerParameters $out $options $FALSE
+		[VOID]$lcp.EmbeddedResources.Add($resPath)
+		$cr = $cop.CompileAssemblyFromSource($lcp, $sources)
+		if ($cr.Errors.Count -gt 0) { throw $cr.Errors -join "`n" }
+		return , [System.IO.File]::ReadAllBytes($out)
 	}
-	if (-not $launcherPatched) {
-		Write-Debug 'CodeDom compiler: launcher frame template miss, compiling'
-		[System.IO.File]::WriteAllBytes($gzPath, $gzBytes)
-		$lcp = New-CompilerParameters $outputFile $LauncherCompilerOptions $FALSE
-		[VOID]$lcp.EmbeddedResources.Add($gzPath)
-		$cr = $cop.CompileAssemblyFromSource($lcp, $launcherSource)
-		if ($cr.Errors.Count -gt 0) {
-			throw $cr.Errors -join "`n"
+	[byte[]]$launcherImage = Get-LauncherImage 'Gzip' $gzBytes
+	if ($lzmaBytes) {
+		[byte[]]$lzmaImage = Get-LauncherImage 'Lzma' $lzmaBytes
+		if ($lzmaImage.Length -lt $launcherImage.Length) {
+			Write-Debug "CodeDom compiler: LZMA launcher wins ($($lzmaImage.Length) < $($launcherImage.Length))"
+			$launcherImage = $lzmaImage
 		}
 	}
+	[System.IO.File]::WriteAllBytes($outputFile, $launcherImage)
 }
 else {
 	$cp = New-CompilerParameters $outputFile $CompilerOptions $prepareDebug (-not $DllExportList)

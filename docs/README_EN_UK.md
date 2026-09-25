@@ -549,33 +549,39 @@ ps12exe's developer does not use this project to promote a political, DEI or oth
 
 Measured on Windows 11 with PowerShell 7.6.6 (.NET 10) and Windows PowerShell 5.1, 20 warm runs each. The process-creation floor (`cmd /c exit`) is ~15 ms. Reproduce with `pwsh -File ../tools/Benchmark/Compare-Compilers.ps1 -IncludeCore` (add `-Compile` for the compilation-speed table below).
 
-| Build                                              | Output size | Warm startup |
-| -------------------------------------------------- | ----------- | ------------ |
-| Windows PowerShell 5.1 running the script directly | —           | ~406 ms      |
-| ps12exe · constant · Framework4.0                  | 1024 bytes  | ~54 ms       |
-| ps12exe · non-constant · Framework4.0              | 14848 bytes | ~365 ms      |
-| PS2EXE 1.0.18 · non-constant                       | 25088 bytes | ~398 ms      |
-| -------------------------------------------------- | ----------- | ------------ |
-| pwsh 7 running the script directly                 | —           | ~676 ms      |
-| ps12exe · constant · Core                          | ~165 KB     | ~104 ms      |
-| ps12exe · non-constant · Core                      | ~181 KB     | ~621 ms      |
-| PS2EXE 1.0.18 · non-constant · Core                | not support | not support  |
+| Build                                                | Output size | Warm startup |
+| ---------------------------------------------------- | ----------- | ------------ |
+| Windows PowerShell 5.1 running the script directly   | —           | ~406 ms      |
+| ps12exe · constant · Framework4.0                    | 1024 bytes  | ~54 ms       |
+| ps12exe · non-constant · Framework4.0                | 14848 bytes | ~365 ms      |
+| PS2EXE 1.0.18 · non-constant                         | 25088 bytes | ~398 ms      |
+| ps12exe · non-constant · large script · Framework4.0 | 30208 bytes | ~381 ms      |
+| PS2EXE 1.0.18 · non-constant · large script          | ~496 KB     | ~402 ms      |
+| ---------------------------------------------------- | ----------- | ------------ |
+| pwsh 7 running the script directly                   | —           | ~676 ms      |
+| ps12exe · constant · Core                            | ~165 KB     | ~104 ms      |
+| ps12exe · non-constant · Core                        | ~181 KB     | ~621 ms      |
+| ps12exe · non-constant · large script · Core         | ~187 KB     | ~637 ms      |
+| PS2EXE 1.0.18 · non-constant · Core                  | not support | not support  |
 
-A constant script is evaluated at compile time, so its exe is 1 KB and never starts PowerShell — about 24× smaller and 6× faster to launch than a PS2EXE hello world. Non-constant exes are ~40% smaller than PS2EXE's, and for top-level-variable-heavy scripts they also run faster, because the script executes inside a function (local scope) rather than at global scope.
+A constant script is evaluated at compile time, so its exe is 1 KB and never starts PowerShell — about 24× smaller and 6× faster to launch than a PS2EXE hello world. Non-constant exes are ~40% smaller than PS2EXE's, and for top-level-variable-heavy scripts they also run faster, because the script executes inside a function (local scope) rather than at global scope. Non-constant exes are always compressed, and the compression scales with the payload: a ~0.5 MB script still produces a ~30 KB Framework exe, about 1/16 of PS2EXE's ~496 KB output, while PS2EXE leaves its payload essentially uncompressed and balloons with script size. The Core exe adds only ~6 KB over its small-script counterpart, so large payloads stay small instead of ballooning.
 
 ### Compilation Speed ⏱️
 
 Measured with the same tool (`-Compile -IncludeCore`). Each sample is a fresh host process (Windows PowerShell 5.1 for Framework/PS2EXE, pwsh 7 for Core); "warm" is the median of 5 compiles after the first. PS2EXE numbers use the locally installed release (1.0.18 in this environment).
 
-| Build                                 | Warm compile |
-| ------------------------------------- | ------------ |
-| ps12exe · constant · Framework4.0     | ~2.3 s       |
-| ps12exe · non-constant · Framework4.0 | ~1.3 s       |
-| PS2EXE · non-constant                 | ~0.9 s       |
-| ------------------------------------- | ------------ |
-| ps12exe · constant · Core             | ~4.2 s       |
-| ps12exe · non-constant · Core         | ~5.7 s       |
-| PS2EXE · non-constant · Core          | not support  |
+| Build                                                | Warm compile |
+| ---------------------------------------------------- | ------------ |
+| ps12exe · constant · Framework4.0                    | ~2.3 s       |
+| ps12exe · non-constant · Framework4.0                | ~1.3 s       |
+| PS2EXE · non-constant                                | ~0.9 s       |
+| ps12exe · non-constant · large script · Framework4.0 | ~1.5 s       |
+| PS2EXE · non-constant · large script                 | ~0.7 s       |
+| ---------------------------------------------------- | ------------ |
+| ps12exe · constant · Core                            | ~4.2 s       |
+| ps12exe · non-constant · Core                        | ~5.7 s       |
+| ps12exe · non-constant · large script · Core         | ~5.9 s       |
+| PS2EXE · non-constant · Core                         | not support  |
 
 PS2EXE compiles a hello world faster because it is a thin wrapper around the .NET Framework compiler built into Windows: it performs a single CodeDom pass and nothing else. ps12exe additionally runs a syntax check, classifies the script and (for constant scripts) evaluates it, and packs the program frame as a payload inside a launcher, so its non-constant compile is ~1.4× PS2EXE's. The trade-off shows up in the output: ps12exe emits 1024 / 14848 bytes where PS2EXE emits 25088, and constant programs launch about 6× faster. Core compilation is dominated by `dotnet publish`; the first compile for a given configuration also restores NuGet packages, after which ps12exe reuses the generated project directory and runs `dotnet publish --no-restore`.
 

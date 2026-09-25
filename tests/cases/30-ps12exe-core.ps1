@@ -33,6 +33,20 @@ Add-Test @{
 		$r = Invoke-ExeCaptureMergedOutput -ExePath $out
 		Assert-Equal 0 $r.ExitCode 'self-built inner 退出码'
 		Assert-Match $r.Output 'self-built-ok' 'self-built inner 输出'
+
+		# 自编译的 ps12exe 必须仍能在打包时启用 LZMA：PSEXE 模式下编码器源码是内嵌字符串，得经 Add-Type 现场编译，
+		# 且该 exe 自身 launcher 可能已带一个只有解码器的 LzmaCodec，别按名字误命中它。
+		$bigSrc = Join-Path $ctx.WorkDir 'self-big.ps1'
+		$bigText = "#_pragma Build.ConstEval.Enabled 0`n`$data = @'`n" + ((1..7000 | ForEach-Object { "the quick brown fox jumps over the lazy dog $_ gamma delta epsilon" }) -join "`n") + "`n'@`nWrite-Output `$data.Length`n"
+		[System.IO.File]::WriteAllText($bigSrc, $bigText, [System.Text.UTF8Encoding]::new($true))
+		$bigOut = Join-Path $ctx.WorkDir 'self-big.exe'
+		& $self $bigSrc $bigOut -NoUpdateCheck | Out-Null
+		$asm = [System.Reflection.Assembly]::LoadFile($bigOut)
+		$rs = $asm.GetManifestResourceStream('main')
+		$head = New-Object byte[] 8
+		[void]$rs.Read($head, 0, 8)
+		$rs.Dispose()
+		Assert-Equal 'PS12LZMA' ([System.Text.Encoding]::ASCII.GetString($head)) '自编译的 ps12exe 未对 LZMA 大负载启用 LZMA'
 	}
 }
 
@@ -70,6 +84,69 @@ Add-Test @{
 		Assert-True ($packedSize -lt 25088) "非常量 exe 未按默认压缩负载打包（size=$packedSize）"
 		$r = Invoke-ExeCaptureMergedOutput -ExePath $ctx.Builds['packed']
 		Assert-Match $r.Output 'packed-embed' 'packed 运行输出'
+	}
+}
+
+# LZMA 打包用例的夹具：用文本数据（避免函数数量触发 PowerShell 的会话上限），大负载下 gzip/Brotli 抓不住长距重复，
+# ps12exe 会把负载改用 LZMA（解码器随 launcher 编入）。Core 需要更大的负载，LZMA 省下的才够抵消解码器的固定开销。
+$lzmaFwInput = "#_pragma Build.ConstEval.Enabled 0`n`$data = @'`n" + ((1..7000 | ForEach-Object { "the quick brown fox jumps over the lazy dog $_ gamma delta epsilon" }) -join "`n") + "`n'@`nWrite-Output `$data.Length`n"
+$lzmaCoreInput = "#_pragma Build.ConstEval.Enabled 0`n`$data = @'`n" + ((1..70000 | ForEach-Object { "the quick brown fox jumps over the lazy dog $_ gamma delta epsilon" }) -join "`n") + "`n'@`nWrite-Output `$data.Length`n"
+
+Add-Test @{
+	Name  = 'ps12exe.pack.lzma'
+	Group = 'ps12exe'
+	Deps  = $deps
+	Build = @{ Name = 'lzmafw'; InputText = $lzmaFwInput; Output = 'lzmafw.exe' }
+	Run   = {
+		param($ctx)
+		$exe = $ctx.Builds['lzmafw']
+		$launcher = [System.Reflection.Assembly]::LoadFile($exe)
+		$stream = $launcher.GetManifestResourceStream('main')
+		$head = New-Object byte[] 8
+		[void]$stream.Read($head, 0, 8)
+		$stream.Dispose()
+		Assert-Equal 'PS12LZMA' ([System.Text.Encoding]::ASCII.GetString($head)) '大负载未走 LZMA 压缩负载'
+		$r = Invoke-ExeCaptureMergedOutput -ExePath $exe
+		Assert-Match $r.Output '\d+' "LZMA 打包的 exe 运行输出异常：$($r.Output)"
+		$content = Get-Exe21spContent -ExePath $exe
+		Assert-Match $content 'the quick brown fox jumps over the lazy dog 7000' 'exe21sp 未还原 LZMA 负载'
+	}
+}
+
+Add-Test @{
+	Name  = 'ps12exe.pack.lzma-fallback'
+	Group = 'ps12exe'
+	Deps  = $deps
+	Build = @{ Name = 'lzmasmall'; InputText = "#_pragma Build.ConstEval.Enabled 0`nWrite-Output 'lzma-small'"; Output = 'lzmasmall.exe' }
+	Run   = {
+		param($ctx)
+		$launcher = [System.Reflection.Assembly]::LoadFile($ctx.Builds['lzmasmall'])
+		$stream = $launcher.GetManifestResourceStream('main')
+		$head = New-Object byte[] 2
+		[void]$stream.Read($head, 0, 2)
+		$stream.Dispose()
+		Assert-Equal '1F-8B' ([System.BitConverter]::ToString($head)) '小负载不应上 LZMA（应回退 gzip）'
+		$r = Invoke-ExeCaptureMergedOutput -ExePath $ctx.Builds['lzmasmall']
+		Assert-Match $r.Output 'lzma-small' '回退 gzip 的 exe 运行输出'
+	}
+}
+
+Add-Test @{
+	Name    = 'ps12exe.pack.lzma-core'
+	Group   = 'ps12exe'
+	Deps    = $deps
+	Timeout = 900
+	Build   = @{ Name = 'lzmacore'; InputText = $lzmaCoreInput; Params = @{ Build = @{ Target = 'Core' } }; Output = 'lzmacore.exe' }
+	Run     = {
+		param($ctx)
+		if (-not (Get-Command dotnet -ErrorAction Ignore)) { throw 'Core 目标需要 .NET SDK（dotnet）' }
+		$exe = $ctx.Builds['lzmacore']
+		$bytes = [System.IO.File]::ReadAllBytes($exe)
+		Assert-True ([System.Text.Encoding]::ASCII.GetString($bytes).Contains('PS12LZMA')) 'Core 大负载未走 LZMA 压缩负载'
+		$r = Invoke-ExeCaptureMergedOutput -ExePath $exe
+		Assert-Match $r.Output '\d+' "Core LZMA exe 运行输出异常：$($r.Output)"
+		$content = Get-Exe21spContent -ExePath $exe
+		Assert-Match $content 'the quick brown fox jumps over the lazy dog 70000' 'exe21sp 未还原 Core LZMA 负载'
 	}
 }
 

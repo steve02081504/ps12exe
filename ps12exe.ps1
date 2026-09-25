@@ -227,6 +227,7 @@ $LocalizeData =
 #_endif
 . $PSScriptRoot\src\WriteI18n.ps1
 . $PSScriptRoot\src\Cache.ps1
+. $PSScriptRoot\src\Lzma.ps1
 . $PSScriptRoot\src\OutputCache.ps1
 . $PSScriptRoot\src\AsmWarmup.ps1
 . $PSScriptRoot\src\DllExportCompiler.ps1

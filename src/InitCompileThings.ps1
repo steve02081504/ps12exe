@@ -117,7 +117,7 @@ if (-not $TempDir) {
 	New-Item -Path $TempTempDir -ItemType Directory | Out-Null
 }
 $TempDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($TempDir)
-# 脚本以未压缩的 main.ps1 资源内嵌；打包时整块负载还会再 gzip 一遍，这里先压反而不可压。
+# 脚本以未压缩的 main.ps1 资源内嵌；打包时整块负载还会再压一遍（gzip/Brotli，必要时 LZMA），这里先压反而不可压。
 [byte[]]$scriptBytes = [System.Text.Encoding]::UTF8.GetBytes($Content)
 $scriptPath = Join-Path $TempDir 'main.ps1'
 [System.IO.File]::WriteAllBytes($scriptPath, $scriptBytes)

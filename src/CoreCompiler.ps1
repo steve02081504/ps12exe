@@ -222,17 +222,22 @@ $($publishedProps.Replace('__DefineConstants__', [System.Security.SecurityElemen
 			throw "ps12exe: core payload not built: $payloadDll`n$($buildOutput -join "`n")"
 		}
 
-		# 负载整体 Brotli 压缩成 launcher 的 "main" 资源（Core 的 launcher 走 pack.cs 的 Brotli 分支）。
+		# 负载压缩成 launcher 的 "main" 资源：默认 Brotli（pack.cs 的 CoreHost 分支），
+		# 若 LZMA 连自带解码器一起算仍明显更小则改用 LZMA（pack.cs 的 CodecLzma 分支）。
 		$mainPath = Join-Path $projectDir 'main'
-		$inStream = [System.IO.File]::OpenRead($payloadDll)
-		$outStream = [System.IO.File]::Create($mainPath)
-		$brotli = [System.IO.Compression.BrotliStream]::new($outStream, [System.IO.Compression.CompressionLevel]::SmallestSize, $true)
-		try {
-			$inStream.CopyTo($brotli)
-		}
-		finally {
-			$brotli.Dispose(); $outStream.Dispose(); $inStream.Dispose()
-		}
+		[byte[]]$payloadBytes = [System.IO.File]::ReadAllBytes($payloadDll)
+		$brotliMs = New-Object System.IO.MemoryStream
+		$brotli = [System.IO.Compression.BrotliStream]::new($brotliMs, [System.IO.Compression.CompressionLevel]::SmallestSize, $true)
+		try { $brotli.Write($payloadBytes, 0, $payloadBytes.Length) }
+		finally { $brotli.Dispose() }
+		[byte[]]$brotliBytes = $brotliMs.ToArray()
+		$brotliMs.Dispose()
+		[byte[]]$lzmaBytes = if ($payloadBytes.Length -ge $LzmaPackMinBytes) { Compress-Lzma $payloadBytes } else { $null }
+		# LZMA 解码器编进 launcher 约 14KB；留余量，只有明显更小才切，避免产物体积反而变大。
+		$LzmaDecoderOverhead = 16384
+		$useLzma = [bool]($lzmaBytes -and (($lzmaBytes.Length + $LzmaDecoderOverhead) -lt $brotliBytes.Length))
+		if ($useLzma) { Write-Debug "Core compiler: LZMA wins ($($lzmaBytes.Length) + overhead < $($brotliBytes.Length))" }
+		[System.IO.File]::WriteAllBytes($mainPath, $(if ($useLzma) { $lzmaBytes } else { $brotliBytes }))
 
 		# CoreHost.cs 是 launcher 侧引导：探测 $PSHOME、接 PSModulePath、挂 AssemblyResolve。和 pack.cs 一样，编译进 ps12exe.exe 时内嵌，脚本模式从磁盘读取。
 		#_if PSEXE
@@ -254,8 +259,14 @@ $($publishedProps.Replace('__DefineConstants__', [System.Security.SecurityElemen
 
 		# launcher 需要 noConsole，CoreHost 才能用 MessageBox 报错而不是写不存在的控制台；conHost 让 pack.cs 走 conhost 重启。
 		$launcherDefineConstants = 'CoreHost'
+		if ($useLzma) { $launcherDefineConstants += ';CodecLzma' }
 		if ($noConsole) { $launcherDefineConstants += ';noConsole' }
 		if ($conHost) { $launcherDefineConstants += ';conHost' }
+		$lzmaCompileItem = ''
+		if ($useLzma) {
+			[System.IO.File]::WriteAllText((Join-Path $projectDir 'LzmaDecode.cs'), $lzmaDecodeSource, [System.Text.UTF8Encoding]::new($false))
+			$lzmaCompileItem = '		<Compile Include="LzmaDecode.cs" />'
+		}
 		$refContentItem = if ($needsRefAssemblies) {
 			$refDir = [System.Security.SecurityElement]::Escape((Join-Path $PSHOME 'ref'))
 			@"
@@ -274,6 +285,7 @@ $($publishedProps.Replace('__DefineConstants__', $launcherDefineConstants))
 	<ItemGroup>
 		<Compile Include="launcher.cs" />
 		<Compile Include="CoreHost.cs" />
+$lzmaCompileItem
 		<EmbeddedResource Include="main" LogicalName="main" />
 $refContentItem
 	</ItemGroup>

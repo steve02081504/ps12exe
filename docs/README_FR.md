@@ -554,27 +554,33 @@ Mesuré sous Windows 11 avec PowerShell 7.6.6 (.NET 10) et Windows PowerShell 5.
 | ps12exe · constant · Framework4.0                      | 1 024 octets       | ~54 ms             |
 | ps12exe · non constant · Framework4.0                  | 14 848 octets      | ~365 ms            |
 | PS2EXE 1.0.18 · non constant                           | 25 088 octets      | ~398 ms            |
+| ps12exe · non constant · grand script · Framework4.0   | 30 208 octets      | ~381 ms            |
+| PS2EXE 1.0.18 · non constant · grand script            | ~496 Ko            | ~402 ms            |
 | ------------------------------------------------------ | ------------------ | ------------------ |
 | pwsh 7 exécutant le script directement                 | —                  | ~676 ms            |
 | ps12exe · constant · Core                              | ~165 Ko            | ~104 ms            |
 | ps12exe · non constant · Core                          | ~181 Ko            | ~621 ms            |
+| ps12exe · non constant · grand script · Core           | ~187 Ko            | ~637 ms            |
 | PS2EXE 1.0.18 · non constant · Core                    | non pris en charge | non pris en charge |
 
-Un script constant est évalué à la compilation : son exe ne fait que 1 Ko et ne démarre jamais PowerShell — environ 24× plus petit et 6× plus rapide à lancer qu'un hello world PS2EXE. Les exe non constants sont ~40 % plus petits que ceux de PS2EXE, et pour les scripts utilisant massivement des variables de portée globale, ils s'exécutent aussi plus vite, car le script s'exécute dans une fonction (portée locale) plutôt qu'au niveau global.
+Un script constant est évalué à la compilation : son exe ne fait que 1 Ko et ne démarre jamais PowerShell — environ 24× plus petit et 6× plus rapide à lancer qu'un hello world PS2EXE. Les exe non constants sont ~40 % plus petits que ceux de PS2EXE, et pour les scripts utilisant massivement des variables de portée globale, ils s'exécutent aussi plus vite, car le script s'exécute dans une fonction (portée locale) plutôt qu'au niveau global. Les exe non constants sont toujours compressés, et l'avantage s'accentue avec la taille : un script d'environ 0,5 Mo donne toujours un exe Framework d'environ 30 Ko, soit environ 1/16 des ~496 Ko de PS2EXE, qui laisse sa charge utile quasiment non compressée et gonfle avec la taille du script. L'exe Core ne prend que ~6 Ko de plus que son équivalent pour petit script, donc les grosses charges utiles restent petites au lieu de gonfler.
 
 ### Vitesse de compilation ⏱️
 
 Mesuré avec le même outil (`-Compile -IncludeCore`). Chaque échantillon est un nouveau processus hôte (Windows PowerShell 5.1 pour Framework/PS2EXE, pwsh 7 pour Core) ; « à chaud » correspond à la médiane de 5 compilations après la première. Les chiffres PS2EXE proviennent de la version installée localement (1.0.18 dans cet environnement).
 
-| Build                                 | Compilation à chaud |
-| ------------------------------------- | ------------------- |
-| ps12exe · constant · Framework4.0     | ~2,3 s              |
-| ps12exe · non constant · Framework4.0 | ~1,3 s              |
-| PS2EXE · non constant                 | ~0,9 s              |
-| ------------------------------------- | ------------------- |
-| ps12exe · constant · Core             | ~4,2 s              |
-| ps12exe · non constant · Core         | ~5,7 s              |
-| PS2EXE · non constant · Core          | non pris en charge  |
+| Build                                                | Compilation à chaud |
+| ---------------------------------------------------- | ------------------- |
+| ps12exe · constant · Framework4.0                    | ~2,3 s              |
+| ps12exe · non constant · Framework4.0                | ~1,3 s              |
+| PS2EXE · non constant                                | ~0,9 s              |
+| ps12exe · non constant · grand script · Framework4.0 | ~1,5 s              |
+| PS2EXE · non constant · grand script                 | ~0,7 s              |
+| ---------------------------------------------------- | ------------------- |
+| ps12exe · constant · Core                            | ~4,2 s              |
+| ps12exe · non constant · Core                        | ~5,7 s              |
+| ps12exe · non constant · grand script · Core         | ~5,9 s              |
+| PS2EXE · non constant · Core                         | non pris en charge  |
 
 PS2EXE compile un hello world plus vite car ce n'est qu'une fine surcouche du compilateur .NET Framework intégré à Windows : il effectue une seule passe CodeDom et rien d'autre. ps12exe exécute en plus une vérification de syntaxe, classe le script et (pour les scripts constants) l'évalue, puis emballe la trame de programme comme charge utile dans un lanceur ; sa compilation non constante est donc ~1,4× celle de PS2EXE. Le compromis se voit dans la sortie : ps12exe produit 1 024 / 14 848 octets là où PS2EXE en produit 25 088, et les programmes constants se lancent environ 6× plus vite. La compilation Core est dominée par `dotnet publish` ; la première compilation d'une configuration donnée restaure aussi les paquets NuGet, après quoi ps12exe réutilise le répertoire de projet généré et lance `dotnet publish --no-restore`.
 

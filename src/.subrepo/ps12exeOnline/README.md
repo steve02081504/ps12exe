@@ -62,17 +62,17 @@ resolved relative to the content root automatically.
 
 ### Useful app settings
 
-| Setting | Purpose |
-| --- | --- |
-| `Compiler__MaxConcurrency` | Concurrent compiles per instance |
-| `Compiler__CompileTimeoutSeconds` | Kill a compile after N seconds |
-| `Compiler__RequestsPerMinute` | Per-IP fixed-window rate limit |
-| `Compiler__MaxScriptBytes` | Maximum script size |
-| `Compiler__MaxCacheBytes` / `Compiler__CacheCleanupMinutes` | Cache size cap and cleanup interval |
-| `Compiler__ModulePath` | Explicit path to `ps12exe.psm1` (defaults to bundled `compiler/`) |
-| `Compiler__PowerShellPath` | Explicit `powershell.exe` / `pwsh` path |
-| `Compiler__CacheDirectory` | Persistent cache directory (defaults to `%HOME%\data` on App Service) |
-| `Compiler__TrustLoopback` | `true` (default) skips sandbox only for loopback requests |
+| Setting                                                     | Purpose                                                               |
+| ----------------------------------------------------------- | --------------------------------------------------------------------- |
+| `Compiler__MaxConcurrency`                                  | Concurrent compiles per instance                                      |
+| `Compiler__CompileTimeoutSeconds`                           | Kill a compile after N seconds                                        |
+| `Compiler__RequestsPerMinute`                               | Per-IP fixed-window rate limit                                        |
+| `Compiler__MaxScriptBytes`                                  | Maximum script size                                                   |
+| `Compiler__MaxCacheBytes` / `Compiler__CacheCleanupMinutes` | Cache size cap and cleanup interval                                   |
+| `Compiler__ModulePath`                                      | Explicit path to `ps12exe.psm1` (defaults to bundled `compiler/`)     |
+| `Compiler__PowerShellPath`                                  | Explicit `powershell.exe` / `pwsh` path                               |
+| `Compiler__CacheDirectory`                                  | Persistent cache directory (defaults to `%HOME%\data` on App Service) |
+| `Compiler__TrustLoopback`                                   | `true` (default) skips sandbox only for loopback requests             |
 
 The real client IP is read from `X-Forwarded-For`; `ForwardedHeaders` is configured with
 `ForwardLimit = 1` and the default proxy allow-list cleared so the platform-injected value wins.

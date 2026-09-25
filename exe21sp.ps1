@@ -226,8 +226,11 @@ param(
 			$Error.Remove($_)
 		}
 	}
-	$ExtractorCode = Get-Content -LiteralPath $PSScriptRoot\src\programFrames\exe21sp.cs -Raw -Encoding UTF8
-	Add-Type -TypeDefinition $ExtractorCode -ReferencedAssemblies $Refs -IgnoreWarnings
+	# exe21sp.cs 用到 LzmaCodec（解压 LZMA 负载），与 LzmaDecode.cs 一起编译（多源文件用 -Path）。
+	Add-Type -Path @(
+		(Join-Path $PSScriptRoot 'src\programFrames\exe21sp.cs'),
+		(Join-Path $PSScriptRoot 'src\programFrames\LzmaDecode.cs')
+	) -ReferencedAssemblies $Refs -IgnoreWarnings
 
 	. $PSScriptRoot\src\TaskbarProgress.ps1
 	$total = $inputItemsToProcess.Count
