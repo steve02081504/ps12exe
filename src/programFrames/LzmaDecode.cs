@@ -1,4 +1,4 @@
-﻿// 本文件由 7-Zip LZMA SDK 19.00 的 C# 源码（public domain）整并而来：
+// 本文件由 7-Zip LZMA SDK 19.00 的 C# 源码（public domain）整并而来：
 //   CS/7zip/ICoder.cs、Compress/RangeCoder/*.cs、Compress/LZ/LzOutWindow.cs、Compress/LZMA/LzmaBase.cs、LzmaDecoder.cs
 // 仅 LzmaCodec.Decompress 为 ps12exe 添加。SDK 原文见 https://www.7-zip.org/sdk.html
 using System;
@@ -33,7 +33,7 @@ namespace SevenZip
 		/// output size. -1 if unknown.
 		/// </param>
 		void SetProgress(Int64 inSize, Int64 outSize);
-	};
+	}
 
 	public interface ICoder
 	{
@@ -60,7 +60,7 @@ namespace SevenZip
 		/// </exception>
 		void Code(System.IO.Stream inStream, System.IO.Stream outStream,
 			Int64 inSize, Int64 outSize, ICodeProgress progress);
-	};
+	}
 
 	/*
 	public interface ICoder2
@@ -138,13 +138,12 @@ namespace SevenZip
 		/// Specifies mode with end marker.
 		/// </summary>
 		EndMarker
-	};
-
+	}
 
 	public interface ISetCoderProperties
 	{
 		void SetCoderProperties(CoderPropID[] propIDs, object[] properties);
-	};
+	}
 
 	public interface IWriteCoderProperties
 	{
@@ -974,7 +973,7 @@ namespace SevenZip.Compression.LZMA
 
 			public byte DecodeWithMatchByte(RangeCoder.Decoder rangeDecoder, uint pos, byte prevByte, byte matchByte)
 			{ return m_Coders[GetState(pos, prevByte)].DecodeWithMatchByte(rangeDecoder, matchByte); }
-		};
+		}
 
 		LZ.OutWindow m_OutWindow = new LZ.OutWindow();
 		RangeCoder.Decoder m_RangeDecoder = new RangeCoder.Decoder();
