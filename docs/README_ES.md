@@ -566,6 +566,21 @@ Medido en Windows 11 con PowerShell 7.6.6 (.NET 10) y Windows PowerShell 5.1, 20
 
 Un script constante se evalúa en tiempo de compilación, por lo que su exe pesa 1 KB y nunca inicia PowerShell: es unas 24× más pequeño y 6× más rápido de lanzar que un hello world de PS2EXE. Los exe no constantes son ~40 % más pequeños que los de PS2EXE y, para scripts con muchas variables de ámbito global, también se ejecutan más rápido, porque el script se ejecuta dentro de una función (ámbito local) en lugar del ámbito global. Además, los exe no constantes siempre se comprimen y la ventaja crece con el tamaño: un script de ~0,5 MB sigue produciendo un exe Framework de ~30 KB, unas 1/16 partes de los ~496 KB de PS2EXE, que deja su carga útil prácticamente sin comprimir y crece con el script. El exe Core solo añade ~6 KB respecto a su equivalente de script pequeño, así que las cargas grandes se mantienen pequeñas en lugar de inflarse.
 
+### Inicio de aplicaciones GUI en modo ventana 🪟
+
+El benchmark de hello world anterior mide el lanzamiento de una aplicación de consola que termina inmediatamente, por lo que sus cifras están dominadas por el arranque del proceso. Una aplicación GUI permanece abierta mientras el usuario interactúa; por eso, la medida relevante es el tiempo desde el doble clic hasta que aparece la ventana —el coste de inicio y ejecución del script, no la duración total del proceso—. Se midió con la misma herramienta (`-Windowed`), usando una ventana WinForms que se cierra sola tras ~800 ms; el arranque en caliente de cada fila incluye el inicio del proceso y la ejecución del script (la duración de la ventana es casi idéntica en todas las filas y el mínimo de ~15 ms de creación del proceso resulta insignificante aquí).
+
+| Compilación                                                               | Tamaño de salida | Inicio en caliente |
+| ------------------------------------------------------------------------- | ---------------- | ------------------ |
+| Windows PowerShell 5.1 ejecutando el script directamente (ventana oculta) | —                | ~1154 ms           |
+| ps12exe · modo ventana · DarkMode Auto · Framework4.0                     | 29184 bytes      | ~1128 ms           |
+| PS2EXE 1.0.18 · modo ventana · no constante                               | 33792 bytes      | ~1128 ms           |
+| -------------------------------------------------------------------       | ---------------- | ------------------ |
+| pwsh 7 ejecutando el script directamente (ventana oculta)                 | —                | ~1349 ms           |
+| ps12exe · modo ventana · DarkMode Auto · Core                             | ~6385 KB         | ~1317 ms           |
+
+Una aplicación ps12exe en modo ventana arranca casi tan rápido como PS2EXE (~1128 ms), y ambas son algo más rápidas que ejecutar el mismo script directamente con PowerShell: ps12exe elimina costes similares a `-NoProfile` y no vuelve a analizar el script, aunque añade el envoltorio del host `Silence`/`OutputEncoding` y compatibilidad con el modo oscuro. La aplicación Core en modo ventana (~1317 ms) solo es ligeramente más lenta que Framework y un poco más rápida que `pwsh` ejecutando el script directamente (~1349 ms). La salida Core de ~6,4 MB es self-contained de forma predeterminada; desactívelo con `-Build @{Target='Core';SelfContained=$false}` para usar el ejecutable de ~0,2 MB con runtime compartido. La ventaja de tamaño de la aplicación Framework en modo ventana frente a PS2EXE (~4,5 KB) es menor que en las aplicaciones de consola porque ambas deben incluir el inicio de WinForms.
+
 ### Velocidad de compilación ⏱️
 
 Medido con la misma herramienta (`-Compile -IncludeCore`). Cada muestra es un proceso anfitrión nuevo (Windows PowerShell 5.1 para Framework/PS2EXE, pwsh 7 para Core); «en caliente» es la mediana de 5 compilaciones después de la primera. Los datos de PS2EXE usan la versión instalada localmente (1.0.18 en este entorno).

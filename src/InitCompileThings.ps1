@@ -105,6 +105,7 @@ if ($noVisualStyles) { $Constants += "noVisualStyles" }
 # DarkMode 只需两个编译符号：Off 剔除暗色代码，On 跳过系统探测，Auto（默认）不定义符号并运行时探测。
 if ($darkMode -eq 'Off') { $Constants += "darkModeOff" }
 elseif ($darkMode -eq 'On') { $Constants += "darkModeOn" }
+if ($isCoreTarget -and $TargetFramework -match '^\.NETCore,Version=v(?<version>\d+\.\d+)$' -and [version]::Parse($Matches.version) -ge [version]'9.0') { $Constants += "ModernWinForms" }
 if ($exitOnCancel) { $Constants += "exitOnCancel" }
 if ($conHost) { $Constants += "conHost" }
 if ($UNICODEEncoding) { $Constants += "UNICODEEncoding" }

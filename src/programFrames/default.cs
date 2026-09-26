@@ -526,12 +526,31 @@ namespace PSRunnerNS {
 		[DllImport("user32.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
 		static extern IntPtr MB_GetString(uint strId);
 
+		[DllImport("dwmapi.dll")]
+		static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
 		public static string GetButtonLabel(uint strId, string fallback) {
 			try {
 				string value = Marshal.PtrToStringUni(MB_GetString(strId));
 				if (!string.IsNullOrEmpty(value)) { return value; }
 			} catch { }
 			return fallback;
+		}
+
+		// 只处理 DWM 标题栏深浅属性：暗色路径其余工作（uxtheme、SetWindowTheme）由 DarkMode 负责。
+		public static void SetDarkTitleBar(IntPtr hwnd, bool dark) {
+			int value = dark ? 1 : 0;
+			if (DwmSetWindowAttribute(hwnd, 20, ref value, sizeof(int)) != 0)
+				DwmSetWindowAttribute(hwnd, 19, ref value, sizeof(int));
+		}
+
+		// 对话框标题栏深浅：暗色可用时交给 DarkMode 一并处理，否则只关掉 DWM 暗色属性。
+		public static void ApplyTitleBar(IntPtr hwnd) {
+			#if !darkModeOff && !Pwsh20
+			DarkMode.DarkTitleBar(hwnd);
+			#else
+			SetDarkTitleBar(hwnd, false);
+			#endif
 		}
 	}
 
@@ -619,16 +638,6 @@ namespace PSRunnerNS {
 		const int ChoiceButtonGap = 24;
 		const int ChoiceBottomMargin = 13;
 		const int ChoiceRightMargin = 12;
-		#if darkModeOff
-		[DllImport("dwmapi.dll")]
-		static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
-
-		static void SetLightTitleBar(Form form) {
-			int useDarkMode = 0;
-			if (DwmSetWindowAttribute(form.Handle, 20, ref useDarkMode, sizeof(int)) != 0)
-				DwmSetWindowAttribute(form.Handle, 19, ref useDarkMode, sizeof(int));
-		}
-		#endif
 
 		public static int Show(System.Collections.ObjectModel.Collection<ChoiceDescription> arrChoice, int intDefault, string strTitle, string strPrompt) {
 			// 数组为空则取消
@@ -711,7 +720,7 @@ namespace PSRunnerNS {
 			form.MaximizeBox = false;
 			form.AcceptButton = buttonOk;
 			#if darkModeOff
-			SetLightTitleBar(form);
+			SystemDialogText.ApplyTitleBar(form.Handle);
 			#endif
 
 			// 显示并计算窗体
@@ -728,8 +737,6 @@ namespace PSRunnerNS {
 	}
 
 	public class ReadKey_Box {
-		[DllImport("dwmapi.dll")]
-		static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
 		[DllImport("user32.dll")]
 		public static extern int ToUnicode(uint wVirtKey, uint wScanCode, byte[] lpKeyState,
 			[Out, MarshalAs(UnmanagedType.LPWStr, SizeConst = 64)] System.Text.StringBuilder pwszBuff,
@@ -764,61 +771,38 @@ namespace PSRunnerNS {
 			public KeyInfo keyinfo;
 
 			void Keyboard_Form_KeyDown(object sender, KeyEventArgs kevent) {
-				if (checkKeyDown) { // 存储按键信息
-					keyinfo.VirtualKeyCode = kevent.KeyValue;
-					keyinfo.Character = GetCharFromKeys(kevent.KeyCode, kevent.Shift, kevent.Alt & kevent.Control)[0];
-					keyinfo.KeyDown = false;
-					keyinfo.ControlKeyState = 0;
-					if (kevent.Alt) {
-						keyinfo.ControlKeyState = ControlKeyStates.LeftAltPressed | ControlKeyStates.RightAltPressed;
-					}
-					if (kevent.Control) {
-						keyinfo.ControlKeyState |= ControlKeyStates.LeftCtrlPressed | ControlKeyStates.RightCtrlPressed;
-						if (!kevent.Alt)
-							if (kevent.KeyValue > 64 && kevent.KeyValue < 96)
-								keyinfo.Character = (char)(kevent.KeyValue - 64);
-					}
-					if (kevent.Shift) {
-						keyinfo.ControlKeyState |= ControlKeyStates.ShiftPressed;
-					}
-					if ((kevent.Modifiers & System.Windows.Forms.Keys.CapsLock) > 0) {
-						keyinfo.ControlKeyState |= ControlKeyStates.CapsLockOn;
-					}
-					if ((kevent.Modifiers & System.Windows.Forms.Keys.NumLock) > 0) {
-						keyinfo.ControlKeyState |= ControlKeyStates.NumLockOn;
-					}
-					// 然后关闭窗体
-					this.Close();
-				}
+				if (checkKeyDown) { CaptureKey(kevent, false); }
 			}
 
 			void Keyboard_Form_KeyUp(object sender, KeyEventArgs kevent) {
-				if (!checkKeyDown) { // 存储按键信息
-					keyinfo.VirtualKeyCode = kevent.KeyValue;
-					keyinfo.Character = GetCharFromKeys(kevent.KeyCode, kevent.Shift, kevent.Alt & kevent.Control)[0];
-					keyinfo.KeyDown = true;
-					keyinfo.ControlKeyState = 0;
-					if (kevent.Alt) {
-						keyinfo.ControlKeyState = ControlKeyStates.LeftAltPressed | ControlKeyStates.RightAltPressed;
-					}
-					if (kevent.Control) {
-						keyinfo.ControlKeyState |= ControlKeyStates.LeftCtrlPressed | ControlKeyStates.RightCtrlPressed;
-						if (!kevent.Alt)
-							if (kevent.KeyValue > 64 && kevent.KeyValue < 96)
-								keyinfo.Character = (char)(kevent.KeyValue - 64);
-					}
-					if (kevent.Shift) {
-						keyinfo.ControlKeyState |= ControlKeyStates.ShiftPressed;
-					}
-					if ((kevent.Modifiers & System.Windows.Forms.Keys.CapsLock) > 0) {
-						keyinfo.ControlKeyState |= ControlKeyStates.CapsLockOn;
-					}
-					if ((kevent.Modifiers & System.Windows.Forms.Keys.NumLock) > 0) {
-						keyinfo.ControlKeyState |= ControlKeyStates.NumLockOn;
-					}
-					// 然后关闭窗体
-					this.Close();
+				if (!checkKeyDown) { CaptureKey(kevent, true); }
+			}
+
+			void CaptureKey(KeyEventArgs kevent, bool keyDown) {
+				keyinfo.VirtualKeyCode = kevent.KeyValue;
+				keyinfo.Character = GetCharFromKeys(kevent.KeyCode, kevent.Shift, kevent.Alt & kevent.Control)[0];
+				keyinfo.KeyDown = keyDown;
+				keyinfo.ControlKeyState = 0;
+				if (kevent.Alt) {
+					keyinfo.ControlKeyState = ControlKeyStates.LeftAltPressed | ControlKeyStates.RightAltPressed;
 				}
+				if (kevent.Control) {
+					keyinfo.ControlKeyState |= ControlKeyStates.LeftCtrlPressed | ControlKeyStates.RightCtrlPressed;
+					if (!kevent.Alt)
+						if (kevent.KeyValue > 64 && kevent.KeyValue < 96)
+							keyinfo.Character = (char)(kevent.KeyValue - 64);
+				}
+				if (kevent.Shift) {
+					keyinfo.ControlKeyState |= ControlKeyStates.ShiftPressed;
+				}
+				if ((kevent.Modifiers & System.Windows.Forms.Keys.CapsLock) > 0) {
+					keyinfo.ControlKeyState |= ControlKeyStates.CapsLockOn;
+				}
+				if ((kevent.Modifiers & System.Windows.Forms.Keys.NumLock) > 0) {
+					keyinfo.ControlKeyState |= ControlKeyStates.NumLockOn;
+				}
+				// 然后关闭窗体
+				this.Close();
 			}
 		}
 
@@ -833,21 +817,11 @@ namespace PSRunnerNS {
 		const int ReadKeyButtonRightMargin = 20;
 		const int ReadKeyButtonBottomMargin = 11;
 
-		static void ApplyTitleBar(IntPtr hwnd) {
-			#if !darkModeOff && !Pwsh20
-			DarkMode.DarkTitleBar(hwnd);
-			#else
-			int light = 0;
-			DwmSetWindowAttribute(hwnd, 20, ref light, sizeof(int));
-			DwmSetWindowAttribute(hwnd, 19, ref light, sizeof(int));
-			#endif
-		}
-
 		public static KeyInfo Show(string strTitle, string strPrompt, bool blIncludeKeyDown) {
 			// 创建控件
 			Keyboard_Form form = new Keyboard_Form();
 			form.Text = strTitle;
-			form.HandleCreated += delegate { ApplyTitleBar(form.Handle); };
+			form.HandleCreated += delegate { SystemDialogText.ApplyTitleBar(form.Handle); };
 			Label label = new Label();
 
 			// 尺寸和位置以标签为基准，因此先完成这个控件
@@ -882,7 +856,7 @@ namespace PSRunnerNS {
 			form.MaximizeBox = false;
 			form.ControlBox = true;
 			form.ShowInTaskbar = false;
-			form.Shown += delegate { ApplyTitleBar(form.Handle); };
+			form.Shown += delegate { SystemDialogText.ApplyTitleBar(form.Handle); };
 
 			// 显示并计算窗体
 			form.checkKeyDown = blIncludeKeyDown;
@@ -1455,6 +1429,8 @@ namespace PSRunnerNS {
 	#endif
 
 	// 在这里定义 IsInputRedirected()、IsOutputRedirected() 和 IsErrorRedirected()，因为它们最早是在 .NET 4.5 中引入的
+	// 窗口化且脚本顶层不用 $input 时整个类都不会被引用，编译期剔除。
+	#if !noConsole || ReadInput
 	public class Console_Info {
 		private enum FileType: uint {
 			FILE_TYPE_UNKNOWN = 0x0000,
@@ -1521,13 +1497,11 @@ namespace PSRunnerNS {
 			return (consoleMode & ConsoleMode.ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0;
 		}
 	}
+	#endif
 
 	#if noConsole
 	// 消息框在亮/暗主题下都使用同一套 WinForms 控件与布局，仅切换调色板。
 	internal static class MessageBoxHelper {
-		[DllImport("dwmapi.dll")]
-		static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
-
 		internal static bool UsesNativeMessageBox {
 			get {
 				#if darkModeOff
@@ -1578,16 +1552,6 @@ namespace PSRunnerNS {
 				#endif
 				return SystemColors.ControlText;
 			}
-		}
-
-		static void ApplyTitleBar(IntPtr hwnd) {
-			#if !darkModeOff && !Pwsh20
-			DarkMode.DarkTitleBar(hwnd);
-			#else
-			int light = 0;
-			DwmSetWindowAttribute(hwnd, 20, ref light, sizeof(int));
-			DwmSetWindowAttribute(hwnd, 19, ref light, sizeof(int));
-			#endif
 		}
 
 		public static void Show(string text, string caption) {
@@ -1762,7 +1726,7 @@ namespace PSRunnerNS {
 				form.ActiveControl = buttonList[active];
 
 				form.HandleCreated += delegate {
-					ApplyTitleBar(form.Handle);
+					SystemDialogText.ApplyTitleBar(form.Handle);
 				};
 
 				return form.ShowDialog();
@@ -1783,7 +1747,8 @@ namespace PSRunnerNS {
 	#endif
 
 	internal class PSRunnerUI: PSHostUserInterface {
-		public PSRunnerRawUI rawUI;
+		// 私有：$Host.PrivateData 直接包装本对象（不再用代理），若公开会和 RawUI 属性形成仅大小写不同的成员冲突。
+		private PSRunnerRawUI rawUI;
 
 		public ConsoleColor ErrorForegroundColor = ConsoleColor.Red;
 		public ConsoleColor ErrorBackgroundColor = ConsoleColor.Black;
@@ -1815,7 +1780,15 @@ namespace PSRunnerNS {
 		}
 
 		#if !Pwsh20
-			public override bool SupportsVirtualTerminal { get { return Console_Info.IsVirtualTerminalSupported(); } }
+			public override bool SupportsVirtualTerminal {
+				get {
+					#if !noConsole
+					return Console_Info.IsVirtualTerminalSupported();
+					#else
+					return false; // 窗口化产物没有控制台，标准输出无法启用 VT 处理
+					#endif
+				}
+			}
 		#endif
 
 		public override Dictionary<string, PSObject> Prompt(string caption, string message, System.Collections.ObjectModel.Collection<FieldDescription> descriptions) {
@@ -2019,7 +1992,10 @@ namespace PSRunnerNS {
 		}
 
 		public override PSCredential PromptForCredential(string caption, string message, string userName, string targetName) {
-			#if !(noConsole || credentialGUI)
+			#if noConsole
+			// 窗口化下与 6 参数重载等价（都走 CredUI），直接复用。
+			return PromptForCredential(caption, message, userName, targetName, PSCredentialTypes.Default, PSCredentialUIOptions.Default);
+			#elif !credentialGUI
 				if (!string.IsNullOrEmpty(caption)) WriteLine(caption);
 				WriteLine(message);
 
@@ -2082,6 +2058,7 @@ namespace PSRunnerNS {
 			#endif
 		}
 
+		#if !noConsole
 		private System.Security.SecureString getPassword() {
 			System.Security.SecureString pwd = new System.Security.SecureString();
 			while (true) {
@@ -2101,6 +2078,7 @@ namespace PSRunnerNS {
 			}
 			return pwd;
 		}
+		#endif
 
 		public override System.Security.SecureString ReadLineAsSecureString() {
 			System.Security.SecureString secstr;
@@ -2316,69 +2294,10 @@ namespace PSRunnerNS {
 			this._ui = ui;
 		}
 
-		public class ConsoleColorProxy {
-			private readonly PSRunnerUI _ui;
-
-			public ConsoleColorProxy(PSRunnerUI ui) {
-				if (ui == null) throw new ArgumentNullException("ui");
-				_ui = ui;
-			}
-
-			public ConsoleColor ErrorForegroundColor {
-				get { return _ui.ErrorForegroundColor; }
-				set { _ui.ErrorForegroundColor = value; }
-			}
-
-			public ConsoleColor ErrorBackgroundColor {
-				get { return _ui.ErrorBackgroundColor; }
-				set { _ui.ErrorBackgroundColor = value; }
-			}
-
-			public ConsoleColor WarningForegroundColor {
-				get { return _ui.WarningForegroundColor; }
-				set { _ui.WarningForegroundColor = value; }
-			}
-
-			public ConsoleColor WarningBackgroundColor {
-				get { return _ui.WarningBackgroundColor; }
-				set { _ui.WarningBackgroundColor = value; }
-			}
-
-			public ConsoleColor DebugForegroundColor {
-				get { return _ui.DebugForegroundColor; }
-				set { _ui.DebugForegroundColor = value; }
-			}
-
-			public ConsoleColor DebugBackgroundColor {
-				get { return _ui.DebugBackgroundColor; }
-				set { _ui.DebugBackgroundColor = value; }
-			}
-
-			public ConsoleColor VerboseForegroundColor {
-				get { return _ui.VerboseForegroundColor; }
-				set { _ui.VerboseForegroundColor = value; }
-			}
-
-			public ConsoleColor VerboseBackgroundColor {
-				get { return _ui.VerboseBackgroundColor; }
-				set { _ui.VerboseBackgroundColor = value; }
-			}
-
-			public ConsoleColor ProgressForegroundColor {
-				get { return _ui.ProgressForegroundColor; }
-				set { _ui.ProgressForegroundColor = value; }
-			}
-
-			public ConsoleColor ProgressBackgroundColor {
-				get { return _ui.ProgressBackgroundColor; }
-				set { _ui.ProgressBackgroundColor = value; }
-			}
-		}
-
 		public override PSObject PrivateData {
 			get {
 				if (_ui == null) return null;
-				return _consoleColorProxy ?? (_consoleColorProxy = PSObject.AsPSObject(new ConsoleColorProxy(_ui)));
+				return _consoleColorProxy ?? (_consoleColorProxy = PSObject.AsPSObject(_ui));
 			}
 		}
 
@@ -2475,6 +2394,10 @@ namespace PSRunnerNS {
 			#endif
 			TimerMark("ctor:runspace-create");
 			this.PSRunSpace.ApartmentState = System.Threading.ApartmentState.$threadingModel;
+			#if noConsole && !darkModeOff && !Pwsh20
+			// 让 BeginInvoke 在入口线程执行管道，使 C# 可在 PowerShell 开始执行前创建同线程的暗色 hook。
+			this.PSRunSpace.ThreadOptions = PSThreadOptions.UseCurrentThread;
+			#endif
 			this.PSRunSpace.Open();
 			TimerMark("ctor:runspace-open");
 			this.pwsh = PowerShell.Create();
@@ -2499,10 +2422,6 @@ namespace PSRunnerNS {
 				}
 			}
 			TimerMark("ctor:read-script");
-			#if noConsole && !darkModeOff && !Pwsh20
-			// 把暗色 hook 的初始化交给脚本线程执行（在用户脚本之前），保证 hook 窗口与脚本创建的窗口同线程。
-			this.PSRunSpace.SessionStateProxy.SetVariable("PSEXEDarkModeSetup", (Action)DarkMode.StartOnCurrentThread);
-			#endif
 			script = "function PSEXEMainFunction{"+script+"}";
 			#if Pwsh20
 				this.pwsh.AddScript(script);
@@ -2597,8 +2516,6 @@ namespace PSRunnerNS {
 
 		[DllImport("uxtheme.dll", CharSet = CharSet.Unicode)]
 		static extern int SetWindowTheme(IntPtr hWnd, string pszSubAppName, string pszSubIdList);
-		[DllImport("dwmapi.dll")]
-		static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
 		[DllImport("kernel32.dll", CharSet = CharSet.Ansi)]
 		static extern IntPtr GetModuleHandle(string name);
 		[DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = true)]
@@ -2668,7 +2585,9 @@ namespace PSRunnerNS {
 				EnableProcessDarkMode();
 				if (!IsDark) { return; }
 				// .NET 9+ 且 Win11：官方 SetColorMode 会接管控件与标题栏，无需逐控件处理。
+				#if ModernWinForms
 				if (ApplyNativeColorMode()) { return; }
+				#endif
 				EnsureManualPipeline();
 			}
 		}
@@ -2690,28 +2609,13 @@ namespace PSRunnerNS {
 				IsDark = dark;
 				EnableProcessDarkMode();
 				// .NET 9+ 且 Win11：官方 SetColorMode 会重绘所有窗口。
+				#if ModernWinForms
 				if (ApplyNativeColorMode()) { return; }
+				#endif
 				// 手动路径：确保管线就绪，再重新遍历本进程窗口，按新值重绘（深色时染色、浅色时还原原始颜色）。
 				if (IsDark) { EnsureManualPipeline(); }
-				RefreshOpenForms();
+				DiscoverWindows();
 			}
-		}
-
-		static void RefreshOpenForms() {
-			try {
-				EnumWindows(delegate(IntPtr hwnd, IntPtr param) {
-					uint processId;
-					GetWindowThreadProcessId(hwnd, out processId);
-					if (processId != (uint)System.Diagnostics.Process.GetCurrentProcess().Id) { return true; }
-					try {
-						Form form = Control.FromHandle(hwnd) as Form;
-						if (form != null && !form.IsDisposed) {
-							form.BeginInvoke((Action)delegate { ThemeForm(form); });
-						}
-					} catch { }
-					return true;
-				}, IntPtr.Zero);
-			} catch { }
 		}
 
 		// 在脚本线程（会创建 WinForms 窗口的那个线程）上创建 shell hook / 主题变化监听窗口。shell hook 的建窗通知会排进该线程
@@ -2828,6 +2732,7 @@ namespace PSRunnerNS {
 			return proc == IntPtr.Zero ? null : (T)(object)Marshal.GetDelegateForFunctionPointer(proc, typeof(T));
 		}
 
+		#if ModernWinForms
 		static bool ApplyNativeColorMode() {
 			try {
 				if (Environment.OSVersion.Version.Build < 22000) { return false; } // 暗色仅 Win11 支持
@@ -2840,6 +2745,7 @@ namespace PSRunnerNS {
 				return true;
 			} catch { return false; }
 		}
+		#endif
 
 		// 轮询本进程顶层窗口；WinForms 的 Application.OpenForms 按线程隔离，跨线程拿不到，故用 EnumWindows + Control.FromHandle。
 		static void DiscoverWindows() {
@@ -2969,12 +2875,17 @@ namespace PSRunnerNS {
 				return;
 			}
 
-			if (IsFieldControl(control)) {
+			TextBoxBase textBox = control as TextBoxBase;
+			ListBox listBox = control as ListBox;
+			ComboBox combo = control as ComboBox;
+			if (textBox != null || listBox != null || combo != null || control is NumericUpDown || control is DomainUpDown) {
 				control.ForeColor = DarkFore(original);
 				control.BackColor = DarkBack(original, FieldColor);
-				if (control is TextBoxBase) { ((TextBoxBase)control).BorderStyle = IsDark ? BorderStyle.FixedSingle : BorderStyle.Fixed3D; }
-				if (control is ListBox) { ((ListBox)control).BorderStyle = IsDark ? BorderStyle.FixedSingle : BorderStyle.Fixed3D; }
-				ComboBox combo = control as ComboBox;
+				if (textBox != null) {
+					textBox.BorderStyle = IsDark ? BorderStyle.FixedSingle : BorderStyle.Fixed3D;
+					SetWindowTheme(textBox.Handle, IsDark ? "DarkMode_CFD" : null, null);
+				}
+				if (listBox != null) { listBox.BorderStyle = IsDark ? BorderStyle.FixedSingle : BorderStyle.Fixed3D; }
 				if (combo != null) {
 					combo.FlatStyle = IsDark ? FlatStyle.Flat : FlatStyle.Standard;
 					SetWindowTheme(combo.Handle, IsDark ? "DarkMode_CFD" : null, null);
@@ -2996,34 +2907,6 @@ namespace PSRunnerNS {
 
 			control.ForeColor = DarkFore(original);
 			control.BackColor = DarkBack(original, WindowColor);
-		}
-
-		static bool IsFieldControl(Control control) {
-			TextBoxBase text = control as TextBoxBase;
-			if (text != null) {
-				text.BorderStyle = BorderStyle.FixedSingle;
-				SetWindowTheme(text.Handle, IsDark ? "DarkMode_CFD" : null, null);
-				if (IsSystemBack(text.BackColor)) { text.BackColor = FieldColor; }
-				return true;
-			}
-			ListBox list = control as ListBox;
-			if (list != null) {
-				list.BorderStyle = BorderStyle.FixedSingle;
-				if (IsSystemBack(list.BackColor)) { list.BackColor = FieldColor; }
-				return true;
-			}
-			if (control is NumericUpDown || control is DomainUpDown) {
-				if (IsSystemBack(control.BackColor)) { control.BackColor = FieldColor; }
-				return true;
-			}
-			ComboBox combo = control as ComboBox;
-			if (combo != null) {
-				combo.FlatStyle = FlatStyle.Flat;
-				SetWindowTheme(combo.Handle, "DarkMode_CFD", null);
-				if (IsSystemBack(combo.BackColor)) { combo.BackColor = FieldColor; }
-				return true;
-			}
-			return false;
 		}
 
 		static bool IsWindowControl(Control control) {
@@ -3060,9 +2943,7 @@ namespace PSRunnerNS {
 		public static void DarkTitleBar(IntPtr hwnd) {
 			if (allowDarkModeForWindow != null) { allowDarkModeForWindow(hwnd, IsDark); }
 			SetWindowTheme(hwnd, IsDark ? "DarkMode_Explorer" : null, null);
-			int on = IsDark ? 1 : 0;
-			DwmSetWindowAttribute(hwnd, 20, ref on, sizeof(int)); // DWMWA_USE_IMMERSIVE_DARK_MODE
-			DwmSetWindowAttribute(hwnd, 19, ref on, sizeof(int)); // 旧 build
+			SystemDialogText.SetDarkTitleBar(hwnd, IsDark); // DWMWA_USE_IMMERSIVE_DARK_MODE（20）/ 旧 build（19）
 		}
 
 		sealed class DarkColorTable : ProfessionalColorTable {
@@ -3290,6 +3171,10 @@ namespace PSRunnerNS {
 			PSRunner.TimerMark("main:baseinit");
 			runner = new PSRunner();
 			PSRunner.TimerMark("main:ctor-done");
+			#if noConsole && !darkModeOff && !Pwsh20
+			// Runspace 使用 UseCurrentThread，hook 与随后执行用户脚本及创建 WinForms 窗口的线程一致。
+			DarkMode.StartOnCurrentThread();
+			#endif
 			System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);
 			#if noConsole
 			runner.ui.CancelPipeline = delegate {
@@ -3357,18 +3242,10 @@ namespace PSRunnerNS {
 					colInput.Complete();
 
 					runner.pwsh.Runspace.SessionStateProxy.SetVariable("PSEXEInput", colInput);
-					#if noConsole && !darkModeOff && !Pwsh20
-					runner.pwsh.AddScript("$PSEXEDarkModeSetup.Invoke(); $PSEXEInput|PSEXEMainFunction "+String.Join(" ", args));
-					#else
 					runner.pwsh.AddScript("$PSEXEInput|PSEXEMainFunction "+String.Join(" ", args));
-					#endif
 				#else
 					// 脚本顶层不用 $input：完全不带管道输入，也不设置 $PSEXEInput
-					#if noConsole && !darkModeOff && !Pwsh20
-					runner.pwsh.AddScript("$PSEXEDarkModeSetup.Invoke(); PSEXEMainFunction "+String.Join(" ", args));
-					#else
 					runner.pwsh.AddScript("PSEXEMainFunction "+String.Join(" ", args));
-					#endif
 				#endif
 				// Out-Default 走 host UI；勿用 Out-String/输出收集，否则 native 子进程 stdout 会变成管道（非 TTY）
 				runner.pwsh.AddCommand("Out-Default");

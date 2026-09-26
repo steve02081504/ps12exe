@@ -543,6 +543,10 @@ $exe = [System.Reflection.Assembly]::GetEntryAssembly().Location
 $marker = $exe + '.dm'
 $darkModeType = [AppDomain]::CurrentDomain.GetAssemblies() | ForEach-Object { $_.GetType('PSRunnerNS.DarkMode') } | Where-Object { $_ } | Select-Object -First 1
 [System.IO.File]::WriteAllText($marker, $(if ($darkModeType) { 'present' } else { 'absent' }))
+$nativeColorModeMethod = if ($darkModeType) { $darkModeType.GetMethod('ApplyNativeColorMode', [System.Reflection.BindingFlags]'NonPublic, Static') }
+[System.IO.File]::WriteAllText($marker + '.native', $(if ($nativeColorModeMethod) { 'present' } else { 'absent' }))
+$darkModeSetupVariable = Get-Variable -Name PSEXEDarkModeSetup -ErrorAction Ignore
+[System.IO.File]::WriteAllText($marker + '.setup-variable', $(if ($darkModeSetupVariable) { 'present' } else { 'absent' }))
 '@
 
 Add-Test @{
@@ -565,6 +569,14 @@ Add-Test @{
 			$value = (Get-Content -LiteralPath $marker -Raw).Trim()
 			if ($name -eq 'dm_off') { Assert-Equal 'absent' $value 'DarkMode=Off 仍编译了暗色代码' }
 			else { Assert-Equal 'present' $value "$name 未编译暗色代码" }
+			if ($name -eq 'dm_auto') {
+				$nativeColorMode = (Get-Content -LiteralPath "$marker.native" -Raw).Trim()
+				Assert-Equal 'absent' $nativeColorMode 'Framework 产物不应包含 .NET 9 专用的 SetColorMode 反射路径'
+			}
+			if ($name -in @('dm_on', 'dm_auto')) {
+				$setupVariable = (Get-Content -LiteralPath "$marker.setup-variable" -Raw).Trim()
+				Assert-Equal 'absent' $setupVariable "$name 不应向用户脚本暴露暗色模式初始化变量"
+			}
 		}
 	}
 }
@@ -633,6 +645,7 @@ Add-Test @{
 			$text = [System.Text.Encoding]::UTF8.GetString([System.IO.File]::ReadAllBytes($ctx.Builds[$name]))
 			Assert-True ($text.Contains('ConstMessageBox')) "$name 是窗口化常量脚本，未走统一渲染的 constexpr 帧"
 			Assert-True ($text.Contains('DarkWindowColor')) "$name 未包含暗色调色板"
+			if ($name -eq 'dm_const_auto') { Assert-True ($text.Contains('ImmersiveColorSet')) 'Auto constexpr GUI 未监听系统主题变化' }
 		}
 		$offText = [System.Text.Encoding]::UTF8.GetString([System.IO.File]::ReadAllBytes($ctx.Builds['dm_const_off']))
 		Assert-True ($offText.Contains('MessageBoxW')) 'dm_const_off 未走 TinySharp 原生消息框'
@@ -704,7 +717,7 @@ Add-Test @{
 		Name      = 'progress_cancel'
 		Output    = 'progress_cancel.exe'
 		InputText = "Write-Progress -Activity 'Working' -Status 'Waiting for cancellation'; Start-Sleep -Seconds 30"
-		Params    = @{ App = @{ Windowed = $true; DarkMode = 'Off' } }
+		Params    = @{ App = @{ Windowed = $true; DarkMode = 'On' } }
 	}
 	Run   = {
 		param($ctx)

@@ -37,6 +37,7 @@ namespace PSRunnerNS {
 		static readonly Color DarkTextColor = Color.FromArgb(245, 245, 245);
 		static bool resolved;
 		static bool isDark;
+		const int WM_SETTINGCHANGE = 0x001A;
 		public static bool IsDark {
 			get {
 				if (!resolved) {
@@ -56,6 +57,17 @@ namespace PSRunnerNS {
 				return isDark;
 			}
 		}
+		#if !darkModeOn
+		static void RefreshSystemTheme() {
+			bool wasDark = isDark;
+			resolved = true;
+			try {
+				object value = Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", "AppsUseLightTheme", 1);
+				isDark = value != null && Convert.ToInt32(value) == 0;
+			} catch { isDark = false; }
+			if (wasDark != isDark) { Enable(); }
+		}
+		#endif
 		public static Color WindowColor { get { return IsDark ? DarkWindowColor : Color.White; } }
 		public static Color FieldColor { get { return IsDark ? DarkFieldColor : Color.FromArgb(240, 240, 240); } }
 		public static Color BorderColor { get { return IsDark ? DarkBorderColor : Color.FromArgb(173, 173, 173); } }
@@ -80,6 +92,52 @@ namespace PSRunnerNS {
 				DwmSetWindowAttribute(hwnd, 20, ref on, sizeof(int)); // DWMWA_USE_IMMERSIVE_DARK_MODE
 				DwmSetWindowAttribute(hwnd, 19, ref on, sizeof(int)); // 旧 build
 			} catch { }
+		}
+
+		sealed class MessageBoxForm : Form {
+			internal Control ContentControl;
+
+			protected override void OnHandleCreated(EventArgs e) {
+				base.OnHandleCreated(e);
+				ApplyDarkMode();
+			}
+
+			#if !darkModeOn
+			protected override void WndProc(ref Message m) {
+				if (m.Msg == WM_SETTINGCHANGE && IsImmersiveColorSet(m.LParam)) {
+					RefreshSystemTheme();
+					ApplyDarkMode();
+				}
+				base.WndProc(ref m);
+			}
+
+			static bool IsImmersiveColorSet(IntPtr lParam) {
+				if (lParam == IntPtr.Zero) { return true; }
+				try {
+					string value = Marshal.PtrToStringUni(lParam);
+					return string.IsNullOrEmpty(value) || value.IndexOf("ImmersiveColorSet", StringComparison.OrdinalIgnoreCase) >= 0;
+				} catch { return true; }
+			}
+			#endif
+
+			internal void ApplyDarkMode() {
+				BackColor = WindowColor;
+				ForeColor = TextColor;
+				foreach (Control control in Controls) {
+					control.BackColor = control is Button ? FieldColor : WindowColor;
+					control.ForeColor = TextColor;
+					Button button = control as Button;
+					if (button != null) {
+						button.FlatAppearance.BorderColor = BorderColor;
+						button.UseVisualStyleBackColor = false;
+					}
+				}
+				ApplyTitleBar(Handle);
+				TextBox box = ContentControl as TextBox;
+				#if !darkModeOff && !Pwsh20
+				if (box != null) { SetWindowTheme(box.Handle, IsDark ? "DarkMode_CFD" : null, null); }
+				#endif
+			}
 		}
 		#else
 		public static bool IsDark { get { return false; } }
@@ -111,7 +169,7 @@ namespace PSRunnerNS {
 			MessageBox.Show(text, title, MessageBoxButtons.OK);
 			#else
 			if (text == null) { text = ""; }
-			using (Form form = new Form()) {
+			using (MessageBoxForm form = new MessageBoxForm()) {
 				form.Text = title;
 				form.FormBorderStyle = FormBorderStyle.FixedDialog;
 				form.StartPosition = FormStartPosition.CenterScreen;
@@ -190,6 +248,7 @@ namespace PSRunnerNS {
 				contentControl.Location = new Point(textLeft, textTop);
 				contentControl.Size = new Size(contentWidth, contentHeight);
 				form.Controls.Add(contentControl);
+				form.ContentControl = contentControl;
 
 				Button ok = new Button();
 				ok.Text = LocalizedOk();
@@ -206,13 +265,7 @@ namespace PSRunnerNS {
 
 				form.AcceptButton = ok;
 				form.ActiveControl = ok;
-				form.HandleCreated += delegate(object sender, EventArgs e) {
-					ApplyTitleBar(form.Handle);
-					TextBox box = contentControl as TextBox;
-					#if !darkModeOff && !Pwsh20
-					if (box != null && IsDark) { SetWindowTheme(box.Handle, "DarkMode_CFD", null); } // 暗化滚动条
-					#endif
-				};
+				if (form.IsHandleCreated) { form.ApplyDarkMode(); }
 				form.ShowDialog();
 			}
 			#endif
