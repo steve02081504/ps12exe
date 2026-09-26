@@ -55,7 +55,7 @@
 			if ($Script:refs.TimestampServerTextBox.Text) {
 				$signing.Timestamp = $Script:refs.TimestampServerTextBox.Text
 			}
-			if ($signing.Count -gt 0) { $signing } else { $null }
+			if ($signing.Count) { $signing } else { $null }
 		}
 		else { $null }
 		ConfigFile = $Script:refs.ConfigFileCheckBox.Checked

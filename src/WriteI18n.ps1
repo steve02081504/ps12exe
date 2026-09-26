@@ -31,14 +31,13 @@ function Write-I18n {
 		[System.Exception]$Exception,
 		[ConsoleColor]$ForegroundColor = $(try { [ConsoleColor]($Host.UI.RawUI.ForegroundColor) } catch { 'White' })
 	)
-	$formatForF = if ($null -eq $FormatArgs) { @() } else { @($FormatArgs) }
 	$template = if ($null -ne $script:I18nData -and $script:I18nData.ContainsKey($Mid)) {
 		$script:I18nData[$Mid]
 	}
 	else {
-		"fatal error: No i18n data for $Mid, Rest format args: $($formatForF -join ', ')"
+		"fatal error: No i18n data for $Mid, Rest format args: $($FormatArgs -join ', ')"
 	}
-	$value = if ($formatForF.Count -gt 0) { $template -f $formatForF } else { $template }
+	$value = if ($FormatArgs) { $template -f $FormatArgs } else { $template }
 	if (-not $ForegroundColor) { $ForegroundColor = 'White' }
 
 	switch ($PipeLineType) {
@@ -76,7 +75,7 @@ function Write-SymboledI18n {
 		[ConsoleColor]$SequenceColor = 'White'
 	)
 	$msgTemplate = if ($null -ne $script:I18nData -and $script:I18nData.ContainsKey($MessageKey)) { $script:I18nData[$MessageKey] } else { "?$MessageKey?" }
-	$message = if ($null -ne $MessageFormatArgs -and $MessageFormatArgs.Count -gt 0) { $msgTemplate -f @($MessageFormatArgs) } else { $msgTemplate }
+	$message = if ($MessageFormatArgs) { $msgTemplate -f $MessageFormatArgs } else { $msgTemplate }
 	$sequence = if ($SequenceKey -and $null -ne $script:I18nData -and $script:I18nData.ContainsKey($SequenceKey)) { $script:I18nData[$SequenceKey] } else { '' }
 	Write-Host -NoNewline " "
 	Write-Host -ForegroundColor $SymbolColor $Symbol -NoNewline

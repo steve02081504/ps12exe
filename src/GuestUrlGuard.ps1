@@ -23,7 +23,6 @@ function Test-GuestPrivateIPAddress([System.Net.IPAddress]$IP) {
 	# IPv6
 	if ($IP.IsIPv6Multicast -or $IP.IsIPv6LinkLocal -or $IP.IsIPv6SiteLocal) { return $true }
 	if (($bytes[0] -band 0xFE) -eq 0xFC) { return $true }                                # fc00::/7 唯一本地
-	if ([System.Net.IPAddress]::IsLoopback($IP)) { return $true }                        # ::1
 	$isMapped = $true
 	for ($i = 0; $i -lt 10; $i++) { if ($bytes[$i] -ne 0) { $isMapped = $false; break } }
 	if ($isMapped -and $bytes[10] -eq 0xFF -and $bytes[11] -eq 0xFF) {                   # ::ffff:a.b.c.d

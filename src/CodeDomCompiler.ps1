@@ -1,19 +1,10 @@
-﻿$type = ('System.Collections.Generic.Dictionary`2') -as "Type"
-$type = $type.MakeGenericType(@([String], [String]) )
-$o = [Activator]::CreateInstance($type)
-if ($isPwsh20Sma) {
-	$o.Add("CompilerVersion", "v3.5")
-}
-else { $o.Add("CompilerVersion", "v4.0") }
-
-$cop = (New-Object Microsoft.CSharp.CSharpCodeProvider($o))
+﻿$providerOptions = [System.Collections.Generic.Dictionary[string, string]]::new()
+$providerOptions.Add('CompilerVersion', $(if ($isPwsh20Sma) { 'v3.5' } else { 'v4.0' }))
+$cop = [Microsoft.CSharp.CSharpCodeProvider]::new($providerOptions)
 [string[]]$BaseCompilerOptions = @($CompilerOptions)
 
-$manifestParam = if ($DllExportList) {
-	# 原生导出产物是 DLL，没有入口点，也不需要管理员/DPI 清单。
-	"/nowin32manifest"
-}
-elseif (($AstAnalyzeResult.IsConst -or $virtualize) -and -not $requireAdmin) {
+$manifestParam = if ($DllExportList -or (($AstAnalyzeResult.IsConst -or $virtualize) -and -not $requireAdmin)) {
+	# 无入口点/无需管理员与 DPI 清单：DllExport 产物、常量/虚拟化产物。
 	"/nowin32manifest"
 }
 elseif ($requireAdmin -or $DPIAware -or $supportOS -or $longPaths) {

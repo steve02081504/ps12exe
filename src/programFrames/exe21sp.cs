@@ -27,7 +27,7 @@ namespace exe21sp {
 		/// 普通 ps12exe exe：来自内嵌资源的原始 PowerShell 脚本。TinySharp 编译的 exe：合成脚本，它打印捕获的输出字符串，并在适用时追加带有所记录退出代码的 exit 语句。若该 exe 不是 ps12exe 输出或负载无法恢复，则返回 null。
 		/// </returns>
 		public static string ExtractScriptFromExe(string exePath) {
-			if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+			if (Missing(exePath))
 				return null;
 			// 首先尝试标准程序框架：内嵌的 main.ps1 资源。
 			var script = TryExtractFromFrame(exePath);
@@ -38,6 +38,25 @@ namespace exe21sp {
 			return TryExtractFromTinySharp(exePath);
 		}
 
+		// 路径缺失（空或文件不存在）：各 Extract/Get/Is 入口的统一前置检查。
+		private static bool Missing(string exePath) {
+			return string.IsNullOrEmpty(exePath) || !File.Exists(exePath);
+		}
+
+		// 托管资源名（Utf8String）转 string；三处脚本资源判断共用。
+		private static string ResourceName(ManifestResource resource) {
+			return object.ReferenceEquals(resource.Name, null) ? null : resource.Name.ToString();
+		}
+
+		// TinySharp 产物的消息字符串与退出码都藏在 .text 段里；两处扫描共用。
+		private static PESection FindTextSection(PEFile peFile) {
+			foreach (var section in peFile.Sections) {
+				if (!object.ReferenceEquals(section.Name, null) && section.Name.ToString() == ".text")
+					return section;
+			}
+			return null;
+		}
+
 		/// <summary>
 		/// 判断 ps12exe 产物是否为 windowed（无控制台）构建，供反编译时补回 <c>#_pragma App.Windowed</c>。
 		/// 标准产物（CodeDom/Core/pack）直接看最外层 PE 子系统；TinySharp 常量 GUI 产物仍标为控制台子系统，
@@ -45,7 +64,7 @@ namespace exe21sp {
 		/// </summary>
 		/// <param name="exePath">.exe 文件的完整路径。</param>
 		public static bool IsWindowedExe(string exePath) {
-			if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+			if (Missing(exePath))
 				return false;
 
 			try {
@@ -74,7 +93,7 @@ namespace exe21sp {
 		/// </summary>
 		/// <param name="exePath">.exe 文件的完整路径。</param>
 		public static string GetTarget(string exePath) {
-			if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+			if (Missing(exePath))
 				return null;
 			try {
 				var image = PEImage.FromFile(exePath);
@@ -98,7 +117,7 @@ namespace exe21sp {
 		/// </summary>
 		/// <param name="exePath">.exe 文件的完整路径。</param>
 		public static string GetPlatform(string exePath) {
-			if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+			if (Missing(exePath))
 				return null;
 			try {
 				var image = PEImage.FromFile(exePath);
@@ -119,7 +138,7 @@ namespace exe21sp {
 		/// </summary>
 		/// <param name="exePath">.exe 文件的完整路径。</param>
 		public static bool IsAdminExe(string exePath) {
-			if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+			if (Missing(exePath))
 				return false;
 			try {
 				var root = PEImage.FromFile(exePath).Resources;
@@ -145,7 +164,7 @@ namespace exe21sp {
 			foreach (var resource in module.Resources) {
 				if (!resource.IsEmbedded)
 					continue;
-				string name = object.ReferenceEquals(resource.Name, null) ? null : resource.Name.ToString();
+				string name = ResourceName(resource);
 				if (name != null && (name.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase) || string.Equals(name, "main", StringComparison.OrdinalIgnoreCase)))
 					return true;
 			}
@@ -163,13 +182,7 @@ namespace exe21sp {
 			if (clrDir.Size == 0 || !clrDir.IsPresentInPE)
 				return false;
 
-			PESection section = null;
-			foreach (var s in peFile.Sections) {
-				if (!object.ReferenceEquals(s.Name, null) && s.Name.ToString() == ".text") {
-					section = s;
-					break;
-				}
-			}
+			PESection section = FindTextSection(peFile);
 			if (section == null)
 				return false;
 
@@ -239,7 +252,7 @@ namespace exe21sp {
 				if (!resource.IsEmbedded)
 					continue;
 
-				string name = object.ReferenceEquals(resource.Name, null) ? null : resource.Name.ToString();
+				string name = ResourceName(resource);
 				// 脚本以未压缩的 .ps1 资源内嵌（标准 frame 是 main.ps1）。
 				if (name != null && name.EndsWith(".ps1", StringComparison.OrdinalIgnoreCase)) {
 					var raw = resource.GetData();
@@ -260,7 +273,7 @@ namespace exe21sp {
 			foreach (var resource in module.Resources) {
 				if (!resource.IsEmbedded)
 					continue;
-				string name = object.ReferenceEquals(resource.Name, null) ? null : resource.Name.ToString();
+				string name = ResourceName(resource);
 				if (!string.Equals(name, "main", StringComparison.OrdinalIgnoreCase))
 					continue;
 
@@ -306,7 +319,7 @@ namespace exe21sp {
 		/// <param name="exePath">.exe 文件的完整路径。</param>
 		/// <returns>.ico 文件字节；当 exe 没有图标资源时返回 null。</returns>
 		public static byte[] ExtractIconFromExe(string exePath) {
-			if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath))
+			if (Missing(exePath))
 				return null;
 			try {
 				return ExtractIconFromImage(PEImage.FromFile(exePath));
@@ -443,13 +456,7 @@ namespace exe21sp {
 				return null;
 
 			// 从这里开始我们将其视为潜在的 TinySharp exe；布局解析失败必须抛出异常。
-			PESection section = null;
-			foreach (var s in peFile.Sections) {
-				if (!object.ReferenceEquals(s.Name, null) && s.Name.ToString() == ".text") {
-					section = s;
-					break;
-				}
-			}
+			PESection section = FindTextSection(peFile);
 			if (section == null)
 				throw new InvalidOperationException("TinySharpNoTextSection");
 			var size = (uint)Math.Min(section.GetPhysicalSize(), 1024 * 1024);

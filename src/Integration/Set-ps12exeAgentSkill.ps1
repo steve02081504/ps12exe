@@ -3,19 +3,10 @@
 # 独立脚本，不导出为命令：由 Set-ps12exeIntegration 直接调用。
 [CmdletBinding()]
 param (
-	[ValidateScript({
-		. $PSScriptRoot\..\predicate.ps1
-		(IsEnable $_) -or (IsDisable $_) -or ($_ -eq 'reset')
-	})]
+	[ValidateScript({ . "$PSScriptRoot\ActionValidator.ps1" $_ })]
 	[ArgumentCompleter({
-		param($Command, $Parameter, $WordToComplete, $CommandAst, $FakeBoundParams)
-		. $PSScriptRoot\..\predicate.ps1
-		if (-not $WordToComplete) {
-			@('enable', 'disable', 'reset')
-		}
-		else {
-			@($DisablePredicates; $EnablePredicates; 'reset') | Where-Object { $_ -like "$WordToComplete*" }
-		}
+		Param($Command, $Parameter, $WordToComplete, $CommandAst, $FakeBoundParams)
+		. "$PSScriptRoot\ActionArgCompleter.ps1" @PSBoundParameters
 	})]
 	$action = 'on',
 	[ArgumentCompleter({

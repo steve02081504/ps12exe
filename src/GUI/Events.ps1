@@ -66,11 +66,11 @@ AutoFixer $Script:refs.MainForm.Controls
 # 允许将文件拖放到文本框中
 @($Script:refs.CompileFileTextBox, $Script:refs.OutputFileTextBox, $Script:refs.IconFileTextBox, $Script:refs.CertificatePathTextBox) | ForEach-Object {
 	$_.add_DragEnter({
-		if ($_.Data.GetDataPresent([Windows.Forms.DataFormats]::FileDrop)) {
-			$_.Effect = [Windows.Forms.DragDropEffects]::Copy
+		$_.Effect = if ($_.Data.GetDataPresent([Windows.Forms.DataFormats]::FileDrop)) {
+			[Windows.Forms.DragDropEffects]::Copy
 		}
 		else {
-			$_.Effect = [Windows.Forms.DragDropEffects]::None
+			[Windows.Forms.DragDropEffects]::None
 		}
 	})
 	$_.add_DragDrop({

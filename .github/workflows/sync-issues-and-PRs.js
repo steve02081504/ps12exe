@@ -23,15 +23,9 @@ module.exports = async ({ github, context }) => {
 		if (!body)
 			return null
 
-		// 为了日志清晰，只打印前300个字符
-		const bodySnippet = body.substring(0, 300).replace(/\n/g, '\\n')
-
 		const match = body.match(/\*\*Original (?:Issue|PR):\*\*\s*(https?:\/\/\S+)/)
 
-		if (match && match[1])
-			return match[1]
-		else
-			return null
+		return match?.[1] ?? null
 	}
 
 	/**
@@ -70,14 +64,10 @@ module.exports = async ({ github, context }) => {
 
 		const listOptions = { ...targetRepo, state: 'open' }
 
-		let items
-		if (itemType === 'Issue') {
-			// 获取所有 issue，然后过滤掉 PR
-			const allIssues = await github.paginate(github.rest.issues.listForRepo, listOptions)
-			items = allIssues.filter(issue => !issue.pull_request)
-		} else
-			// 只获取 PR
-			items = await github.paginate(github.rest.pulls.list, listOptions)
+		// 获取所有 issue，然后过滤掉 PR；PR 只获取 PR 列表
+		const items = itemType === 'Issue'
+			? (await github.paginate(github.rest.issues.listForRepo, listOptions)).filter(issue => !issue.pull_request)
+			: await github.paginate(github.rest.pulls.list, listOptions)
 
 		let createdCount = 0
 		for (const item of items) {
@@ -107,10 +97,9 @@ module.exports = async ({ github, context }) => {
 			}
 		}
 
-		if (createdCount === 0)
-			console.log(`All ${itemType}s are already up-to-date.`)
-		else
-			console.log(`Successfully created ${createdCount} new issue(s) for ${itemType}s.`)
+		console.log(createdCount === 0
+			? `All ${itemType}s are already up-to-date.`
+			: `Successfully created ${createdCount} new issue(s) for ${itemType}s.`)
 	}
 
 	// --- 主逻辑 ---

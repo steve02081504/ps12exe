@@ -43,8 +43,7 @@ export function applyTextEdits(document, text, edits) {
  */
 export async function getOfficialEdits(document, options) {
 	const config = vscode.workspace.getConfiguration('editor', document)
-	const hasWorkspace = !!(vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length)
-	const target = hasWorkspace ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global
+	const target = vscode.workspace.workspaceFolders?.length ? vscode.ConfigurationTarget.Workspace : vscode.ConfigurationTarget.Global
 	const inspected = config.inspect('defaultFormatter')
 	const previous = inspected
 		? inspected.workspaceFolderLanguageValue ?? inspected.workspaceLanguageValue ?? inspected.globalLanguageValue ?? null

@@ -80,7 +80,7 @@ public sealed class CompilerService : IDisposable
 				// 另一个并发请求抢先写好了同一份产物，直接用它的即可。
 			}
 
-			return CompileResult.Success(File.Exists(cachePath) ? cachePath : outputFile);
+			return CompileResult.Success(cachePath);
 		}
 		catch (OperationCanceledException)
 		{
@@ -98,7 +98,8 @@ public sealed class CompilerService : IDisposable
 	{
 		if (!File.Exists(_workerScript))
 			return CompileResult.Failure("CompileFailed", "compile.ps1 is missing from the deployment.");
-		if (_modulePath.Value is null)
+		var modulePath = _modulePath.Value;
+		if (modulePath is null)
 			_logger.LogWarning("ps12exe module was not found on disk; the worker will try to import it by name.");
 
 		var startInfo = new ProcessStartInfo(_powerShellPath.Value)
@@ -108,16 +109,13 @@ public sealed class CompilerService : IDisposable
 			RedirectStandardError = true,
 			CreateNoWindow = true,
 			WorkingDirectory = _cacheDirectory,
+			ArgumentList =
+			{
+				"-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", _workerScript,
+				"-InputFile", inputFile, "-OutputFile", outputFile,
+			},
 		};
-		foreach (var argument in new[]
-		{
-			"-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", _workerScript,
-			"-InputFile", inputFile, "-OutputFile", outputFile,
-		})
-		{
-			startInfo.ArgumentList.Add(argument);
-		}
-		if (_modulePath.Value is string modulePath)
+		if (modulePath is not null)
 		{
 			startInfo.ArgumentList.Add("-ModulePath");
 			startInfo.ArgumentList.Add(modulePath);
@@ -220,7 +218,7 @@ public sealed class CompilerService : IDisposable
 				return windowsPowerShell;
 		}
 
-		return FindOnPath("pwsh") ?? FindOnPath("pwsh.exe") ?? (OperatingSystem.IsWindows() ? "powershell.exe" : "pwsh");
+		return FindOnPath("pwsh") ?? (OperatingSystem.IsWindows() ? "powershell.exe" : "pwsh");
 	}
 
 	private static string? FindOnPath(string executable)
@@ -252,9 +250,9 @@ public sealed class CompilerService : IDisposable
 			if (!process.HasExited)
 				process.Kill(entireProcessTree: true);
 		}
-		catch (Exception ex)
+		catch
 		{
-			_ = ex;
+			// 进程可能已自行退出，忽略。
 		}
 	}
 
@@ -265,9 +263,9 @@ public sealed class CompilerService : IDisposable
 			if (File.Exists(path))
 				File.Delete(path);
 		}
-		catch (Exception ex)
+		catch
 		{
-			_ = ex;
+			// 文件可能正被占用，留给后续清理。
 		}
 	}
 

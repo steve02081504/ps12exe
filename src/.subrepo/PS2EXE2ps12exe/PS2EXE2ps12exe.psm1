@@ -252,9 +252,6 @@ function Invoke-ps2exe {
 
 	# ps12exe 缺少 embedFiles，且不提供 PS2EXE 的 $ScriptRoot；用 minifyer 在预处理后注入。
 	# 需要转写时总会走这里，未命中任何注入点时原样返回。（conHost 已由 ps12exe 原生 App.ConHost 支持。）
-	$rewriteState = @{
-		Embeds = $embedEntries
-	}
 	$build.Minify = {
 		$text = $_
 		if (-not $text) { return $text }
@@ -264,7 +261,7 @@ function Invoke-ps2exe {
 		if (-not $ast) { return $text }
 
 		$inject = [System.Collections.Generic.List[string]]::new()
-		foreach ($embed in $rewriteState.Embeds) {
+		foreach ($embed in $embedEntries) {
 			$targetLiteral = $embed.Target.Replace("'", "''")
 			$inject.Add(@"
 & {

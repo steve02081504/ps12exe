@@ -237,7 +237,6 @@ param(
 	$currentIndex = 0
 	foreach ($currentInput in $inputItemsToProcess) {
 		Write-TaskbarProgress -Percent ([Math]::Min(100, [int](($currentIndex / $total) * 100)))
-		$resolved = $null
 		try {
 			$resolved = Resolve-ExeInputPath -PathOrUrl $currentInput
 		}

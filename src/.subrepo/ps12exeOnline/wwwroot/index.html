@@ -116,7 +116,7 @@
 		const a = document.getElementById('downloadLink')
 		let playing = false
 
-		userInput.addEventListener('focus', event => {
+		userInput.addEventListener('focus', () => {
 			try {
 				if (playing) MIDIjs.resume()
 				else MIDIjs.play('./bgm.mid', true)
@@ -124,7 +124,7 @@
 			}
 			catch (error) { /* 没装 MIDI 插件时忽略 */ }
 		})
-		userInput.addEventListener('blur', event => {
+		userInput.addEventListener('blur', () => {
 			try { MIDIjs.pause() }
 			catch (error) { /* 忽略 */ }
 		})

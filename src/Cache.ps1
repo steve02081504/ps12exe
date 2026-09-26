@@ -89,13 +89,13 @@ function Set-CachedBytes([string]$Path, [byte[]]$Bytes) {
 	[System.IO.File]::WriteAllBytes($tmp, $Bytes)
 	Move-Item -LiteralPath $tmp -Destination $Path -Force
 }
-function Convert-RvaToOffset([byte[]]$Image, [int]$PeOffset, [int]$SectionCount, [int]$SectionsBase, [uint32]$Rva) {
-	for ($i = 0; $i -lt $SectionCount; $i++) {
-		$o = $SectionsBase + $i * 40
-		$va = [System.BitConverter]::ToUInt32($Image, $o + 12)
-		$vs = [System.BitConverter]::ToUInt32($Image, $o + 8)
-		$raw = [System.BitConverter]::ToUInt32($Image, $o + 16)
-		$ptr = [System.BitConverter]::ToUInt32($Image, $o + 20)
+function Convert-RvaToOffset([byte[]]$Image, [int]$SectionCount, [int]$SectionsBase, [uint32]$Rva) {
+	for ($sectionIndex = 0; $sectionIndex -lt $SectionCount; $sectionIndex++) {
+		$sectionOffset = $SectionsBase + $sectionIndex * 40
+		$va = [System.BitConverter]::ToUInt32($Image, $sectionOffset + 12)
+		$vs = [System.BitConverter]::ToUInt32($Image, $sectionOffset + 8)
+		$raw = [System.BitConverter]::ToUInt32($Image, $sectionOffset + 16)
+		$ptr = [System.BitConverter]::ToUInt32($Image, $sectionOffset + 20)
 		if ($Rva -ge $va -and $Rva -lt ($va + [math]::Max($vs, $raw))) { return [int]($ptr + ($Rva - $va)) }
 	}
 	return -1
@@ -110,10 +110,10 @@ function Get-FrameLayout([byte[]]$Image) {
 	$ddOff = if ($magic -eq 0x20b) { $pe + 24 + 112 } else { $pe + 24 + 96 }
 	$sectionsBase = $pe + 24 + $optSize
 	$clrRva = [System.BitConverter]::ToUInt32($Image, $ddOff + 14 * 8)
-	$cliOffset = Convert-RvaToOffset $Image $pe $sectionCount $sectionsBase $clrRva
+	$cliOffset = Convert-RvaToOffset $Image $sectionCount $sectionsBase $clrRva
 	if ($cliOffset -lt 0) { throw '模板缺少 CLI 头' }
 	$resRva = [System.BitConverter]::ToUInt32($Image, $cliOffset + 24)
-	$resOffset = Convert-RvaToOffset $Image $pe $sectionCount $sectionsBase $resRva
+	$resOffset = Convert-RvaToOffset $Image $sectionCount $sectionsBase $resRva
 	if ($resOffset -lt 0) { throw '模板缺少托管资源' }
 	return [pscustomobject]@{ CliOffset = $cliOffset; ResourceOffset = $resOffset }
 }

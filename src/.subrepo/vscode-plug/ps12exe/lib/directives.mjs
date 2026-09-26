@@ -35,8 +35,7 @@ const DIRECTIVE_PREFIX_RE = /^([\t ]*)(#_[!#A-Za-z_]*)$/
  */
 export function directivePrefixAt(textBeforeCursor) {
 	const match = DIRECTIVE_PREFIX_RE.exec(textBeforeCursor)
-	if (!match) return null
-	return { start: match[1].length, prefix: match[2] }
+	return match ? { start: match[1].length, prefix: match[2] } : null
 }
 
 /**
@@ -69,7 +68,7 @@ export function directiveAvailability(blocks, line) {
  * @returns {Array<{ label: string, insertText: string, section: string }>} 匹配的候选列表
  */
 export function buildDirectiveCandidates(prefix, availability) {
-	const lower = String(prefix || '').toLowerCase()
+	const lower = prefix.toLowerCase()
 	return DIRECTIVE_COMPLETIONS.filter((entry) => {
 		if (!entry.label.toLowerCase().startsWith(lower)) return false
 		if (availability) {
@@ -100,8 +99,7 @@ const IF_CONDITION_PREFIX_RE = /^([\t ]*#_if[\t ]+)([A-Za-z_]*)$/
  */
 export function ifConditionPrefixAt(textBeforeCursor) {
 	const match = IF_CONDITION_PREFIX_RE.exec(textBeforeCursor)
-	if (!match) return null
-	return { start: match[1].length, prefix: match[2] }
+	return match ? { start: match[1].length, prefix: match[2] } : null
 }
 
 /**
@@ -111,6 +109,6 @@ export function ifConditionPrefixAt(textBeforeCursor) {
  * @returns {Array<{ label: string, insertText: string, section: string }>} 匹配的候选列表
  */
 export function buildConditionCandidates(prefix) {
-	const lower = String(prefix || '').toLowerCase()
+	const lower = prefix.toLowerCase()
 	return CONDITION_COMPLETIONS.filter((entry) => entry.label.toLowerCase().startsWith(lower))
 }

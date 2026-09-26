@@ -116,8 +116,9 @@ if ($AST -and $AST.ParamBlock) { $Constants += "ScriptHasParam" }
 if ($StartupTiming) { $Constants += "StartupTiming" }
 
 if (-not $TempDir) {
-	$TempDir = $TempTempDir = [System.IO.Path]::GetTempPath() + [System.IO.Path]::GetRandomFileName()
-	New-Item -Path $TempTempDir -ItemType Directory | Out-Null
+	$AutoTempDir = [System.IO.Path]::GetTempPath() + [System.IO.Path]::GetRandomFileName()
+	$TempDir = $AutoTempDir
+	New-Item -Path $AutoTempDir -ItemType Directory | Out-Null
 }
 $TempDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($TempDir)
 # 脚本以未压缩的 main.ps1 资源内嵌；打包时整块负载还会再压一遍（gzip/Brotli，必要时 LZMA），这里先压反而不可压。
@@ -330,10 +331,9 @@ if ($iconFile) {
 			foreach ($imgData in $imageData) {
 				$size = $imgData.Size
 				$width = if ($size -eq 256) { 0 } else { $size }
-				$height = if ($size -eq 256) { 0 } else { $size }
 
 				$writer.Write([Byte]$width)
-				$writer.Write([Byte]$height)
+				$writer.Write([Byte]$width)
 				$writer.Write([Byte]0)
 				$writer.Write([Byte]0)
 				$writer.Write([UInt16]1)

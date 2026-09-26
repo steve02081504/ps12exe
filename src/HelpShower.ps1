@@ -52,7 +52,7 @@ function ShowParamsHelp($ParamsHelpData) {
 	}
 
 	# 对于所有的键
-	$MaxKeyLength = $ParamsHelpData.Keys.Length | Measure-Object -Maximum | Select-Object -ExpandProperty Maximum
+	$MaxKeyLength = ($ParamsHelpData.Keys | Measure-Object -Property Length -Maximum).Maximum
 
 	$ParamsHelpData.Keys | ForEach-Object {
 		$Key = $_
@@ -62,7 +62,7 @@ function ShowParamsHelp($ParamsHelpData) {
 		if ($Value -is [System.Collections.IDictionary]) {
 			# 对象参数：键名作为分组标题，子键缩进并相互对齐
 			"$($VirtualTerminal.Colors.BrightYellow)$Key$Spaces$($VirtualTerminal.Colors.Reset)"
-			$SubMaxKeyLength = $Value.Keys.Length | Measure-Object -Maximum | Select-Object -ExpandProperty Maximum
+			$SubMaxKeyLength = ($Value.Keys | Measure-Object -Property Length -Maximum).Maximum
 			$Value.Keys | ForEach-Object {
 				$SubKey = $_
 				$SubValue = ShowColoredString $Value[$SubKey] $KnownOptions

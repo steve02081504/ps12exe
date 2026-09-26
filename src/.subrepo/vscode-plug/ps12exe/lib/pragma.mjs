@@ -126,6 +126,25 @@ export function peekPragmaData(locale) {
 }
 
 /**
+ * 收集所有作为其他键前缀的段（`app`、`build.core` …）：它们都是可继续展开的分组。分组本身在 `PrarmsData` 里没有标量值，
+ * 因此不会作为叶子进入扁平数据，这里映射到其规范的显示名。
+ *
+ * @param {Map<string, { name: string, description: string }>} data - 扁平化后的说明数据
+ * @returns {Map<string, string>} 小写点号前缀到显示名的映射
+ */
+export function groupPrefixes(data) {
+	const prefixes = new Map()
+	for (const [key, entry] of data) {
+		let index = key.indexOf('.')
+		while (index >= 0) {
+			prefixes.set(key.slice(0, index), entry.name.slice(0, index))
+			index = key.indexOf('.', index + 1)
+		}
+	}
+	return prefixes
+}
+
+/**
  * 返回分组（如 `App`、`Build`、`Build.Core`）的直接子键的显示名（只取最后一段，如 `Backend`）。
  *
  * 子键既可能是叶子（`Build.Core.Backend`），也可能是更深的子分组（`Build.Core.Trim`），两者都算一级子键。
@@ -179,8 +198,7 @@ export function lookupPragma(data, name) {
 	const exact = data.get(lower)
 	if (exact) return exact
 	const children = directChildNames(data, lower)
-	if (children.length) return { name: canonicalGroupName(data, lower), description: '', isGroup: true, children }
-	return null
+	return children.length ? { name: canonicalGroupName(data, lower), description: '', isGroup: true, children } : null
 }
 
 /**
@@ -196,23 +214,13 @@ export function lookupPragma(data, name) {
 export function buildPragmaCandidates(data, prefix) {
 	const entries = new Map(data)
 
-	// 所有作为其他键前缀的段（`app`、`build.consteval` …）都是可继续展开的对象：即使它们自身没有说明
-	// （如 `App` 只是分组），也要作为候选出现。
-	const objectNames = new Map()
-	for (const key of data.keys()) {
-		let index = key.indexOf('.')
-		while (index >= 0) {
-			const segment = key.slice(0, index)
-			objectNames.set(segment, data.get(key).name.slice(0, index))
-			index = key.indexOf('.', index + 1)
-		}
-	}
+	// 所有作为其他键前缀的段都是可继续展开的对象：即使它们自身没有说明（如 `App` 只是分组），也要作为候选出现。
+	const objectNames = groupPrefixes(data)
 	for (const [segment, name] of objectNames)
 		if (!entries.has(segment)) entries.set(segment, { name, description: '' })
 
-	const lower = String(prefix || '').toLowerCase()
-	const parentEnd = lower.lastIndexOf('.')
-	const parent = parentEnd >= 0 ? lower.slice(0, parentEnd + 1) : ''
+	const lower = prefix.toLowerCase()
+	const parent = lower.slice(0, lower.lastIndexOf('.') + 1)
 	const candidates = []
 	for (const [key, entry] of entries) {
 		if (!key.startsWith(parent) || !key.startsWith(lower)) continue

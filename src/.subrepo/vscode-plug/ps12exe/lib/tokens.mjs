@@ -2,6 +2,11 @@
 // 供 `lib/commands.mjs`（命令名扫描）与 `lib/cli.mjs`（ps12exe 调用参数扫描）共用。
 
 /**
+ * `#_!!` 转义标记（含其后的一个可选空格）。ps12exe 会把它去掉，因此其后的内容是代码。
+ */
+export const BANG_MARKER_RE = /^([\t ]*)#_!! ?/
+
+/**
  * 跳过一段字符串字面量（`'…'` 或 `"…"`），双引号内的反引号转义与单引号的双写都会正确处理。跨行（未闭合）时停在行尾。
  *
  * @param {string} text - 待扫描的文本
@@ -62,7 +67,7 @@ export function isCompleteLine(line) {
 	let depth = 0
 	for (let i = 0; i < line.length; i++) {
 		const char = line[i]
-		if (char === '#' && depth >= 0) break
+		if (char === '#') break
 		if (char === '\'' || char === '"') { i = skipString(line, i) - 1; continue }
 		if (char === '`') { i++; continue }
 		if (char === '(' || char === '[' || char === '{') depth++

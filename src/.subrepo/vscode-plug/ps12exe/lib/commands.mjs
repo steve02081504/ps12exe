@@ -11,10 +11,11 @@
 // `aliasMap` 传入，未确认的别名不会被误报。here-string 函数体与块注释内的命令不是调用，因此复用
 // `lib/preprocessor.mjs#computeSkipMask` 跳过；`#_!!` 行会被 ps12exe 去掉标记变成真实代码，所以照常检查。
 
+import { FALLBACK_ALIASES } from './aliases.mjs'
 import { analyze, computeSkipMask, exeLineMask } from './preprocessor.mjs'
 import { convertPs2exeInvocation } from './ps2exe.mjs'
 import { requireModules } from './require.mjs'
-import { skipString } from './tokens.mjs'
+import { BANG_MARKER_RE, skipString } from './tokens.mjs'
 
 /** 英文源字符串；它们同时也是 l10n bundle 的键。 */
 export const COMMAND_MESSAGES = Object.freeze({
@@ -52,16 +53,6 @@ const MODULE_COMMANDS = new Set(['get-module', 'import-module', 'install-module'
 /** 文件里出现任意预处理指令即视为「会被 ps12exe 编译」。 */
 const DIRECTIVE_RE = /^[\t ]*#_/
 
-/**
- * 内置的标准别名映射，供未探测到 PowerShell 宿主时回退使用。`inmo` 由随 PowerShell 发布的 PowerShellGet 模块导出，
- * 因此也算标准别名。
- */
-export const MODULE_ALIASES = Object.freeze({
-	gmo: 'Get-Module',
-	ipmo: 'Import-Module',
-	inmo: 'Install-Module'
-})
-
 // 命令名可含连字符、点与下划线（`Get-Module`、`ps2exe.ps1`）。
 const COMMAND_NAME_RE = /^[A-Za-z_][A-Za-z0-9_.-]*/
 
@@ -78,7 +69,7 @@ function commandTokens(line) {
 	for (let i = 0; i < line.length; i++) {
 		const char = line[i]
 		if (expectCommand) {
-			if (char === ' ' || char === '\t' || char === '&' || char === '.' || char === '{' || char === '(' || char === ';' || char === '|') continue
+			if (' \t&.{(;|'.includes(char)) continue
 			if (char === '\'' || char === '"') break // 命令名位置上出现字符串：这一行不是调用
 			const match = COMMAND_NAME_RE.exec(line.slice(i))
 			if (match) {
@@ -91,7 +82,7 @@ function commandTokens(line) {
 		if (char === '#') break
 		if (char === '\'' || char === '"') { i = skipString(line, i) - 1; continue }
 		if (char === '`') { i++; continue }
-		if (char === ';' || char === '|' || char === '(' || char === '{' || char === '=') expectCommand = true
+		if (';|({='.includes(char)) expectCommand = true
 	}
 	return tokens
 }
@@ -169,8 +160,7 @@ function installTarget(rest) {
 	const match = /^("[^"]*"|'[^']*'|[^\s]+)/.exec(text)
 	if (!match) return null
 	const name = unquote(match[1])
-	if (!name || name.startsWith('$') || name.startsWith('-')) return null
-	return name
+	return name && !/^[$-]/.test(name) ? name : null
 }
 
 /**
@@ -206,8 +196,8 @@ function requireFixForLine(raw) {
  * @param {Record<string, string>} [aliasMap] - 别名到定义的映射（见 `lib/aliases.mjs`）
  * @returns {Array<{ line: number, severity: 'warning', message: string, args: string[], code: string, start: number, end: number, replacement?: string }>} 诊断列表
  */
-export function analyzeCommandUsage(text, aliasMap = MODULE_ALIASES) {
-	const lines = String(text).split(/\r\n|\n|\r/)
+export function analyzeCommandUsage(text, aliasMap = FALLBACK_ALIASES) {
+	const lines = text.split(/\r\n|\n|\r/)
 	const skip = computeSkipMask(lines)
 	const ignored = computeIgnoredMask(lines)
 	const moduleAliases = moduleAliasSet(aliasMap)
@@ -239,7 +229,7 @@ export function analyzeCommandUsage(text, aliasMap = MODULE_ALIASES) {
 
 		let content = raw
 		let offset = 0
-		const bang = /^([\t ]*)#_!! ?/.exec(raw)
+		const bang = BANG_MARKER_RE.exec(raw)
 		if (bang) {
 			offset = bang[0].length
 			content = raw.slice(offset)

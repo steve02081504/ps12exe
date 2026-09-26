@@ -17,7 +17,7 @@ import { toPs12exeLocale } from './lib/locale.mjs'
 import { POWER_SHELL_EXTENSION_ID, isPowerShellExtensionInstalled, getOfficialEdits, applyTextEdits } from './lib/officialFormatter.mjs'
 import { resolvePowerShell, compileScript, syncModule, launchGUI } from './lib/powershell.mjs'
 import { pragmaNameAt, getPragmaData, peekPragmaData, lookupPragma, buildPragmaCandidates, clearPragmaCache } from './lib/pragma.mjs'
-import { analyze, endifAutoClose, isBalanced, foldingRanges, toggleBangLines, computeSkipMask } from './lib/preprocessor.mjs'
+import { analyze, endifAutoClose, isBalanced, foldingRanges, toggleBangLines, computeSkipMask, splitLines } from './lib/preprocessor.mjs'
 import { requireModulesAt } from './lib/require.mjs'
 
 const OUTPUT_CHANNEL_NAME = 'ps12exe'
@@ -61,9 +61,7 @@ function getOutputChannel() {
  */
 function resolveTarget(resource) {
 	if (resource instanceof vscode.Uri) return resource
-	const editor = vscode.window.activeTextEditor
-	if (editor) return editor.document.uri
-	return undefined
+	return vscode.window.activeTextEditor?.document.uri
 }
 
 /**
@@ -73,7 +71,7 @@ function resolveTarget(resource) {
  * @returns {boolean} 是本地 .ps1 文件时为真
  */
 function isPs1(uri) {
-	return !!uri && uri.scheme === 'file' && path.extname(uri.fsPath).toLowerCase() === '.ps1'
+	return uri?.scheme === 'file' && path.extname(uri.fsPath).toLowerCase() === '.ps1'
 }
 
 /**
@@ -82,16 +80,10 @@ function isPs1(uri) {
  * @returns {string} 对应的界面模式取值
  */
 function currentUiMode() {
-	switch (vscode.window.activeColorTheme.kind) {
-		case vscode.ColorThemeKind.Dark:
-		case vscode.ColorThemeKind.HighContrast:
-			return 'Dark'
-		case vscode.ColorThemeKind.Light:
-		case vscode.ColorThemeKind.HighContrastLight:
-			return 'Light'
-		default:
-			return 'Auto'
-	}
+	const kind = vscode.window.activeColorTheme.kind
+	if ([vscode.ColorThemeKind.Dark, vscode.ColorThemeKind.HighContrast].includes(kind)) return 'Dark'
+	if ([vscode.ColorThemeKind.Light, vscode.ColorThemeKind.HighContrastLight].includes(kind)) return 'Light'
+	return 'Auto'
 }
 
 /**
@@ -184,14 +176,13 @@ async function compileCommand(resource) {
 	if (!host) return
 
 	const file = uri.fsPath
-	const locale = toPs12exeLocale(vscode.env.language)
 	const outputPath = file.replace(/\.ps1$/i, '.exe')
 
 	const result = await vscode.window.withProgress({
 		location: vscode.ProgressLocation.Notification,
 		title: t('Compiling {0}...', path.basename(file)),
 		cancellable: true
-	}, (progress, token) => compileScript({ host, file, locale, channel: getOutputChannel(), token }))
+	}, (progress, token) => compileScript({ host, file, locale: toPs12exeLocale(vscode.env.language), channel: getOutputChannel(), token }))
 
 	if (result.cancelled) {
 		vscode.window.showInformationMessage(t('Compilation cancelled.'))
@@ -286,8 +277,7 @@ async function toggleBangCommand() {
  * @returns {vscode.Range} 覆盖全文的范围
  */
 function fullDocumentRange(document) {
-	const lastLine = Math.max(document.lineCount - 1, 0)
-	return new vscode.Range(new vscode.Position(0, 0), document.lineAt(lastLine).range.end)
+	return new vscode.Range(new vscode.Position(0, 0), document.lineAt(Math.max(document.lineCount - 1, 0)).range.end)
 }
 
 /**
@@ -303,6 +293,16 @@ function editorFormattingOptions(document) {
 		insertSpaces: config.get('insertSpaces', false),
 		tabSize: config.get('tabSize', 4)
 	}
+}
+
+/**
+ * 把一个缩进单位表示为实际字符串。
+ *
+ * @param {{insertSpaces: boolean, tabSize: number}} options - 编辑器格式化选项
+ * @returns {string} 一个缩进单位的文本
+ */
+function indentUnitOf(options) {
+	return options.insertSpaces ? ' '.repeat(options.tabSize || 4) : '\t'
 }
 
 /**
@@ -344,25 +344,23 @@ function updateDiagnostics(document) {
 	if (!diagnosticCollection || document.languageId !== 'powershell') return
 	ensureAliasMap()
 	const text = document.getText()
-	const lines = text.split(/\r\n|\n|\r/)
+	const lines = splitLines(text)
 	const ignored = computeIgnoredMask(lines)
 	const locale = toPs12exeLocale(vscode.env.language)
 	const cliData = peekPragmaData(locale)
 	if (!cliData) ensureCliData(locale)
-	const cliDiagnostics = cliData ? analyzeCliUsage(text, cliData) : []
-	const found = [
+
+	const items = [
 		...analyze(text).diagnostics,
 		...analyzeCommandUsage(text, currentAliasMap()),
-		...cliDiagnostics
+		...cliData ? analyzeCliUsage(text, cliData) : []
 	]
-
-	const items = found
 		.filter((entry) => !ignored[entry.line])
 		.map((entry) => {
 			const line = document.lineAt(Math.min(entry.line, document.lineCount - 1))
-			const range = typeof entry.start === 'number'
-				? new vscode.Range(line.lineNumber, entry.start, line.lineNumber, entry.end)
-				: line.range
+			const range = entry.start === undefined
+				? line.range
+				: new vscode.Range(line.lineNumber, entry.start, line.lineNumber, entry.end)
 			const diagnostic = new vscode.Diagnostic(
 				range,
 				t(entry.message, ...entry.args),
@@ -418,7 +416,7 @@ function notifyMissingPowerShell() {
 async function formatDocumentText(document, options) {
 	const current = document.getText()
 	const formattingOptions = options || editorFormattingOptions(document)
-	const indentUnit = formattingOptions.insertSpaces ? ' '.repeat(formattingOptions.tabSize || 4) : '\t'
+	const indentUnit = indentUnitOf(formattingOptions)
 
 	let base = current
 	let officialApplied = false
@@ -431,7 +429,7 @@ async function formatDocumentText(document, options) {
 		catch (error) {
 			const channel = getOutputChannel()
 			channel.appendLine(t('Failed to run the official PowerShell formatter; the document was left unchanged.'))
-			channel.appendLine(String(error && error.message ? error.message : error))
+			channel.appendLine(String(error?.message || error))
 		}
 	else
 		notifyMissingPowerShell()
@@ -454,9 +452,9 @@ async function formatDocumentText(document, options) {
  * @param {string | undefined} uri - 触发命令时传入的文档地址字符串，未提供时使用活动编辑器
  */
 async function formatDocumentCommand(uri) {
-	let document
-	if (uri) document = await vscode.workspace.openTextDocument(vscode.Uri.parse(uri))
-	else document = vscode.window.activeTextEditor && vscode.window.activeTextEditor.document
+	const document = uri
+		? await vscode.workspace.openTextDocument(vscode.Uri.parse(uri))
+		: vscode.window.activeTextEditor?.document
 
 	if (!document || document.languageId !== 'powershell') {
 		vscode.window.showWarningMessage(t('Please select or open a PowerShell script (.ps1) file.'))
@@ -518,8 +516,7 @@ function registerIfAutoClose(context) {
 			if (!close) continue
 			if (isBalanced(event.document.getText())) continue
 
-			const { insertSpaces, tabSize } = editorFormattingOptions(event.document)
-			const indentUnit = insertSpaces ? ' '.repeat(tabSize || 4) : '\t'
+			const indentUnit = indentUnitOf(editorFormattingOptions(event.document))
 			void insertEndif(editor, breakLine + close.offset, close.indent, indentUnit)
 			return
 		}
@@ -552,7 +549,7 @@ function registerDirectiveSuggest(context) {
 				if (position.line >= event.document.lineCount) return
 				const before = event.document.lineAt(position.line).text.slice(0, position.character)
 				if (!directivePrefixAt(before)) continue
-				if (computeSkipMask(event.document.getText().split(/\r\n|\n|\r/))[position.line]) return
+				if (computeSkipMask(splitLines(event.document.getText()))[position.line]) return
 				void vscode.commands.executeCommand('editor.action.triggerSuggest')
 				return
 			}
@@ -604,6 +601,16 @@ const definitionProvider = {
 }
 
 /**
+ * 取 pragma 条目的本地化说明：分组条目描述其直接子键，叶子条目用自身说明。
+ *
+ * @param {{ description: string, isGroup?: boolean, children?: string[] }} entry - `lookupPragma` 返回的条目
+ * @returns {string} 本地化的说明文本
+ */
+function pragmaEntryDescription(entry) {
+	return entry.isGroup ? t(HOVER_MESSAGES.pragmaGroup, entry.children.join(', ')) : entry.description
+}
+
+/**
  * 为 `#_pragma` 变量名构造悬浮提示：其本地化说明来自当前安装的 ps12exe 模块（见 `lib/pragma.mjs`），并链接到 README 的预处理小节。区域数据不可用时回退到通用的 `#_pragma` 说明。
  *
  * @param {number} line - 悬浮提示所在行号
@@ -616,7 +623,7 @@ async function createPragmaHover(line, pragma, locale) {
 	try {
 		const data = await getPragmaData(locale)
 		const entry = lookupPragma(data, pragma.name)
-		if (entry) description = entry.isGroup ? t(HOVER_MESSAGES.pragmaGroup, entry.children.join(', ')) : entry.description
+		if (entry) description = pragmaEntryDescription(entry)
 	}
 	catch {
 		// 模块未安装或读取失败：退回通用说明，不改动悬停本身。
@@ -650,7 +657,7 @@ async function createCliHover(cli, line, locale) {
 	}
 	if (!entry) return null
 
-	const description = entry.isGroup ? t(HOVER_MESSAGES.pragmaGroup, entry.children.join(', ')) : entry.description
+	const description = pragmaEntryDescription(entry)
 	const header = cli.kind === 'param' ? `-${entry.name}` : entry.name
 	const contents = new vscode.MarkdownString()
 	contents.appendMarkdown(`\`${header}\`\n\n${description}`)
@@ -774,7 +781,7 @@ const hoverProvider = {
 		const token = icon || pragma || required ? null : conditionAt(line, position.character) || directiveAt(line, position.character)
 		const cli = icon || pragma || required || token ? null : cliTokenAt(document.getText(), position.line, position.character)
 		if (!icon && !pragma && !required && !token && !cli) return null
-		if (computeSkipMask(document.getText().split(/\r\n|\n|\r/))[position.line]) return null
+		if (computeSkipMask(splitLines(document.getText()))[position.line]) return null
 
 		if (icon) return createIconHover(position.line, icon, locale)
 		if (pragma) return createPragmaHover(position.line, pragma, locale)
@@ -802,6 +809,33 @@ function applyFollowUp(item, followUp) {
 	if (command) item.command = { command, title: '' }
 }
 
+/**
+ * 把 `lib/directives.mjs` 的候选渲染成补全项：每项带本地化说明与 README 链接。
+ *
+ * @param {Array<{ label: string, insertText: string, section: string, followUp?: string }>} candidates - 补全候选
+ * @param {vscode.Range} range - 补全替换的列范围
+ * @param {string | undefined} locale - 当前区域标识，未知时为 undefined
+ * @param {object} options - 渲染选项
+ * @param {vscode.CompletionItemKind} options.kind - 补全项类型
+ * @param {string} options.detail - 已本地化的 `detail` 文本
+ * @param {boolean} [options.sortText] - 是否按候选顺序写入 `sortText`，保留 `DIRECTIVE_COMPLETIONS` 的分组顺序
+ * @returns {vscode.CompletionItem[]} 补全项列表
+ */
+function buildCompletionItems(candidates, range, locale, { kind, detail, sortText }) {
+	return candidates.map((candidate, index) => {
+		const item = new vscode.CompletionItem(candidate.label, kind)
+		item.insertText = candidate.insertText
+		item.range = range
+		if (sortText) item.sortText = String(index).padStart(2, '0')
+		item.detail = detail
+		const docs = new vscode.MarkdownString(t(HOVER_MESSAGES[candidate.section]))
+		docs.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${documentationUrl(locale, candidate.section)})`)
+		item.documentation = docs
+		applyFollowUp(item, candidate.followUp)
+		return item
+	})
+}
+
 const completionProvider = {
 	/**
 	 * 输入 `#_` 后补全预处理器指令（每项带本地化说明与 README 链接）。在 `#_pragma ` 后补全参数名；已输入父级点号（`App.`）时只列出该父级的直接子键，候选及其说明同样来自当前安装的模块。
@@ -816,51 +850,49 @@ const completionProvider = {
 		const before = line.slice(0, position.character)
 		const locale = toPs12exeLocale(vscode.env.language)
 
+		// 只在确实需要时切分文档并计算跳过掩码；补全请求很频繁，未命中任何前缀时不做无谓的整篇扫描。
+		let lines
+		let skip
+		/**
+		 * 光标所在行是否为不透明内容（here-string / 块注释）。
+		 *
+		 * @returns {boolean} 该行应跳过时为 true
+		 */
+		const isSkippedLine = () => {
+			lines ??= splitLines(document.getText())
+			skip ??= computeSkipMask(lines)
+			return skip[position.line]
+		}
+
 		const directive = directivePrefixAt(before)
 		if (directive) {
-			const lines = document.getText().split(/\r\n|\n|\r/)
-			if (computeSkipMask(lines)[position.line]) return undefined
+			if (isSkippedLine()) return undefined
 			// 抹掉当前正在输入的指令名再分析块结构，这样半截或完整的 `#_if`/`#_else`/`#_endif` 不会被当成已有结构，
 			// `#_else` / `#_endif` 只在插入后不会出现 stray 或 duplicate 时才进入候选。
 			const probe = [...lines]
 			probe[position.line] = line.slice(0, directive.start) + line.slice(position.character)
 			const availability = directiveAvailability(analyze(probe.join('\n')).blocks, position.line)
 			const range = new vscode.Range(position.line, directive.start, position.line, position.character)
-			return buildDirectiveCandidates(directive.prefix, availability).map((candidate, index) => {
-				const item = new vscode.CompletionItem(candidate.label, vscode.CompletionItemKind.Keyword)
-				item.insertText = candidate.insertText
-				item.range = range
-				// 保留 `DIRECTIVE_COMPLETIONS` 的分组顺序（if/else/endif、include* …），而不是按字母重排。
-				item.sortText = String(index).padStart(2, '0')
-				item.detail = t('ps12exe preprocessor directive')
-				const docs = new vscode.MarkdownString(t(HOVER_MESSAGES[candidate.section]))
-				docs.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${documentationUrl(locale, candidate.section)})`)
-				item.documentation = docs
-				applyFollowUp(item, candidate.followUp)
-				return item
+			return buildCompletionItems(buildDirectiveCandidates(directive.prefix, availability), range, locale, {
+				kind: vscode.CompletionItemKind.Keyword,
+				detail: t('ps12exe preprocessor directive'),
+				sortText: true
 			})
 		}
 
 		const condition = ifConditionPrefixAt(before)
 		if (condition) {
-			if (computeSkipMask(document.getText().split(/\r\n|\n|\r/))[position.line]) return undefined
+			if (isSkippedLine()) return undefined
 			const range = new vscode.Range(position.line, condition.start, position.line, position.character)
-			return buildConditionCandidates(condition.prefix).map((candidate) => {
-				const item = new vscode.CompletionItem(candidate.label, vscode.CompletionItemKind.Constant)
-				item.insertText = candidate.insertText
-				item.range = range
-				item.detail = t('ps12exe preprocessor condition')
-				const docs = new vscode.MarkdownString(t(HOVER_MESSAGES[candidate.section]))
-				docs.appendMarkdown(`\n\n[${t(HOVER_MESSAGES.more)}](${documentationUrl(locale, candidate.section)})`)
-				item.documentation = docs
-				applyFollowUp(item, candidate.followUp)
-				return item
+			return buildCompletionItems(buildConditionCandidates(condition.prefix), range, locale, {
+				kind: vscode.CompletionItemKind.Constant,
+				detail: t('ps12exe preprocessor condition')
 			})
 		}
 
 		const match = /^([\t ]*#_pragma[\t ]+)([A-Z_a-z][\w.]*)?$/.exec(before)
 		if (!match) return undefined
-		if (computeSkipMask(document.getText().split(/\r\n|\n|\r/))[position.line]) return undefined
+		if (isSkippedLine()) return undefined
 
 		let data
 		try {
@@ -945,33 +977,16 @@ const codeActionProvider = {
 			const replacement = diagnostic.data?.replacement
 			const line = diagnostic.range.start.line
 
-			if (diagnostic.code === PS2EXE_DIAGNOSTIC && replacement) {
-				const action = new vscode.CodeAction(t('Use ps12exe'), vscode.CodeActionKind.QuickFix)
+			if (replacement && [PS2EXE_DIAGNOSTIC, MODULE_DIAGNOSTIC, PS2EXE_REQUIRE_DIAGNOSTIC].includes(diagnostic.code)) {
+				const action = new vscode.CodeAction(diagnostic.code === MODULE_DIAGNOSTIC ? t('Use #_require') : t('Use ps12exe'), vscode.CodeActionKind.QuickFix)
 				action.edit = new vscode.WorkspaceEdit()
 				action.edit.replace(document.uri, diagnostic.range, replacement)
 				action.diagnostics = [diagnostic]
-				add(action, `ps12exe:${line}:${replacement}`)
+				add(action, `${diagnostic.code}:${line}:${replacement}`)
 			}
 
-			if (diagnostic.code === MODULE_DIAGNOSTIC && replacement) {
-				const action = new vscode.CodeAction(t('Use #_require'), vscode.CodeActionKind.QuickFix)
-				action.edit = new vscode.WorkspaceEdit()
-				action.edit.replace(document.uri, diagnostic.range, replacement)
-				action.diagnostics = [diagnostic]
-				add(action, `require:${line}:${replacement}`)
-			}
-
-			if (diagnostic.code === PS2EXE_REQUIRE_DIAGNOSTIC && replacement) {
-				const action = new vscode.CodeAction(t('Use ps12exe'), vscode.CodeActionKind.QuickFix)
-				action.edit = new vscode.WorkspaceEdit()
-				action.edit.replace(document.uri, diagnostic.range, replacement)
-				action.diagnostics = [diagnostic]
-				add(action, `require-ps2exe:${line}:${replacement}`)
-			}
-
-			if (diagnostic.code === PS2EXE_DIAGNOSTIC || diagnostic.code === PS2EXE_REQUIRE_DIAGNOSTIC || diagnostic.code === MODULE_DIAGNOSTIC
-				|| diagnostic.code === CLI_PARAMETER_DIAGNOSTIC || diagnostic.code === CLI_MEMBER_DIAGNOSTIC) {
-				const indent = (document.lineAt(line).text.match(/^[\t ]*/) || [''])[0]
+			if ([PS2EXE_DIAGNOSTIC, PS2EXE_REQUIRE_DIAGNOSTIC, MODULE_DIAGNOSTIC, CLI_PARAMETER_DIAGNOSTIC, CLI_MEMBER_DIAGNOSTIC].includes(diagnostic.code)) {
+				const indent = document.lineAt(line).text.match(/^[\t ]*/)[0]
 				const eol = document.eol === vscode.EndOfLine.CRLF ? '\r\n' : '\n'
 				const action = new vscode.CodeAction(t('Ignore this warning'), vscode.CodeActionKind.QuickFix)
 				action.edit = new vscode.WorkspaceEdit()

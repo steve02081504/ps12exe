@@ -78,7 +78,7 @@ function ConvertFrom-WinFormsXML {
 	)
 
 	try {
-		if ( $Xml.GetType().Name -eq 'String' ) { $Xml = ([xml]$Xml).ChildNodes }
+		if ( $Xml -is [string] ) { $Xml = ([xml]$Xml).ChildNodes }
 
 		if ( $Xml.ToString() -ne 'SplitterPanel' ) { $newControl = New-Object System.Windows.Forms.$($Xml.ToString()) }
 
@@ -125,7 +125,7 @@ function ConvertFrom-WinFormsXML {
 
 		if ( $Xml.ChildNodes ) { $Xml.ChildNodes | ForEach-Object { ConvertFrom-WinformsXML -Xml $_ -ParentControl $newControl -Reference $Reference -Suppress } }
 
-		if ( $Suppress -eq $false ) { return $newControl }
+		if (-not $Suppress) { return $newControl }
 	}
 	catch { Update-ErrorLog -ErrorRecord $_ -Message "Exception encountered adding $($Xml.ToString()) to $($ParentControl.Name)" }
 }

@@ -597,11 +597,6 @@ else {
 		$global:LastExitCode = 2
 		return
 	}
-	if ($conHost -and $coreTargetOs -and $coreTargetOs -ne 'Windows') {
-		Write-I18n Error CoreTargetOsNotWindows -Category InvalidArgument
-		$global:LastExitCode = 2
-		return
-	}
 }
 if ($conHost -and $noConsole) {
 	Write-I18n Error CombinedArg_ConHost_NoConsole -Category InvalidArgument
@@ -1084,8 +1079,8 @@ $($_ | Format-List | Out-String)
 finally {
 	Write-TaskbarProgressClear
 	Stop-AsmWarmup $AsmWarmup
-	if ($TempTempDir) {
-		Remove-Item $TempTempDir -Recurse -Force -ErrorAction SilentlyContinue
+	if ($AutoTempDir) {
+		Remove-Item $AutoTempDir -Recurse -Force -ErrorAction SilentlyContinue
 	}
 }
 #_if PSEXE

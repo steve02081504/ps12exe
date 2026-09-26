@@ -69,7 +69,7 @@ export function resolveIconAt(line, character, baseDir) {
 export function needsIconExtraction(file, index) {
 	const extension = path.extname(file).toLowerCase()
 	if (CONTAINER_EXTENSIONS.includes(extension)) return true
-	return index !== null && index !== undefined && !IMAGE_EXTENSIONS.has(extension)
+	return index != null && !IMAGE_EXTENSIONS.has(extension)
 }
 
 /**
@@ -93,7 +93,7 @@ export async function getIconPreview({ file, index }) {
 	const stat = await fsp.stat(file).catch(() => undefined)
 	if (!stat || !stat.isFile()) return null
 
-	const key = `${file.toLowerCase()}|${stat.mtimeMs}|${index === null || index === undefined ? '' : index}`
+	const key = `${file.toLowerCase()}|${stat.mtimeMs}|${index ?? ''}`
 	const cached = previewCache.get(key)
 	if (cached) return cached
 
@@ -114,8 +114,7 @@ async function buildPreview(file, index) {
 	const mime = renderableMime(file)
 	if (mime && !needsIconExtraction(file, index))
 		try {
-			const bytes = await fsp.readFile(file)
-			return `data:${mime};base64,${bytes.toString('base64')}`
+			return `data:${mime};base64,${(await fsp.readFile(file)).toString('base64')}`
 		}
 		catch {
 			return null
@@ -140,19 +139,15 @@ async function buildPreview(file, index) {
  * @returns {string} PowerShell 脚本
  */
 export function buildProbeScript(file, index) {
-	const containers = CONTAINER_EXTENSIONS.map((extension) => `'${extension}'`).join(', ')
-	const images = [...IMAGE_EXTENSIONS].map((extension) => `'${extension}'`).join(', ')
-	const numericIndex = Number.isInteger(index) ? index : -1
-
 	return [
 		'$ErrorActionPreference = "Stop"',
 		'[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)',
 		'Add-Type -AssemblyName System.Drawing',
 		`$path = ${psQuote(file)}`,
-		`$index = ${numericIndex}`,
+		`$index = ${Number.isInteger(index) ? index : -1}`,
 		'$extension = [System.IO.Path]::GetExtension($path).ToLower()',
-		`$containerExtensions = @(${containers})`,
-		`$imageExtensions = @(${images})`,
+		`$containerExtensions = @(${CONTAINER_EXTENSIONS.map((extension) => `'${extension}'`).join(', ')})`,
+		`$imageExtensions = @(${[...IMAGE_EXTENSIONS].map((extension) => `'${extension}'`).join(', ')})`,
 		'$source = $null',
 		'try {',
 		'  if (($containerExtensions -contains $extension) -or ($index -ge 0 -and ($imageExtensions -notcontains $extension))) {',

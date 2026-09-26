@@ -19,19 +19,10 @@ Set-ps12exeIntegration -Skip ContextMenu,VSCodeExtension
 #>
 [CmdletBinding()]
 param (
-	[ValidateScript({
-		. $PSScriptRoot\..\predicate.ps1
-		(IsEnable $_) -or (IsDisable $_) -or ($_ -eq 'reset')
-	})]
+	[ValidateScript({ . "$PSScriptRoot\ActionValidator.ps1" $_ })]
 	[ArgumentCompleter({
-		param($Command, $Parameter, $WordToComplete, $CommandAst, $FakeBoundParams)
-		. $PSScriptRoot\..\predicate.ps1
-		if (-not $WordToComplete) {
-			@('enable', 'disable', 'reset')
-		}
-		else {
-			@($DisablePredicates; $EnablePredicates; 'reset') | Where-Object { $_ -like "$WordToComplete*" }
-		}
+		Param($Command, $Parameter, $WordToComplete, $CommandAst, $FakeBoundParams)
+		. "$PSScriptRoot\ActionArgCompleter.ps1" @PSBoundParameters
 	})]
 	$action = 'on',
 	[ArgumentCompleter({

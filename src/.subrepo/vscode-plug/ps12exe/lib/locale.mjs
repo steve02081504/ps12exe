@@ -27,7 +27,6 @@ export const PS12EXE_LOCALES = Object.freeze({
  */
 export function toPs12exeLocale(language) {
 	if (!language) return undefined
-	const key = String(language).toLowerCase()
 	// 未知区域会原样传递：ps12exe 会回退到匹配的区域前缀（例如 `pt` -> 无匹配，然后是 en-UK），而不是失败。
-	return PS12EXE_LOCALES[key] || String(language)
+	return PS12EXE_LOCALES[language.toLowerCase()] || language
 }

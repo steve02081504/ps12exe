@@ -34,7 +34,7 @@ export async function findIncompleteBlocks(text, onError) {
 		flags = await findIncompleteFragments({ host, texts: fragments.map((fragment) => fragment.text) })
 	}
 	catch (error) {
-		if (onError) onError(`ps12exe: could not check preprocessor blocks for completeness: ${error && error.message ? error.message : error}`)
+		if (onError) onError(`ps12exe: could not check preprocessor blocks for completeness: ${error?.message || error}`)
 		return new Set()
 	}
 
@@ -59,8 +59,7 @@ export async function findIncompleteBlocks(text, onError) {
  */
 export async function formatPreprocessedText(baseText, options = {}) {
 	const indentUnit = options.indentUnit || '\t'
-	let styled = restoreParenIndentation(baseText, indentUnit)
-	styled = restoreClauseIndentation(styled)
+	const styled = restoreClauseIndentation(restoreParenIndentation(baseText, indentUnit))
 	const incomplete = await findIncompleteBlocks(styled, options.onError)
 	const indented = indentText(styled, { indentUnit, incompleteBlocks: incomplete })
 	if (!options.originalText) return indented
@@ -79,6 +78,5 @@ export async function formatPreprocessedText(baseText, options = {}) {
  * @returns {Promise<string>} 格式化后的文档文本
  */
 export async function applyPreprocessorFormatting(currentText, baseText, officialApplied, options = {}) {
-	if (!officialApplied) return currentText
-	return formatPreprocessedText(baseText, { ...options, originalText: currentText })
+	return officialApplied ? formatPreprocessedText(baseText, { ...options, originalText: currentText }) : currentText
 }

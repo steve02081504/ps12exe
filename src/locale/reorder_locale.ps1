@@ -34,7 +34,6 @@ function Get-TopLevelKeyBlocks {
 			}
 		}
 	}
-	$keyStarts = $keyStarts | Sort-Object LineIndex
 	$blocks = @{}
 	for ($j = 0; $j -lt $keyStarts.Count; $j++) {
 		$start = $keyStarts[$j].LineIndex

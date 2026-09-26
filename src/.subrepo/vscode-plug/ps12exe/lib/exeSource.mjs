@@ -134,8 +134,7 @@ export class ExeSourceFileSystemProvider {
 	 * @returns {string} 缓存目录路径
 	 */
 	cacheDirFor(exePath) {
-		const hash = createHash('sha1').update(exePath.toLowerCase()).digest('hex').slice(0, 16)
-		return path.join(this.storageRoot, hash)
+		return path.join(this.storageRoot, createHash('sha1').update(exePath.toLowerCase()).digest('hex').slice(0, 16))
 	}
 
 	/**
@@ -389,7 +388,7 @@ export class ExeSourceCustomEditorProvider {
 				opened = true
 			}
 			catch (error) {
-				this.provider.channel.appendLine(`ps12exe: could not open exe source for ${exeUri.fsPath}: ${error && error.message ? error.message : error}`)
+				this.provider.channel.appendLine(`ps12exe: could not open exe source for ${exeUri.fsPath}: ${error?.message || error}`)
 			}
 
 		if (!opened)
@@ -432,7 +431,7 @@ export function registerExeSource(context, { requireHost, channel }) {
 			}
 			catch (error) {
 				channel.show(true)
-				vscode.window.showErrorMessage(t('Failed to open exe source: {0}', error && error.message ? error.message : String(error)))
+				vscode.window.showErrorMessage(t('Failed to open exe source: {0}', error?.message || String(error)))
 			}
 		})
 	)

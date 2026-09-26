@@ -2,7 +2,7 @@
 import assert from 'node:assert'
 
 import { parseAliasOutput, FALLBACK_ALIASES } from '../lib/aliases.mjs'
-import { analyzeCommandUsage, computeIgnoredMask, IGNORE_DIRECTIVE, MODULE_ALIASES, PS2EXE_DIAGNOSTIC, PS2EXE_REQUIRE_DIAGNOSTIC, MODULE_DIAGNOSTIC } from '../lib/commands.mjs'
+import { analyzeCommandUsage, computeIgnoredMask, IGNORE_DIRECTIVE, PS2EXE_DIAGNOSTIC, PS2EXE_REQUIRE_DIAGNOSTIC, MODULE_DIAGNOSTIC } from '../lib/commands.mjs'
 
 // 模块管理告警只在使用了预处理指令的文件里出现，测试文本因此都带上一个 `#_` 指令行。
 const DIRECTIVE = '#_pragma App.Windowed'
@@ -91,7 +91,7 @@ suite('ps12exe command warnings', () => {
 			'Import-Module qux',
 			'Install-Module quux'
 		].join('\n')
-		const found = analyzeCommandUsage(text, MODULE_ALIASES)
+		const found = analyzeCommandUsage(text, FALLBACK_ALIASES)
 		assert.deepStrictEqual(
 			found.map((d) => [d.line, d.args[0], d.code]),
 			[
@@ -105,7 +105,7 @@ suite('ps12exe command warnings', () => {
 		)
 
 		// 普通脚本（没有预处理指令）不会被 ps12exe 编译，不该收到模块管理告警；PS2EXE 调用则照常告警。
-		assert.deepStrictEqual(analyzeCommandUsage('gmo foo\nInstall-Module bar', MODULE_ALIASES), [])
+		assert.deepStrictEqual(analyzeCommandUsage('gmo foo\nInstall-Module bar', FALLBACK_ALIASES), [])
 		assert.deepStrictEqual(analyzeCommandUsage('ps2exe a.ps1').map((d) => d.code), [PS2EXE_DIAGNOSTIC])
 	})
 
@@ -121,7 +121,7 @@ suite('ps12exe command warnings', () => {
 			'gmo top'
 		].join('\n')
 		assert.deepStrictEqual(
-			analyzeCommandUsage(psscript, MODULE_ALIASES).map((d) => [d.line, d.args[0], d.code]),
+			analyzeCommandUsage(psscript, FALLBACK_ALIASES).map((d) => [d.line, d.args[0], d.code]),
 			[
 				[4, 'gmo', MODULE_DIAGNOSTIC],
 				[6, 'gmo', MODULE_DIAGNOSTIC]
@@ -130,12 +130,12 @@ suite('ps12exe command warnings', () => {
 
 		// 嵌入 `#_if PSScript` 里的 `#_if PSEXE` 仍处于直接运行宿主，其模块命令同样不告警。
 		const nested = [DIRECTIVE, '#_if PSScript', '#_if PSEXE', 'ipmo foo', '#_endif', '#_endif'].join('\n')
-		assert.deepStrictEqual(analyzeCommandUsage(nested, MODULE_ALIASES), [])
+		assert.deepStrictEqual(analyzeCommandUsage(nested, FALLBACK_ALIASES), [])
 
 		// 会进入 EXE 的分支照常告警。
 		const install = [DIRECTIVE, '#_if PSEXE', '#_!! Install-Module foo', '#_endif'].join('\n')
 		assert.deepStrictEqual(
-			analyzeCommandUsage(install, MODULE_ALIASES).map((d) => [d.line, d.code]),
+			analyzeCommandUsage(install, FALLBACK_ALIASES).map((d) => [d.line, d.code]),
 			[[2, MODULE_DIAGNOSTIC]]
 		)
 

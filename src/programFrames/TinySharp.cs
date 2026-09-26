@@ -32,6 +32,52 @@ namespace TinySharp {
 			return targetRuntime == "Framework2.0" ? "v2.0." : "v4.0.";
 		}
 
+		// 四条常量壳共用的 PE 骨架：固定基址、关 ASLR（DynamicBase），x64 用 PE64 其余（x86/anycpu）用 PE32。
+		private static PEImage CreateImage(string architecture) {
+			var peKind = architecture == "x64" ? OptionalHeaderMagic.PE64 : OptionalHeaderMagic.PE32;
+			var archType = architecture == "x64" ? MachineType.Amd64 : MachineType.I386;
+			var image = new PEImage {
+				ImageBase = 0x00000000004e0000,
+				PEKind = peKind,
+				MachineType = archType
+			};
+			// 确保 PE 加载到给定的映像基址。
+			image.DllCharacteristics &= ~DllCharacteristics.DynamicBase;
+			return image;
+		}
+
+		// 共用的元数据空架：模块行 + main 函数容器类型（<Module>）。
+		private static void CreateTables(out TablesStream tablesStream, out BlobStreamBuffer blobStreamBuffer, out StringsStreamBuffer stringsStreamBuffer) {
+			tablesStream = new TablesStream();
+			blobStreamBuffer = new BlobStreamBuffer();
+			stringsStreamBuffer = new StringsStreamBuffer();
+			// 添加空的模块行。
+			tablesStream.GetTable<ModuleDefinitionRow>().Add(new ModuleDefinitionRow());
+			// 为 main 函数添加容器类型定义（<Module>）。
+			tablesStream.GetTable<TypeDefinitionRow>().Add(new TypeDefinitionRow(0, 0, 0, 0, 1, 1));
+		}
+
+		// 收尾：程序集清单 + 元数据目录 + 入口点；anycpu 清掉 Bit32Required。
+		private static void FinishImage(PEImage image, TablesStream tablesStream, BlobStreamBuffer blobStreamBuffer, StringsStreamBuffer stringsStreamBuffer, MetadataToken entryPoint, string targetRuntime, string architecture, string assemblyName) {
+			// 定义程序集清单。CLR 不允许程序集名为空，调用方复用 P/Invoke 库名以节省空间。
+			tablesStream.GetTable<AssemblyDefinitionRow>().Add(new AssemblyDefinitionRow(
+				0, 1, 0, 0, 0, 0, 0,
+				stringsStreamBuffer.GetStringIndex(assemblyName), 0));
+			// 把所有 .NET 元数据加入 PE 映像。
+			var metadataDirectory = new MetadataDirectory {
+				VersionString = ClrVersionString(targetRuntime)
+			};
+			metadataDirectory.Streams.Add(tablesStream);
+			metadataDirectory.Streams.Add(blobStreamBuffer.CreateStream());
+			metadataDirectory.Streams.Add(stringsStreamBuffer.CreateStream());
+			image.DotNetDirectory = new DotNetDirectory {
+				EntryPoint = entryPoint,
+				Metadata = metadataDirectory
+			};
+			if (architecture == "anycpu")
+				image.DotNetDirectory.Flags &= ~DotNetDirectoryFlags.Bit32Required;
+		}
+
 		// 追加一个 static P/Invoke 方法行，返回其方法号（1 起）。
 		private static uint AddPInvoke(
 			TablesStream tablesStream, ModuleDefinition module,
@@ -49,68 +95,47 @@ namespace TinySharp {
 
 		public static Program Compile(
 			string targetRuntime, string architecture = "x64",
-			string outputValue = "Hello World!", int ExitCode = 0, bool hasOutput = true,
+			string outputValue = "Hello World!", int exitCode = 0, bool hasOutput = true,
 			bool useMessageBox = false
 		) {
 			if (useMessageBox && hasOutput)
-				return CompileMessageBox(targetRuntime, architecture, outputValue, ExitCode);
-			string baseFunction = "7";
-			bool allASCIIoutput = outputValue.All(c => c >= 0 && c <= 127);
+				return CompileMessageBox(targetRuntime, architecture, outputValue, exitCode);
+			string assemblyName = "7";
+			bool allAsciiOutput = outputValue.All(c => c >= 0 && c <= 127);
 
 			// 非 ASCII 控制台常量：WriteConsoleW 在 stdout 被重定向（管道/文件）时会失败并丢输出，
 			// 因此单独走「控制台 WriteConsoleW / 重定向 UTF-8 WriteFile」的壳（见 CompileUnicode）。
-			if (hasOutput && !allASCIIoutput)
-				return CompileUnicode(targetRuntime, architecture, outputValue, ExitCode);
+			if (hasOutput && !allAsciiOutput)
+				return CompileUnicode(targetRuntime, architecture, outputValue, exitCode);
 
 			// 输出字符串按 ASCII 或 UTF-16 编码，末尾补 NUL 方便 puts 直接输出。
-			byte[] payloadBytes = (allASCIIoutput?Encoding.ASCII:Encoding.Unicode).GetBytes(outputValue+'\0');
+			byte[] payloadBytes = (allAsciiOutput?Encoding.ASCII:Encoding.Unicode).GetBytes(outputValue+'\0');
 			// 常量输出较大时用 XPRESS 压缩内嵌，运行时解压后再打印；只有压缩确实更小才走该路径。
 			if (hasOutput) {
 				byte[] compressedPayload = TryCompressXpress(payloadBytes);
 				if (compressedPayload != null && compressedPayload.Length + CompressionOverhead < payloadBytes.Length)
-					return CompileCompressed(targetRuntime, architecture, outputValue, allASCIIoutput, compressedPayload, payloadBytes.Length, ExitCode);
+					return CompileCompressed(targetRuntime, architecture, outputValue, allAsciiOutput, compressedPayload, payloadBytes.Length, exitCode);
 			}
 			var module = new ModuleDefinition("Dummy");
 
 			// 包含待输出字符串的段。
 			DataSegment segment = new DataSegment(payloadBytes);
 
-			var PEKind = OptionalHeaderMagic.PE64;
-			var ArchType = MachineType.Amd64;
-			if (architecture != "x64") {
-				PEKind = OptionalHeaderMagic.PE32;
-				ArchType = MachineType.I386;
-			}
-
 			// 初始化新的 PE 映像并设置一些默认值。
-			var image = new PEImage {
-				ImageBase = 0x00000000004e0000,
-				PEKind = PEKind,
-				MachineType = ArchType
-			};
-
-			// 确保 PE 加载到给定的映像基址。
-			image.DllCharacteristics &= ~DllCharacteristics.DynamicBase;
+			var image = CreateImage(architecture);
 
 			// 创建新的元数据流。
-			var tablesStream = new TablesStream();
-			var blobStreamBuffer = new BlobStreamBuffer();
-			var stringsStreamBuffer = new StringsStreamBuffer();
-
-			// 添加空的模块行。
-			tablesStream.GetTable<ModuleDefinitionRow>().Add(new ModuleDefinitionRow());
-
-			// 为 main 函数添加容器类型定义（<Module>）。
-			tablesStream.GetTable<TypeDefinitionRow>().Add(new TypeDefinitionRow(
-				0, 0, 0, 0, 1, 1
-			));
+			TablesStream tablesStream;
+			BlobStreamBuffer blobStreamBuffer;
+			StringsStreamBuffer stringsStreamBuffer;
+			CreateTables(out tablesStream, out blobStreamBuffer, out stringsStreamBuffer);
 
 			var methodTable = tablesStream.GetTable<MethodDefinitionRow>();
 
 			// 添加 puts 方法。
 			if (hasOutput)
-				if(allASCIIoutput) {
-					baseFunction = "puts";
+				if(allAsciiOutput) {
+					assemblyName = "puts";
 					methodTable.Add(new MethodDefinitionRow(
 						SegmentReference.Null,
 						MethodImplAttributes.PreserveSig,
@@ -127,7 +152,7 @@ namespace TinySharp {
 					));
 				}
 				else {
-					baseFunction = "WriteConsoleW";
+					assemblyName = "WriteConsoleW";
 					methodTable.Add(new MethodDefinitionRow(
 						SegmentReference.Null,
 						MethodImplAttributes.PreserveSig,
@@ -170,7 +195,7 @@ namespace TinySharp {
 				var assembler = new CilAssembler(new BinaryStreamWriter(codeStream), new CilOperandBuilder(new OriginalMetadataTokenProvider(null), ThrowErrorListener.Instance));
 				uint patchIndex = 0;
 				if (hasOutput) {
-					if(allASCIIoutput) {
+					if(allAsciiOutput) {
 						patchIndex = 2;
 						assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, 5112224));
 						assembler.WriteInstruction(new CilInstruction(CilOpCodes.Call, new MetadataToken(TableIndex.Method, 1)));
@@ -186,8 +211,8 @@ namespace TinySharp {
 						assembler.WriteInstruction(new CilInstruction(CilOpCodes.Call, new MetadataToken(TableIndex.Method, 2)));
 					}
 				}
-				if (ExitCode != 0)
-					assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, ExitCode));
+				if (exitCode != 0)
+					assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ldc_I4, exitCode));
 				assembler.WriteInstruction(new CilInstruction(CilOpCodes.Ret));
 
 				var body = new CilRawTinyMethodBody(codeStream.ToArray()).AsPatchedSegment();
@@ -195,7 +220,7 @@ namespace TinySharp {
 					body = body.Patch(patchIndex, AddressFixupType.Absolute32BitAddress, new Symbol(segment.ToReference()));
 
 				var retype = module.CorLibTypeFactory.Void;
-				if (ExitCode != 0)
+				if (exitCode != 0)
 					retype = module.CorLibTypeFactory.Int32;
 
 				methodTable.Add(new MethodDefinitionRow(
@@ -214,11 +239,11 @@ namespace TinySharp {
 
 			if (hasOutput) {
 				// 添加 ucrtbase 模块引用
-				var baseLibrary = allASCIIoutput ? "ucrtbase" : "Kernel32";
+				var baseLibrary = allAsciiOutput ? "ucrtbase" : "Kernel32";
 				tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex(baseLibrary)));
 
 				// 为 puts 方法添加 P/Invoke 元数据。
-				if (allASCIIoutput)
+				if (allAsciiOutput)
 					tablesStream.GetTable<ImplementationMapRow>().Add(new ImplementationMapRow(
 						ImplementationMapAttributes.CallConvCdecl,
 						tablesStream.GetIndexEncoder(CodedIndex.MemberForwarded).EncodeToken(new MetadataToken(TableIndex.Method, 1)),
@@ -241,30 +266,9 @@ namespace TinySharp {
 				}
 			}
 
-			// 定义程序集清单。
-			tablesStream.GetTable<AssemblyDefinitionRow>().Add(new AssemblyDefinitionRow(
-				0,
-				1, 0, 0, 0,
-				0,
-				0,
-				stringsStreamBuffer.GetStringIndex(baseFunction), // CLR 不允许程序集名为空，复用 "puts" 以节省空间。
-				0
-			));
-
-			// 把所有 .NET 元数据加入 PE 映像。
-			var metadataDirectory = new MetadataDirectory {
-				VersionString = ClrVersionString(targetRuntime)
-			};
-			metadataDirectory.Streams.Add(tablesStream);
-			metadataDirectory.Streams.Add(blobStreamBuffer.CreateStream());
-			metadataDirectory.Streams.Add(stringsStreamBuffer.CreateStream());
-
-			image.DotNetDirectory = new DotNetDirectory {
-				EntryPoint = new MetadataToken(TableIndex.Method, hasOutput?allASCIIoutput?2u:3u:1u),
-				Metadata = metadataDirectory
-			};
-			if (architecture == "anycpu")
-				image.DotNetDirectory.Flags &= ~DotNetDirectoryFlags.Bit32Required;
+			FinishImage(image, tablesStream, blobStreamBuffer, stringsStreamBuffer,
+				new MetadataToken(TableIndex.Method, hasOutput ? (allAsciiOutput ? 2u : 3u) : 1u),
+				targetRuntime, architecture, assemblyName);
 
 			var result = new Program();
 			result.Image = image;
@@ -278,7 +282,7 @@ namespace TinySharp {
 		/// <summary>非 ASCII 控制台常量壳：stdout 是控制台时用 WriteConsoleW 打印 UTF-16；句柄不是控制台（被重定向到管道/文件）时 WriteConsoleW 返回 0，改用 WriteFile 输出 UTF-8。这样重定向下不再丢失输出（旧实现直接用 WriteConsoleW，重定向时静默失败）。</summary>
 		private static Program CompileUnicode(
 			string targetRuntime, string architecture,
-			string outputValue, int ExitCode
+			string outputValue, int exitCode
 		) {
 			var module = new ModuleDefinition("Dummy");
 			// s16 末尾补 NUL（WriteConsoleW 用显式长度，NUL 只供 exe21sp 还原时定位字符串边界）；s8 供重定向输出。
@@ -287,25 +291,12 @@ namespace TinySharp {
 			var s16 = new DataSegment(utf16Bytes);
 			var s8 = new DataSegment(utf8Bytes);
 
-			var PEKind = OptionalHeaderMagic.PE64;
-			var ArchType = MachineType.Amd64;
-			if (architecture != "x64") {
-				PEKind = OptionalHeaderMagic.PE32;
-				ArchType = MachineType.I386;
-			}
+			var image = CreateImage(architecture);
 
-			var image = new PEImage {
-				ImageBase = 0x00000000004e0000,
-				PEKind = PEKind,
-				MachineType = ArchType
-			};
-			image.DllCharacteristics &= ~DllCharacteristics.DynamicBase;
-
-			var tablesStream = new TablesStream();
-			var blobStreamBuffer = new BlobStreamBuffer();
-			var stringsStreamBuffer = new StringsStreamBuffer();
-			tablesStream.GetTable<ModuleDefinitionRow>().Add(new ModuleDefinitionRow());
-			tablesStream.GetTable<TypeDefinitionRow>().Add(new TypeDefinitionRow(0, 0, 0, 0, 1, 1));
+			TablesStream tablesStream;
+			BlobStreamBuffer blobStreamBuffer;
+			StringsStreamBuffer stringsStreamBuffer;
+			CreateTables(out tablesStream, out blobStreamBuffer, out stringsStreamBuffer);
 
 			var methodTable = tablesStream.GetTable<MethodDefinitionRow>();
 			var corlib = module.CorLibTypeFactory;
@@ -360,13 +351,13 @@ namespace TinySharp {
 				callMethod(writeFileIndex);
 				emit(0x26); // pop
 
-				if (ExitCode != 0)
-					ldcInt(ExitCode);
+				if (exitCode != 0)
+					ldcInt(exitCode);
 				emit(0x2A); // ret
 
 				var body = BuildFatMethodBody(codeStream.ToArray(), 8, patches);
 				var retype = module.CorLibTypeFactory.Void;
-				if (ExitCode != 0) retype = module.CorLibTypeFactory.Int32;
+				if (exitCode != 0) retype = module.CorLibTypeFactory.Int32;
 				methodTable.Add(new MethodDefinitionRow(
 					body.ToReference(), 0, MethodAttributes.Static, 0,
 					blobStreamBuffer.GetBlobIndex(module, new DummyProvider(), MethodSignature.CreateStatic(retype), ThrowErrorListener.Instance), 1));
@@ -384,22 +375,9 @@ namespace TinySharp {
 			addImplMap(writeConsoleIndex, "WriteConsoleW");
 			addImplMap(writeFileIndex, "WriteFile");
 
-			tablesStream.GetTable<AssemblyDefinitionRow>().Add(new AssemblyDefinitionRow(
-				0, 1, 0, 0, 0, 0, 0,
-				stringsStreamBuffer.GetStringIndex("WriteConsoleW"), 0));
-
-			var metadataDirectory = new MetadataDirectory {
-				VersionString = ClrVersionString(targetRuntime)
-			};
-			metadataDirectory.Streams.Add(tablesStream);
-			metadataDirectory.Streams.Add(blobStreamBuffer.CreateStream());
-			metadataDirectory.Streams.Add(stringsStreamBuffer.CreateStream());
-			image.DotNetDirectory = new DotNetDirectory {
-				EntryPoint = new MetadataToken(TableIndex.Method, entryPointIndex),
-				Metadata = metadataDirectory
-			};
-			if (architecture == "anycpu")
-				image.DotNetDirectory.Flags &= ~DotNetDirectoryFlags.Bit32Required;
+			FinishImage(image, tablesStream, blobStreamBuffer, stringsStreamBuffer,
+				new MetadataToken(TableIndex.Method, entryPointIndex),
+				targetRuntime, architecture, "WriteConsoleW");
 
 			var result = new Program();
 			result.Image = image;
@@ -417,31 +395,18 @@ namespace TinySharp {
 		/// <summary>压缩常量输出路径：内嵌 XPRESS 压缩字节，运行时用 cabinet.dll 解压到 .data 的 BSS 缓冲区，再沿用 puts/WriteConsoleW 打印。负载不可压缩时不会走到这里。</summary>
 		private static Program CompileCompressed(
 			string targetRuntime, string architecture, string outputValue,
-			bool allASCIIoutput, byte[] compressedPayload, int uncompressedSize, int ExitCode
+			bool allAsciiOutput, byte[] compressedPayload, int uncompressedSize, int exitCode
 		) {
 			var module = new ModuleDefinition("Dummy");
 			// 压缩后的负载放只读的 .text
 			DataSegment payload = new DataSegment(compressedPayload);
 
-			var PEKind = OptionalHeaderMagic.PE64;
-			var ArchType = MachineType.Amd64;
-			if (architecture != "x64") {
-				PEKind = OptionalHeaderMagic.PE32;
-				ArchType = MachineType.I386;
-			}
+			var image = CreateImage(architecture);
 
-			var image = new PEImage {
-				ImageBase = 0x00000000004e0000,
-				PEKind = PEKind,
-				MachineType = ArchType
-			};
-			image.DllCharacteristics &= ~DllCharacteristics.DynamicBase;
-
-			var tablesStream = new TablesStream();
-			var blobStreamBuffer = new BlobStreamBuffer();
-			var stringsStreamBuffer = new StringsStreamBuffer();
-			tablesStream.GetTable<ModuleDefinitionRow>().Add(new ModuleDefinitionRow());
-			tablesStream.GetTable<TypeDefinitionRow>().Add(new TypeDefinitionRow(0, 0, 0, 0, 1, 1));
+			TablesStream tablesStream;
+			BlobStreamBuffer blobStreamBuffer;
+			StringsStreamBuffer stringsStreamBuffer;
+			CreateTables(out tablesStream, out blobStreamBuffer, out stringsStreamBuffer);
 
 			var methodTable = tablesStream.GetTable<MethodDefinitionRow>();
 			var corlib = module.CorLibTypeFactory;
@@ -450,7 +415,7 @@ namespace TinySharp {
 				AddPInvoke(tablesStream, module, stringsStreamBuffer, blobStreamBuffer, name, signature);
 
 			uint putsIndex = 0, getStdHandleIndex = 0, writeConsoleIndex = 0;
-			if (allASCIIoutput)
+			if (allAsciiOutput)
 				putsIndex = addPInvoke("puts", MethodSignature.CreateStatic(corlib.Void, new[] { corlib.IntPtr }));
 			else {
 				getStdHandleIndex = addPInvoke("GetStdHandle", MethodSignature.CreateStatic(corlib.IntPtr, new[] { corlib.Int32 }));
@@ -497,7 +462,7 @@ namespace TinySharp {
 					payload, compressedPayload.Length, outputBuf, uncompressedSize, handleBuf, resultSizeBuf,
 					createDecompressorIndex, decompressIndex, closeDecompressorIndex);
 
-				if (allASCIIoutput) {
+				if (allAsciiOutput) {
 					// puts(output)
 					ldcAddress(outputBuf);
 					callMethod(putsIndex);
@@ -513,14 +478,14 @@ namespace TinySharp {
 					callMethod(writeConsoleIndex);
 				}
 
-				if (ExitCode != 0)
-					ldcInt(ExitCode);
+				if (exitCode != 0)
+					ldcInt(exitCode);
 				emit(0x2A); // ret
 
 				var body = BuildFatMethodBody(codeStream.ToArray(), 8, patches);
 
 				var retype = module.CorLibTypeFactory.Void;
-				if (ExitCode != 0) retype = module.CorLibTypeFactory.Int32;
+				if (exitCode != 0) retype = module.CorLibTypeFactory.Int32;
 				methodTable.Add(new MethodDefinitionRow(
 					body.ToReference(), 0, MethodAttributes.Static, 0,
 					blobStreamBuffer.GetBlobIndex(module, new DummyProvider(), MethodSignature.CreateStatic(retype), ThrowErrorListener.Instance), 1));
@@ -528,7 +493,7 @@ namespace TinySharp {
 			uint entryPointIndex = (uint)methodTable.Count; // main 是最后添加的一行
 
 			// 模块引用：1=基础库（ucrtbase/Kernel32），2=cabinet
-			var baseLibrary = allASCIIoutput ? "ucrtbase" : "Kernel32";
+			var baseLibrary = allAsciiOutput ? "ucrtbase" : "Kernel32";
 			tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex(baseLibrary)));
 			tablesStream.GetTable<ModuleReferenceRow>().Add(new ModuleReferenceRow(stringsStreamBuffer.GetStringIndex("cabinet")));
 
@@ -540,7 +505,7 @@ namespace TinySharp {
 					stringsStreamBuffer.GetStringIndex(name),
 					moduleIndex));
 
-			if (allASCIIoutput)
+			if (allAsciiOutput)
 				addImplMap(putsIndex, "puts", 1, ImplementationMapAttributes.CallConvCdecl);
 			else {
 				addImplMap(getStdHandleIndex, "GetStdHandle", 1, ImplementationMapAttributes.CallConvCdecl);
@@ -550,22 +515,9 @@ namespace TinySharp {
 			addImplMap(decompressIndex, "Decompress", 2, ImplementationMapAttributes.CallConvStdcall);
 			addImplMap(closeDecompressorIndex, "CloseDecompressor", 2, ImplementationMapAttributes.CallConvStdcall);
 
-			tablesStream.GetTable<AssemblyDefinitionRow>().Add(new AssemblyDefinitionRow(
-				0, 1, 0, 0, 0, 0, 0,
-				stringsStreamBuffer.GetStringIndex(allASCIIoutput ? "puts" : "WriteConsoleW"), 0));
-
-			var metadataDirectory = new MetadataDirectory {
-				VersionString = ClrVersionString(targetRuntime)
-			};
-			metadataDirectory.Streams.Add(tablesStream);
-			metadataDirectory.Streams.Add(blobStreamBuffer.CreateStream());
-			metadataDirectory.Streams.Add(stringsStreamBuffer.CreateStream());
-			image.DotNetDirectory = new DotNetDirectory {
-				EntryPoint = new MetadataToken(TableIndex.Method, entryPointIndex),
-				Metadata = metadataDirectory
-			};
-			if (architecture == "anycpu")
-				image.DotNetDirectory.Flags &= ~DotNetDirectoryFlags.Bit32Required;
+			FinishImage(image, tablesStream, blobStreamBuffer, stringsStreamBuffer,
+				new MetadataToken(TableIndex.Method, entryPointIndex),
+				targetRuntime, architecture, allAsciiOutput ? "puts" : "WriteConsoleW");
 
 			var result = new Program();
 			result.Image = image;
@@ -659,7 +611,7 @@ namespace TinySharp {
 		}
 
 		/// <summary>构建最小 PE，显示 MessageBoxW(text, caption) 后退出。用于 -noConsole 常量输出。标题在运行时解析：先尝试 Win32 版本资源的 FileDescription（title），回退到 GetModuleFileNameW+PathFindFileNameW（文件名），因此两者都能在 exe 改名后继续生效并遵循 -title。</summary>
-		private static Program CompileMessageBox(string targetRuntime, string architecture, string outputValue, int ExitCode) {
+		private static Program CompileMessageBox(string targetRuntime, string architecture, string outputValue, int exitCode) {
 			var module = new ModuleDefinition("Dummy");
 			// 文本恒为 UTF-16；较大且可压缩时改存 XPRESS 压缩字节，运行时先解压再弹窗。
 			byte[] rawText = Encoding.Unicode.GetBytes(outputValue + '\0');
@@ -681,24 +633,12 @@ namespace TinySharp {
 			var handleBufSeg    = useCompressed ? new VirtualSegment(null, 8u) : null;
 			var resultSizeBufSeg = useCompressed ? new VirtualSegment(null, 8u) : null;
 
-			var PEKind = OptionalHeaderMagic.PE64;
-			var ArchType = MachineType.Amd64;
-			if (architecture != "x64") {
-				PEKind = OptionalHeaderMagic.PE32;
-				ArchType = MachineType.I386;
-			}
-			var image = new PEImage {
-				ImageBase = 0x00000000004e0000,
-				PEKind = PEKind,
-				MachineType = ArchType
-			};
-			image.DllCharacteristics &= ~DllCharacteristics.DynamicBase;
+			var image = CreateImage(architecture);
 
-			var tablesStream = new TablesStream();
-			var blobStreamBuffer = new BlobStreamBuffer();
-			var stringsStreamBuffer = new StringsStreamBuffer();
-			tablesStream.GetTable<ModuleDefinitionRow>().Add(new ModuleDefinitionRow());
-			tablesStream.GetTable<TypeDefinitionRow>().Add(new TypeDefinitionRow(0, 0, 0, 0, 1, 1));
+			TablesStream tablesStream;
+			BlobStreamBuffer blobStreamBuffer;
+			StringsStreamBuffer stringsStreamBuffer;
+			CreateTables(out tablesStream, out blobStreamBuffer, out stringsStreamBuffer);
 
 			var methodTable = tablesStream.GetTable<MethodDefinitionRow>();
 			// 1: MessageBoxW (user32)
@@ -832,8 +772,8 @@ namespace TinySharp {
 			//   [117] call  Method#3     PathFindFileNameW(pathBuf) → filenamePtr
 			//   [122] ldc.i4 0           uType
 			//   [127] call  Method#1     MessageBoxW(0, text, filenamePtr, 0)
-			//   DONE @132 [或 @137（当 ExitCode!=0）]:
-			//   [132] ldc.i4 ExitCode    （仅在 ExitCode != 0 时）
+			//   DONE @132 [或 @137（当 exitCode!=0）]:
+			//   [132] ldc.i4 exitCode    （仅在 exitCode != 0 时）
 			//   [132|137] ret
 			// 段内 patch 偏移 = 代码偏移 + 12（fat 头大小）。
 			using (var codeStream = new MemoryStream()) {
@@ -884,7 +824,7 @@ namespace TinySharp {
 			writeCall(1);      // [95] MessageBoxW(0, text, titlePtr, 0)
 
 			codeStream.WriteByte(0x2B); // [100] br.s
-			codeStream.WriteByte((byte)(30 + (ExitCode != 0 ? 5 : 0))); // [101] → DONE
+			codeStream.WriteByte((byte)(30 + (exitCode != 0 ? 5 : 0))); // [101] → DONE
 
 			// FALLBACK @102
 			writeLdc(0);       // [102] hWnd
@@ -895,38 +835,29 @@ namespace TinySharp {
 			writeCall(1);      // [127] MessageBoxW(0, text, filenamePtr, 0)
 
 			// DONE @132
-			if (ExitCode != 0) writeLdc(ExitCode); // [132] 仅在需要时
+			if (exitCode != 0) writeLdc(exitCode); // [132] 仅在需要时
 				codeStream.WriteByte(0x2A); // ret
 
 				byte[] code = codeStream.ToArray();
-				// Fat 方法头：flags=0x3003（fat，hdrSize=3 个双字），MaxStack=4，CodeSize，LocalVarSigTok=0
-				byte[] header = {
-					0x03, 0x30, 4, 0,
-					(byte)code.Length, (byte)(code.Length >> 8), (byte)(code.Length >> 16), (byte)(code.Length >> 24),
-					0, 0, 0, 0
-				};
-				byte[] fullMethod = new byte[header.Length + code.Length];
-				Buffer.BlockCopy(header, 0, fullMethod, 0, header.Length);
-				Buffer.BlockCopy(code, 0, fullMethod, header.Length, code.Length);
-
-				// Patch 偏移 = int32 操作数的代码流偏移 + 12（fat 头）
-				var body = new DataSegment(fullMethod).AsPatchedSegment();
-				body = body.Patch(12 +  6, AddressFixupType.Absolute32BitAddress, new Symbol(pathBufSeg.ToReference()));
-				body = body.Patch(12 + 21, AddressFixupType.Absolute32BitAddress, new Symbol(pathBufSeg.ToReference()));
-				body = body.Patch(12 + 36, AddressFixupType.Absolute32BitAddress, new Symbol(viBufSeg.ToReference()));
-				body = body.Patch(12 + 48, AddressFixupType.Absolute32BitAddress, new Symbol(viBufSeg.ToReference()));
-				body = body.Patch(12 + 53, AddressFixupType.Absolute32BitAddress, new Symbol(subBlockStr.ToReference()));
-				body = body.Patch(12 + 58, AddressFixupType.Absolute32BitAddress, new Symbol(pValueBufSeg.ToReference()));
-				body = body.Patch(12 + 63, AddressFixupType.Absolute32BitAddress, new Symbol(lenBufSeg.ToReference()));
+				// 代码流偏移 → 绝对地址 patch（+12 为 fat 头大小，见 BuildFatMethodBody）。
+				var patches = new Dictionary<int, ISegment>();
+				patches[6] = pathBufSeg;
+				patches[21] = pathBufSeg;
+				patches[36] = viBufSeg;
+				patches[48] = viBufSeg;
+				patches[53] = subBlockStr;
+				patches[58] = pValueBufSeg;
+				patches[63] = lenBufSeg;
 				if (!useCompressed) {
-					body = body.Patch(12 + 80, AddressFixupType.Absolute32BitAddress, new Symbol(textSegment.ToReference()));
-					body = body.Patch(12 + 108, AddressFixupType.Absolute32BitAddress, new Symbol(textSegment.ToReference()));
+					patches[80] = textSegment;
+					patches[108] = textSegment;
 				}
-				body = body.Patch(12 + 85, AddressFixupType.Absolute32BitAddress, new Symbol(pValueBufSeg.ToReference()));
-				body = body.Patch(12 + 113, AddressFixupType.Absolute32BitAddress, new Symbol(pathBufSeg.ToReference()));
+				patches[85] = pValueBufSeg;
+				patches[113] = pathBufSeg;
+				var body = BuildFatMethodBody(code, 4, patches);
 
 				var retype = module.CorLibTypeFactory.Void;
-				if (ExitCode != 0) retype = module.CorLibTypeFactory.Int32;
+				if (exitCode != 0) retype = module.CorLibTypeFactory.Int32;
 				methodTable.Add(new MethodDefinitionRow(
 					body.ToReference(), 0, MethodAttributes.Static, 0,
 					blobStreamBuffer.GetBlobIndex(module, new DummyProvider(),
@@ -976,23 +907,10 @@ namespace TinySharp {
 					stringsStreamBuffer.GetStringIndex("CloseDecompressor"), 5));
 			}
 
-			tablesStream.GetTable<AssemblyDefinitionRow>().Add(new AssemblyDefinitionRow(
-				0, 1, 0, 0, 0, 0, 0,
-				stringsStreamBuffer.GetStringIndex("user32"), 0));
-
-			var metadataDirectory = new MetadataDirectory {
-				VersionString = ClrVersionString(targetRuntime)
-			};
-			metadataDirectory.Streams.Add(tablesStream);
-			metadataDirectory.Streams.Add(blobStreamBuffer.CreateStream());
-			metadataDirectory.Streams.Add(stringsStreamBuffer.CreateStream());
-			image.DotNetDirectory = new DotNetDirectory {
-				// 方法：1=MessageBoxW,2=GetModuleFileNameW,3=PathFindFileNameW,4=GetFileVersionInfoW,5=VerQueryValueW,6/7/8=cabinet 解压(压缩时),9=文本指针 helper(压缩时),末位=Main
-				EntryPoint = new MetadataToken(TableIndex.Method, useCompressed ? 10u : 6u),
-				Metadata = metadataDirectory
-			};
-			if (architecture == "anycpu")
-				image.DotNetDirectory.Flags &= ~DotNetDirectoryFlags.Bit32Required;
+			// 方法：1=MessageBoxW,2=GetModuleFileNameW,3=PathFindFileNameW,4=GetFileVersionInfoW,5=VerQueryValueW,6/7/8=cabinet 解压(压缩时),9=文本指针 helper(压缩时),末位=Main
+			FinishImage(image, tablesStream, blobStreamBuffer, stringsStreamBuffer,
+				new MetadataToken(TableIndex.Method, useCompressed ? 10u : 6u),
+				targetRuntime, architecture, "user32");
 
 			var result = new Program();
 			result.Image = image;

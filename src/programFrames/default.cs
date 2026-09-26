@@ -124,7 +124,6 @@ namespace PSRunnerNS {
 			private ConsoleColor _GUIBackgroundColor = ConsoleColor.White;
 			private ConsoleColor _GUIForegroundColor = ConsoleColor.Black;
 
-			#if noConsole
 			private string _windowTitleData;
 			public PSRunnerRawUI() {
 				// DLL 导出模式下没有托管入口程序集，回退到当前程序集。
@@ -140,7 +139,6 @@ namespace PSRunnerNS {
 						_windowTitleData = Path.GetFileNameWithoutExtension(entry.Location);
 				}
 			}
-			#endif
 		#else
 			const int STD_OUTPUT_HANDLE = -11;
 
@@ -507,21 +505,18 @@ namespace PSRunnerNS {
 
 		public override string WindowTitle {
 			get {
-				return
 				#if !noConsole
-					Console.Title
+					return Console.Title;
 				#else
-					_windowTitleData
+					return _windowTitleData;
 				#endif
-				;
 			}
 			set {
 				#if !noConsole
-					Console.Title
+					Console.Title = value;
 				#else
-					_windowTitleData
+					_windowTitleData = value;
 				#endif
-				= value;
 			}
 		}
 	}
@@ -637,8 +632,7 @@ namespace PSRunnerNS {
 
 		public static int Show(System.Collections.ObjectModel.Collection<ChoiceDescription> arrChoice, int intDefault, string strTitle, string strPrompt) {
 			// 数组为空则取消
-			if (arrChoice == null) return -1;
-			if (arrChoice.Count < 1) return -1;
+			if (arrChoice == null || arrChoice.Count < 1) return -1;
 
 			// 生成控件
 			Form form = new Form();
@@ -1243,7 +1237,6 @@ namespace PSRunnerNS {
 				progress.objProgressBar.Top = ProgressBarTop(position);
 				progress.lbRemainingTime.Top = RemainingTimeTop(position);
 				progress.lbOperation.Top = OperationTop(position);
-				progressDataList[position] = progress;
 			}
 		}
 
@@ -1506,25 +1499,19 @@ namespace PSRunnerNS {
 		static public bool IsInputRedirected() {
 			UIntPtr hInput = GetStdHandle(STDHandle.STD_INPUT_HANDLE);
 			FileType fileType = GetFileType(hInput);
-			if ((fileType == FileType.FILE_TYPE_CHAR) || (fileType == FileType.FILE_TYPE_UNKNOWN))
-				return false;
-			return true;
+			return fileType != FileType.FILE_TYPE_CHAR && fileType != FileType.FILE_TYPE_UNKNOWN;
 		}
 
 		static public bool IsOutputRedirected() {
 			UIntPtr hOutput = GetStdHandle(STDHandle.STD_OUTPUT_HANDLE);
 			FileType fileType = GetFileType(hOutput);
-			if ((fileType == FileType.FILE_TYPE_CHAR) || (fileType == FileType.FILE_TYPE_UNKNOWN))
-				return false;
-			return true;
+			return fileType != FileType.FILE_TYPE_CHAR && fileType != FileType.FILE_TYPE_UNKNOWN;
 		}
 
 		static public bool IsErrorRedirected() {
 			UIntPtr hError = GetStdHandle(STDHandle.STD_ERROR_HANDLE);
 			FileType fileType = GetFileType(hError);
-			if ((fileType == FileType.FILE_TYPE_CHAR) || (fileType == FileType.FILE_TYPE_UNKNOWN))
-				return false;
-			return true;
+			return fileType != FileType.FILE_TYPE_CHAR && fileType != FileType.FILE_TYPE_UNKNOWN;
 		}
 		static public bool IsVirtualTerminalSupported() {
 			UIntPtr hOutput = GetStdHandle(STDHandle.STD_OUTPUT_HANDLE);
@@ -2190,13 +2177,9 @@ namespace PSRunnerNS {
 
 		internal void WriteErrorRecord(ErrorRecord errorItem) {
 			// 特殊处理原生stderr导致的异常
-			if (errorItem.Exception is System.Management.Automation.RemoteException) {
-				var RemoteException = errorItem.Exception as System.Management.Automation.RemoteException;
-				if (RemoteException.SerializedRemoteException == null)
-					Console.Error.WriteLine(errorItem.Exception.Message);
-				else
-					WriteErrorLine(errorItem.ToString());
-			}
+			var remoteException = errorItem.Exception as System.Management.Automation.RemoteException;
+			if (remoteException != null && remoteException.SerializedRemoteException == null)
+				Console.Error.WriteLine(errorItem.Exception.Message);
 			else
 				WriteErrorLine(errorItem.ToString());
 		}
@@ -2460,7 +2443,6 @@ namespace PSRunnerNS {
 		public volatile bool CancelRequested;
 
 		private int exitCode;
-		public bool Inited;
 
 		public bool ShouldExit {
 			get { return this.shouldExit; }
@@ -3129,7 +3111,7 @@ namespace PSRunnerNS {
 	#endif
 
 	static partial class PSRunnerEntry {
-		static PSRunner me;
+		static PSRunner runner;
 
 		#if ScriptHasParam
 		// 把命令行参数当 PowerShell 数据(PSD)解析：只接受字面量（字符串/数字/bool/null/数组/哈希表），
@@ -3306,16 +3288,16 @@ namespace PSRunnerNS {
 			PSRunner.TimerMark("main:enter");
 			PSRunner.BaseInit();
 			PSRunner.TimerMark("main:baseinit");
-			me = new PSRunner();
+			runner = new PSRunner();
 			PSRunner.TimerMark("main:ctor-done");
 			System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);
 			#if noConsole
-			me.ui.CancelPipeline = delegate {
-				me.CancelRequested = true;
-				Progress_Form progressForm = me.ui.pf;
+			runner.ui.CancelPipeline = delegate {
+				runner.CancelRequested = true;
+				Progress_Form progressForm = runner.ui.pf;
 				System.Threading.ThreadPool.QueueUserWorkItem(delegate {
 					try {
-						me.pwsh.BeginStop((_) => {
+						runner.pwsh.BeginStop((_) => {
 							if (progressForm != null) progressForm.CloseAfterCancel();
 							mre.Set();
 						}, null);
@@ -3331,7 +3313,7 @@ namespace PSRunnerNS {
 				#if !noConsole
 				Console.CancelKeyPress += (object sender, ConsoleCancelEventArgs eventargs) => {
 					try {
-						me.pwsh.BeginStop((_) => {
+						runner.pwsh.BeginStop((_) => {
 							mre.Set();
 							eventargs.Cancel = true;
 						}, null);
@@ -3355,7 +3337,7 @@ namespace PSRunnerNS {
 					if (TryParsePsd(args[i], out psdValue, out explicitCast) &&
 						(explicitCast || psdValue is System.Collections.IDictionary || psdValue is System.Array)) {
 						string psdVar = "PSEXEArg" + (psdIndex++);
-						me.pwsh.Runspace.SessionStateProxy.SetVariable(psdVar, psdValue);
+						runner.pwsh.Runspace.SessionStateProxy.SetVariable(psdVar, psdValue);
 						args[i] = "$" + psdVar;
 						continue;
 					}
@@ -3374,60 +3356,59 @@ namespace PSRunnerNS {
 					}
 					colInput.Complete();
 
-					me.pwsh.Runspace.SessionStateProxy.SetVariable("PSEXEInput", colInput);
+					runner.pwsh.Runspace.SessionStateProxy.SetVariable("PSEXEInput", colInput);
 					#if noConsole && !darkModeOff && !Pwsh20
-					me.pwsh.AddScript("$PSEXEDarkModeSetup.Invoke(); $PSEXEInput|PSEXEMainFunction "+String.Join(" ", args));
+					runner.pwsh.AddScript("$PSEXEDarkModeSetup.Invoke(); $PSEXEInput|PSEXEMainFunction "+String.Join(" ", args));
 					#else
-					me.pwsh.AddScript("$PSEXEInput|PSEXEMainFunction "+String.Join(" ", args));
+					runner.pwsh.AddScript("$PSEXEInput|PSEXEMainFunction "+String.Join(" ", args));
 					#endif
 				#else
 					// 脚本顶层不用 $input：完全不带管道输入，也不设置 $PSEXEInput
 					#if noConsole && !darkModeOff && !Pwsh20
-					me.pwsh.AddScript("$PSEXEDarkModeSetup.Invoke(); PSEXEMainFunction "+String.Join(" ", args));
+					runner.pwsh.AddScript("$PSEXEDarkModeSetup.Invoke(); PSEXEMainFunction "+String.Join(" ", args));
 					#else
-					me.pwsh.AddScript("PSEXEMainFunction "+String.Join(" ", args));
+					runner.pwsh.AddScript("PSEXEMainFunction "+String.Join(" ", args));
 					#endif
 				#endif
 				// Out-Default 走 host UI；勿用 Out-String/输出收集，否则 native 子进程 stdout 会变成管道（非 TTY）
-				me.pwsh.AddCommand("Out-Default");
-				me.pwsh.Streams.Error.DataAdded += (sender, eventargs) => {
-					me.ui.WriteErrorRecord(((PSDataCollection<ErrorRecord>)sender)[eventargs.Index]);
+				runner.pwsh.AddCommand("Out-Default");
+				runner.pwsh.Streams.Error.DataAdded += (sender, eventargs) => {
+					runner.ui.WriteErrorRecord(((PSDataCollection<ErrorRecord>)sender)[eventargs.Index]);
 				};
-				IAsyncResult asyncResult = me.pwsh.BeginInvoke();
+				IAsyncResult asyncResult = runner.pwsh.BeginInvoke();
 				PSRunner.TimerMark("main:begininvoke");
 
 				System.Threading.WaitHandle[] waitHandles = new System.Threading.WaitHandle[] { mre, asyncResult.AsyncWaitHandle };
 				while (System.Threading.WaitHandle.WaitAny(waitHandles, 10) == System.Threading.WaitHandle.WaitTimeout) {
-					if (me.ShouldExit) break;
+					if (runner.ShouldExit) break;
 				}
 
 				PSRunner.TimerMark("main:pipeline-completed");
-				me.Inited = true;
-				me.pwsh.EndInvoke(asyncResult);
+				runner.pwsh.EndInvoke(asyncResult);
 				PSRunner.TimerMark("main:endinvoke");
-				if (me.pwsh.InvocationStateInfo.State != PSInvocationState.Stopped) me.pwsh.Stop();
+				if (runner.pwsh.InvocationStateInfo.State != PSInvocationState.Stopped) runner.pwsh.Stop();
 				PSRunner.TimerMark("main:stop");
 
-				if (me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed)
-					me.ui.WriteErrorLine(me.pwsh.InvocationStateInfo.Reason.Message);
+				if (runner.pwsh.InvocationStateInfo.State == PSInvocationState.Failed)
+					runner.ui.WriteErrorLine(runner.pwsh.InvocationStateInfo.Reason.Message);
 			}
 			catch (Exception ex) {
 				#if !noError
-					if (!me.CancelRequested) me.ui.WriteErrorLine(ex.Message);
+					if (!runner.CancelRequested) runner.ui.WriteErrorLine(ex.Message);
 				#endif
-				me.ExitCode = 1;
+				runner.ExitCode = 1;
 			}
 			finally {
 				#if noConsole
-				if (me.CancelRequested && me.ui.pf != null) me.ui.pf.CloseAfterCancel();
+				if (runner.CancelRequested && runner.ui.pf != null) runner.ui.pf.CloseAfterCancel();
 				#endif
 				#if !Pwsh20 // bro wtf
 					mre.Dispose();
 				#endif
-				me.pwsh.Dispose();
+				runner.pwsh.Dispose();
 			}
 
-			return me.ExitCode;
+			return runner.ExitCode;
 		}
 	}
 }

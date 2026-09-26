@@ -2,19 +2,10 @@
 # 独立脚本，不导出为命令：由 Set-ps12exeIntegration 直接调用。
 [CmdletBinding()]
 param (
-	[ValidateScript({
-		. $PSScriptRoot\..\predicate.ps1
-		(IsEnable $_) -or (IsDisable $_) -or ($_ -eq 'reset')
-	})]
+	[ValidateScript({ . "$PSScriptRoot\ActionValidator.ps1" $_ })]
 	[ArgumentCompleter({
-		param($Command, $Parameter, $WordToComplete, $CommandAst, $FakeBoundParams)
-		. $PSScriptRoot\..\predicate.ps1
-		if (-not $WordToComplete) {
-			@('enable', 'disable', 'reset')
-		}
-		else {
-			@($DisablePredicates; $EnablePredicates; 'reset') | Where-Object { $_ -like "$WordToComplete*" }
-		}
+		Param($Command, $Parameter, $WordToComplete, $CommandAst, $FakeBoundParams)
+		. "$PSScriptRoot\ActionArgCompleter.ps1" @PSBoundParameters
 	})]
 	$action = 'on',
 	[ArgumentCompleter({
@@ -79,8 +70,9 @@ function AddCommandToContextMenu {
 	Set-ItemProperty -LiteralPath "$key\Command" -Name "(Default)" -Value $command
 }
 
-function RemoveCommandsFromContextMenu($className) {
-	$key = "Registry::HKEY_CURRENT_USER\Software\Classes\*\shell\$className"
+# 递归删除 HKCU\Software\Classes 下的键树（右键菜单项、文件处理器、文件类型关联共用）。
+function Remove-RegistryTree($subKey) {
+	$key = "Registry::HKEY_CURRENT_USER\Software\Classes\$subKey"
 	if (Test-Path -LiteralPath $key) {
 		Remove-Item -LiteralPath $key -Recurse
 	}
@@ -92,13 +84,6 @@ function AddFileType($fileType, $DefaultProgram) {
 	if ($DefaultProgram) {
 		New-Item -Path "$key\OpenWithProgids" -Force | Out-Null
 		New-ItemProperty -LiteralPath "$key\OpenWithProgids" -Name $DefaultProgram -Value "" -PropertyType String -Force | Out-Null
-	}
-}
-
-function RemoveFileType($fileType) {
-	$key = "Registry::HKEY_CURRENT_USER\Software\Classes\$fileType"
-	if (Test-Path -LiteralPath $key) {
-		Remove-Item -LiteralPath $key -Recurse
 	}
 }
 
@@ -125,19 +110,12 @@ function AddFileHandlerProgram {
 	Set-ItemProperty -LiteralPath "$key\shell\open\command" -Name "(Default)" -Value $command
 }
 
-function RemoveFileHandlerProgram($className) {
-	$key = "Registry::HKEY_CURRENT_USER\Software\Classes\$className"
-	if (Test-Path -LiteralPath $key) {
-		Remove-Item -LiteralPath $key -Recurse
-	}
-}
-
 . $PSScriptRoot\..\predicate.ps1
 if ('reset' -eq $action -or (IsDisable $action)) {
-	RemoveCommandsFromContextMenu "ps12exeCompile"
-	RemoveCommandsFromContextMenu "ps12exeGUIOpen"
-	RemoveFileHandlerProgram "ps12exeGUI.psccfg"
-	RemoveFileType ".psccfg"
+	Remove-RegistryTree "*\shell\ps12exeCompile"
+	Remove-RegistryTree "*\shell\ps12exeGUIOpen"
+	Remove-RegistryTree "ps12exeGUI.psccfg"
+	Remove-RegistryTree ".psccfg"
 }
 if ('reset' -eq $action -or (IsEnable $action)) {
 	AddCommandToContextMenu "ps12exeCompile" "ps1" $LocalizeData.CompileTitle (PwshCodeAsCommand "ps12exe '%1';pause")

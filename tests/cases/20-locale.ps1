@@ -82,3 +82,37 @@ Add-Test @{
 		}
 	}
 }
+
+Add-Test @{
+	Name  = 'locale.help-aligns-params'
+	Group = 'locale'
+	Deps  = @('src/HelpShower.ps1', 'src/VirtualTerminal.ps1')
+	Run   = {
+		param($ctx)
+		$shower = Join-Path $ctx.RepoRoot 'src/HelpShower.ps1'
+		# 顶层键与分组子键长度都不同：两处对齐必须各自按本层最长键补空格（曾因 `.Keys.Length` 恒为
+		# $null 而完全丢失缩进，见 HelpShower.ps1#ShowParamsHelp 的 $MaxKeyLength/$SubMaxKeyLength）。
+		$helpData = @{
+			title      = 'align'
+			Usage      = 'ps12exe'
+			PrarmsData = @{
+				Short        = 'short value'
+				AVeryLongKey = 'long value'
+				Group        = @{
+					A    = 'a value'
+					BBBB = 'bbbb value'
+				}
+			}
+		}
+		$esc = [char]27
+		$lines = @(. $shower -HelpData $helpData) -replace "$esc\[[0-9;]*m", ''
+		# 顶层参数行的 " : " 必须落在同一列。
+		$topCols = @($lines | Where-Object { $_ -match '^\S+ +: ' } | ForEach-Object { $_.IndexOf(': ') })
+		Assert-True ($topCols.Count -ge 2) "顶层参数行过少：$($topCols -join ',')"
+		Assert-True (@($topCols | Select-Object -Unique).Count -eq 1) "顶层参数未对齐：$($topCols -join ',')"
+		# 分组子键（4 空格缩进）的 " : " 也必须落在同一列。
+		$subCols = @($lines | Where-Object { $_ -match '^    \S+ +: ' } | ForEach-Object { $_.IndexOf(': ') })
+		Assert-True ($subCols.Count -ge 2) "分组子键行过少：$($subCols -join ',')"
+		Assert-True (@($subCols | Select-Object -Unique).Count -eq 1) "分组子键未对齐：$($subCols -join ',')"
+	}
+}

@@ -54,7 +54,7 @@ function skipSpaces(text, start) {
  */
 function switchValue(value) {
 	if (value === true) return true
-	const text = String(value).trim().toLowerCase()
+	const text = value.trim().toLowerCase()
 	if (text === '' || text === '$true' || text === 'true' || text === '1') return true
 	if (text === '$false' || text === 'false' || text === '0') return false
 	throw new Error('non-literal switch value')
@@ -67,9 +67,7 @@ function switchValue(value) {
  * @returns {string} 字面量文本
  */
 function toLiteral(raw) {
-	if (raw.startsWith('\'') || raw.startsWith('"')) return raw
-	if (/^[$(@[`]/.test(raw)) return raw
-	return `'${raw.replace(/'/g, '\'\'')}'`
+	return raw.startsWith('\'') || raw.startsWith('"') || /^[$(@[`]/.test(raw) ? raw : `'${raw.replace(/'/g, '\'\'')}'`
 }
 
 /**
@@ -79,8 +77,7 @@ function toLiteral(raw) {
  * @returns {string} 字符串字面量文本
  */
 function toCultureLiteral(raw) {
-	if (raw.startsWith('$') || raw.startsWith('(') || raw.startsWith('@')) return `"${raw}"`
-	return toLiteral(raw)
+	return raw.startsWith('$') || raw.startsWith('(') || raw.startsWith('@') ? `"${raw}"` : toLiteral(raw)
 }
 
 /**
@@ -111,8 +108,7 @@ function boolLiteral(value) {
  * @returns {{ end: number, text: string } | null} 调用结束列与改写后的文本；不可改写时为 null
  */
 export function convertPs2exeInvocation(line, token) {
-	const content = line.slice(token.start)
-	if (!isCompleteLine(content)) return null
+	if (!isCompleteLine(line.slice(token.start))) return null
 
 	try {
 		/** @type {Map<string, string | true>} */

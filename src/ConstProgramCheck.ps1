@@ -22,7 +22,7 @@ function Test-ConstResultTooLong([string]$Output) {
 
 	# MessageBox(noConsole) 恒用 UTF-16；控制台按 ASCII/UTF-16 自适应（与 TinySharp.cs 保持一致）
 	$payloadIsAscii = (-not $noConsole) -and (-not ($Output -match '[^\x00-\x7F]'))
-	$isNonAsciiConsole = (-not $noConsole) -and ($Output -match '[^\x00-\x7F]')
+	$isNonAsciiConsole = (-not $noConsole) -and (-not $payloadIsAscii)
 	if ($payloadIsAscii) {
 		$payload = [Text.Encoding]::ASCII.GetBytes($Output + [char]0)
 	}

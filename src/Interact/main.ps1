@@ -21,7 +21,6 @@ try {
 		Write-TaskbarProgress -Percent 0
 
 		# 输入文件提示
-		$inputFile = ''
 		do {
 			Write-SymboledInfoI18n EnterInputFile
 			Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
@@ -35,10 +34,7 @@ try {
 					$null = Invoke-WebRequest -Uri $inputFile -Method Head -ErrorAction Stop
 					# 对于 URL，扩展名检查是可选的（URL 可能没有扩展名）；但如果查询字符串或片段之前有扩展名，则它应当是有效的
 					$urlWithoutQuery = $inputFile -replace '[?#].*$', ''
-					if ($urlWithoutQuery -match "\.(ps1|psd1|tmp)$") {
-						# 有效的 URL 且扩展名有效
-					}
-					elseif ($urlWithoutQuery -match "\.[^./]+$") {
+					if ($urlWithoutQuery -match "\.[^./]+$" -and $urlWithoutQuery -notmatch "\.(ps1|psd1|tmp)$") {
 						# URL 有扩展名但无效
 						Write-SymboledErrorI18n InvalidExtension
 						$inputFile = ''
@@ -66,7 +62,6 @@ try {
 		Write-TaskbarProgress -Percent 15
 
 		# 输出文件提示
-		$outputFile = ''
 		Write-SymboledInfoI18n EnterOutputFile
 		Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
 		$outputFile = Read-Host
@@ -87,7 +82,6 @@ try {
 			$resources = @{}
 
 			# 图标
-			$icon = ''
 			do {
 				Write-SymboledInfoI18n IconPath
 				Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
@@ -115,8 +109,7 @@ try {
 					}
 
 					if ($isValid) {
-						$icon = $iconInput
-						$resources.Icon = $icon
+						$resources.Icon = $iconInput
 						break
 					}
 				}
@@ -187,7 +180,6 @@ try {
 			$codeSigningParams = @{}
 
 			# 证书路径
-			$certPath = ''
 			do {
 				Write-SymboledInfoI18n EnterCertificatePath
 				Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
@@ -218,8 +210,7 @@ try {
 					}
 
 					if ($isValid) {
-						$certPath = $certPathInput
-						$codeSigningParams.Certificate = $certPath
+						$codeSigningParams.Certificate = $certPathInput
 
 						# 证书密码
 						Write-SymboledInfoI18n EnterCertificatePassword
@@ -260,14 +251,7 @@ try {
 			}
 
 			if ($codeSigningParams.Count -gt 0) {
-				$codeSigningParamsStr = $codeSigningParams.GetEnumerator() | ForEach-Object {
-					if ($_.Key -eq 'Password') {
-						"$($_.Key)='$($_.Value -replace "'", "''")'"
-					}
-					else {
-						"$($_.Key)='$($_.Value -replace "'", "''")'"
-					}
-				} | Join-String -Separator '; '
+				$codeSigningParamsStr = $codeSigningParams.GetEnumerator() | ForEach-Object { "$($_.Key)='$($_.Value -replace "'", "''")'" } | Join-String -Separator '; '
 				$cmdParams.Add("-Signing @{$codeSigningParamsStr}") | Out-Null
 			}
 		}

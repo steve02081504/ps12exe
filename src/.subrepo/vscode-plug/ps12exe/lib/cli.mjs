@@ -7,9 +7,9 @@
 // `#_!!` 行会被 ps12exe 去掉标记变成真实代码，所以照常解析。调用可以跨多行（`@{ … }` 展开），
 // 因此这里按整个文档扫描，而不是逐行。
 
-import { canonicalGroupName } from './pragma.mjs'
+import { canonicalGroupName, groupPrefixes } from './pragma.mjs'
 import { computeSkipMask } from './preprocessor.mjs'
-import { readValueToken, skipString } from './tokens.mjs'
+import { BANG_MARKER_RE, readValueToken, skipString } from './tokens.mjs'
 
 /** 英文源字符串；它们同时也是 l10n bundle 的键。 */
 export const CLI_MESSAGES = Object.freeze({
@@ -34,9 +34,6 @@ const COMMON_PARAMETERS = new Set([
 	'pipelinevariable', 'whatif', 'confirm'
 ])
 
-// `#_!!` 标记（含其后的一个可选空格）；ps12exe 会把它去掉，因此其后的内容是代码。
-const BANG_RE = /^([\t ]*)#_!! ?/
-
 /**
  * 把文档逐行复制一份，here-string/块注释整行替换为等长空格，并抹掉 `#_!!` 标记，使字符偏移与原文一致、解析时不会被它们干扰。
  *
@@ -44,11 +41,11 @@ const BANG_RE = /^([\t ]*)#_!! ?/
  * @returns {{ masked: string, lineStarts: number[] }} 用于扫描的文本（换行统一为 `\n`，行长不变）与每行起始偏移
  */
 function maskText(text) {
-	const lines = String(text).split(/\r\n|\n|\r/)
+	const lines = text.split(/\r\n|\n|\r/)
 	const skip = computeSkipMask(lines)
 	const masked = lines.map((line, index) => {
 		if (skip[index]) return ' '.repeat(line.length)
-		const bang = BANG_RE.exec(line)
+		const bang = BANG_MARKER_RE.exec(line)
 		if (bang) return ' '.repeat(bang[0].length) + line.slice(bang[0].length)
 		return line
 	}).join('\n')
@@ -93,8 +90,7 @@ function parseHashtable(text, start, group, out) {
 	let i = start + 2
 	while (i < text.length) {
 		const char = text[i]
-		if (char === ' ' || char === '\t' || char === '\r' || char === '\n') { i++; continue }
-		if (char === ';') { i++; continue }
+		if (' \t\r\n;'.includes(char)) { i++; continue }
 		if (char === '`') { i += 2; continue }
 		if (char === '#') {
 			const newline = text.indexOf('\n', i)
@@ -114,10 +110,10 @@ function parseHashtable(text, start, group, out) {
 		const path = `${group}.${key.name.toLowerCase()}`
 		out.push({ kind: 'member', name: key.name, path, start: key.start, end: key.end })
 		i = key.end
-		while (text[i] === ' ' || text[i] === '\t' || text[i] === '\r') i++
+		while (' \t\r'.includes(text[i])) i++
 		if (text[i] !== '=') continue
 		i++
-		while (text[i] === ' ' || text[i] === '\t' || text[i] === '\r' || text[i] === '\n') i++
+		while (' \t\r\n'.includes(text[i])) i++
 		if (text[i] === '@' && text[i + 1] === '{') i = parseHashtable(text, i, path, out)
 		else i = readValueToken(text, i)
 	}
@@ -136,8 +132,8 @@ function parseInvocation(text, start, out) {
 	let i = start
 	while (i < text.length) {
 		const char = text[i]
-		if (char === ' ' || char === '\t' || char === '\r') { i++; continue }
-		if (char === '\n' || char === ';' || char === '|' || char === ')' || char === '}' || char === '#') break
+		if (' \t\r'.includes(char)) { i++; continue }
+		if ('\n;|)}#'.includes(char)) break
 		if (char === '`') { i += 2; continue }
 
 		if (char === '-') {
@@ -151,9 +147,9 @@ function parseInvocation(text, start, out) {
 			if (text[i] === ':') valueStart = i + 1
 			else {
 				let j = i
-				while (text[j] === ' ' || text[j] === '\t') j++
+				while (' \t'.includes(text[j])) j++
 				const next = text[j]
-				if (j < text.length && next !== '-' && next !== '\n' && next !== ';' && next !== '|' && next !== ')' && next !== '}' && next !== '#')
+				if (j < text.length && !'-;\n|)}#'.includes(next))
 					valueStart = j
 			}
 			if (valueStart < 0) continue
@@ -206,8 +202,7 @@ export function scanCliInvocations(text) {
 	let expectCommand = true
 	while (i < masked.length) {
 		const char = masked[i]
-		if (char === '\n') { i++; expectCommand = true; continue }
-		if (char === ' ' || char === '\t' || char === '\r') { i++; continue }
+		if (' \t\r\n'.includes(char)) { i++; if (char === '\n') expectCommand = true; continue }
 		if (char === '#') {
 			const newline = masked.indexOf('\n', i)
 			i = newline === -1 ? masked.length : newline
@@ -217,7 +212,7 @@ export function scanCliInvocations(text) {
 		if (char === '\'' || char === '"') { i = skipString(masked, i); continue }
 
 		if (expectCommand) {
-			if (char === '&' || char === '.' || char === '{' || char === '(' || char === ';' || char === '|' || char === '=') { i++; continue }
+			if ('&.{(;|='.includes(char)) { i++; continue }
 			const match = /^[A-Za-z_][A-Za-z0-9_.-]*/.exec(masked.slice(i))
 			if (match) {
 				i += match[0].length
@@ -233,7 +228,7 @@ export function scanCliInvocations(text) {
 			continue
 		}
 
-		if (char === ';' || char === '|' || char === '(' || char === '{' || char === '=') expectCommand = true
+		if (';|({='.includes(char)) expectCommand = true
 		i++
 	}
 
@@ -266,25 +261,6 @@ export function cliTokenAt(text, line, character) {
 }
 
 /**
- * 计算已知路径集合：PrarmsData 压平后的叶子键，以及所有点号前缀（分组，如 `build`、`build.core`）。
- *
- * @param {Map<string, { name: string, description: string }>} data - 扁平化后的说明数据
- * @returns {{ leaves: Set<string>, groups: Set<string> }} 叶子与分组的路径集合
- */
-function pathSets(data) {
-	const leaves = new Set(data.keys())
-	const groups = new Set()
-	for (const key of data.keys()) {
-		let index = key.indexOf('.')
-		while (index >= 0) {
-			groups.add(key.slice(0, index))
-			index = key.indexOf('.', index + 1)
-		}
-	}
-	return { leaves, groups }
-}
-
-/**
  * 扫描文档中 ps12exe 调用的参数与成员键，对无法在 PrarmsData（或通用参数）中找到的名字给出诊断。被
  * `# use_ps12exe:ignore` 抑制的行由调用方过滤。
  *
@@ -294,7 +270,9 @@ function pathSets(data) {
  */
 export function analyzeCliUsage(text, data) {
 	if (!data) return []
-	const { leaves, groups } = pathSets(data)
+	// 已知路径：PrarmsData 压平后的叶子键，以及所有点号前缀（分组，如 `build`、`build.core`）。
+	const leaves = new Set(data.keys())
+	const groups = new Set(groupPrefixes(data).keys())
 	/**
 	 * 某个小写点号路径是否为已知的参数、成员或分组。
 	 *

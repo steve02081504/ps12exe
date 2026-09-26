@@ -34,8 +34,7 @@ export function unquote(value) {
  */
 export function splitIconIndex(value) {
 	const match = ICON_INDEX_RE.exec(value)
-	if (!match) return { value, index: null }
-	return { value: unquote(match[1]), index: Number(match[2]) }
+	return match ? { value: unquote(match[1]), index: Number(match[2]) } : { value, index: null }
 }
 
 /**

@@ -108,7 +108,7 @@ export async function resolvePowerShell(refresh = false) {
 	for (const command of await hostCandidates()) {
 		const result = await probeHost(command)
 		if (!result) continue
-		if (!fallback) fallback = result
+		fallback ??= result
 		if (result.moduleVersion) {
 			// 只缓存成功的结果，这样之后安装模块能在下次运行时被识别到。
 			cachedHost = result
@@ -234,12 +234,9 @@ const PARSE_MARKER = 'PS12EXE_PARSE:'
  * @returns {boolean[]} 每个片段一个标志，无法解析时为 `true`
  */
 export function parseIncompleteOutput(stdout) {
-	const results = []
-	for (const line of String(stdout || '').split(/\r?\n/)) {
-		const index = line.indexOf(PARSE_MARKER)
-		if (index >= 0) results.push(line.slice(index + PARSE_MARKER.length).trim() === 'incomplete')
-	}
-	return results
+	return String(stdout || '').split(/\r?\n/)
+		.filter((line) => line.includes(PARSE_MARKER))
+		.map((line) => line.slice(line.indexOf(PARSE_MARKER) + PARSE_MARKER.length).trim() === 'incomplete')
 }
 
 /**
@@ -316,15 +313,13 @@ export function compileScript({ host, file, locale, channel, token }) {
 		'exit $LASTEXITCODE'
 	].join('; ')
 
-	if (channel)
-		channel.appendLine(`> ps12exe -inputFile "${file}"${locale ? ` -Locale "${locale}"` : ''}`)
+	channel?.appendLine(`> ps12exe -inputFile "${file}"${locale ? ` -Locale "${locale}"` : ''}`)
 
 	return runScript(host, script, { channel, token })
 }
 
 /**
  * 在给定宿主中运行 `exe21sp -inputFile <file> -outputFile <outputFile>`。exe21sp 会把还原出的脚本写入 `outputFile`，并在其旁边释放伴随文件（添加的 `#_pragma Resources.Icon` 引用的图标），因此调用方应选择自己缓存目录内的输出路径。
- *
  * @param {object} options - 配置项
  * @param {{ command: string }} options.host - 主机信息
  * @param {string} options.file - 可执行文件路径
@@ -345,8 +340,7 @@ export function extractScriptToFile({ host, file, outputFile, locale, channel, t
 		'exit $global:LastExitCode'
 	].join('; ')
 
-	if (channel)
-		channel.appendLine(`> exe21sp -inputFile "${file}" -outputFile "${outputFile}"`)
+	channel?.appendLine(`> exe21sp -inputFile "${file}" -outputFile "${outputFile}"`)
 
 	return runScript(host, script, { channel, token })
 }
@@ -373,8 +367,7 @@ export function compileToExe({ host, input, output, locale, channel, token }) {
 		'exit $global:LastExitCode'
 	].join('; ')
 
-	if (channel)
-		channel.appendLine(`> ps12exe -inputFile "${input}" -outputFile "${output}"`)
+	channel?.appendLine(`> ps12exe -inputFile "${input}" -outputFile "${output}"`)
 
 	return runScript(host, script, { channel, token })
 }
@@ -415,8 +408,7 @@ export function parseSyncOutput(stdout) {
 		.reverse()
 		.find((entry) => entry.includes(SYNC_MARKER))
 	if (!line) return undefined
-	const parsed = line.slice(line.indexOf(SYNC_MARKER) + SYNC_MARKER.length).trim()
-	const [status, version] = parsed.split(/\s+/, 2)
+	const [status, version] = line.slice(line.indexOf(SYNC_MARKER) + SYNC_MARKER.length).trim().split(/\s+/, 2)
 	return { status, version }
 }
 
@@ -430,15 +422,13 @@ export function parseSyncOutput(stdout) {
  * @returns {Promise<{ status: 'installed' | 'updated' | 'up-to-date' | 'unreachable' | 'unknown' | 'error', version?: string, error?: string }>} 同步结果
  */
 export async function syncModule({ host, channel, token }) {
-	if (channel) channel.appendLine('> syncing ps12exe module')
+	channel?.appendLine('> syncing ps12exe module')
 
 	const result = await runScript(host, SYNC_SCRIPT, { channel, token })
 	if (result.cancelled) return { status: 'error', error: 'cancelled' }
 	if (result.error) return { status: 'error', error: result.error.message }
 
-	const parsed = parseSyncOutput(result.stdout)
-	if (parsed) return parsed
-	return { status: 'error', error: String(result.stderr || '').trim() || `exit code ${result.code}` }
+	return parseSyncOutput(result.stdout) ?? { status: 'error', error: String(result.stderr || '').trim() || `exit code ${result.code}` }
 }
 
 /**

@@ -44,10 +44,7 @@ internal static class CoreHost {
 			}
 		}
 		candidates.AddRange(KnownPshomePaths());
-		foreach (string candidate in candidates) {
-			if (File.Exists(Path.Combine(candidate, "System.Management.Automation.dll"))) return candidate;
-		}
-		return null;
+		return candidates.Find(candidate => File.Exists(Path.Combine(candidate, "System.Management.Automation.dll")));
 	}
 
 	static IEnumerable<string> KnownPshomePaths() {

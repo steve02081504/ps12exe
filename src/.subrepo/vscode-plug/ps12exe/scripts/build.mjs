@@ -106,7 +106,7 @@ function localVsce() {
 	const pkgPath = path.join(root, 'node_modules', '@vscode', 'vsce', 'package.json')
 	if (!fs.existsSync(pkgPath)) return undefined
 	const { bin } = readJson(pkgPath)
-	const entry = typeof bin === 'string' ? bin : bin && bin.vsce
+	const entry = typeof bin === 'string' ? bin : bin?.vsce
 	return entry ? path.join(path.dirname(pkgPath), entry) : undefined
 }
 
@@ -137,9 +137,7 @@ async function packageExtension() {
  * @returns {Promise<string | undefined>} 本地 VS Code CLI 路径，找不到时为 undefined
  */
 async function resolveCodeCli() {
-	const configured = process.env.VSCODE_CLI_PATH || process.env.VSCODE_EXECUTABLE_PATH
-	if (configured) return configured
-	return await where_command('code') || undefined
+	return process.env.VSCODE_CLI_PATH || process.env.VSCODE_EXECUTABLE_PATH || await where_command('code') || undefined
 }
 
 /**

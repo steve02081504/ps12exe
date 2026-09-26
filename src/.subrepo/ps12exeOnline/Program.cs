@@ -30,8 +30,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 // 请求体上限：脚本大小上限 + JSON/编码开销；让 Kestrel 与 IIS 在读取前就拒绝超大请求。
-var maxScriptBytes = builder.Configuration.GetValue("Compiler:MaxScriptBytes", 2 * 1024 * 1024L);
-var maxRequestBodySize = (maxScriptBytes * 4) + (64 * 1024);
+var maxRequestBodySize = (builder.Configuration.GetValue("Compiler:MaxScriptBytes", 2 * 1024 * 1024L) * 4) + (64 * 1024);
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = maxRequestBodySize);
 builder.Services.Configure<IISServerOptions>(options => options.MaxRequestBodySize = maxRequestBodySize);
 
@@ -71,8 +70,7 @@ app.MapPost("/api/compile", async (
 		if (Encoding.UTF8.GetByteCount(content) > options.MaxScriptBytes)
 			return Error(StatusCodes.Status413PayloadTooLarge, "FileTooLarge", "The script is too large.");
 
-		var clientIp = http.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-		if (!rateLimiter.TryAcquire(clientIp))
+		if (!rateLimiter.TryAcquire(http.Connection.RemoteIpAddress?.ToString() ?? "unknown"))
 		{
 			http.Response.Headers.RetryAfter = "60";
 			return Error(StatusCodes.Status429TooManyRequests, "TooManyRequests", "Too many requests, please try again later.");
@@ -104,8 +102,7 @@ static string? NormalizeLocale(string? locale, CompilerOptions options)
 {
 	if (string.IsNullOrWhiteSpace(locale))
 		return null;
-	var trimmed = locale.Trim();
-	return options.AllowedLocales.FirstOrDefault(allowed => string.Equals(allowed, trimmed, StringComparison.OrdinalIgnoreCase));
+	return options.AllowedLocales.FirstOrDefault(allowed => string.Equals(allowed, locale.Trim(), StringComparison.OrdinalIgnoreCase));
 }
 
 internal sealed record CompileRequest(string? Content, string? Locale);

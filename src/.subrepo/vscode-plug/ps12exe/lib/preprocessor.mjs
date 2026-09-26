@@ -40,12 +40,12 @@ function detectEol(text) {
 }
 
 /**
- * 按行切分文档。
+ * 按行切分文档（兼容 CRLF、LF 与 CR）。
  *
  * @param {string} text - 待切分的文档全文
  * @returns {string[]} 切分后的行数组
  */
-function splitLines(text) {
+export function splitLines(text) {
 	return text.split(/\r\n|\n|\r/)
 }
 
@@ -56,8 +56,7 @@ function splitLines(text) {
  * @returns {string} 该行的前导空白
  */
 function leadingOf(line) {
-	const match = line.match(/^[\t ]*/)
-	return match ? match[0] : ''
+	return line.match(/^[\t ]*/)[0]
 }
 
 /**
@@ -246,7 +245,7 @@ export function isBalanced(text) {
 export function endifAutoClose(currentLine, insertedText) {
 	if (currentLine === undefined || !/\r?\n/.test(insertedText)) return undefined
 	if (!IF_RE.test(currentLine)) return undefined
-	const indent = (currentLine.match(/^[\t ]*/) || [''])[0]
+	const indent = currentLine.match(/^[\t ]*/)[0]
 	return { offset: insertedText.split(/\r?\n/).length - 1, indent }
 }
 
@@ -270,7 +269,7 @@ export function toggleBangLine(line) {
 	const marked = line.match(BANG_RE)
 	if (marked) return marked[1] + marked[2]
 	if (OTHER_DIRECTIVE_RE.test(line)) return undefined
-	const indent = (line.match(/^[\t ]*/) || [''])[0]
+	const indent = line.match(/^[\t ]*/)[0]
 	return `${indent}#_!!${line.slice(indent.length)}`
 }
 
@@ -285,9 +284,7 @@ export function toggleBangLine(line) {
  */
 export function toggleBangLines(lines, startLine, endLine, skipMask) {
 	const changes = []
-	const first = Math.max(0, startLine)
-	const last = Math.min(endLine, lines.length - 1)
-	for (let i = first; i <= last; i++) {
+	for (let i = Math.max(0, startLine); i <= Math.min(endLine, lines.length - 1); i++) {
 		if (skipMask && skipMask[i]) continue
 		const toggled = toggleBangLine(lines[i])
 		if (toggled !== undefined && toggled !== lines[i]) changes.push({ line: i, text: toggled })
@@ -303,14 +300,10 @@ export function toggleBangLines(lines, startLine, endLine, skipMask) {
  * @returns {Array<{ block: number, text: string }>} `block` 是块索引
  */
 export function branchFragments(blocks, lines) {
-	const fragments = []
-	blocks.forEach((entry, index) => {
-		const firstEnd = entry.elseLine === null ? entry.endLine : entry.elseLine
-		fragments.push({ block: index, text: lines.slice(entry.startLine + 1, firstEnd).join('\n') })
-		if (entry.elseLine !== null)
-			fragments.push({ block: index, text: lines.slice(entry.elseLine + 1, entry.endLine).join('\n') })
+	return blocks.flatMap((entry, index) => {
+		const first = { block: index, text: lines.slice(entry.startLine + 1, entry.elseLine === null ? entry.endLine : entry.elseLine).join('\n') }
+		return entry.elseLine === null ? [first] : [first, { block: index, text: lines.slice(entry.elseLine + 1, entry.endLine).join('\n') }]
 	})
-	return fragments
 }
 
 /**
@@ -650,8 +643,7 @@ function referenceDirective(blocks, line) {
 			best = { index, block }
 	}
 	if (!best) return null
-	const directive = best.block.elseLine !== null && line > best.block.elseLine ? best.block.elseLine : best.block.startLine
-	return { index: best.index, line: directive }
+	return { index: best.index, line: best.block.elseLine !== null && line > best.block.elseLine ? best.block.elseLine : best.block.startLine }
 }
 
 /**

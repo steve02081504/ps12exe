@@ -28,8 +28,7 @@ export function clearGalleryCache() {
  * @returns {string} 图库页面地址
  */
 export function packagePageUrl(id, version) {
-	const base = `${PAGE_BASE}/${encodeURIComponent(id)}`
-	return version ? `${base}/${encodeURIComponent(version)}` : base
+	return `${PAGE_BASE}/${encodeURIComponent(id)}${version ? `/${encodeURIComponent(version)}` : ''}`
 }
 
 /**
@@ -124,17 +123,14 @@ export function parseGalleryEntry(xml) {
 	const id = stripHtml(fieldValue(entry[0], 'Id'))
 	if (!id) return null
 
-	const version = fieldValue(entry[0], 'Version')
-	const tags = fieldValue(entry[0], 'Tags').split(/\s+/).filter((tag) => tag && !isGeneratedTag(tag))
-
 	return {
 		id,
-		version,
+		version: fieldValue(entry[0], 'Version'),
 		description: normalizeDescription(fieldValue(entry[0], 'Description')),
 		iconUrl: fieldValue(entry[0], 'IconUrl'),
 		projectUrl: fieldValue(entry[0], 'ProjectUrl'),
-		galleryUrl: fieldValue(entry[0], 'GalleryDetailsUrl') || packagePageUrl(id, version),
-		tags
+		galleryUrl: fieldValue(entry[0], 'GalleryDetailsUrl') || packagePageUrl(id, fieldValue(entry[0], 'Version')),
+		tags: fieldValue(entry[0], 'Tags').split(/\s+/).filter((tag) => tag && !isGeneratedTag(tag))
 	}
 }
 

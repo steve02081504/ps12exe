@@ -21,7 +21,6 @@ try {
 	while ($true) {
 		Write-TaskbarProgress -Percent 0
 		$exe21spArgs = @{}
-		$inputFile = ''
 		do {
 			Write-SymboledInfoI18n EnterInputFile
 			Write-Host -ForegroundColor Gray $I18n.Prompt -NoNewline
