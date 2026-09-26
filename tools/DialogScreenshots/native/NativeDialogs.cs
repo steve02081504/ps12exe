@@ -1,4 +1,4 @@
-﻿// 原生对话框参照程序：供 tools/DialogScreenshots/Compare-Dialogs.ps1 截取「系统原生亮色」图。
+// 原生对话框参照程序：供 tools/DialogScreenshots/Compare-Dialogs.ps1 截取「系统原生亮色」图。
 // 通过环境变量 NATIVE_DIALOG 选择场景（msgbox/input/choice/readkey/constexpr/progress），NATIVE_TITLE 指定窗口标题。
 // 仅用于截图对照，不属于 ps12exe 运行时产物。
 using System;
@@ -91,7 +91,7 @@ internal static class NativeDialogs {
 		for (int i = 0; i < choices.Length; i++) {
 			choices[i] = new RadioButton();
 			choices[i].Text = labels[i];
-			choices[i].SetBounds(29, 38 + i * 25, 300, 20);
+			choices[i].SetBounds(29, 38 + (i * 25), 300, 20);
 			choices[i].Checked = i == 0;
 			form.Controls.Add(choices[i]);
 		}
