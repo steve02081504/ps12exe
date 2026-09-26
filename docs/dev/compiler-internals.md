@@ -113,3 +113,18 @@
 - 裁剪版必须保留 netstandard2.0 引用以兼容 WinPS 5.1 与 pwsh 7。
 - 从 PowerShell 驱动 AsmResolver.DotNet 的两个坑：`MethodDefinition.Name`/`TypeDefinition.Name` 是 `Utf8String`，用 `-eq 'X'` 比较会失败（PS 会把它当字符枚举），要写 `$_.Name.ToString() -eq 'X'`；`[Flags]` 枚举的 `-bor`/`-bnot` 在本仓库的 StrictMode 下会抛 InvalidCastException，位运算前先 `[int]` 转换再用 `[枚举类型](...)` 转回。
 - 该工具会在 `tools/AsmResolver/{bin,obj}` 留下无 BOM 的生成 `.cs`，`Get-RepoFiles` 已排除 `bin|obj`。
+
+<a id="darkmode"></a>
+
+## Windowed 产物的深色模式（`App.DarkMode`）
+
+`default.cs` 里的 `DarkMode` 只在 windowed（`noConsole`）且非 `Off` 时编译：`InitCompileThings.ps1` 最多追加 `darkModeOff`/`darkModeOn` 两个常量，`Auto` 不定义额外常量——`Off` 整段不编译（零开销），`On` 跳过系统探测直接置 `IsDark`，`Auto` 运行时读 `HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\AppsUseLightTheme`。
+
+- 进程级开启：uxtheme 未公开序号 `132`=`ShouldAppsUseDarkMode`、`133`=`AllowDarkModeForWindow`、`135`=`SetPreferredAppMode`（<18362 为 `AllowDarkModeForApp`）、`136`=`FlushMenuThemes`、`104`=`RefreshImmersiveColorPolicyState`（编号取自 [ysc3839/win32-darkmode](https://github.com/ysc3839/win32-darkmode)，勿依早期文档把 132/133 当成 SetPreferredAppMode/FlushMenuThemes）；标题栏 `DwmSetWindowAttribute`（attr 20，旧 build 19）。
+- 控件染色：.NET 9+ 且 Win11 走官方 `Application.SetColorMode(Dark)`（反射调用，绕过 `WFO5001` 实验性诊断），官方实现天然覆盖所有 WinForms 控件；其余运行时 `ThemeForm` 递归改色 + `SetWindowTheme("DarkMode_Explorer"...)`，Button 转 Flat、TextBox/ListBox 用 FixedSingle 边框。
+- **Auto 实时跟随系统深浅切换**：`Auto` 时在 UI 线程建一个隐藏窗口（`ThemeChangeWindow`）监听 `WM_SETTINGCHANGE`，lParam 含 `ImmersiveColorSet`（广播带 lParam=0 时保守重探）就重新读注册表并 `ApplySystemDark`：官方路径再调 `SetColorMode(Dark/Classic)`；手动路径遍历本进程窗口重绘——深色时按原色判断染色、浅色时用记录的原始颜色精确还原（`ControlOriginalColors`），因此双向都能即时切换。`On` 编译期强制暗色，不需要监听器。
+  - 坑：改 `Form.BackColor` 会把「仍用系统色」的子控件一起带上（WinForms 行为），所以 `ThemeForm` 必须**先遍历整棵树记录原始色、再统一应用**，否则记录到的是被污染的值，浅色还原失效。
+- **内置对话框**：`Input_Box`、`Choice_Box`、`ReadKey_Box`、`Progress_Form` 和 `MessageBoxHelper` 在亮/暗主题下均使用 WinForms 窗体与相同布局，主题仅切换颜色；进度条使用自绘 `FlatProgressBar`。`Progress_Form` 在独立 STA 消息线程运行并接收跨线程进度更新，本地化的 Cancel 按钮可在脚本执行期间停止当前 PowerShell 流水线。`constexpr.cs` 的窗口化常量提示也使用同一套自绘窗体结构。截图对比中的系统原生窗口仅作外观参考，不应为降低它与产品窗体的 diff 而改用原生 MessageBox 或 Shell 进度对话框。`Credential_Form` 仍通过系统 CredUI 提示凭据。
+- **消除首帧闪白**：WinEvent（异步）和 timer（太慢）都晚于首次绘制，不可用。改为在脚本线程用 `RegisterShellHookWindow` 监听 `HSHELL_WINDOWCREATED`——hook 窗口必须由脚本线程创建（宿主在管道开头插入 `$PSEXEDarkModeSetup.Invoke()`，即 `PSRunnerEntry.Main` 里的 `DarkMode.StartOnCurrentThread`），这样建窗通知与脚本窗口同线程、早于首次绘制；再 `SetWindowSubclass` 拦截首个 `WM_PAINT`/`WM_ERASEBKGND`，在 WinForms 绘制前同步染色；且 `ThemeForm` 必须先改颜色再动 DWM/主题，否则设置标题栏触发的重绘会让首帧仍是亮色。托管 `SetWindowsHookEx(WH_CBT)` 不会回调、`SetWinEventHook(EVENT_OBJECT_CREATE)` 是异步的，都不可用。
+- 常量 GUI（`constexpr.cs` / TinySharp）：TinySharp 是裸 IL 壳、无法在运行时探测/自绘暗色，窗口化（`noConsole`）常量统一走 `constexpr.cs` 帧，由 WinForms 自绘信息窗体按 `App.DarkMode` 使用亮/暗调色板；控制台常量脚本仍走 ~1KB 的 TinySharp 壳。Core 常量脚本本就走 constexpr，同样受益。
+- 局限：只暗化本 exe 自己创建的 WinForms 窗口，不碰系统的运行框/控制面板（那需要在 explorer 等进程里注入 + subclass，参考 StartAllBack 的 `DarkMagicX64.dll`）；自绘/第三方控件、图片资源不跟随。

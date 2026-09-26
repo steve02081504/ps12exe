@@ -1,4 +1,4 @@
-﻿# 进程/EXE 运行辅助：合并输出捕获、独立 console、向窗口发送回车关闭 MessageBox。
+﻿# 进程/EXE 运行辅助：合并输出捕获、独立 console、向进程窗口发送回车并关闭对话框。
 $ErrorActionPreference = 'Stop'
 
 # 经 cmd 把 stdout/stderr 接到同一文件，保留进程内写入顺序，规避 Windows PowerShell native stderr 抛 NativeCommandError。
@@ -66,6 +66,8 @@ public class CIWindowHelper {
 	[DllImport("user32.dll")]
 	private static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
 	[DllImport("user32.dll")]
+	private static extern bool IsWindowVisible(IntPtr hWnd);
+	[DllImport("user32.dll")]
 	private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 	private const uint WM_KEYDOWN = 0x0100;
 	private const uint WM_KEYUP   = 0x0101;
@@ -78,21 +80,38 @@ public class CIWindowHelper {
 		FindWindowByProcessId((uint)processId, ref target);
 		if (target == IntPtr.Zero) return false;
 		// 消息要经对话框管理器 IsDialogMessage 才生效，而它只处理活动窗口；后台桌面上回车会被丢弃。
-		// 因此同时投递 WM_COMMAND(IDOK) 与 WM_CLOSE，保证消息框总能被关闭。
+		// 同时投递 WM_COMMAND(IDOK) 与 WM_CLOSE，以兼容原生消息框和自绘 WinForms 对话框。
 		PostMessage(target, WM_KEYDOWN, (IntPtr)VK_RETURN, IntPtr.Zero);
 		PostMessage(target, WM_KEYUP,   (IntPtr)VK_RETURN, IntPtr.Zero);
 		PostMessage(target, WM_COMMAND, (IntPtr)IDOK, IntPtr.Zero);
 		PostMessage(target, WM_CLOSE,   IntPtr.Zero, IntPtr.Zero);
 		return true;
 	}
+	public static bool ClickFirstButtonInProcessMainWindow(int processId) {
+		IntPtr target = IntPtr.Zero;
+		FindWindowByProcessId((uint)processId, ref target);
+		if (target == IntPtr.Zero) return false;
+		bool clicked = false;
+		EnumChildWindows(target, (hWnd, lp) => {
+			if (IsWindowVisible(hWnd)) {
+				StringBuilder className = new StringBuilder(256);
+				if (GetClassName(hWnd, className, className.Capacity) > 0 && className.ToString().StartsWith("WindowsForms10.BUTTON", StringComparison.Ordinal)) {
+					clicked = PostMessage(hWnd, 0x00F5, IntPtr.Zero, IntPtr.Zero);
+					return false;
+				}
+			}
+			return true;
+		}, IntPtr.Zero);
+		return clicked;
+	}
 	private static void FindWindowByProcessId(uint targetPid, ref IntPtr result) {
 		IntPtr[] found = new IntPtr[1];
 		EnumWindows((hWnd, lp) => {
 			uint pid;
 			GetWindowThreadProcessId(hWnd, out pid);
-			if (pid == targetPid) {
+			if (pid == targetPid && IsWindowVisible(hWnd)) {
 				StringBuilder sb = new StringBuilder(256);
-				if (GetClassName(hWnd, sb, sb.Capacity) > 0 && sb.ToString() == "#32770") {
+				if (GetClassName(hWnd, sb, sb.Capacity) > 0 && (sb.ToString() == "#32770" || sb.ToString().StartsWith("WindowsForms10.Window", StringComparison.Ordinal))) {
 					found[0] = hWnd;
 					return false;
 				}
@@ -104,6 +123,8 @@ public class CIWindowHelper {
 	private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 	[DllImport("user32.dll")]
 	private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+	[DllImport("user32.dll")]
+	private static extern bool EnumChildWindows(IntPtr hWndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);
 }
 '@ -ReferencedAssemblies System
 }
@@ -195,4 +216,3 @@ function Invoke-Exe21spInPrivateConsole {
 	}
 	finally { if (-not $p.HasExited) { Stop-ProcessTree -ProcessId $p.Id } }
 }
-

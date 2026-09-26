@@ -536,3 +536,221 @@ Add-Test @{
 		Assert-True ($quiet.Trim().Length -lt $normal.Trim().Length) "-Quiet 未减少信息输出（normal=$($normal.Trim().Length) quiet=$($quiet.Trim().Length)）"
 	}
 }
+
+# DarkMode 编译期定死：Off 时 default.cs 里的 DarkMode 类型整段不编译，On/Auto 则编译（Auto 再运行时探测）。
+$dmProbe = @'
+$exe = [System.Reflection.Assembly]::GetEntryAssembly().Location
+$marker = $exe + '.dm'
+$darkModeType = [AppDomain]::CurrentDomain.GetAssemblies() | ForEach-Object { $_.GetType('PSRunnerNS.DarkMode') } | Where-Object { $_ } | Select-Object -First 1
+[System.IO.File]::WriteAllText($marker, $(if ($darkModeType) { 'present' } else { 'absent' }))
+'@
+
+Add-Test @{
+	Name   = 'ps12exe.app.darkmode'
+	Group  = 'ps12exe'
+	Deps   = $deps
+	Builds = @(
+		@{ Name = 'dm_on'; Output = 'dm_on.exe'; Params = @{ App = @{ Windowed = $true; DarkMode = 'On' } }; InputText = $dmProbe }
+		@{ Name = 'dm_auto'; Output = 'dm_auto.exe'; Params = @{ App = @{ Windowed = $true; DarkMode = 'Auto' } }; InputText = $dmProbe }
+		@{ Name = 'dm_off'; Output = 'dm_off.exe'; Params = @{ App = @{ Windowed = $true; DarkMode = 'Off' } }; InputText = $dmProbe }
+	)
+	Run    = {
+		param($ctx)
+		foreach ($name in @('dm_on', 'dm_auto', 'dm_off')) {
+			$exe = Copy-BuildAs -BuildPath $ctx.Builds[$name] -WorkDir $ctx.WorkDir -Name "$name.exe"
+			$marker = "$exe.dm"
+			if (Test-Path -LiteralPath $marker) { Remove-Item -LiteralPath $marker -Force }
+			$p = Start-Process -FilePath $exe -PassThru -Wait
+			Assert-Equal 0 $p.ExitCode "$name 退出码"
+			$value = (Get-Content -LiteralPath $marker -Raw).Trim()
+			if ($name -eq 'dm_off') { Assert-Equal 'absent' $value 'DarkMode=Off 仍编译了暗色代码' }
+			else { Assert-Equal 'present' $value "$name 未编译暗色代码" }
+		}
+	}
+}
+
+# 开屏不闪：DarkMode=On 时，窗体首次绘制时的背景必须已是暗色（说明染色发生在 WinForms 绘制之前）。
+$dmFlashProbe = @'
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+$marker = [System.Reflection.Assembly]::GetEntryAssembly().Location + '.paint'
+$form = New-Object System.Windows.Forms.Form
+$form.Text = 'darkmode-paint'
+$form.Size = New-Object System.Drawing.Size(360, 220)
+$script:recorded = $false
+$form.Add_Paint({
+	# 只记「可见」窗口的首次绘制：不可见时的离屏绘制不算开屏闪。
+	if (-not $script:recorded -and $form.Visible) {
+		$script:recorded = $true
+		[System.IO.File]::WriteAllText($marker, "$($form.BackColor.R),$($form.BackColor.G),$($form.BackColor.B)")
+	}
+})
+$timer = New-Object System.Windows.Forms.Timer
+$timer.Interval = 1200
+$timer.Add_Tick({ $form.Close() })
+$timer.Start()
+[System.Windows.Forms.Application]::Run($form)
+'@
+
+Add-Test @{
+	Name  = 'ps12exe.app.darkmode.no-flash'
+	Group = 'ps12exe'
+	Deps  = $deps
+	Build = @{
+		Name      = 'dm_flash'
+		Output    = 'dm_flash.exe'
+		Params    = @{ App = @{ Windowed = $true; DarkMode = 'On' } }
+		InputText = $dmFlashProbe
+	}
+	Run   = {
+		param($ctx)
+		$exe = Copy-BuildAs -BuildPath $ctx.Builds['dm_flash'] -WorkDir $ctx.WorkDir -Name 'dm_flash.exe'
+		$marker = "$exe.paint"
+		if (Test-Path -LiteralPath $marker) { Remove-Item -LiteralPath $marker -Force }
+		$process = Start-Process -FilePath $exe -PassThru
+		if (-not $process.WaitForExit(30000)) { $process.Kill(); Assert-True $false 'darkmode 窗口未在超时内退出' }
+		Assert-True (Test-Path -LiteralPath $marker) '窗体从未绘制（无桌面会话？）'
+		$value = (Get-Content -LiteralPath $marker -Raw).Trim()
+		Assert-Equal '32,32,32' $value "首次绘制背景不是暗色，开屏会闪一下：$value"
+	}
+}
+
+# 常量 GUI：所有窗口化常量均走 constexpr 帧，使用同一套 WinForms 对话框和亮/暗调色板。
+# 控制台常量脚本仍走 ~1KB 的 TinySharp 壳。
+Add-Test @{
+	Name   = 'ps12exe.app.darkmode.const'
+	Group  = 'ps12exe'
+	Deps   = $deps
+	Builds = @(
+		@{ Name = 'dm_const_on'; Output = 'dm_const_on.exe'; Params = @{ App = @{ Windowed = $true; DarkMode = 'On' } }; InputText = "'const-dm'" }
+		@{ Name = 'dm_const_auto'; Output = 'dm_const_auto.exe'; Params = @{ App = @{ Windowed = $true; DarkMode = 'Auto' } }; InputText = "'const-dm'" }
+		@{ Name = 'dm_const_off'; Output = 'dm_const_off.exe'; Params = @{ App = @{ Windowed = $true; DarkMode = 'Off' } }; InputText = "'const-dm'" }
+		@{ Name = 'dm_const_con_auto'; Output = 'dm_const_con_auto.exe'; Params = @{ App = @{ DarkMode = 'Auto' } }; InputText = "'const-dm'" }
+	)
+	Run    = {
+		param($ctx)
+		foreach ($name in @('dm_const_on', 'dm_const_auto')) {
+			$text = [System.Text.Encoding]::UTF8.GetString([System.IO.File]::ReadAllBytes($ctx.Builds[$name]))
+			Assert-True ($text.Contains('ConstMessageBox')) "$name 是窗口化常量脚本，未走统一渲染的 constexpr 帧"
+			Assert-True ($text.Contains('DarkWindowColor')) "$name 未包含暗色调色板"
+		}
+		$offText = [System.Text.Encoding]::UTF8.GetString([System.IO.File]::ReadAllBytes($ctx.Builds['dm_const_off']))
+		Assert-True ($offText.Contains('ConstMessageBox')) 'dm_const_off 未走统一渲染的 constexpr 帧'
+		Assert-False ($offText.Contains('DarkWindowColor')) 'DarkMode=Off 的 constexpr 帧不应包含暗色调色板'
+		foreach ($name in @('dm_const_con_auto')) {
+			$bytes = [System.IO.File]::ReadAllBytes($ctx.Builds[$name])
+			$text = [System.Text.Encoding]::UTF8.GetString($bytes)
+			Assert-False ($text.Contains('DarkMode')) "$name 不应包含暗色代码（应走 ~1KB 的 TinySharp 壳）"
+			Assert-True ($bytes.Length -lt 4096) "$name 体积异常，可能未走 TinySharp：$($bytes.Length)"
+		}
+	}
+}
+
+# 内置对话框：windowed 时始终有统一渲染的 MessageBoxHelper、自绘进度条与可取消的进度窗体；
+# 系统按钮本地化对所有主题配置均可用。
+$dmDialogProbe = @'
+$exe = [System.Reflection.Assembly]::GetEntryAssembly().Location
+$marker = $exe + '.dlg'
+$names = @('PSRunnerNS.MessageBoxHelper', 'PSRunnerNS.FlatProgressBar', 'PSRunnerNS.IShellProgressDialog')
+$lines = foreach ($name in $names) {
+	$type = [AppDomain]::CurrentDomain.GetAssemblies() | ForEach-Object { $_.GetType($name) } | Where-Object { $_ } | Select-Object -First 1
+	$(if ($type) { 'present' } else { 'absent' })
+}
+$dialogText = [AppDomain]::CurrentDomain.GetAssemblies() | ForEach-Object { $_.GetType('PSRunnerNS.SystemDialogText') } | Where-Object { $_ } | Select-Object -First 1
+$lines += $(if ($dialogText.GetMethod('GetButtonLabel', [System.Reflection.BindingFlags]::Static -bor [System.Reflection.BindingFlags]::Public)) { 'present' } else { 'absent' })
+$ui = [AppDomain]::CurrentDomain.GetAssemblies() | ForEach-Object { $_.GetType('PSRunnerNS.PSRunnerUI') } | Where-Object { $_ } | Select-Object -First 1
+$formatInputPrompt = $ui.GetMethod('FormatInputPrompt', [System.Reflection.BindingFlags]::Static -bor [System.Reflection.BindingFlags]::NonPublic)
+$lines += ([string]$formatInputPrompt.Invoke($null, [object[]]@('Input'))).Replace(' ', '_')
+$lines += ([string]$formatInputPrompt.Invoke($null, [object[]]@('Input:'))).Replace(' ', '_')
+$helper = [AppDomain]::CurrentDomain.GetAssemblies() | ForEach-Object { $_.GetType('PSRunnerNS.MessageBoxHelper') } | Where-Object { $_ } | Select-Object -First 1
+$lines += $(if ($helper.GetMethod('ShowLight', [System.Reflection.BindingFlags]::Static -bor [System.Reflection.BindingFlags]::NonPublic)) { 'present' } else { 'absent' })
+$progressForm = [AppDomain]::CurrentDomain.GetAssemblies() | ForEach-Object { $_.GetType('PSRunnerNS.Progress_Form') } | Where-Object { $_ } | Select-Object -First 1
+$lines += $(if ($progressForm.GetConstructor([type[]]@([string], [ConsoleColor], [Action]))) { 'present' } else { 'absent' })
+$ui = [AppDomain]::CurrentDomain.GetAssemblies() | ForEach-Object { $_.GetType('PSRunnerNS.PSRunnerUI') } | Where-Object { $_ } | Select-Object -First 1
+$lines += $(if ($ui.GetField('CancelPipeline', [System.Reflection.BindingFlags]::Instance -bor [System.Reflection.BindingFlags]::Public)) { 'present' } else { 'absent' })
+[System.IO.File]::WriteAllText($marker, ($lines -join ','))
+'@
+
+Add-Test @{
+	Name   = 'ps12exe.app.darkmode.dialogs'
+	Group  = 'ps12exe'
+	Deps   = $deps
+	Builds = @(
+		@{ Name = 'dm_dlg_on'; Output = 'dm_dlg_on.exe'; Params = @{ App = @{ Windowed = $true; DarkMode = 'On' } }; InputText = $dmDialogProbe }
+		@{ Name = 'dm_dlg_off'; Output = 'dm_dlg_off.exe'; Params = @{ App = @{ Windowed = $true; DarkMode = 'Off' } }; InputText = $dmDialogProbe }
+	)
+	Run    = {
+		param($ctx)
+		foreach ($pair in @(@('dm_dlg_on', 'present,present,absent,present,Input:_,Input:_,absent,present,present'), @('dm_dlg_off', 'present,present,absent,present,Input:_,Input:_,absent,present,present'))) {
+			$name = $pair[0]; $expected = $pair[1]
+			$exe = Copy-BuildAs -BuildPath $ctx.Builds[$name] -WorkDir $ctx.WorkDir -Name "$name.exe"
+			$marker = "$exe.dlg"
+			if (Test-Path -LiteralPath $marker) { Remove-Item -LiteralPath $marker -Force }
+			$process = Start-Process -FilePath $exe -PassThru -Wait
+			Assert-Equal 0 $process.ExitCode "$name 退出码"
+			$value = (Get-Content -LiteralPath $marker -Raw).Trim()
+			Assert-Equal $expected $value "$name 内置对话框类型编译情况不符"
+		}
+	}
+}
+
+Add-Test @{
+	Name  = 'ps12exe.app.progress.cancel'
+	Group = 'ps12exe'
+	Deps  = $deps
+	Build = @{
+		Name      = 'progress_cancel'
+		Output    = 'progress_cancel.exe'
+		InputText = "Write-Progress -Activity 'Working' -Status 'Waiting for cancellation'; Start-Sleep -Seconds 30"
+		Params    = @{ App = @{ Windowed = $true; DarkMode = 'Off' } }
+	}
+	Run   = {
+		param($ctx)
+		$process = Start-Process -FilePath $ctx.Builds['progress_cancel'] -WorkingDirectory $ctx.WorkDir -PassThru
+		$clicked = $false
+		try {
+			$deadline = [DateTime]::UtcNow.AddSeconds(10)
+			while (-not $process.HasExited -and [DateTime]::UtcNow -lt $deadline -and -not $clicked) {
+				$clicked = [CIWindowHelper]::ClickFirstButtonInProcessMainWindow($process.Id)
+				if (-not $clicked) { Start-Sleep -Milliseconds 50 }
+			}
+			Assert-True $clicked '进度窗体未显示可点击的取消按钮'
+			Assert-True ($process.WaitForExit(5000)) '点击进度窗体的取消按钮后流水线仍未停止'
+			Assert-Equal 1 $process.ExitCode '取消进度操作的退出码'
+		} finally {
+			if (-not $process.HasExited) { Stop-ProcessTree -ProcessId $process.Id }
+			$process.Dispose()
+		}
+	}
+}
+
+# Auto 跟着系统主题实时切换：只有 Auto（未编译期强制）才带 ThemeChangeWindow 监听 WM_SETTINGCHANGE + ImmersiveColorSet；On 不需要。
+$dmLiveProbe = @'
+$exe = [System.Reflection.Assembly]::GetEntryAssembly().Location
+$marker = $exe + '.live'
+$themeChangeWindowType = [AppDomain]::CurrentDomain.GetAssemblies() | ForEach-Object { $_.GetType('PSRunnerNS.DarkMode+ThemeChangeWindow') } | Where-Object { $_ } | Select-Object -First 1
+[System.IO.File]::WriteAllText($marker, $(if ($themeChangeWindowType) { 'present' } else { 'absent' }))
+'@
+
+Add-Test @{
+	Name   = 'ps12exe.app.darkmode.live-switch'
+	Group  = 'ps12exe'
+	Deps   = $deps
+	Builds = @(
+		@{ Name = 'dm_live_auto'; Output = 'dm_live_auto.exe'; Params = @{ App = @{ Windowed = $true; DarkMode = 'Auto' } }; InputText = $dmLiveProbe }
+		@{ Name = 'dm_live_on'; Output = 'dm_live_on.exe'; Params = @{ App = @{ Windowed = $true; DarkMode = 'On' } }; InputText = $dmLiveProbe }
+	)
+	Run    = {
+		param($ctx)
+		foreach ($pair in @(@('dm_live_auto', 'present'), @('dm_live_on', 'absent'))) {
+			$name = $pair[0]; $expected = $pair[1]
+			$exe = Copy-BuildAs -BuildPath $ctx.Builds[$name] -WorkDir $ctx.WorkDir -Name "$name.exe"
+			$marker = "$exe.live"
+			if (Test-Path -LiteralPath $marker) { Remove-Item -LiteralPath $marker -Force }
+			$process = Start-Process -FilePath $exe -PassThru -Wait
+			Assert-Equal 0 $process.ExitCode "$name 退出码"
+			$value = (Get-Content -LiteralPath $marker -Raw).Trim()
+			Assert-Equal $expected $value "$name 的系统主题监听器编译情况不符"
+		}
+	}
+}

@@ -32,7 +32,7 @@
 		title      = "उपयोग:"
 		Usage      = "[input |] ps12exe [[-inputFile] '<फ़ाइल नाम|url>' | -Content '<स्क्रिप्ट>'] [-outputFile '<फ़ाइल नाम>']
 	[-App @{Windowed=`$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default';
-	VisualStyles=`$true; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true; ConHost=`$true}]
+	VisualStyles=`$true; DarkMode='Auto'|'On'|'Off'; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true; ConHost=`$true}]
 	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
 	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
 	Culture='<संस्कृति>'; Options='<विकल्प>'; KeepSource=`$true; Minify={<स्क्रिप्टब्लॉक>}; TempDir='<फ़ोल्डर>';
@@ -53,6 +53,7 @@
 				Silence          = "शांत किए जाने वाले आउटपुट स्ट्रीम; ``'Output'``, ``'Verbose'``, ``'Error'``, ``'Warning'``, ``'Debug'`` में से एक या अधिक, या सभी के लिए ``'*'``।"
 				OutputEncoding   = "कंसोल आउटपुट एन्कोडिंग; ``'Default'``, ``'UTF8'`` या ``'UTF16LE'``।"
 				VisualStyles     = "GUI एप्लिकेशन के लिए विजुअल स्टाइल सक्षम करें (डिफ़ॉल्ट `` `$true ``)।"
+				DarkMode         = "विंडोड GUI WinForms विंडो के लिए डार्क थीम; ``'Auto'`` सिस्टम थीम का अनुसरण करता है, ``'On'``/``'Off'`` इसे बाध्य करते हैं।"
 				ExitOnCancel     = "``Read-Host`` इनपुट बॉक्स में Cancel या ``'X'`` का चयन करते समय प्रोग्राम से बाहर निकलें।"
 				CredentialGUI    = "कंसोल मोड में क्रेडेंशल के लिए GUI का उपयोग करें।"
 				DpiAware         = "संकलित एक्सीक्यूटेबल फ़ाइल को DPI aware के रूप में चिह्नित करें।"

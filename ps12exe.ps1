@@ -26,6 +26,7 @@ A hashtable describing how the produced application behaves. Supported keys:
 - Silence: stream names to suppress; one or more of 'Output', 'Verbose', 'Error', 'Warning', 'Debug', or '*' (default: empty)
 - OutputEncoding: console output encoding; 'Default', 'UTF8' or 'UTF16LE' (default: 'Default')
 - VisualStyles: enable visual styles for GUI applications (default: $true)
+- DarkMode: dark theme for windowed GUI WinForms windows; 'Auto' follows the system theme, 'On'/'Off' force it (default: 'Auto')
 - ExitOnCancel: exit when Cancel or "X" is selected in a Read-Host input box (default: $false)
 - CredentialGUI: use a GUI for prompting credentials in console mode (default: $false)
 - DpiAware: mark the compiled executable as DPI aware (default: $false)
@@ -115,7 +116,7 @@ Param(
 	[String]$outputFile = $NULL,
 	[ArgumentCompleter({
 		Param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
-		$validKeys = @('Windowed', 'Silence', 'OutputEncoding', 'VisualStyles', 'ExitOnCancel', 'CredentialGUI', 'DpiAware', 'WinFormsDpiAware', 'ConHost')
+		$validKeys = @('Windowed', 'Silence', 'OutputEncoding', 'VisualStyles', 'DarkMode', 'ExitOnCancel', 'CredentialGUI', 'DpiAware', 'WinFormsDpiAware', 'ConHost')
 		if (-not $wordToComplete) { return "@{}" }
 		$wordToComplete = $wordToComplete.Trim('"', "'", ' ', '`t', '{', '}')
 		if ($wordToComplete -match '=') { return }
@@ -418,6 +419,12 @@ $outputEncodingName = "$(Get-Opt $App 'OutputEncoding' 'Default')"
 $UNICODEEncoding = $outputEncodingName -ieq 'UTF16LE'
 $UTF8Encoding = $outputEncodingName -ieq 'UTF8'
 $noVisualStyles = -not (ConvertTo-OptBool (Get-Opt $App 'VisualStyles' $true) $true)
+# DarkMode：windowed 产物的 WinForms 暗色适配，Auto 跟随系统主题，On/Off 强制。
+$darkMode = switch ((Get-Opt $App 'DarkMode' 'Auto').ToString().Trim().ToLowerInvariant()) {
+	'on' { 'On' }
+	'off' { 'Off' }
+	default { 'Auto' }
+}
 $exitOnCancel = ConvertTo-OptBool (Get-Opt $App 'ExitOnCancel' $false) $false
 $credentialGUI = ConvertTo-OptBool (Get-Opt $App 'CredentialGUI' $false) $false
 $DPIAware = ConvertTo-OptBool (Get-Opt $App 'DpiAware' $false) $false
@@ -911,7 +918,8 @@ try {
 	Write-TaskbarProgress -Percent 10
 	#_if PSScript
 		# 常量脚本优先生成 TinySharp 壳（体积 ~1KB）；产物是 .NET Framework 托管 PE，Core 目标跳过它改走 CoreCompiler。
-		if ($AstAnalyzeResult.IsConst -and -not $requireAdmin -and -not $isCoreTarget) {
+		# TinySharp 是裸 IL 壳，窗口化常量统一走 constexpr 帧，以使用同一套支持亮/暗主题的 WinForms 对话框；控制台常量仍用 TinySharp。
+		if ($AstAnalyzeResult.IsConst -and -not $requireAdmin -and -not $isCoreTarget -and -not $noConsole) {
 			Write-I18n Verbose TryingTinySharpCompile
 			Write-I18n Host CompilingFile
 			Write-TaskbarProgress -Percent 20

@@ -142,7 +142,7 @@ help       : 显示此帮助信息。
 
 ```powershell
 [input |] ps12exe [[-inputFile] '<文件名|url>' | -Content '<脚本>'] [-outputFile '<文件名>']
-        [-App @{Windowed=$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default'; VisualStyles=$true;
+        [-App @{Windowed=$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default'; VisualStyles=$true; DarkMode='Auto'|'On'|'Off';
         ExitOnCancel=$true; CredentialGUI=$true; DpiAware=$true; WinFormsDpiAware=$true; ConHost=$true}]
         [-Os @{Admin=$true; ModernOS=$true; LongPaths=$true; Virtualize=$true}]
         [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
@@ -164,6 +164,7 @@ App              : 描述生成的应用程序行为的哈希表。支持的键�
                    Silence          : 要静默的输出流；可取 'Output'、'Verbose'、'Error'、'Warning'、'Debug' 中的一个或多个，或 '*' 表示全部。
                    OutputEncoding   : 控制台输出编码；'Default'、'UTF8' 或 'UTF16LE'。
                    VisualStyles     : 为GUI应用程序启用视觉样式（默认 $true）。
+                   DarkMode         : 窗口化 GUI 产物的 WinForms 深色主题；'Auto' 跟随系统主题，'On'/'Off' 强制。
                    ExitOnCancel     : 当在Read-Host输入框中选择Cancel或'X'时退出程序。
                    CredentialGUI    : 在控制台模式下使用GUI提示凭据。
                    DpiAware         : 将编译的可执行文件标记为DPI感知。

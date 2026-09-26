@@ -102,6 +102,9 @@ if ($resourceParams.version) { $Constants += "version" }
 if ($resourceParams.Count) { $Constants += "Resources" }
 if ($credentialGUI) { $Constants += "credentialGUI" }
 if ($noVisualStyles) { $Constants += "noVisualStyles" }
+# DarkMode 只需两个编译符号：Off 剔除暗色代码，On 跳过系统探测，Auto（默认）不定义符号并运行时探测。
+if ($darkMode -eq 'Off') { $Constants += "darkModeOff" }
+elseif ($darkMode -eq 'On') { $Constants += "darkModeOn" }
 if ($exitOnCancel) { $Constants += "exitOnCancel" }
 if ($conHost) { $Constants += "conHost" }
 if ($UNICODEEncoding) { $Constants += "UNICODEEncoding" }

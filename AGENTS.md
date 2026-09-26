@@ -16,6 +16,7 @@
 - 对外统一使用对象式参数：`-App @{…}`、`-Os @{…}`、`-Build @{…}`、`-Resources @{…}`、`-Signing @{…}`，外加模式开关 `-PreprocessOnly -Golf -Sandbox -NoUpdateCheck -Quiet -Locale -ConfigFile -help`。
 - Core 目标的 .NET/PowerShell 打包选项集中在 `Build.Core` 嵌套对象（`Backend='Shared'|'Bundled'`、`TargetOs`、`TargetFramework`、`PowerShellVersion`、`SingleFile`、`SelfContained`、`Trimmed`、`TrimMode`、`ReadyToRun`、`InvariantGlobalization`、`Aot`）；`Backend='Shared'` 用目标机 pwsh 解析 SMA，`Bundled` 打包 `Microsoft.PowerShell.SDK` 以支持 self-contained/trim/AOT。`arm64` 只对 Core 有效。Core 会按脚本内容自动打开 `UseWindowsForms`/`UseWPF`，用到 `Add-Type` 时随产物带 `$PSHOME\ref`（细节见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#core-gui-and-addtype)）。
 - **行为型开关只允许改名/归类，不允许删除**；新增参数优先放进最贴近的对象里。
+- `App.DarkMode`（`Auto`/`On`/`Off`，默认 `Auto`）：windowed 产物的 WinForms 深色适配，编译期定死（`Off` 时整段暗色代码不编译）；`Auto` 实时跟随系统深浅切换（`WM_SETTINGCHANGE`），消除首帧闪白、内置对话框（MessageBox/Input/Choice/ReadKey/Progress）的深色与原生对齐、uxtheme 序号等实现与局限见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#darkmode)。
 - 公开 API 在 `ps12exe.ps1` 内经 `Get-Opt` / `ConvertTo-OptBool` 适配为内部规范变量（`$noConsole`、`$resourceParams`、`$targetRuntime` 等），下游编译器与 C# 帧只认这些内部变量。
 - `#_pragma` 使用对象点号路径（如 `#_pragma App.Windowed`、`#_pragma Build.ConstEval.Enabled 0`）；支持无值形式（等价 `$true`）与任意层级。
 - 宿主嵌套状态通过 `PS12EXE_NESTED` 环境变量传递，不用参数；读取方立即 `Remove-Item Env:PS12EXE_NESTED`。
@@ -55,6 +56,7 @@
 - 帮助渲染：`. .\src\HelpShower.ps1 -HelpData (& .\src\locale\zh-CN.ps1).ConsoleHelpData | Write-Host`。
 - 新增/修改用例后记得本地跑一次相关 `-Filter`，并在提交前 `pwsh tests/run.ps1 -All` 过一遍。
 - 基准测试：`pwsh -File tools/Benchmark/Compare-Compilers.ps1 -Compile -IncludeCore` 输出 README 用的体积/启动/编译耗时 markdown，另含原生 DLL 导出（`#_DllExport`）的产物体积/编译耗时表；`-Content`/`-Script` 指定被测内容，`-Runs` 控制运行时热运行次数、`-CompileRuns` 控制编译取样数（第 0 次为冷编译，其余取中位数，默认 5）。PS2EXE 行取本地安装的最新版本（pwsh 下会补查 Windows PowerShell 的每用户模块目录 `Documents\WindowsPowerShell\Modules`），找不到就跳过其行。
+- 对话框截图比较：`pwsh -File tools/DialogScreenshots/Compare-Dialogs.ps1` 会暂时切换当前用户 AppsUseLightTheme、截取系统亮色参照与 ps12exe 亮/暗产物、生成像素 diff HTML 并打开；使用细节及 input/choice 的参照限制见 [tools/DialogScreenshots/README.md](tools/DialogScreenshots/README.md)。
 - README 的编译器包体积（解压/压缩）：按 `Publish.ps1` 的删除规则把仓库清成发布包，用 Windows PowerShell 5.1 的 `Publish-Module` 发到本地文件仓库得到 nupkg——展开 nupkg 的总字节数为「解压」，nupkg 文件本身为「压缩」；PS2EXE 用 PSGallery 的 nupkg（`Save-Module`/直接下载）同样测量。pwsh 下的 PowerShellGet 2.x `Publish-Module` 会报 `NupkgPath` 绑定错误，故用 5.1。
 - 运行时编译缓存统一挂在 `%TEMP%\ps12exe\`（`src/Cache.ps1` 提供 `Get-TempRoot`/`Get-CacheRoot <name>`/`Clear-StaleCache`；更新检查的 txt 在根下 `version.txt`）：Core 工程在 `cache\core`、CodeDom 帧模板在 `cache\codedom`、打包用 LZMA 编码器 DLL 在 `cache\lzma`、产物结果在 `cache\output`。各缓存的键与坑见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#compile-caches)。
 - Framework 编译后台预热 `ExeSinker`/AsmResolver（`src/AsmWarmup.ps1` 的 `Start-AsmWarmup`）。**别为省掉 ExeSinker 给 csc 传空 `/win32res`**（已试过并回退，理由见 [docs/dev/compiler-internals.md](docs/dev/compiler-internals.md#codedom-cache)）。

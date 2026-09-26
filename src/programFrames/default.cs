@@ -527,15 +527,29 @@ namespace PSRunnerNS {
 	}
 
 	#if noConsole
-	public class Input_Box {
+	internal static class SystemDialogText {
 		[DllImport("user32.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.Cdecl)]
-		private static extern IntPtr MB_GetString(uint strId);
+		static extern IntPtr MB_GetString(uint strId);
+
+		public static string GetButtonLabel(uint strId, string fallback) {
+			try {
+				string value = Marshal.PtrToStringUni(MB_GetString(strId));
+				if (!string.IsNullOrEmpty(value)) { return value; }
+			} catch { }
+			return fallback;
+		}
+	}
+
+	public class Input_Box {
+		// 几何对齐标准 WinForms 输入框参照。深色适配交给 DarkMode 的窗口首帧染色，无需在此处理。
+		const int InputMargin = 12;
+		const int InputButtonWidth = 75;
+		const int InputButtonHeight = 23;
 
 		public static DialogResult Show(string strTitle, string strPrompt, ref string strVal, bool blSecure) {
 			// 生成控件
 			Form form = new Form();
-			form.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-			form.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+			form.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
 			Label label = new Label();
 			TextBox textBox = new TextBox();
 			Button buttonOk = new Button();
@@ -548,40 +562,31 @@ namespace PSRunnerNS {
 				else
 					strPrompt = "Input:";
 			}
-			label.Text = strPrompt.PadRight(16);
-			label.Location = new Point(9, 19);
-			label.MaximumSize = new System.Drawing.Size(System.Windows.Forms.Screen.FromControl(form).Bounds.Width * 5 / 8 - 18, 0);
+			label.Text = strPrompt;
+			label.Location = new Point(InputMargin, InputMargin);
+			label.MaximumSize = new System.Drawing.Size(System.Windows.Forms.Screen.FromControl(form).Bounds.Width * 5 / 8 - InputMargin * 2, 0);
 			label.AutoSize = true;
 			// 标签的尺寸要到 Add() 之后才能确定
 			form.Controls.Add(label);
+			int iClientWidth = System.Math.Max(352, label.Right + InputMargin);
 
 			// 生成文本框
 			if (blSecure) textBox.UseSystemPasswordChar = true;
 			textBox.Text = strVal;
-			textBox.SetBounds(12, label.Bottom, label.Right - 12, 20);
+			textBox.SetBounds(InputMargin, System.Math.Max(38, label.Bottom + 6), iClientWidth - InputMargin * 2, 23);
 
-			// 生成按钮，并获取本地化的 "OK" 字符串
-			string sTextOK = Marshal.PtrToStringUni(MB_GetString(0));
-			if (string.IsNullOrEmpty(sTextOK))
-				buttonOk.Text = "OK";
-			else
-				buttonOk.Text = sTextOK;
+			buttonOk.Text = SystemDialogText.GetButtonLabel(0, "OK");
+			buttonCancel.Text = SystemDialogText.GetButtonLabel(1, "Cancel");
 
-			// 获取本地化的 "Cancel" 字符串
-			string sTextCancel = Marshal.PtrToStringUni(MB_GetString(1));
-			if (string.IsNullOrEmpty(sTextCancel))
-				buttonCancel.Text = "Cancel";
-			else
-				buttonCancel.Text = sTextCancel;
-
+			int iButtonTop = textBox.Bottom + 33;
 			buttonOk.DialogResult = DialogResult.OK;
 			buttonCancel.DialogResult = DialogResult.Cancel;
-			buttonOk.SetBounds(System.Math.Max(12, label.Right - 158), label.Bottom + 36, 75, 23);
-			buttonCancel.SetBounds(System.Math.Max(93, label.Right - 77), label.Bottom + 36, 75, 23);
+			buttonCancel.SetBounds(iClientWidth - InputMargin - InputButtonWidth * 2 - 6, iButtonTop, InputButtonWidth, InputButtonHeight);
+			buttonOk.SetBounds(iClientWidth - InputMargin - InputButtonWidth, iButtonTop, InputButtonWidth, InputButtonHeight);
 
 			// 配置窗体
 			form.Text = strTitle;
-			form.ClientSize = new System.Drawing.Size(System.Math.Max(178, label.Right + 10), label.Bottom + 71);
+			form.ClientSize = new System.Drawing.Size(iClientWidth, iButtonTop + InputButtonHeight + 17);
 			form.Controls.AddRange(new Control[] {
 				textBox,
 				buttonOk,
@@ -589,13 +594,13 @@ namespace PSRunnerNS {
 			});
 			form.FormBorderStyle = FormBorderStyle.FixedDialog;
 			form.StartPosition = FormStartPosition.CenterScreen;
-			try {
-				form.Icon = Icon.ExtractAssociatedIcon((Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly()).Location);
-			} catch {}
 			form.MinimizeBox = false;
 			form.MaximizeBox = false;
+			form.ShowInTaskbar = false;
+			form.ShowIcon = false;
 			form.AcceptButton = buttonOk;
 			form.CancelButton = buttonCancel;
+			form.Shown += delegate { textBox.Focus(); };
 
 			// 显示窗体并计算结果
 			DialogResult dialogResult = form.ShowDialog();
@@ -609,6 +614,27 @@ namespace PSRunnerNS {
 	}
 
 	public class Choice_Box {
+		// 几何对齐系统亮色 Choice 参照：客户区宽 360、提示左/上 12/12、单选缩进 29、首项/行距 9/7，按钮右/底留白 12/13。
+		// 深色适配交给 DarkMode 的窗口首帧染色。
+		const int ChoiceClientWidth = 360;
+		const int ChoicePromptLeft = 12;
+		const int ChoicePromptTop = 12;
+		const int ChoiceFirstRadioGap = 9;
+		const int ChoiceRadioGap = 7;
+		const int ChoiceButtonGap = 24;
+		const int ChoiceBottomMargin = 13;
+		const int ChoiceRightMargin = 12;
+		#if darkModeOff
+		[DllImport("dwmapi.dll")]
+		static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
+		static void SetLightTitleBar(Form form) {
+			int useDarkMode = 0;
+			if (DwmSetWindowAttribute(form.Handle, 20, ref useDarkMode, sizeof(int)) != 0)
+				DwmSetWindowAttribute(form.Handle, 19, ref useDarkMode, sizeof(int));
+		}
+		#endif
+
 		public static int Show(System.Collections.ObjectModel.Collection<ChoiceDescription> arrChoice, int intDefault, string strTitle, string strPrompt) {
 			// 数组为空则取消
 			if (arrChoice == null) return -1;
@@ -617,34 +643,40 @@ namespace PSRunnerNS {
 			// 生成控件
 			Form form = new Form();
 			form.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-			form.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+			form.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
+			form.Font = SystemFonts.DefaultFont;
 			RadioButton[] aradioButton = new RadioButton[arrChoice.Count];
 			ToolTip toolTip = new ToolTip();
 			Button buttonOk = new Button();
 
 			// 尺寸和位置根据标签确定，有提示时必须先完成这个控件
-			int iPosY = 19, iMaxX = 0;
+			int iPosY = ChoicePromptTop, iMaxX = 0;
+			int iMaxWidth = System.Windows.Forms.Screen.FromControl(form).Bounds.Width * 5 / 8 - 18;
 			if (!string.IsNullOrEmpty(strPrompt)) {
 				Label label = new Label();
 				label.Text = strPrompt;
-				label.Location = new Point(9, 19);
-				label.MaximumSize = new System.Drawing.Size(System.Windows.Forms.Screen.FromControl(form).Bounds.Width * 5 / 8 - 18, 0);
+				label.BackColor = form.BackColor;
+				label.ForeColor = form.ForeColor;
+				label.Location = new Point(ChoicePromptLeft, ChoicePromptTop);
+				label.MaximumSize = new System.Drawing.Size(iMaxWidth, 0);
 				label.AutoSize = true;
 				// 标签的尺寸要到 Add() 之后才能确定
 				form.Controls.Add(label);
-				iPosY = label.Bottom;
+				iPosY = label.Bottom + ChoiceFirstRadioGap;
 				iMaxX = label.Right;
 			}
 
 			// 其余尺寸和位置以单选按钮为基准，因此现在就完成这些控件
 			int Counter = 0;
-			int tempWidth = System.Windows.Forms.Screen.FromControl(form).Bounds.Width * 5 / 8 - 18;
+			int tempWidth = iMaxWidth;
 			foreach(ChoiceDescription sAuswahl in arrChoice) {
 				aradioButton[Counter] = new RadioButton();
 				aradioButton[Counter].Text = Regex.Replace(sAuswahl.Label, ".\b", "");
+				aradioButton[Counter].BackColor = form.BackColor;
+				aradioButton[Counter].ForeColor = form.ForeColor;
 				if (Counter == intDefault)
 					aradioButton[Counter].Checked = true;
-				aradioButton[Counter].Location = new Point(9, iPosY);
+				aradioButton[Counter].Location = new Point(29, iPosY);
 				aradioButton[Counter].AutoSize = true;
 				// 标签的尺寸要到 Add() 之后才能确定
 				form.Controls.Add(aradioButton[Counter]);
@@ -654,7 +686,7 @@ namespace PSRunnerNS {
 					aradioButton[Counter].Width = tempWidth;
 					aradioButton[Counter].AutoSize = false;
 				}
-				iPosY = aradioButton[Counter].Bottom;
+				iPosY = aradioButton[Counter].Bottom + ChoiceRadioGap;
 				if (aradioButton[Counter].Right > iMaxX) {
 					iMaxX = aradioButton[Counter].Right;
 				}
@@ -667,22 +699,26 @@ namespace PSRunnerNS {
 			toolTip.ShowAlways = true;
 
 			// 创建按钮
-			buttonOk.Text = "OK";
+			buttonOk.Text = SystemDialogText.GetButtonLabel(0, "OK");
 			buttonOk.DialogResult = DialogResult.OK;
-			buttonOk.SetBounds(System.Math.Max(12, iMaxX - 77), iPosY + 36, 75, 23);
+			int iButtonTop = iPosY - ChoiceRadioGap + ChoiceButtonGap;
+			int iClientWidth = System.Math.Max(ChoiceClientWidth, iMaxX + ChoiceRightMargin);
+			buttonOk.SetBounds(iClientWidth - ChoiceRightMargin - 75, iButtonTop, 75, 23);
 
 			// 配置窗体
 			form.Text = strTitle;
-			form.ClientSize = new System.Drawing.Size(System.Math.Max(178, iMaxX + 10), iPosY + 71);
+			form.ClientSize = new System.Drawing.Size(iClientWidth, buttonOk.Bottom + ChoiceBottomMargin);
 			form.Controls.Add(buttonOk);
 			form.FormBorderStyle = FormBorderStyle.FixedDialog;
 			form.StartPosition = FormStartPosition.CenterScreen;
-			try {
-				form.Icon = Icon.ExtractAssociatedIcon((Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly()).Location);
-			} catch {}
+			form.ShowInTaskbar = false;
+			form.ShowIcon = false;
 			form.MinimizeBox = false;
 			form.MaximizeBox = false;
 			form.AcceptButton = buttonOk;
+			#if darkModeOff
+			SetLightTitleBar(form);
+			#endif
 
 			// 显示并计算窗体
 			if (form.ShowDialog() != DialogResult.OK)
@@ -698,6 +734,8 @@ namespace PSRunnerNS {
 	}
 
 	public class ReadKey_Box {
+		[DllImport("dwmapi.dll")]
+		static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
 		[DllImport("user32.dll")]
 		public static extern int ToUnicode(uint wVirtKey, uint wScanCode, byte[] lpKeyState,
 			[Out, MarshalAs(UnmanagedType.LPWStr, SizeConst = 64)] System.Text.StringBuilder pwszBuff,
@@ -720,8 +758,8 @@ namespace PSRunnerNS {
 
 		class Keyboard_Form: Form {
 			public Keyboard_Form() {
-				this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-				this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+				this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
+				this.Font = SystemFonts.MessageBoxFont;
 				this.KeyDown += new KeyEventHandler(Keyboard_Form_KeyDown);
 				this.KeyUp += new KeyEventHandler(Keyboard_Form_KeyUp);
 			}
@@ -790,9 +828,32 @@ namespace PSRunnerNS {
 			}
 		}
 
+		// 几何对齐单行提示框（125% DPI）：文本内边距 12/34，按钮 86x26 距右 20。
+		const int ReadKeyLabelLeft = 10;
+		const int ReadKeyLabelTop = 28;
+		const int ReadKeyClientWidth = 138;
+		const int ReadKeyClientHeight = 123;
+		const int ReadKeyButtonTop = 84;
+		const int ReadKeyButtonWidth = 86;
+		const int ReadKeyButtonHeight = 26;
+		const int ReadKeyButtonRightMargin = 20;
+		const int ReadKeyButtonBottomMargin = 11;
+
+		static void ApplyTitleBar(IntPtr hwnd) {
+			#if !darkModeOff && !Pwsh20
+			DarkMode.DarkTitleBar(hwnd);
+			#else
+			int light = 0;
+			DwmSetWindowAttribute(hwnd, 20, ref light, sizeof(int));
+			DwmSetWindowAttribute(hwnd, 19, ref light, sizeof(int));
+			#endif
+		}
+
 		public static KeyInfo Show(string strTitle, string strPrompt, bool blIncludeKeyDown) {
 			// 创建控件
 			Keyboard_Form form = new Keyboard_Form();
+			form.Text = strTitle;
+			form.HandleCreated += delegate { ApplyTitleBar(form.Handle); };
 			Label label = new Label();
 
 			// 尺寸和位置以标签为基准，因此先完成这个控件
@@ -800,22 +861,34 @@ namespace PSRunnerNS {
 				label.Text = "Press a key";
 			else
 				label.Text = strPrompt;
-			label.Location = new Point(9, 19);
+			label.Location = new Point(ReadKeyLabelLeft, ReadKeyLabelTop);
 			label.MaximumSize = new System.Drawing.Size(System.Windows.Forms.Screen.FromControl(form).Bounds.Width * 5 / 8 - 18, 0);
 			label.AutoSize = true;
 			// 标签的尺寸要到 Add() 之后才能确定
 			form.Controls.Add(label);
 
+			// 与原生 MessageBox 一致的确认按钮（点击即等价于按一下确定键），贴客户区右下角。
+			Button buttonOk = new Button();
+			buttonOk.Text = SystemDialogText.GetButtonLabel(0, "OK");
+			buttonOk.DialogResult = DialogResult.OK;
+			buttonOk.Size = new System.Drawing.Size(ReadKeyButtonWidth, ReadKeyButtonHeight);
+			buttonOk.Location = new Point(0, ReadKeyButtonTop);
+			form.Controls.Add(buttonOk);
+			form.AcceptButton = buttonOk;
+
 			// 配置窗体
-			form.Text = strTitle;
-			form.ClientSize = new System.Drawing.Size(System.Math.Max(178, label.Right + 10), label.Bottom + 55);
+			int iClientWidth = System.Math.Max(ReadKeyClientWidth, System.Math.Max(label.Right + ReadKeyButtonRightMargin, ReadKeyButtonWidth + ReadKeyButtonRightMargin));
+			int iClientHeight = System.Math.Max(ReadKeyClientHeight, buttonOk.Bottom + ReadKeyButtonBottomMargin);
+			buttonOk.Location = new Point(iClientWidth - ReadKeyButtonWidth - ReadKeyButtonRightMargin, buttonOk.Top);
+			form.ClientSize = new System.Drawing.Size(iClientWidth, iClientHeight);
 			form.FormBorderStyle = FormBorderStyle.FixedDialog;
 			form.StartPosition = FormStartPosition.CenterScreen;
-			try {
-				form.Icon = Icon.ExtractAssociatedIcon((Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly()).Location);
-			} catch {}
+			form.ShowIcon = false;
 			form.MinimizeBox = false;
 			form.MaximizeBox = false;
+			form.ControlBox = true;
+			form.ShowInTaskbar = false;
+			form.Shown += delegate { ApplyTitleBar(form.Handle); };
 
 			// 显示并计算窗体
 			form.checkKeyDown = blIncludeKeyDown;
@@ -824,21 +897,82 @@ namespace PSRunnerNS {
 		}
 	}
 
+	// 自绘进度条：WinForms 的 ProgressBar 是原生控件、OnPaint 不生效，深色下无法控色（主题只暗轨道、填充会断裂），
+	// 因此继承 Control 自绘。同时修正浅色下 ProgressBar.ForeColor 被忽略、渲染成绿色的问题。
+	public class FlatProgressBar: Control {
+		int minimum = 0, maximum = 100, current = 0;
+
+		public FlatProgressBar() {
+			SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
+		}
+
+		[System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
+		public int Minimum { get { return minimum; } set { minimum = value; Invalidate(); } }
+		[System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
+		public int Maximum { get { return maximum; } set { maximum = value; Invalidate(); } }
+		[System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
+		public int Value { get { return current; } set { current = System.Math.Max(minimum, System.Math.Min(maximum, value)); Invalidate(); } }
+
+		// 进度条强调色（来自 Progress_Form 的 ConsoleColor 设置）。
+		public Color BarColor = Color.FromArgb(0, 120, 215);
+		public Color TrackColor = Color.FromArgb(231, 231, 231);
+		public Color BorderColor = Color.FromArgb(173, 173, 173);
+		public Color BackColorOverride = Color.White;
+
+		static System.Drawing.Drawing2D.GraphicsPath Rounded(System.Drawing.Rectangle rect, int radius) {
+			System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
+			int diameter = radius * 2;
+			path.AddArc(rect.Left, rect.Top, diameter, diameter, 180, 90);
+			path.AddArc(rect.Right - diameter, rect.Top, diameter, diameter, 270, 90);
+			path.AddArc(rect.Right - diameter, rect.Bottom - diameter, diameter, diameter, 0, 90);
+			path.AddArc(rect.Left, rect.Bottom - diameter, diameter, diameter, 90, 90);
+			path.CloseFigure();
+			return path;
+		}
+
+		protected override void OnPaint(PaintEventArgs e) {
+			Graphics graphics = e.Graphics;
+			graphics.Clear(BackColorOverride);
+			graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+			System.Drawing.Rectangle bounds = new System.Drawing.Rectangle(0, 0, Width - 1, Height - 1);
+			if (bounds.Width <= 0 || bounds.Height <= 0) { return; }
+			using (System.Drawing.Drawing2D.GraphicsPath outer = Rounded(bounds, 3))
+			using (SolidBrush trackBrush = new SolidBrush(TrackColor))
+			using (Pen borderPen = new Pen(BorderColor)) {
+				graphics.FillPath(trackBrush, outer);
+				graphics.DrawPath(borderPen, outer);
+			}
+			double fraction = (maximum - minimum) == 0 ? 0 : (current - minimum) / (double)(maximum - minimum);
+			int fillWidth = (int)System.Math.Round((Width - 2) * fraction);
+			if (fillWidth > 0) {
+				System.Drawing.Rectangle fill = new System.Drawing.Rectangle(1, 1, fillWidth, Height - 2);
+				using (System.Drawing.Drawing2D.GraphicsPath inner = Rounded(fill, 3))
+				using (SolidBrush fillBrush = new SolidBrush(BarColor)) {
+					graphics.FillPath(fillBrush, inner);
+				}
+			}
+		}
+	}
+
 	public class Progress_Form: Form {
-		private ConsoleColor ProgressBarColor = ConsoleColor.DarkCyan;
+		const int ProgressFormWidth = 406;
+		const int ProgressFormHeight = 196;
+		const int ProgressHeaderHeight = 40;
+		const int ProgressFooterHeight = 41;
+		const int ProgressRowHeight = 104;
+		private ConsoleColor ProgressBarColor = ConsoleColor.Green;
 		private string WindowTitle = "";
 
 		#if !noVisualStyles
-		private System.Timers.Timer _timer = new System.Timers.Timer();
+		private System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
 		private int _barNumber = -1;
 		private int _barValue = -1;
-		private bool _inTick = false;
 		#endif
 
 		struct Progress_Data {
 			internal Label lbActivity;
 			internal Label lbStatus;
-			internal ProgressBar objProgressBar;
+			internal FlatProgressBar objProgressBar;
 			internal Label lbRemainingTime;
 			internal Label lbOperation;
 			internal int ActivityId;
@@ -846,36 +980,201 @@ namespace PSRunnerNS {
 			internal int Depth;
 		};
 
-		private List<Progress_Data> progressDataList = new List<Progress_Data> ();
+		// 配色（Off/Pwsh20 产物固定浅色）。
+		static Color WindowBackColor {
+			get {
+				#if !darkModeOff && !Pwsh20
+				if (DarkMode.IsDark) { return DarkMode.WindowColor; }
+				#endif
+				return Color.White;
+			}
+		}
 
-		public Progress_Form(string Title, ConsoleColor BarColor) {
+		static Color FieldBackColor {
+			get {
+				#if !darkModeOff && !Pwsh20
+				if (DarkMode.IsDark) { return DarkMode.FieldColor; }
+				#endif
+				return Color.FromArgb(240, 240, 240);
+			}
+		}
+
+		static Color BorderLineColor {
+			get {
+				#if !darkModeOff && !Pwsh20
+				if (DarkMode.IsDark) { return DarkMode.BorderColor; }
+				#endif
+				return Color.FromArgb(184, 184, 184);
+			}
+		}
+
+		static Color ProgressTrackColor {
+			get {
+				#if !darkModeOff && !Pwsh20
+				if (DarkMode.IsDark) { return DarkMode.FieldColor; }
+				#endif
+				return Color.FromArgb(231, 231, 231);
+			}
+		}
+
+		static Color LabelTextColor {
+			get {
+				#if !darkModeOff && !Pwsh20
+				if (DarkMode.IsDark) { return DarkMode.TextColor; }
+				#endif
+				return SystemColors.ControlText;
+			}
+		}
+
+		static Color HeaderStartColor {
+			get {
+				#if !darkModeOff && !Pwsh20
+				if (DarkMode.IsDark) { return Color.FromArgb(47, 47, 47); }
+				#endif
+				return Color.FromArgb(218, 228, 243);
+			}
+		}
+
+		static Color HeaderEndColor {
+			get {
+				#if !darkModeOff && !Pwsh20
+				if (DarkMode.IsDark) { return DarkMode.WindowColor; }
+				#endif
+				return Color.FromArgb(9, 51, 93);
+			}
+		}
+
+		static Color HeaderMiddleColor {
+			get {
+				#if !darkModeOff && !Pwsh20
+				if (DarkMode.IsDark) { return Color.FromArgb(58, 58, 58); }
+				#endif
+				return Color.FromArgb(156, 192, 227);
+			}
+		}
+
+		static Color HeaderTextColor {
+			get {
+				#if !darkModeOff && !Pwsh20
+				if (DarkMode.IsDark) { return DarkMode.TextColor; }
+				#endif
+				return SystemColors.ControlText;
+			}
+		}
+
+		static Color CancelButtonBackColor {
+			get {
+				#if !darkModeOff && !Pwsh20
+				if (DarkMode.IsDark) { return DarkMode.FieldColor; }
+				#endif
+				return Color.White;
+			}
+		}
+
+		static Color CancelButtonBorderColor {
+			get {
+				#if !darkModeOff && !Pwsh20
+				if (DarkMode.IsDark) { return DarkMode.BorderColor; }
+				#endif
+				return Color.FromArgb(0, 120, 215);
+			}
+		}
+
+		private List<Progress_Data> progressDataList = new List<Progress_Data> ();
+		private volatile int progressCount;
+		private Action cancelPipeline;
+
+		public Progress_Form(string Title, ConsoleColor BarColor, Action CancelPipeline) {
 			WindowTitle = Title;
 			ProgressBarColor = BarColor;
-			InitializeComponent();
+			cancelPipeline = CancelPipeline;
+			System.Threading.ManualResetEvent ready = new System.Threading.ManualResetEvent(false);
+			Exception startupError = null;
+			System.Threading.Thread uiThread = new System.Threading.Thread(new System.Threading.ThreadStart(delegate {
+				try {
+					InitializeComponent();
+					this.Shown += delegate { ready.Set(); };
+					this.FormClosed += delegate {
+						#if !noVisualStyles
+						timer.Stop();
+						timer.Dispose();
+						#endif
+						Application.ExitThread();
+					};
+				} catch (Exception exception) {
+					startupError = exception;
+					ready.Set();
+					return;
+				}
+				Application.Run(this);
+			}));
+			uiThread.IsBackground = true;
+			uiThread.SetApartmentState(System.Threading.ApartmentState.STA);
+		uiThread.Start();
+		ready.WaitOne();
+		if (startupError != null) { throw startupError; }
 		}
+
+		protected override void OnPaintBackground(PaintEventArgs e) {
+			e.Graphics.Clear(WindowBackColor);
+			System.Drawing.Rectangle headerBounds = new System.Drawing.Rectangle(0, 0, ClientSize.Width, ProgressHeaderHeight);
+			using (System.Drawing.Drawing2D.LinearGradientBrush header = new System.Drawing.Drawing2D.LinearGradientBrush(headerBounds, HeaderStartColor, HeaderEndColor, 0f)) {
+				System.Drawing.Drawing2D.ColorBlend blend = new System.Drawing.Drawing2D.ColorBlend();
+				blend.Colors = new[] { HeaderStartColor, HeaderMiddleColor, HeaderEndColor };
+				blend.Positions = new[] { 0f, 0.55f, 1f };
+				header.InterpolationColors = blend;
+				e.Graphics.FillRectangle(header, headerBounds);
+			}
+			int footerTop = ClientSize.Height - ProgressFooterHeight;
+			System.Drawing.Rectangle footerBounds = new System.Drawing.Rectangle(0, footerTop, ClientSize.Width, ProgressFooterHeight);
+			using (SolidBrush footer = new SolidBrush(FieldBackColor))
+				e.Graphics.FillRectangle(footer, footerBounds);
+			using (Pen separator = new Pen(BorderLineColor))
+				e.Graphics.DrawLine(separator, 0, footerTop, ClientSize.Width, footerTop);
+		}
+
 		private void InitializeComponent() {
 			this.SuspendLayout();
 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+			this.Font = SystemFonts.MessageBoxFont;
 
 			this.AutoScroll = true;
 			this.Text = WindowTitle;
-			this.Height = 147;
-			this.Width = 800;
-			this.BackColor = Color.White;
+			this.Height = ProgressFormHeight;
+			this.Width = ProgressFormWidth;
+			this.BackColor = WindowBackColor;
+			this.ForeColor = LabelTextColor;
 			this.FormBorderStyle = FormBorderStyle.FixedSingle;
 			this.MinimizeBox = false;
 			this.MaximizeBox = false;
 			this.ControlBox = false;
+			this.ShowInTaskbar = false;
+			this.DoubleBuffered = true;
 			this.StartPosition = FormStartPosition.CenterScreen;
-
+			Button cancelButton = new Button();
+			cancelButton.Text = SystemDialogText.GetButtonLabel(1, "Cancel");
+			cancelButton.Size = new System.Drawing.Size(73, 23);
+			cancelButton.Location = new Point(ClientSize.Width - 24 - cancelButton.Width,
+				ClientSize.Height - ProgressFooterHeight + (ProgressFooterHeight - cancelButton.Height) / 2);
+			cancelButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+			cancelButton.FlatStyle = FlatStyle.Flat;
+			cancelButton.FlatAppearance.BorderSize = 1;
+			cancelButton.FlatAppearance.BorderColor = CancelButtonBorderColor;
+			cancelButton.BackColor = CancelButtonBackColor;
+			cancelButton.ForeColor = LabelTextColor;
+			cancelButton.UseVisualStyleBackColor = false;
+			cancelButton.Click += delegate {
+				cancelButton.Enabled = false;
+				cancelPipeline();
+			};
+			this.Controls.Add(cancelButton);
 			this.ResumeLayout();
 			#if !noVisualStyles
-			_timer.Elapsed += new System.Timers.ElapsedEventHandler(TimeTick);
-			_timer.Interval = 50; // 毫秒
-			_timer.AutoReset = true;
-			_timer.Start();
+			timer.Tick += TimeTick;
+			timer.Interval = 50; // 毫秒
+			timer.Start();
 			#endif
 		}
 
@@ -889,9 +1188,7 @@ namespace PSRunnerNS {
 		}
 
 		#if !noVisualStyles
-		private void TimeTick(object source, System.Timers.ElapsedEventArgs eventargs) { // 由 _timer 事件调用的工作函数
-			if (_inTick) return;
-			_inTick = true;
+		private void TimeTick(object source, EventArgs eventargs) {
 			if (_barNumber >= 0) {
 				if (_barValue >= 0) {
 					progressDataList[_barNumber].objProgressBar.Value = _barValue;
@@ -899,82 +1196,131 @@ namespace PSRunnerNS {
 				}
 				progressDataList[_barNumber].objProgressBar.Refresh();
 			}
-			_inTick = false;
 		}
 		#endif
 
+		private Label MakeProgressLabel(int left, int top, int width) {
+			Label label = new Label();
+			label.Left = left;
+			label.Top = top;
+			label.Width = width;
+			label.Height = 16;
+			label.BackColor = Color.Transparent;
+			label.ForeColor = LabelTextColor;
+			return label;
+		}
+
+		private int ActivityTop(int position) {
+			return position == 0 ? 8 : ProgressHeaderHeight + ProgressRowHeight * position + 10;
+		}
+
+		private int StatusTop(int position) {
+			return position == 0 ? ProgressHeaderHeight + 10 : ProgressHeaderHeight + ProgressRowHeight * position + 26;
+		}
+
+		private int ProgressBarTop(int position) {
+			return position == 0 ? ProgressHeaderHeight + 54 : ProgressHeaderHeight + ProgressRowHeight * position + 47;
+		}
+
+		private int RemainingTimeTop(int position) {
+			return position == 0 ? ProgressHeaderHeight + 76 : ProgressHeaderHeight + ProgressRowHeight * position + 72;
+		}
+
+		private int OperationTop(int position) {
+			return position == 0 ? ProgressHeaderHeight + 92 : ProgressHeaderHeight + ProgressRowHeight * position + 88;
+		}
+
+		private void LayoutProgressRows() {
+			int desiredHeight = ProgressFormHeight + System.Math.Max(0, progressDataList.Count - 1) * ProgressRowHeight;
+			System.Windows.Forms.Screen screen = System.Windows.Forms.Screen.FromControl(this);
+			this.Width = ProgressFormWidth;
+			this.Height = System.Math.Min(desiredHeight, screen.Bounds.Height);
+			this.Location = new Point((screen.Bounds.Width - this.Width) / 2, (screen.Bounds.Height - this.Height) / 2);
+			for (int position = 0; position < progressDataList.Count; position++) {
+				Progress_Data progress = progressDataList[position];
+				progress.lbActivity.Top = ActivityTop(position);
+				progress.lbStatus.Top = StatusTop(position);
+				progress.objProgressBar.Top = ProgressBarTop(position);
+				progress.lbRemainingTime.Top = RemainingTimeTop(position);
+				progress.lbOperation.Top = OperationTop(position);
+				progressDataList[position] = progress;
+			}
+		}
+
 		private void AddBar(ref Progress_Data pd, int position) {
 			// 创建标签
-			pd.lbActivity = new Label();
-			pd.lbActivity.Left = 5;
-			pd.lbActivity.Top = 104 * position + 10;
-			pd.lbActivity.Width = 800 - 20;
-			pd.lbActivity.Height = 16;
-			pd.lbActivity.Font = new Font(pd.lbActivity.Font, FontStyle.Bold);
+			pd.lbActivity = MakeProgressLabel(19, ActivityTop(position), ProgressFormWidth - 29);
+			if (position == 0) {
+				pd.lbActivity.Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 12f, FontStyle.Regular);
+				pd.lbActivity.Height = 28;
+				pd.lbActivity.ForeColor = HeaderTextColor;
+			} else {
+				pd.lbActivity.Font = new Font(pd.lbActivity.Font, FontStyle.Bold);
+			}
 			pd.lbActivity.Text = "";
 			// 把标签添加到窗体
 			this.Controls.Add(pd.lbActivity);
 
 			// 创建标签
-			pd.lbStatus = new Label();
-			pd.lbStatus.Left = 25;
-			pd.lbStatus.Top = 104 * position + 26;
-			pd.lbStatus.Width = 800 - 40;
-			pd.lbStatus.Height = 16;
+			pd.lbStatus = MakeProgressLabel(20, StatusTop(position), ProgressFormWidth - 45);
 			pd.lbStatus.Text = "";
 			// 把标签添加到窗体
 			this.Controls.Add(pd.lbStatus);
 
-			// 创建进度条
-			pd.objProgressBar = new ProgressBar();
+			// 创建进度条（自绘，几何对齐原生 msctls_progress32 的细条高度 15）
+			pd.objProgressBar = new FlatProgressBar();
 			pd.objProgressBar.Value = 0;
-			pd.objProgressBar.Style =
-				#if noVisualStyles
-					ProgressBarStyle.Continuous
-				#else
-					ProgressBarStyle.Blocks
-				#endif
-			;
-			pd.objProgressBar.ForeColor = DrawingColor(ProgressBarColor);
-			if (pd.Depth < 15) {
-				pd.objProgressBar.Size = new System.Drawing.Size(800 - 60 - 30 * pd.Depth, 20);
-				pd.objProgressBar.Left = 25 + 30 * pd.Depth;
-			} else {
-				pd.objProgressBar.Size = new System.Drawing.Size(800 - 60 - 450, 20);
-				pd.objProgressBar.Left = 25 + 450;
-			}
-			pd.objProgressBar.Top = 104 * position + 47;
+			pd.objProgressBar.BarColor = DrawingColor(ProgressBarColor);
+			pd.objProgressBar.BackColorOverride = WindowBackColor;
+			pd.objProgressBar.TrackColor = ProgressTrackColor;
+			pd.objProgressBar.BorderColor = BorderLineColor;
+			int indent = System.Math.Min(pd.Depth, 8) * 30;
+			pd.objProgressBar.Size = new System.Drawing.Size(ProgressFormWidth - 49 - indent, 15);
+			pd.objProgressBar.Left = 21 + indent;
+			pd.objProgressBar.Top = ProgressBarTop(position);
 			// 把进度条添加到窗体
 			this.Controls.Add(pd.objProgressBar);
 
 			// 创建标签
-			pd.lbRemainingTime = new Label();
-			pd.lbRemainingTime.Left = 5;
-			pd.lbRemainingTime.Top = 104 * position + 72;
-			pd.lbRemainingTime.Width = 800 - 20;
-			pd.lbRemainingTime.Height = 16;
+			pd.lbRemainingTime = MakeProgressLabel(5, RemainingTimeTop(position), ProgressFormWidth - 20);
 			pd.lbRemainingTime.Text = "";
+			pd.lbRemainingTime.Visible = false;
 			// 把标签添加到窗体
 			this.Controls.Add(pd.lbRemainingTime);
 
 			// 创建标签
-			pd.lbOperation = new Label();
-			pd.lbOperation.Left = 25;
-			pd.lbOperation.Top = 104 * position + 88;
-			pd.lbOperation.Width = 800 - 40;
-			pd.lbOperation.Height = 16;
+			pd.lbOperation = MakeProgressLabel(25, OperationTop(position), ProgressFormWidth - 50);
 			pd.lbOperation.Text = "";
+			pd.lbOperation.Visible = false;
 			// 把标签添加到窗体
 			this.Controls.Add(pd.lbOperation);
 		}
 
 		public int GetCount() {
-			return progressDataList.Count;
+			return progressCount;
+		}
+
+		public void CloseAfterCancel() {
+			if (IsDisposed || Disposing) return;
+			try {
+				if (InvokeRequired) BeginInvoke((Action)Close);
+				else Close();
+			} catch (ObjectDisposedException) { }
+			catch (InvalidOperationException) { }
 		}
 
 		public void Update(ProgressRecord objRecord) {
-			if (objRecord == null)
+			if (objRecord == null || IsDisposed || Disposing) return;
+			if (InvokeRequired) {
+				try { Invoke((Action)delegate { UpdateProgress(objRecord); }); }
+				catch (ObjectDisposedException) { }
+				catch (InvalidOperationException) { }
 				return;
+			}
+			UpdateProgress(objRecord);
+		}
+
+		private void UpdateProgress(ProgressRecord objRecord) {
 
 			int currentProgress = -1;
 			for (int i = 0; i < progressDataList.Count; i++) {
@@ -1002,35 +1348,16 @@ namespace PSRunnerNS {
 					progressDataList[currentProgress].lbOperation.Dispose();
 
 					progressDataList.RemoveAt(currentProgress);
+					progressCount = progressDataList.Count;
 				}
 
 				if (progressDataList.Count == 0) {
-					#if !noVisualStyles
-					_timer.Stop();
-					_timer.Dispose();
-					#endif
 					this.Close();
 					return;
 				}
 
 				if (currentProgress < 0) return;
-
-				for (int i = currentProgress; i < progressDataList.Count; i++) {
-					progressDataList[i].lbActivity.Top = 104 * i + 10;
-					progressDataList[i].lbStatus.Top = 104 * i + 26;
-					progressDataList[i].objProgressBar.Top = 104 * i + 47;
-					progressDataList[i].lbRemainingTime.Top = 104 * i + 72;
-					progressDataList[i].lbOperation.Top = 104 * i + 88;
-				}
-
-				if (104 * progressDataList.Count + 43 <= System.Windows.Forms.Screen.FromControl(this).Bounds.Height) {
-					this.Height = 104 * progressDataList.Count + 43;
-					this.Location = new Point((System.Windows.Forms.Screen.FromControl(this).Bounds.Width - this.Width) / 2, (System.Windows.Forms.Screen.FromControl(this).Bounds.Height - this.Height) / 2);
-				} else {
-					this.Height = System.Windows.Forms.Screen.FromControl(this).Bounds.Height;
-					this.Location = new Point((System.Windows.Forms.Screen.FromControl(this).Bounds.Width - this.Width) / 2, 0);
-				}
-
+				LayoutProgressRows();
 				return;
 			}
 
@@ -1070,22 +1397,9 @@ namespace PSRunnerNS {
 					AddBar(ref pd, nextid);
 					currentProgress = nextid;
 					progressDataList.Insert(nextid, pd);
-
-					for (int i = currentProgress + 1; i < progressDataList.Count; i++) {
-						progressDataList[i].lbActivity.Top = 104 * i + 10;
-						progressDataList[i].lbStatus.Top = 104 * i + 26;
-						progressDataList[i].objProgressBar.Top = 104 * i + 47;
-						progressDataList[i].lbRemainingTime.Top = 104 * i + 72;
-						progressDataList[i].lbOperation.Top = 104 * i + 88;
-					}
 				}
-				if (104 * progressDataList.Count + 43 <= System.Windows.Forms.Screen.FromControl(this).Bounds.Height) {
-					this.Height = 104 * progressDataList.Count + 43;
-					this.Location = new Point((System.Windows.Forms.Screen.FromControl(this).Bounds.Width - this.Width) / 2, (System.Windows.Forms.Screen.FromControl(this).Bounds.Height - this.Height) / 2);
-				} else {
-					this.Height = System.Windows.Forms.Screen.FromControl(this).Bounds.Height;
-					this.Location = new Point((System.Windows.Forms.Screen.FromControl(this).Bounds.Width - this.Width) / 2, 0);
-				}
+				progressCount = progressDataList.Count;
+				LayoutProgressRows();
 			}
 
 			if (!string.IsNullOrEmpty(objRecord.Activity))
@@ -1093,10 +1407,13 @@ namespace PSRunnerNS {
 			else
 				progressDataList[currentProgress].lbActivity.Text = "";
 
-			if (!string.IsNullOrEmpty(objRecord.StatusDescription))
-				progressDataList[currentProgress].lbStatus.Text = objRecord.StatusDescription;
-			else
+			if (!string.IsNullOrEmpty(objRecord.StatusDescription)) {
+				progressDataList[currentProgress].lbStatus.Text = objRecord.PercentComplete >= 0 && objRecord.PercentComplete <= 100
+					? string.Format("{0} ({1}%)", objRecord.StatusDescription, objRecord.PercentComplete)
+					: objRecord.StatusDescription;
+			} else {
 				progressDataList[currentProgress].lbStatus.Text = "";
+			}
 
 			if ((objRecord.PercentComplete >= 0) && (objRecord.PercentComplete <= 100)) {
 				#if !noVisualStyles
@@ -1132,13 +1449,14 @@ namespace PSRunnerNS {
 				progressDataList[currentProgress].lbRemainingTime.Text = string.Format("Remaining time: {0:00}:{1:00}:{2:00}", (int) objTimeSpan.TotalHours, objTimeSpan.Minutes, objTimeSpan.Seconds);
 			} else
 				progressDataList[currentProgress].lbRemainingTime.Text = "";
+			progressDataList[currentProgress].lbRemainingTime.Visible = !string.IsNullOrEmpty(progressDataList[currentProgress].lbRemainingTime.Text);
 
 			if (!string.IsNullOrEmpty(objRecord.CurrentOperation))
 				progressDataList[currentProgress].lbOperation.Text = objRecord.CurrentOperation;
 			else
 				progressDataList[currentProgress].lbOperation.Text = "";
-
-			Application.DoEvents();
+			progressDataList[currentProgress].lbOperation.Visible = !string.IsNullOrEmpty(progressDataList[currentProgress].lbOperation.Text);
+			LayoutProgressRows();
 		}
 	}
 	#endif
@@ -1217,6 +1535,252 @@ namespace PSRunnerNS {
 		}
 	}
 
+	#if noConsole
+	// 消息框在亮/暗主题下都使用同一套 WinForms 控件与布局，仅切换调色板。
+	internal static class MessageBoxHelper {
+		[DllImport("dwmapi.dll")]
+		static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
+		static bool IsDark {
+			get {
+				#if !darkModeOff && !Pwsh20
+				return DarkMode.IsDark;
+				#else
+				return false;
+				#endif
+			}
+		}
+		static Color WindowColor {
+			get {
+				#if !darkModeOff && !Pwsh20
+				if (IsDark) { return DarkMode.WindowColor; }
+				#endif
+				return Color.White;
+			}
+		}
+		static Color FieldColor {
+			get {
+				#if !darkModeOff && !Pwsh20
+				if (IsDark) { return DarkMode.FieldColor; }
+				#endif
+				return Color.FromArgb(240, 240, 240);
+			}
+		}
+		static Color BorderColor {
+			get {
+				#if !darkModeOff && !Pwsh20
+				if (IsDark) { return DarkMode.BorderColor; }
+				#endif
+				return Color.FromArgb(173, 173, 173);
+			}
+		}
+		static Color TextColor {
+			get {
+				#if !darkModeOff && !Pwsh20
+				if (IsDark) { return DarkMode.TextColor; }
+				#endif
+				return SystemColors.ControlText;
+			}
+		}
+
+		static void ApplyTitleBar(IntPtr hwnd) {
+			#if !darkModeOff && !Pwsh20
+			DarkMode.DarkTitleBar(hwnd);
+			#else
+			int light = 0;
+			DwmSetWindowAttribute(hwnd, 20, ref light, sizeof(int));
+			DwmSetWindowAttribute(hwnd, 19, ref light, sizeof(int));
+			#endif
+		}
+
+		public static void Show(string text, string caption) {
+			Show(text, caption, MessageBoxButtons.OK, MessageBoxIcon.None);
+		}
+
+		public static DialogResult Show(string text, string caption, MessageBoxButtons buttons, MessageBoxIcon icon) {
+			return Show(text, caption, buttons, icon, MessageBoxDefaultButton.Button1);
+		}
+
+		// 与原生 MessageBox 一致的按钮文案（MB_GetString 序号：0=OK 1=Cancel 2=Abort 3=Retry 4=Ignore 5=Yes 6=No）。
+		static string[] ButtonLabels(MessageBoxButtons kind) {
+			switch (kind) {
+				case MessageBoxButtons.OKCancel: return new[] { SystemDialogText.GetButtonLabel(0, "OK"), SystemDialogText.GetButtonLabel(1, "Cancel") };
+				case MessageBoxButtons.YesNo: return new[] { SystemDialogText.GetButtonLabel(5, "Yes"), SystemDialogText.GetButtonLabel(6, "No") };
+				case MessageBoxButtons.YesNoCancel: return new[] { SystemDialogText.GetButtonLabel(5, "Yes"), SystemDialogText.GetButtonLabel(6, "No"), SystemDialogText.GetButtonLabel(1, "Cancel") };
+				case MessageBoxButtons.RetryCancel: return new[] { SystemDialogText.GetButtonLabel(3, "Retry"), SystemDialogText.GetButtonLabel(1, "Cancel") };
+				case MessageBoxButtons.AbortRetryIgnore: return new[] { SystemDialogText.GetButtonLabel(2, "Abort"), SystemDialogText.GetButtonLabel(3, "Retry"), SystemDialogText.GetButtonLabel(4, "Ignore") };
+				default: return new[] { SystemDialogText.GetButtonLabel(0, "OK") };
+			}
+		}
+
+		static DialogResult[] ButtonResults(MessageBoxButtons kind) {
+			switch (kind) {
+				case MessageBoxButtons.OKCancel: return new[] { DialogResult.OK, DialogResult.Cancel };
+				case MessageBoxButtons.YesNo: return new[] { DialogResult.Yes, DialogResult.No };
+				case MessageBoxButtons.YesNoCancel: return new[] { DialogResult.Yes, DialogResult.No, DialogResult.Cancel };
+				case MessageBoxButtons.RetryCancel: return new[] { DialogResult.Retry, DialogResult.Cancel };
+				case MessageBoxButtons.AbortRetryIgnore: return new[] { DialogResult.Abort, DialogResult.Retry, DialogResult.Ignore };
+				default: return new[] { DialogResult.OK };
+			}
+		}
+
+		// 96 DPI 逻辑几何（由 125% 原生截图反推）：消息区上下内边距 27、文本左边距 14、图标左边距 25/尺寸 32、
+		// 图标到文本 8、右边距 22、底部按钮面板 47、按钮最小 80x28、按钮间距 8、按钮距右 20。
+		const int MsgVPad = 27;
+		const int MsgIconLeft = 25;
+		const int MsgIconSize = 32;
+		const int MsgButtonGap = 8;
+		const int MsgButtonRightPad = 20;
+
+		internal static DialogResult Show(string text, string caption, MessageBoxButtons buttons, MessageBoxIcon icon, MessageBoxDefaultButton defaultButton) {
+			if (text == null) { text = ""; }
+			using (Form form = new Form()) {
+				form.Text = caption;
+				form.FormBorderStyle = FormBorderStyle.FixedDialog;
+				form.StartPosition = FormStartPosition.CenterScreen;
+				form.MinimizeBox = false;
+				form.MaximizeBox = false;
+				form.ShowIcon = true;
+				form.ShowInTaskbar = false;
+				form.AutoScaleMode = AutoScaleMode.None;
+				form.Font = SystemFonts.MessageBoxFont;
+				form.KeyPreview = true;
+				form.BackColor = WindowColor;
+				form.ForeColor = TextColor;
+
+				float scale;
+				using (Graphics graphics = form.CreateGraphics()) { scale = graphics.DpiX / 96f; }
+				System.Func<int, int> Scale = delegate(int value) { return (int)System.Math.Round(value * scale); };
+
+				bool hasIcon = icon != MessageBoxIcon.None;
+				int textMax = Scale(hasIcon ? 346 : 397); // 原生窗口宽度上限约 445 逻辑像素
+				System.Drawing.Size wrapped = TextRenderer.MeasureText(text, form.Font, new System.Drawing.Size(textMax, int.MaxValue),
+					TextFormatFlags.WordBreak | TextFormatFlags.NoPadding | TextFormatFlags.NoPrefix);
+				int maxTextHeight = Screen.FromPoint(Cursor.Position).WorkingArea.Height - Scale(220);
+				Control content;
+				int contentWidth, contentHeight;
+				if (wrapped.Height > maxTextHeight && maxTextHeight > Scale(40)) {
+					TextBox box = new TextBox();
+					box.Multiline = true;
+					box.ReadOnly = true;
+					box.WordWrap = true;
+					box.ScrollBars = ScrollBars.Vertical;
+					box.BorderStyle = BorderStyle.FixedSingle;
+					box.TabStop = false;
+					box.Cursor = Cursors.Arrow;
+					box.BackColor = WindowColor;
+					box.ForeColor = TextColor;
+					box.Font = form.Font;
+					box.Text = text;
+					content = box;
+					contentWidth = textMax;
+					contentHeight = maxTextHeight;
+				} else {
+					Label label = new Label();
+					label.AutoSize = true;
+					label.MaximumSize = new System.Drawing.Size(textMax, 0);
+					label.Text = text;
+					label.BackColor = WindowColor;
+					label.ForeColor = TextColor;
+					label.UseMnemonic = false;
+					content = label;
+					contentWidth = wrapped.Width;
+					contentHeight = wrapped.Height;
+				}
+
+				PictureBox iconBox = null;
+				if (hasIcon) {
+					iconBox = new PictureBox();
+					iconBox.SizeMode = PictureBoxSizeMode.StretchImage;
+					iconBox.Size = new System.Drawing.Size(Scale(MsgIconSize), Scale(MsgIconSize));
+					iconBox.Image = new Icon(MessageBoxIconImage(icon), Scale(MsgIconSize), Scale(MsgIconSize)).ToBitmap();
+					iconBox.BackColor = WindowColor;
+				}
+
+				string[] labels = ButtonLabels(buttons);
+				DialogResult[] results = ButtonResults(buttons);
+				Button[] buttonList = new Button[labels.Length];
+				int active = System.Math.Max(0, (int)defaultButton - 1);
+				if (active >= buttonList.Length) { active = 0; }
+				for (int buttonIndex = 0; buttonIndex < labels.Length; buttonIndex++) {
+					Button button = new Button();
+					button.Text = labels[buttonIndex];
+					button.DialogResult = results[buttonIndex];
+					button.AutoSize = true;
+					button.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+					button.MinimumSize = new System.Drawing.Size(Scale(80), Scale(28));
+					button.FlatStyle = FlatStyle.Flat;
+					button.FlatAppearance.BorderSize = 1;
+					button.FlatAppearance.BorderColor = BorderColor;
+					button.BackColor = FieldColor;
+					button.ForeColor = TextColor;
+					button.UseVisualStyleBackColor = false;
+					button.TabIndex = buttonIndex == active ? 0 : buttonIndex + 1;
+					buttonList[buttonIndex] = button;
+				}
+				int buttonRowWidth = 0;
+				for (int buttonIndex = 0; buttonIndex < buttonList.Length; buttonIndex++) { buttonRowWidth += buttonList[buttonIndex].Width + Scale(MsgButtonGap); }
+				if (buttonList.Length > 0) { buttonRowWidth -= Scale(MsgButtonGap); }
+
+				int iconHeight = iconBox != null ? Scale(MsgIconSize) : 0;
+				int blockHeight = System.Math.Max(contentHeight, iconHeight);
+				int messageTop = Scale(MsgVPad);
+				int textTop = messageTop + (iconHeight > contentHeight ? (iconHeight - contentHeight) / 2 : 0);
+				int panelTop = messageTop + blockHeight + Scale(MsgVPad);
+				int textLeft = iconBox != null ? Scale(MsgIconLeft) + iconHeight + Scale(8) : Scale(14);
+				int clientWidth = System.Math.Max(textLeft + contentWidth, Scale(MsgButtonRightPad) + buttonRowWidth) + Scale(22);
+				int clientHeight = panelTop + Scale(47);
+
+				if (iconBox != null) { iconBox.Location = new Point(Scale(MsgIconLeft), messageTop); }
+				content.Location = new Point(textLeft, textTop);
+				content.Size = new System.Drawing.Size(contentWidth, contentHeight);
+
+				Panel panel = new Panel();
+				panel.BackColor = FieldColor;
+				Label separator = new Label();
+				separator.BackColor = BorderColor;
+				separator.Bounds = new System.Drawing.Rectangle(0, 0, clientWidth, System.Math.Max(1, Scale(1)));
+				panel.Controls.Add(separator);
+				panel.Location = new Point(0, panelTop);
+				panel.Size = new System.Drawing.Size(clientWidth, clientHeight - panelTop);
+
+				form.ClientSize = new System.Drawing.Size(clientWidth, clientHeight);
+				if (iconBox != null) { form.Controls.Add(iconBox); }
+				form.Controls.Add(content);
+				form.Controls.Add(panel);
+
+				int separatorHeight = System.Math.Max(1, Scale(1));
+				int buttonX = clientWidth - Scale(MsgButtonRightPad) - buttonRowWidth;
+				for (int buttonIndex = 0; buttonIndex < buttonList.Length; buttonIndex++) {
+					int buttonY = separatorHeight + (panel.Height - separatorHeight - buttonList[buttonIndex].Height) / 2;
+					buttonList[buttonIndex].Location = new Point(buttonX, buttonY);
+					buttonX += buttonList[buttonIndex].Width + Scale(MsgButtonGap);
+					panel.Controls.Add(buttonList[buttonIndex]);
+				}
+
+				form.AcceptButton = buttonList[active];
+				form.ActiveControl = buttonList[active];
+
+				form.HandleCreated += delegate {
+					ApplyTitleBar(form.Handle);
+				};
+
+				return form.ShowDialog();
+			}
+		}
+
+		static Icon MessageBoxIconImage(MessageBoxIcon icon) {
+			switch (icon) {
+				case MessageBoxIcon.Error: return SystemIcons.Error;
+				case MessageBoxIcon.Warning: return SystemIcons.Warning;
+				case MessageBoxIcon.Information: return SystemIcons.Information;
+				case MessageBoxIcon.Question: return SystemIcons.Question;
+				default: return SystemIcons.Application;
+			}
+		}
+	}
+	#endif
+
 	internal class PSRunnerUI: PSHostUserInterface {
 		public PSRunnerRawUI rawUI;
 
@@ -1236,7 +1800,7 @@ namespace PSRunnerNS {
 		#if !noConsole
 			ConsoleColor.Yellow
 		#else
-			ConsoleColor.DarkCyan
+			ConsoleColor.Green
 		#endif
 		;
 		public ConsoleColor ProgressBackgroundColor = ConsoleColor.DarkCyan;
@@ -1263,7 +1827,7 @@ namespace PSRunnerNS {
 
 					if (!string.IsNullOrEmpty(caption)) sTitle = caption;
 					if (!string.IsNullOrEmpty(message)) sMeldung = message;
-					MessageBox.Show(sMeldung, sTitle);
+					MessageBoxHelper.Show(sMeldung, sTitle);
 				}
 
 				// 重置 Input_Box 的标签文本
@@ -1317,7 +1881,7 @@ namespace PSRunnerNS {
 							if (!string.IsNullOrEmpty(cd.HelpMessage)) Write(" (Type !? for help.)");
 							if ((!string.IsNullOrEmpty(cd.Name)) || (!string.IsNullOrEmpty(cd.HelpMessage))) Write(": ");
 							#else
-							if (!string.IsNullOrEmpty(cd.Name)) _ib_message = string.Format("{0}: ", cd.Name);
+							if (!string.IsNullOrEmpty(cd.Name)) _ib_message = FormatInputPrompt(cd.Name);
 							if (!string.IsNullOrEmpty(cd.HelpMessage)) _ib_message += "\n(Type !? for help.)";
 							#endif
 							do {
@@ -1343,7 +1907,7 @@ namespace PSRunnerNS {
 							#if !noConsole
 								Write(string.Format("{0}: ", cd.Name));
 							#else
-								_ib_message = string.Format("{0}: ", cd.Name);
+								_ib_message = FormatInputPrompt(cd.Name);
 							#endif
 
 						obj = ReadLineAsSecureString();
@@ -1498,6 +2062,9 @@ namespace PSRunnerNS {
 
 		#if noConsole
 		private string _ib_message;
+		static string FormatInputPrompt(string prompt) {
+			return prompt + (prompt.EndsWith(":", StringComparison.Ordinal) ? " " : ": ");
+		}
 		#endif
 
 		public override string ReadLine() {
@@ -1566,7 +2133,7 @@ namespace PSRunnerNS {
 				Console.BackgroundColor = bgc;
 			#else
 				if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
-					MessageBox.Show(value, rawUI.WindowTitle);
+					MessageBoxHelper.Show(value, rawUI.WindowTitle);
 			#endif
 			#endif
 		}
@@ -1577,7 +2144,7 @@ namespace PSRunnerNS {
 				Console.Write(value);
 			#else
 				if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
-					MessageBox.Show(value, rawUI.WindowTitle);
+					MessageBoxHelper.Show(value, rawUI.WindowTitle);
 			#endif
 			#endif
 		}
@@ -1588,7 +2155,7 @@ namespace PSRunnerNS {
 			#if !noConsole
 				WriteLineInternal(DebugForegroundColor, DebugBackgroundColor, string.Format("DEBUG: {0}", message));
 			#else
-				MessageBox.Show(message, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
+				MessageBoxHelper.Show(message, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
 			#endif
 			#endif
 		}
@@ -1602,7 +2169,7 @@ namespace PSRunnerNS {
 				else
 					WriteLineInternal(ErrorForegroundColor, ErrorBackgroundColor, string.Format("ERROR: {0}", value));
 			#else
-				MessageBox.Show(value, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
+				MessageBoxHelper.Show(value, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
 			#endif
 			#endif
 		}
@@ -1625,7 +2192,7 @@ namespace PSRunnerNS {
 			#if !noConsole
 				Console.WriteLine();
 			#else
-				MessageBox.Show("", rawUI.WindowTitle);
+				MessageBoxHelper.Show("", rawUI.WindowTitle);
 			#endif
 			#endif
 		}
@@ -1647,7 +2214,7 @@ namespace PSRunnerNS {
 				}
 			#else
 				if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
-					MessageBox.Show(value, rawUI.WindowTitle);
+					MessageBoxHelper.Show(value, rawUI.WindowTitle);
 			#endif
 			#endif
 		}
@@ -1676,20 +2243,20 @@ namespace PSRunnerNS {
 				Console.WriteLine(value);
 			#else
 				if ((!string.IsNullOrEmpty(value)) && (value != "\n"))
-					MessageBox.Show(value, rawUI.WindowTitle);
+					MessageBoxHelper.Show(value, rawUI.WindowTitle);
 			#endif
 			#endif
 		}
 
 		#if noConsole
 		public Progress_Form pf;
+		public Action CancelPipeline;
 		#endif
 		public override void WriteProgress(long sourceId, ProgressRecord record) {
 			#if noConsole
 			if (pf == null) {
 				if (record.RecordType == ProgressRecordType.Completed) return;
-				pf = new Progress_Form(rawUI.WindowTitle, ProgressForegroundColor);
-				pf.Show();
+				pf = new Progress_Form(rawUI.WindowTitle, ProgressForegroundColor, CancelPipeline);
 			}
 			pf.Update(record);
 			if (record.RecordType == ProgressRecordType.Completed) {
@@ -1720,7 +2287,7 @@ namespace PSRunnerNS {
 			#if !noConsole
 			WriteLineInternal(VerboseForegroundColor, VerboseBackgroundColor, string.Format("VERBOSE: {0}", message));
 			#else
-			MessageBox.Show(message, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
+			MessageBoxHelper.Show(message, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Information);
 			#endif
 			#endif
 		}
@@ -1731,7 +2298,7 @@ namespace PSRunnerNS {
 				#if !noConsole
 					WriteLineInternal(WarningForegroundColor, WarningBackgroundColor, string.Format("WARNING: {0}", message));
 				#else
-					MessageBox.Show(message, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+					MessageBoxHelper.Show(message, rawUI.WindowTitle, MessageBoxButtons.OK, MessageBoxIcon.Warning);
 				#endif
 			#endif
 		}
@@ -1876,6 +2443,7 @@ namespace PSRunnerNS {
 		}
 
 		private bool shouldExit;
+		public volatile bool CancelRequested;
 
 		private int exitCode;
 		public bool Inited;
@@ -1935,6 +2503,10 @@ namespace PSRunnerNS {
 				}
 			}
 			TimerMark("ctor:read-script");
+			#if noConsole && !darkModeOff && !Pwsh20
+			// 把暗色 hook 的初始化交给脚本线程执行（在用户脚本之前），保证 hook 窗口与脚本创建的窗口同线程。
+			this.PSRunSpace.SessionStateProxy.SetVariable("PSEXEDarkModeSetup", (Action)DarkMode.StartOnCurrentThread);
+			#endif
 			script = "function PSEXEMainFunction{"+script+"}";
 			#if Pwsh20
 				this.pwsh.AddScript(script);
@@ -1982,6 +2554,10 @@ namespace PSRunnerNS {
 			Application.EnableVisualStyles();
 			#endif
 
+			#if noConsole && !darkModeOff && !Pwsh20
+			DarkMode.Init();
+			#endif
+
 			FixModulePath();
 		}
 
@@ -2012,6 +2588,532 @@ namespace PSRunnerNS {
 			}
 		}
 	}
+
+	#if noConsole && !darkModeOff && !Pwsh20
+	// App.DarkMode：windowed 产物的 WinForms 暗色适配。默认 Auto 跟随系统，On/Off 强制（Off 时整段不编译）。
+	// 进程级用 uxtheme 未公开序号开启暗色；.NET 9+ / Win11 走官方 Application.SetColorMode，
+	// 其余运行时用 shell hook 在本进程窗口首次绘制前挂 subclass，把 WinForms 控件逐个染暗并给标题栏挂 DWM 暗色属性。
+	public static class DarkMode {
+		delegate int SetPreferredAppModeDel(int mode);
+		delegate void FlushMenuThemesDel();
+		delegate bool AllowDarkModeForWindowDel(IntPtr hwnd, bool allow);
+		delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr param);
+
+		[DllImport("uxtheme.dll", CharSet = CharSet.Unicode)]
+		static extern int SetWindowTheme(IntPtr hWnd, string pszSubAppName, string pszSubIdList);
+		[DllImport("dwmapi.dll")]
+		static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+		[DllImport("kernel32.dll", CharSet = CharSet.Ansi)]
+		static extern IntPtr GetModuleHandle(string name);
+		[DllImport("kernel32.dll", CharSet = CharSet.Ansi, SetLastError = true)]
+		static extern IntPtr GetProcAddress(IntPtr hModule, IntPtr procName);
+		[DllImport("user32.dll")]
+		static extern bool EnumWindows(EnumWindowsProc callback, IntPtr param);
+		[DllImport("user32.dll")]
+		static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint processId);
+		[DllImport("user32.dll")]
+		static extern bool RegisterShellHookWindow(IntPtr hwnd);
+		[DllImport("user32.dll", CharSet = CharSet.Unicode)]
+		static extern uint RegisterWindowMessage(string lpString);
+		[DllImport("comctl32.dll", SetLastError = true)]
+		static extern bool SetWindowSubclass(IntPtr hWnd, SubclassProc pfnSubclass, UIntPtr uIdSubclass, IntPtr dwRefData);
+		[DllImport("comctl32.dll")]
+		static extern bool RemoveWindowSubclass(IntPtr hWnd, SubclassProc pfnSubclass, UIntPtr uIdSubclass);
+		[DllImport("comctl32.dll")]
+		static extern IntPtr DefSubclassProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
+
+		delegate IntPtr SubclassProc(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam, UIntPtr uSubclassId, IntPtr dwRefData);
+		const int HSHELL_WINDOWCREATED = 1;
+		const uint WM_PAINT = 0x000F;
+		const uint WM_ERASEBKGND = 0x0014;
+		const uint WM_SETTINGCHANGE = 0x001A;
+		static SubclassProc subclassProc;
+		static uint shellHookMessage;
+		static NativeWindow shellHookWindow;
+		static bool manualTheming;
+
+		// Auto 模式下监听系统主题变化（WM_SETTINGCHANGE + "ImmersiveColorSet"）：消息窗口建在 UI 线程上，收到通知即重新探测并让所有窗口跟随。
+		static NativeWindow themeChangeWindow;
+		static SetPreferredAppModeDel setPreferredAppMode;
+		static FlushMenuThemesDel flushMenuThemes;
+		static AllowDarkModeForWindowDel allowDarkModeForWindow;
+		static System.Threading.Timer pollTimer;
+
+		public static readonly Color WindowColor = Color.FromArgb(32, 32, 32);
+		public static readonly Color FieldColor = Color.FromArgb(45, 45, 45);
+		public static readonly Color BorderColor = Color.FromArgb(64, 64, 64);
+		public static readonly Color TextColor = Color.FromArgb(245, 245, 245);
+		public static readonly Color DisabledTextColor = Color.FromArgb(130, 130, 130);
+
+		public static bool IsDark { get; private set; }
+
+		static readonly object initLock = new object();
+		sealed class ControlOriginalColors {
+			public Color BackColor;
+			public Color ForeColor;
+			public FlatStyle RadioButtonFlatStyle;
+			public bool RadioButtonUseVisualStyleBackColor;
+			public bool AppliedDark; // 最近一次应用到的深浅状态，避免轮询重复染色
+			public bool HasApplied;
+		}
+		// 记录控件被改动前的原始颜色，以便系统由深转浅时精确还原。
+		static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Control, ControlOriginalColors> themed = new System.Runtime.CompilerServices.ConditionalWeakTable<Control, ControlOriginalColors>();
+		static bool started;
+
+		public static void Init() {
+			lock (initLock) {
+				if (started) { return; }
+				started = true;
+				#if darkModeOn
+				IsDark = true; // 编译期强制暗色，不做探测
+				#else
+				IsDark = SystemPrefersDark(); // Auto：跟随系统
+				#endif
+				EnableProcessDarkMode();
+				if (!IsDark) { return; }
+				// .NET 9+ 且 Win11：官方 SetColorMode 会接管控件与标题栏，无需逐控件处理。
+				if (ApplyNativeColorMode()) { return; }
+				EnsureManualPipeline();
+			}
+		}
+
+		// 手动染色管线（旧运行时）：安装深色 ToolStrip 渲染器与窗口发现轮询。幂等。
+		static void EnsureManualPipeline() {
+			if (manualTheming) { return; }
+			manualTheming = true;
+			try { ToolStripManager.Renderer = new DarkToolStripRenderer(); } catch { }
+			if (pollTimer == null) {
+				pollTimer = new System.Threading.Timer(delegate { DiscoverWindows(); }, null, 2000, 2000);
+			}
+		}
+
+		// Auto 模式：切换深浅。On 编译期强制暗色、不做运行时切换。
+		public static void ApplySystemDark(bool dark) {
+			lock (initLock) {
+				if (IsDark == dark) { return; }
+				IsDark = dark;
+				EnableProcessDarkMode();
+				// .NET 9+ 且 Win11：官方 SetColorMode 会重绘所有窗口。
+				if (ApplyNativeColorMode()) { return; }
+				// 手动路径：确保管线就绪，再重新遍历本进程窗口，按新值重绘（深色时染色、浅色时还原原始颜色）。
+				if (IsDark) { EnsureManualPipeline(); }
+				RefreshOpenForms();
+			}
+		}
+
+		static void RefreshOpenForms() {
+			try {
+				EnumWindows(delegate(IntPtr hwnd, IntPtr param) {
+					uint processId;
+					GetWindowThreadProcessId(hwnd, out processId);
+					if (processId != (uint)System.Diagnostics.Process.GetCurrentProcess().Id) { return true; }
+					try {
+						Form form = Control.FromHandle(hwnd) as Form;
+						if (form != null && !form.IsDisposed) {
+							form.BeginInvoke((Action)delegate { ThemeForm(form); });
+						}
+					} catch { }
+					return true;
+				}, IntPtr.Zero);
+			} catch { }
+		}
+
+		// 在脚本线程（会创建 WinForms 窗口的那个线程）上创建 shell hook / 主题变化监听窗口。shell hook 的建窗通知会排进该线程
+		// 消息队列，于首个 WM_PAINT 之前被处理，从而同步挂 subclass、在首次绘制前完成染色，消除亮色闪帧。
+		public static void StartOnCurrentThread() {
+			lock (initLock) {
+				if (manualTheming && shellHookWindow == null) {
+					try {
+						subclassProc = ThemeOnFirstPaint;
+						shellHookMessage = RegisterWindowMessage("SHELLHOOK");
+						shellHookWindow = new ShellHookWindow();
+						RegisterShellHookWindow(shellHookWindow.Handle);
+					} catch { }
+				}
+				#if !darkModeOn
+				if (themeChangeWindow == null) {
+					try { themeChangeWindow = new ThemeChangeWindow(); } catch { }
+				}
+				#endif
+			}
+		}
+
+		#if !darkModeOn
+		// Auto 模式下监听 WM_SETTINGCHANGE：lParam 指向 "ImmersiveColorSet" 时说明系统深浅色变化，重新探测并让所有窗口跟随。
+		// 广播消息可能带 lParam=0（系统不在进程内封送字符串），此时保守地重新探测一次。
+		sealed class ThemeChangeWindow : NativeWindow {
+			public ThemeChangeWindow() {
+				CreateHandle(new CreateParams { Caption = "", X = 0, Y = 0, Width = 0, Height = 0, Style = 0, ExStyle = 0, ClassName = "STATIC" });
+			}
+
+			protected override void WndProc(ref Message m) {
+				if (m.Msg == (int)WM_SETTINGCHANGE && IsImmersiveColorSet(m.LParam)) {
+					try { ApplySystemDark(SystemPrefersDark()); } catch { }
+				}
+				base.WndProc(ref m);
+			}
+
+			// WM_SETTINGCHANGE 的 lParam 是进程内地址的宽字符指针；lParam=0 时无法判断具体项，按「可能变过」处理。
+			static bool IsImmersiveColorSet(IntPtr lParam) {
+				if (lParam == IntPtr.Zero) { return true; }
+				try {
+					string value = Marshal.PtrToStringUni(lParam);
+					return string.IsNullOrEmpty(value) || value.IndexOf("ImmersiveColorSet", StringComparison.OrdinalIgnoreCase) >= 0;
+				} catch { return true; }
+			}
+		}
+		#endif
+
+		// 只用于接收 SHELLHOOK 消息的隐藏原生窗口。
+		sealed class ShellHookWindow : NativeWindow {
+			public ShellHookWindow() {
+				CreateHandle(new CreateParams { Caption = "", X = 0, Y = 0, Width = 0, Height = 0, Style = 0, ExStyle = 0, ClassName = "STATIC" });
+			}
+			protected override void WndProc(ref Message m) {
+				if (shellHookMessage != 0 && m.Msg == (int)shellHookMessage && m.WParam.ToInt32() == HSHELL_WINDOWCREATED) {
+					try {
+						uint processId;
+						GetWindowThreadProcessId(m.LParam, out processId);
+						if (processId == (uint)System.Diagnostics.Process.GetCurrentProcess().Id) {
+							SetWindowSubclass(m.LParam, subclassProc, (UIntPtr)1, IntPtr.Zero);
+						}
+					} catch { }
+				}
+				base.WndProc(ref m);
+			}
+		}
+
+		static IntPtr ThemeOnFirstPaint(IntPtr hwnd, uint uMsg, IntPtr wParam, IntPtr lParam, UIntPtr uIdSubclass, IntPtr dwRefData) {
+			if (uMsg == WM_PAINT || uMsg == WM_ERASEBKGND) {
+				try {
+					Control control = Control.FromHandle(hwnd);
+					Form form = control as Form;
+					if (form != null) { ThemeForm(form); }
+					else if (control != null) { ThemeControl(control); }
+				} catch { }
+				try { RemoveWindowSubclass(hwnd, subclassProc, uIdSubclass); } catch { }
+			}
+			return DefSubclassProc(hwnd, uMsg, wParam, lParam);
+		}
+
+		static void ThemeWhenControlReady(IntPtr hwnd) {
+			try {
+				Form form = Control.FromHandle(hwnd) as Form;
+				if (form == null) { return; }
+				form.BeginInvoke((Action)delegate { ThemeWhenReady(form); });
+			} catch { }
+		}
+
+		#if !darkModeOn
+		static bool SystemPrefersDark() {
+			try {
+				object value = Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize", "AppsUseLightTheme", 1);
+				return value != null && Convert.ToInt32(value) == 0;
+			} catch { return false; }
+		}
+		#endif
+
+		static void EnableProcessDarkMode() {
+			// uxtheme 未公开序号（见 ysc3839/win32-darkmode）：132=ShouldAppsUseDarkMode，133=AllowDarkModeForWindow，
+			// 135=SetPreferredAppMode(build>=18362)/AllowDarkModeForApp(<18362)，136=FlushMenuThemes，104=RefreshImmersiveColorPolicyState。
+			IntPtr uxtheme = GetModuleHandle("uxtheme.dll");
+			if (uxtheme != IntPtr.Zero) {
+				setPreferredAppMode = Bind<SetPreferredAppModeDel>(uxtheme, 135);
+				flushMenuThemes = Bind<FlushMenuThemesDel>(uxtheme, 136);
+				allowDarkModeForWindow = Bind<AllowDarkModeForWindowDel>(uxtheme, 133);
+			}
+			// 1=AllowDark 3=ForceLight
+			if (setPreferredAppMode != null) setPreferredAppMode(IsDark ? 1 : 3);
+			if (flushMenuThemes != null) flushMenuThemes();
+		}
+
+		static T Bind<T>(IntPtr module, int ordinal) where T : class {
+			IntPtr proc = GetProcAddress(module, (IntPtr)ordinal);
+			return proc == IntPtr.Zero ? null : (T)(object)Marshal.GetDelegateForFunctionPointer(proc, typeof(T));
+		}
+
+		static bool ApplyNativeColorMode() {
+			try {
+				if (Environment.OSVersion.Version.Build < 22000) { return false; } // 暗色仅 Win11 支持
+				MethodInfo method = typeof(Application).GetMethod("SetColorMode", BindingFlags.Public | BindingFlags.Static);
+				if (method == null) { return false; }
+				ParameterInfo[] parameters = method.GetParameters();
+				if (parameters.Length != 1 || !parameters[0].ParameterType.IsEnum) { return false; }
+				object value = Enum.Parse(parameters[0].ParameterType, IsDark ? "Dark" : "Classic");
+				method.Invoke(null, new object[] { value });
+				return true;
+			} catch { return false; }
+		}
+
+		// 轮询本进程顶层窗口；WinForms 的 Application.OpenForms 按线程隔离，跨线程拿不到，故用 EnumWindows + Control.FromHandle。
+		static void DiscoverWindows() {
+			try {
+				uint currentProcessId = (uint)System.Diagnostics.Process.GetCurrentProcess().Id;
+				EnumWindows(delegate(IntPtr hwnd, IntPtr param) {
+					uint processId;
+					GetWindowThreadProcessId(hwnd, out processId);
+					if (processId != currentProcessId) { return true; }
+					ThemeWhenControlReady(hwnd);
+					return true;
+				}, IntPtr.Zero);
+			} catch { }
+		}
+
+		// 首次遇到控件时记录其原始颜色（只记一次）；之后每次重绘都基于原始值判断，避免把已染色的颜色误当成系统色。
+		static ControlOriginalColors OriginalColorsOf(Control control) {
+			ControlOriginalColors original;
+			if (themed.TryGetValue(control, out original)) { return original; }
+			original = new ControlOriginalColors();
+			original.BackColor = control.BackColor;
+			original.ForeColor = control.ForeColor;
+			RadioButton radioButton = control as RadioButton;
+			if (radioButton != null) {
+				original.RadioButtonFlatStyle = radioButton.FlatStyle;
+				original.RadioButtonUseVisualStyleBackColor = radioButton.UseVisualStyleBackColor;
+			}
+			try { themed.Add(control, original); } catch { }
+			return original;
+		}
+
+		static void ThemeForm(Form form) {
+			if (form == null || form.IsDisposed) { return; }
+			try {
+				// 关键：改窗体 BackColor 会传播给「仍用系统色」的子控件（WinForms 行为），若先改窗体再记录子控件原始色，
+				// 记录到的就是被污染的值，浅色还原会失效。故先遍历整棵树记录原始色，再统一应用。
+				CaptureOriginalColors(form);
+				// 先改颜色再动 DWM/主题：设置标题栏会触发重绘，若晚于颜色设置，首帧仍是亮色。
+				form.BackColor = IsDark ? WindowColor : OriginalColorsOf(form).BackColor;
+				form.ForeColor = IsDark ? TextColor : OriginalColorsOf(form).ForeColor;
+				DarkTitleBar(form.Handle);
+				form.ControlAdded -= OnControlAdded;
+				form.ControlAdded += OnControlAdded;
+				ThemeChildren(form);
+				ControlOriginalColors original = OriginalColorsOf(form);
+				original.AppliedDark = IsDark;
+				original.HasApplied = true;
+			} catch { }
+		}
+
+		static void CaptureOriginalColors(Control parent) {
+			OriginalColorsOf(parent);
+			foreach (Control child in parent.Controls) { CaptureOriginalColors(child); }
+		}
+
+		// 轮询/首帧路径：只在深浅状态或控件尚未染色时才真正重绘。
+		static void ThemeWhenReady(Form form) {
+			if (form == null || form.IsDisposed) { return; }
+			try {
+				ControlOriginalColors original = OriginalColorsOf(form);
+				if (original.HasApplied && original.AppliedDark == IsDark) { return; }
+			} catch { }
+			ThemeForm(form);
+		}
+
+		static void OnControlAdded(object sender, ControlEventArgs e) {
+			ThemeControl(e.Control);
+		}
+
+		static void ThemeChildren(Control parent) {
+			foreach (Control child in parent.Controls) {
+				ThemeControl(child);
+				ThemeChildren(child);
+			}
+		}
+
+		static void ThemeControl(Control control) {
+			if (control == null || control.IsDisposed) { return; }
+			try {
+				ApplyControlColors(control);
+				control.ControlAdded -= OnControlAdded;
+				control.ControlAdded += OnControlAdded;
+			} catch { }
+		}
+
+		// 只改「仍是系统色」的控件：脚本自定义的颜色在深色下保留原色，浅色时精确还原原始值。
+		static Color DarkBack(ControlOriginalColors original, Color dark) {
+			if (!IsDark) { return original.BackColor; }
+			return IsSystemBack(original.BackColor) ? dark : original.BackColor;
+		}
+
+		static Color DarkFore(ControlOriginalColors original) {
+			if (!IsDark) { return original.ForeColor; }
+			return IsSystemText(original.ForeColor) ? TextColor : original.ForeColor;
+		}
+
+		static void ApplyControlColors(Control control) {
+			ControlOriginalColors original = OriginalColorsOf(control);
+			RadioButton radioButton = control as RadioButton;
+			if (radioButton != null) {
+				radioButton.ForeColor = DarkFore(original);
+				radioButton.BackColor = DarkBack(original, WindowColor);
+				if (IsDark) {
+					radioButton.FlatStyle = FlatStyle.Flat;
+					radioButton.UseVisualStyleBackColor = false;
+					SetWindowTheme(radioButton.Handle, "DarkMode_Explorer", null);
+				} else {
+					radioButton.FlatStyle = original.RadioButtonFlatStyle;
+					radioButton.UseVisualStyleBackColor = original.RadioButtonUseVisualStyleBackColor;
+					SetWindowTheme(radioButton.Handle, null, null);
+				}
+				return;
+			}
+
+			Button button = control as Button;
+			if (button != null) {
+				button.ForeColor = DarkFore(original);
+				button.BackColor = DarkBack(original, FieldColor);
+				if (IsDark) {
+					button.FlatStyle = FlatStyle.Flat;
+					button.FlatAppearance.BorderSize = 1;
+					button.FlatAppearance.BorderColor = BorderColor;
+					button.UseVisualStyleBackColor = false;
+				} else {
+					button.UseVisualStyleBackColor = original.BackColor == SystemColors.Control;
+				}
+				return;
+			}
+
+			if (IsFieldControl(control)) {
+				control.ForeColor = DarkFore(original);
+				control.BackColor = DarkBack(original, FieldColor);
+				if (control is TextBoxBase) { ((TextBoxBase)control).BorderStyle = IsDark ? BorderStyle.FixedSingle : BorderStyle.Fixed3D; }
+				if (control is ListBox) { ((ListBox)control).BorderStyle = IsDark ? BorderStyle.FixedSingle : BorderStyle.Fixed3D; }
+				ComboBox combo = control as ComboBox;
+				if (combo != null) {
+					combo.FlatStyle = IsDark ? FlatStyle.Flat : FlatStyle.Standard;
+					SetWindowTheme(combo.Handle, IsDark ? "DarkMode_CFD" : null, null);
+				}
+				return;
+			}
+
+			if (IsWindowControl(control)) {
+				control.ForeColor = DarkFore(original);
+				control.BackColor = DarkBack(original, WindowColor);
+				return;
+			}
+
+			if (control is Label || control is LinkLabel) {
+				control.ForeColor = DarkFore(original);
+				control.BackColor = original.BackColor == Color.Transparent ? Color.Transparent : (IsDark ? (control.Parent != null ? control.Parent.BackColor : WindowColor) : original.BackColor);
+				return;
+			}
+
+			control.ForeColor = DarkFore(original);
+			control.BackColor = DarkBack(original, WindowColor);
+		}
+
+		static bool IsFieldControl(Control control) {
+			TextBoxBase text = control as TextBoxBase;
+			if (text != null) {
+				text.BorderStyle = BorderStyle.FixedSingle;
+				SetWindowTheme(text.Handle, IsDark ? "DarkMode_CFD" : null, null);
+				if (IsSystemBack(text.BackColor)) { text.BackColor = FieldColor; }
+				return true;
+			}
+			ListBox list = control as ListBox;
+			if (list != null) {
+				list.BorderStyle = BorderStyle.FixedSingle;
+				if (IsSystemBack(list.BackColor)) { list.BackColor = FieldColor; }
+				return true;
+			}
+			if (control is NumericUpDown || control is DomainUpDown) {
+				if (IsSystemBack(control.BackColor)) { control.BackColor = FieldColor; }
+				return true;
+			}
+			ComboBox combo = control as ComboBox;
+			if (combo != null) {
+				combo.FlatStyle = FlatStyle.Flat;
+				SetWindowTheme(combo.Handle, "DarkMode_CFD", null);
+				if (IsSystemBack(combo.BackColor)) { combo.BackColor = FieldColor; }
+				return true;
+			}
+			return false;
+		}
+
+		static bool IsWindowControl(Control control) {
+			ListView listView = control as ListView;
+			if (listView != null) { SetWindowTheme(listView.Handle, "DarkMode_Explorer", null); return true; }
+			TreeView treeView = control as TreeView;
+			if (treeView != null) { SetWindowTheme(treeView.Handle, "DarkMode_Explorer", null); return true; }
+			DataGridView grid = control as DataGridView;
+			if (grid != null) {
+				grid.BackgroundColor = WindowColor;
+				grid.GridColor = BorderColor;
+				grid.EnableHeadersVisualStyles = false;
+				grid.DefaultCellStyle.BackColor = WindowColor;
+				grid.DefaultCellStyle.ForeColor = TextColor;
+				grid.DefaultCellStyle.SelectionBackColor = FieldColor;
+				grid.DefaultCellStyle.SelectionForeColor = TextColor;
+				grid.ColumnHeadersDefaultCellStyle.BackColor = FieldColor;
+				grid.ColumnHeadersDefaultCellStyle.ForeColor = TextColor;
+				grid.RowHeadersDefaultCellStyle.BackColor = FieldColor;
+				grid.RowHeadersDefaultCellStyle.ForeColor = TextColor;
+				return true;
+			}
+			return false;
+		}
+
+		static bool IsSystemBack(Color color) {
+			return color == SystemColors.Control || color == SystemColors.Window || color == Color.Transparent;
+		}
+
+		static bool IsSystemText(Color color) {
+			return color == SystemColors.ControlText || color == SystemColors.WindowText;
+		}
+
+		public static void DarkTitleBar(IntPtr hwnd) {
+			if (allowDarkModeForWindow != null) { allowDarkModeForWindow(hwnd, IsDark); }
+			SetWindowTheme(hwnd, IsDark ? "DarkMode_Explorer" : null, null);
+			int on = IsDark ? 1 : 0;
+			DwmSetWindowAttribute(hwnd, 20, ref on, sizeof(int)); // DWMWA_USE_IMMERSIVE_DARK_MODE
+			DwmSetWindowAttribute(hwnd, 19, ref on, sizeof(int)); // 旧 build
+		}
+
+		sealed class DarkColorTable : ProfessionalColorTable {
+			public override Color ToolStripGradientBegin { get { return WindowColor; } }
+			public override Color ToolStripGradientMiddle { get { return WindowColor; } }
+			public override Color ToolStripGradientEnd { get { return WindowColor; } }
+			public override Color ToolStripBorder { get { return BorderColor; } }
+			public override Color ToolStripDropDownBackground { get { return FieldColor; } }
+			public override Color ImageMarginGradientBegin { get { return FieldColor; } }
+			public override Color ImageMarginGradientMiddle { get { return FieldColor; } }
+			public override Color ImageMarginGradientEnd { get { return FieldColor; } }
+			public override Color MenuBorder { get { return BorderColor; } }
+			public override Color MenuItemBorder { get { return BorderColor; } }
+			public override Color MenuItemSelected { get { return FieldColor; } }
+			public override Color MenuItemSelectedGradientBegin { get { return FieldColor; } }
+			public override Color MenuItemSelectedGradientEnd { get { return FieldColor; } }
+			public override Color MenuItemPressedGradientBegin { get { return FieldColor; } }
+			public override Color MenuItemPressedGradientEnd { get { return FieldColor; } }
+			public override Color SeparatorDark { get { return BorderColor; } }
+			public override Color SeparatorLight { get { return BorderColor; } }
+			public override Color ButtonSelectedHighlight { get { return FieldColor; } }
+			public override Color ButtonPressedHighlight { get { return FieldColor; } }
+			public override Color CheckBackground { get { return FieldColor; } }
+			public override Color CheckSelectedBackground { get { return FieldColor; } }
+			public override Color StatusStripGradientBegin { get { return WindowColor; } }
+			public override Color StatusStripGradientEnd { get { return WindowColor; } }
+			public override Color RaftingContainerGradientBegin { get { return WindowColor; } }
+			public override Color RaftingContainerGradientEnd { get { return WindowColor; } }
+			public override Color OverflowButtonGradientBegin { get { return WindowColor; } }
+			public override Color OverflowButtonGradientMiddle { get { return WindowColor; } }
+			public override Color OverflowButtonGradientEnd { get { return WindowColor; } }
+		}
+
+		sealed class DarkToolStripRenderer : ToolStripProfessionalRenderer {
+			public DarkToolStripRenderer() : base(new DarkColorTable()) { RoundedEdges = false; }
+			protected override void OnRenderItemText(ToolStripItemTextRenderEventArgs e) {
+				e.TextColor = e.Item.Enabled ? TextColor : DisabledTextColor;
+				base.OnRenderItemText(e);
+			}
+			protected override void OnRenderArrow(ToolStripArrowRenderEventArgs e) {
+				e.ArrowColor = e.Item.Enabled ? TextColor : DisabledTextColor;
+				base.OnRenderArrow(e);
+			}
+		}
+	}
+	#endif
+
 	static partial class PSRunnerEntry {
 		static PSRunner me;
 
@@ -2193,6 +3295,23 @@ namespace PSRunnerNS {
 			me = new PSRunner();
 			PSRunner.TimerMark("main:ctor-done");
 			System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);
+			#if noConsole
+			me.ui.CancelPipeline = delegate {
+				me.CancelRequested = true;
+				Progress_Form progressForm = me.ui.pf;
+				System.Threading.ThreadPool.QueueUserWorkItem(delegate {
+					try {
+						me.pwsh.BeginStop((_) => {
+							if (progressForm != null) progressForm.CloseAfterCancel();
+							mre.Set();
+						}, null);
+					} catch {
+						if (progressForm != null) progressForm.CloseAfterCancel();
+						mre.Set();
+					}
+				});
+			};
+			#endif
 
 			try {
 				#if !noConsole
@@ -2242,10 +3361,18 @@ namespace PSRunnerNS {
 					colInput.Complete();
 
 					me.pwsh.Runspace.SessionStateProxy.SetVariable("PSEXEInput", colInput);
+					#if noConsole && !darkModeOff && !Pwsh20
+					me.pwsh.AddScript("$PSEXEDarkModeSetup.Invoke(); $PSEXEInput|PSEXEMainFunction "+String.Join(" ", args));
+					#else
 					me.pwsh.AddScript("$PSEXEInput|PSEXEMainFunction "+String.Join(" ", args));
+					#endif
 				#else
 					// 脚本顶层不用 $input：完全不带管道输入，也不设置 $PSEXEInput
+					#if noConsole && !darkModeOff && !Pwsh20
+					me.pwsh.AddScript("$PSEXEDarkModeSetup.Invoke(); PSEXEMainFunction "+String.Join(" ", args));
+					#else
 					me.pwsh.AddScript("PSEXEMainFunction "+String.Join(" ", args));
+					#endif
 				#endif
 				// Out-Default 走 host UI；勿用 Out-String/输出收集，否则 native 子进程 stdout 会变成管道（非 TTY）
 				me.pwsh.AddCommand("Out-Default");
@@ -2264,7 +3391,7 @@ namespace PSRunnerNS {
 				me.Inited = true;
 				me.pwsh.EndInvoke(asyncResult);
 				PSRunner.TimerMark("main:endinvoke");
-				me.pwsh.Stop();
+				if (me.pwsh.InvocationStateInfo.State != PSInvocationState.Stopped) me.pwsh.Stop();
 				PSRunner.TimerMark("main:stop");
 
 				if (me.pwsh.InvocationStateInfo.State == PSInvocationState.Failed)
@@ -2272,11 +3399,14 @@ namespace PSRunnerNS {
 			}
 			catch (Exception ex) {
 				#if !noError
-					me.ui.WriteErrorLine(ex.Message);
+					if (!me.CancelRequested) me.ui.WriteErrorLine(ex.Message);
 				#endif
 				me.ExitCode = 1;
 			}
 			finally {
+				#if noConsole
+				if (me.CancelRequested && me.ui.pf != null) me.ui.pf.CloseAfterCancel();
+				#endif
 				#if !Pwsh20 // bro wtf
 					mre.Dispose();
 				#endif

@@ -41,8 +41,8 @@ Add-Test @{
 	Builds = @(
 		@{ Name = 'c0'; InputText = "'tinysharp-console-zero'"; Output = 'ts_console_0.exe' }
 		@{ Name = 'c42'; InputText = "'tinysharp-console-42'; exit 42"; Output = 'ts_console_42.exe' }
-		@{ Name = 'g0'; InputText = "'tinysharp-gui-zero'"; Params = @{ App = @{ Windowed = $true }; Resources = @{ Title = 'CI' } }; Output = 'ts_gui_0.exe' }
-		@{ Name = 'g42'; InputText = "'tinysharp-gui-42'; exit 42"; Params = @{ App = @{ Windowed = $true }; Resources = @{ Title = 'CI' } }; Output = 'ts_gui_42.exe' }
+		@{ Name = 'g0'; InputText = "'tinysharp-gui-zero'"; Params = @{ App = @{ Windowed = $true; DarkMode = 'Off' }; Resources = @{ Title = 'CI' } }; Output = 'ts_gui_0.exe' }
+		@{ Name = 'g42'; InputText = "'tinysharp-gui-42'; exit 42"; Params = @{ App = @{ Windowed = $true; DarkMode = 'Off' }; Resources = @{ Title = 'CI' } }; Output = 'ts_gui_42.exe' }
 	)
 	Run    = {
 		param($ctx)
@@ -209,7 +209,7 @@ Add-Test @{
 		@{ Name = 'win'; InputText = "Get-Date | Out-Null; Write-Output 'windowed-embed'"; Params = @{ App = @{ Windowed = $true } }; Output = 'windowed_std.exe' }
 		@{ Name = 'con'; InputText = "Get-Date | Out-Null; Write-Output 'console-embed'"; Output = 'console_std.exe' }
 		@{ Name = 'srcwin'; InputText = "#_pragma App.Windowed`nGet-Date | Out-Null; Write-Output 'srcwin-embed'"; Output = 'src_windowed.exe' }
-		@{ Name = 'tsgui'; InputText = "'tinysharp-gui-windowed'"; Params = @{ App = @{ Windowed = $true }; Resources = @{ Title = 'CI' } }; Output = 'ts_windowed.exe' }
+		@{ Name = 'tsgui'; InputText = "'tinysharp-gui-windowed'"; Params = @{ App = @{ Windowed = $true; DarkMode = 'Off' }; Resources = @{ Title = 'CI' } }; Output = 'ts_windowed.exe' }
 	)
 	Run    = {
 		param($ctx)

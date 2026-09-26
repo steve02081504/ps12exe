@@ -32,7 +32,7 @@
 		title      = "使用方法："
 		Usage      = "[input |] ps12exe [[-inputFile] '<ファイル名|url>' | -Content '<スクリプト>'] [-outputFile '<ファイル名>']
 	[-App @{Windowed=`$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default';
-	VisualStyles=`$true; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true; ConHost=`$true}]
+	VisualStyles=`$true; DarkMode='Auto'|'On'|'Off'; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true; ConHost=`$true}]
 	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
 	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
 	Culture='<カルチャ>'; Options='<オプション>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<ディレクトリ>';
@@ -53,6 +53,7 @@
 				Silence          = "抑制する出力ストリームの名前。``'Output'``、``'Verbose'``、``'Error'``、``'Warning'``、``'Debug'`` のいずれか 1 つ以上、またはすべてを表す ``'*'``。"
 				OutputEncoding   = "コンソール出力のエンコーディング。``'Default'``、``'UTF8'``、``'UTF16LE'``。"
 				VisualStyles     = "GUI アプリケーションのビジュアルスタイルを有効にします（既定値 `` `$true ``）。"
+				DarkMode         = "ウィンドウ版 GUI の WinForms ウィンドウのダークテーマ。``'Auto'`` はシステムに従い、``'On'``/``'Off'`` で強制します。"
 				ExitOnCancel     = "``Read-Host`` 入力ボックスで Cancel または ``'X'`` を選択したときにプログラムを終了します。"
 				CredentialGUI    = "コンソールモードで GUI プロンプトを使用して資格情報を求めます。"
 				DpiAware         = "コンパイルされた実行可能ファイルを DPI 対応としてマークします。"

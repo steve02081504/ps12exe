@@ -32,7 +32,7 @@
 		title      = "Utilisation :"
 		Usage      = "[input |] ps12exe [[-inputFile] '<nom_de_fichier|url>' | -Content '<script>'] [-outputFile '<nom_de_fichier>']
 	[-App @{Windowed=`$true; Silence=@('Output','Error'); OutputEncoding='UTF8'|'UTF16LE'|'Default';
-	VisualStyles=`$true; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true; ConHost=`$true}]
+	VisualStyles=`$true; DarkMode='Auto'|'On'|'Off'; ExitOnCancel=`$true; CredentialGUI=`$true; DpiAware=`$true; WinFormsDpiAware=`$true; ConHost=`$true}]
 	[-Os @{Admin=`$true; ModernOS=`$true; LongPaths=`$true; Virtualize=`$true}]
 	[-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
 	Culture='<culture>'; Options='<options>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<dossier>';
@@ -53,6 +53,7 @@
 				Silence          = "Noms des flux à rendre silencieux ; un ou plusieurs parmi ``'Output'``, ``'Verbose'``, ``'Error'``, ``'Warning'``, ``'Debug'``, ou ``'*'`` pour tous."
 				OutputEncoding   = "Encodage de sortie de la console ; ``'Default'``, ``'UTF8'`` ou ``'UTF16LE'``."
 				VisualStyles     = "Active les styles visuels pour les applications GUI (par défaut `` `$true ``)."
+				DarkMode         = "Thème sombre pour les fenêtres WinForms des applications GUI ; ``'Auto'`` suit le thème du système, ``'On'``/``'Off'`` le force."
 				ExitOnCancel     = "Quitte le programme lorsqu'Annuler ou ``'X'`` est sélectionné dans la boîte de dialogue ``Read-Host``."
 				CredentialGUI    = "Utilise une invite GUI pour les informations d'identification en mode console."
 				DpiAware         = "Marque le fichier exécutable compilé comme compatible DPI."
