@@ -91,7 +91,7 @@ internal static class NativeDialogs {
 		for (int i = 0; i < choices.Length; i++) {
 			choices[i] = new RadioButton();
 			choices[i].Text = labels[i];
-			choices[i].SetBounds(29, 38 + i * 25, 300, 20);
+			choices[i].SetBounds(29, 38 + (i * 25), 300, 20);
 			choices[i].Checked = i == 0;
 			form.Controls.Add(choices[i]);
 		}

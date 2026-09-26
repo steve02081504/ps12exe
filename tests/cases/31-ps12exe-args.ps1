@@ -732,7 +732,8 @@ Add-Test @{
 			Assert-True $clicked '进度窗体未显示可点击的取消按钮'
 			Assert-True ($process.WaitForExit(5000)) '点击进度窗体的取消按钮后流水线仍未停止'
 			Assert-Equal 1 $process.ExitCode '取消进度操作的退出码'
-		} finally {
+		}
+		finally {
 			if (-not $process.HasExited) { Stop-ProcessTree -ProcessId $process.Id }
 			$process.Dispose()
 		}

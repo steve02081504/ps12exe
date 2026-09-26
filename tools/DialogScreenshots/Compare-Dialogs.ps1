@@ -195,12 +195,14 @@ function Get-ImageDifference {
 				}
 			}
 			[System.Runtime.InteropServices.Marshal]::Copy($bufferD, 0, $dataD.Scan0, $bufferD.Length)
-		} finally {
+		}
+		finally {
 			$imageA.UnlockBits($dataA); $imageB.UnlockBits($dataB); $diff.UnlockBits($dataD)
 		}
 		$diff.Save($DiffOutPath, [System.Drawing.Imaging.ImageFormat]::Png)
 		return [Math]::Round(100.0 * $different / $total, 2)
-	} finally {
+	}
+	finally {
 		$diff.Dispose(); $imageA.Dispose(); $imageB.Dispose()
 	}
 }
@@ -286,11 +288,13 @@ try {
 		$closeKey = $definition['CloseKey']
 		Invoke-Capture -Exe $ourDarkExe -Title $definition.Title -OutPng (Join-Path $dir 'ours-dark.png') -CloseKey $closeKey | Out-Null
 	}
-} finally {
+}
+finally {
 	Write-Host '还原系统主题...'
 	if ($hadAppsUseLightTheme) {
 		Set-SystemLightTheme $originalLight
-	} else {
+	}
+	else {
 		Remove-ItemProperty -Path $personalizeKey -Name AppsUseLightTheme -ErrorAction Ignore
 		$result = [IntPtr]::Zero
 		[void][DialogShotsNative]::SendMessageTimeout([IntPtr]0xFFFF, 0x001A, [IntPtr]::Zero, 'ImmersiveColorSet', 0x0002, 2000, [ref]$result)
@@ -316,16 +320,16 @@ foreach ($entry in $results) {
 	$pctOursLightDark = Get-ImageDifference -PathA $oursLight -PathB $oursDark -DiffOutPath $diffOursLightDark
 
 	$rows += [pscustomobject]@{
-		Name = $name
-		NativeLight = $nativeLight
-		OursLight = $oursLight
-		OursDark = $oursDark
+		Name                = $name
+		NativeLight         = $nativeLight
+		OursLight           = $oursLight
+		OursDark            = $oursDark
 		DiffNativeOursLight = $diffNativeOursLight
-		DiffNativeOursDark = $diffNativeOursDark
-		DiffOursLightDark = $diffOursLightDark
-		PctNativeOursLight = $pctNativeOursLight
-		PctNativeOursDark = $pctNativeOursDark
-		PctOursLightDark = $pctOursLightDark
+		DiffNativeOursDark  = $diffNativeOursDark
+		DiffOursLightDark   = $diffOursLightDark
+		PctNativeOursLight  = $pctNativeOursLight
+		PctNativeOursDark   = $pctNativeOursDark
+		PctOursLightDark    = $pctOursLightDark
 	}
 }
 

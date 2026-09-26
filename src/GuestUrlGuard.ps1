@@ -25,17 +25,17 @@ function Test-GuestPrivateIPAddress([System.Net.IPAddress]$IP) {
 	if (($bytes[0] -band 0xFE) -eq 0xFC) { return $true }                                # fc00::/7 唯一本地
 	$isMapped = $true
 	for ($i = 0; $i -lt 10; $i++) { if ($bytes[$i] -ne 0) { $isMapped = $false; break } }
-	if ($isMapped -and $bytes[10] -eq 0xFF -and $bytes[11] -eq 0xFF) {                   # ::ffff:a.b.c.d
+	if ($isMapped -and $bytes[10] -eq 0xFF -and $bytes[11] -eq 0xFF) { # ::ffff:a.b.c.d
 		$v4 = [System.Net.IPAddress]::new([byte[]]@($bytes[12], $bytes[13], $bytes[14], $bytes[15]))
 		return (Test-GuestPrivateIPAddress $v4)
 	}
 	$firstTwelveZero = $true
 	for ($i = 0; $i -lt 12; $i++) { if ($bytes[$i] -ne 0) { $firstTwelveZero = $false; break } }
-	if ($firstTwelveZero) {                                                              # ::a.b.c.d（IPv4 兼容，含 ::）
+	if ($firstTwelveZero) { # ::a.b.c.d（IPv4 兼容，含 ::）
 		$v4 = [System.Net.IPAddress]::new([byte[]]@($bytes[12], $bytes[13], $bytes[14], $bytes[15]))
 		return (Test-GuestPrivateIPAddress $v4)
 	}
-	if ($bytes[0] -eq 0x20 -and $bytes[1] -eq 0x02) {                                    # 2002::/16 6to4（内嵌 IPv4）
+	if ($bytes[0] -eq 0x20 -and $bytes[1] -eq 0x02) { # 2002::/16 6to4（内嵌 IPv4）
 		$v4 = [System.Net.IPAddress]::new([byte[]]@($bytes[2], $bytes[3], $bytes[4], $bytes[5]))
 		return (Test-GuestPrivateIPAddress $v4)
 	}
