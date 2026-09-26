@@ -918,8 +918,8 @@ try {
 	Write-TaskbarProgress -Percent 10
 	#_if PSScript
 		# 常量脚本优先生成 TinySharp 壳（体积 ~1KB）；产物是 .NET Framework 托管 PE，Core 目标跳过它改走 CoreCompiler。
-		# TinySharp 是裸 IL 壳，窗口化常量统一走 constexpr 帧，以使用同一套支持亮/暗主题的 WinForms 对话框；控制台常量仍用 TinySharp。
-		if ($AstAnalyzeResult.IsConst -and -not $requireAdmin -and -not $isCoreTarget -and -not $noConsole) {
+		# TinySharp 的窗口化 MessageBox 使用 Windows 原生 MessageBoxW；DarkMode Off 保留这条精简路径，On/Auto 才走 constexpr WinForms 帧。
+		if ($AstAnalyzeResult.IsConst -and -not $requireAdmin -and -not $isCoreTarget -and (-not $noConsole -or $darkMode -eq 'Off')) {
 			Write-I18n Verbose TryingTinySharpCompile
 			Write-I18n Host CompilingFile
 			Write-TaskbarProgress -Percent 20

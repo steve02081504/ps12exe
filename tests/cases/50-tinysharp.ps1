@@ -49,8 +49,8 @@ Add-Test @{
 }
 
 Add-Test @{
-	Name   = 'ps12exe.constexpr.gui'
-	Group  = 'ps12exe'
+	Name   = 'tinysharp.gui.native-messagebox'
+	Group  = 'tinysharp'
 	Deps   = $script:TsDeps
 	Builds = @(
 		@{ Name = 'gui'; InputText = "'TinySharp-GUI-OK'"; Params = @{ App = @{ Windowed = $true; DarkMode = 'Off' }; Resources = @{ Title = 'CITitle' } }; Output = 'ts_gui.exe' }
@@ -58,11 +58,14 @@ Add-Test @{
 	)
 	Run    = {
 		param($ctx)
+		$guiSize = (Get-Item -LiteralPath $ctx.Builds['guicompressed']).Length
+		$rawUtf16 = [Text.Encoding]::Unicode.GetByteCount($script:BigGui)
+		Assert-True ($guiSize -lt $rawUtf16) "TinySharp GUI 原生消息框压缩壳应小于 UTF-16 原文（$rawUtf16），实际 $guiSize"
 		$exitCode = Invoke-ExeAndSendEnterToWindow -ExePath $ctx.Builds['gui'] -TimeoutSeconds 20
-		Assert-Equal 0 $exitCode 'constexpr GUI 退出码'
+		Assert-Equal 0 $exitCode 'TinySharp GUI 原生消息框退出码'
 
 		$exitCompressed = Invoke-ExeAndSendEnterToWindow -ExePath $ctx.Builds['guicompressed'] -TimeoutSeconds 20
-		Assert-Equal 0 $exitCompressed 'constexpr GUI 长文本退出码'
+		Assert-Equal 0 $exitCompressed 'TinySharp GUI 长文本原生消息框退出码'
 	}
 }
 

@@ -1541,6 +1541,16 @@ namespace PSRunnerNS {
 		[DllImport("dwmapi.dll")]
 		static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
 
+		internal static bool UsesNativeMessageBox {
+			get {
+				#if darkModeOff
+				return true;
+				#else
+				return false;
+				#endif
+			}
+		}
+
 		static bool IsDark {
 			get {
 				#if !darkModeOff && !Pwsh20
@@ -1633,6 +1643,9 @@ namespace PSRunnerNS {
 		const int MsgButtonRightPad = 20;
 
 		internal static DialogResult Show(string text, string caption, MessageBoxButtons buttons, MessageBoxIcon icon, MessageBoxDefaultButton defaultButton) {
+			#if darkModeOff
+			return MessageBox.Show(text, caption, buttons, icon, defaultButton);
+			#else
 			if (text == null) { text = ""; }
 			using (Form form = new Form()) {
 				form.Text = caption;
@@ -1767,6 +1780,7 @@ namespace PSRunnerNS {
 
 				return form.ShowDialog();
 			}
+			#endif
 		}
 
 		static Icon MessageBoxIconImage(MessageBoxIcon icon) {

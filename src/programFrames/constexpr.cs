@@ -107,6 +107,10 @@ namespace PSRunnerNS {
 		// 对齐原生 MessageBox(Information) 的观感：左侧 32@96dpi 信息图标、文本区自动换行、
 		// 底部 80x28 本地化确认按钮，整套几何按 DPI 缩放。
 		public static bool TryShow(string text, string title) {
+			#if darkModeOff
+			MessageBox.Show(text, title, MessageBoxButtons.OK);
+			return true;
+			#else
 			if (text == null) { text = ""; }
 			using (Form form = new Form()) {
 				form.Text = title;
@@ -213,6 +217,7 @@ namespace PSRunnerNS {
 				form.ShowDialog();
 			}
 			return true;
+			#endif
 		}
 	}
 	#endif

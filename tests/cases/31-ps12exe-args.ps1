@@ -615,7 +615,7 @@ Add-Test @{
 	}
 }
 
-# 常量 GUI：所有窗口化常量均走 constexpr 帧，使用同一套 WinForms 对话框和亮/暗调色板。
+# 常量 GUI：DarkMode=Off 走精简 TinySharp 原生 MessageBoxW；On/Auto 走 constexpr WinForms 帧。
 # 控制台常量脚本仍走 ~1KB 的 TinySharp 壳。
 Add-Test @{
 	Name   = 'ps12exe.app.darkmode.const'
@@ -635,8 +635,9 @@ Add-Test @{
 			Assert-True ($text.Contains('DarkWindowColor')) "$name 未包含暗色调色板"
 		}
 		$offText = [System.Text.Encoding]::UTF8.GetString([System.IO.File]::ReadAllBytes($ctx.Builds['dm_const_off']))
-		Assert-True ($offText.Contains('ConstMessageBox')) 'dm_const_off 未走统一渲染的 constexpr 帧'
-		Assert-False ($offText.Contains('DarkWindowColor')) 'DarkMode=Off 的 constexpr 帧不应包含暗色调色板'
+		Assert-True ($offText.Contains('MessageBoxW')) 'dm_const_off 未走 TinySharp 原生消息框'
+		Assert-False ($offText.Contains('ConstMessageBox')) 'DarkMode=Off 的 GUI 常量不应包含 constexpr WinForms 帧'
+		Assert-True ((Get-Item -LiteralPath $ctx.Builds['dm_const_off']).Length -lt 2048) 'DarkMode=Off 的 GUI 常量未走精简 TinySharp 壳'
 		foreach ($name in @('dm_const_con_auto')) {
 			$bytes = [System.IO.File]::ReadAllBytes($ctx.Builds[$name])
 			$text = [System.Text.Encoding]::UTF8.GetString($bytes)
@@ -646,8 +647,7 @@ Add-Test @{
 	}
 }
 
-# 内置对话框：windowed 时始终有统一渲染的 MessageBoxHelper、自绘进度条与可取消的进度窗体；
-# 系统按钮本地化对所有主题配置均可用。
+# 内置对话框：DarkMode=Off 的消息框使用系统 MessageBox，On/Auto 使用自绘消息框；进度条和进度窗体统一渲染且可取消。
 $dmDialogProbe = @'
 $exe = [System.Reflection.Assembly]::GetEntryAssembly().Location
 $marker = $exe + '.dlg'
@@ -663,6 +663,8 @@ $formatInputPrompt = $ui.GetMethod('FormatInputPrompt', [System.Reflection.Bindi
 $lines += ([string]$formatInputPrompt.Invoke($null, [object[]]@('Input'))).Replace(' ', '_')
 $lines += ([string]$formatInputPrompt.Invoke($null, [object[]]@('Input:'))).Replace(' ', '_')
 $helper = [AppDomain]::CurrentDomain.GetAssemblies() | ForEach-Object { $_.GetType('PSRunnerNS.MessageBoxHelper') } | Where-Object { $_ } | Select-Object -First 1
+$usesNativeMessageBox = $helper.GetProperty('UsesNativeMessageBox', [System.Reflection.BindingFlags]::Static -bor [System.Reflection.BindingFlags]::NonPublic)
+$lines += ([string]$usesNativeMessageBox.GetValue($null)).ToLowerInvariant()
 $lines += $(if ($helper.GetMethod('ShowLight', [System.Reflection.BindingFlags]::Static -bor [System.Reflection.BindingFlags]::NonPublic)) { 'present' } else { 'absent' })
 $progressForm = [AppDomain]::CurrentDomain.GetAssemblies() | ForEach-Object { $_.GetType('PSRunnerNS.Progress_Form') } | Where-Object { $_ } | Select-Object -First 1
 $lines += $(if ($progressForm.GetConstructor([type[]]@([string], [ConsoleColor], [Action]))) { 'present' } else { 'absent' })
@@ -681,7 +683,7 @@ Add-Test @{
 	)
 	Run    = {
 		param($ctx)
-		foreach ($pair in @(@('dm_dlg_on', 'present,present,absent,present,Input:_,Input:_,absent,present,present'), @('dm_dlg_off', 'present,present,absent,present,Input:_,Input:_,absent,present,present'))) {
+		foreach ($pair in @(@('dm_dlg_on', 'present,present,absent,present,Input:_,Input:_,false,absent,present,present'), @('dm_dlg_off', 'present,present,absent,present,Input:_,Input:_,true,absent,present,present'))) {
 			$name = $pair[0]; $expected = $pair[1]
 			$exe = Copy-BuildAs -BuildPath $ctx.Builds[$name] -WorkDir $ctx.WorkDir -Name "$name.exe"
 			$marker = "$exe.dlg"

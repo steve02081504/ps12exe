@@ -1,5 +1,6 @@
 ﻿# exe21sp 提取：普通/TinySharp/压缩/Core 产物还原、资源参数与图标往返、保存到文件分支。
 $deps = @('exe21sp.ps1', 'src/Interact/exe21sp.ps1', 'src/TaskbarProgress.ps1') + $script:CoreCompileDeps
+$script:CompressedTinySharpOutput = 'exe21sp-compressed-tinysharp-output-0123456789 abcdefghijklmnopqrstuvwxyz. ' * 60
 
 # 生成确定性的 1x1 32bpp ICO 测试夹具（源码里没有该图标，用于验证资源往返）。
 $script:IconFixture = Join-Path (Get-TestRepoRoot) 'tests/.cache/fixtures/resource.ico'
@@ -41,7 +42,9 @@ Add-Test @{
 	Builds = @(
 		@{ Name = 'c0'; InputText = "'tinysharp-console-zero'"; Output = 'ts_console_0.exe' }
 		@{ Name = 'c42'; InputText = "'tinysharp-console-42'; exit 42"; Output = 'ts_console_42.exe' }
+		@{ Name = 'compressed'; InputText = "'$($script:CompressedTinySharpOutput)'"; Output = 'ts_console_compressed.exe' }
 		@{ Name = 'g0'; InputText = "'tinysharp-gui-zero'"; Params = @{ App = @{ Windowed = $true; DarkMode = 'Off' }; Resources = @{ Title = 'CI' } }; Output = 'ts_gui_0.exe' }
+		@{ Name = 'gcompressed'; InputText = "'$($script:CompressedTinySharpOutput)'"; Params = @{ App = @{ Windowed = $true; DarkMode = 'Off' }; Resources = @{ Title = 'CI' } }; Output = 'ts_gui_compressed.exe' }
 		@{ Name = 'g42'; InputText = "'tinysharp-gui-42'; exit 42"; Params = @{ App = @{ Windowed = $true; DarkMode = 'Off' }; Resources = @{ Title = 'CI' } }; Output = 'ts_gui_42.exe' }
 	)
 	Run    = {
@@ -57,8 +60,14 @@ Add-Test @{
 		& $ctx.Builds['c42'] | Out-Null
 		Assert-Equal 42 $LASTEXITCODE 'ts_console_42 退出码'
 
+		$compressed = Get-Exe21spContent -ExePath $ctx.Builds['compressed']
+		Assert-Match $compressed ([regex]::Escape($script:CompressedTinySharpOutput)) "exe21sp TinySharp 压缩输出内容：$compressed"
+
 		$g0 = Get-Exe21spContent -ExePath $ctx.Builds['g0']
 		Assert-Match $g0 'tinysharp-gui-zero' "exe21sp TinySharp GUI 0 内容：$g0"
+		$gcompressed = Get-Exe21spContent -ExePath $ctx.Builds['gcompressed']
+		Assert-Match $gcompressed ([regex]::Escape($script:CompressedTinySharpOutput)) "exe21sp TinySharp GUI 压缩输出内容：$gcompressed"
+		Assert-Match $gcompressed '(?m)^#_pragma\s+App\.Windowed$' "exe21sp TinySharp GUI 压缩产物未还原窗口模式：$gcompressed"
 		$g42 = Get-Exe21spContent -ExePath $ctx.Builds['g42']
 		Assert-Match $g42 'tinysharp-gui-42' "exe21sp TinySharp GUI 42 内容：$g42"
 		Assert-Match $g42 'exit 42' "exe21sp TinySharp GUI 42 未保留 exit：$g42"

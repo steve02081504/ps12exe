@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Runtime.InteropServices;
 using System.Text;
 using AsmResolver;
 using AsmResolver.DotNet;
@@ -460,7 +461,9 @@ namespace exe21sp {
 				throw new InvalidOperationException("TinySharpCannotReadText");
 
 			// 通过统计 CIL 区域中 ldc.i4 的 VA 引用次数来定位消息字符串。TinySharp 把消息地址打入每个 MessageBoxW 调用点（双路径 MessageBox 构建为 2×，控制台构建为 1×），而基础设施字符串（如 VerQueryValueW 的 subBlock 路径）只被引用一次。因此，映射到 .text 中实际文件内容且引用次数最多的 VA 就是消息——无需内容启发式。
-			string message = FindMessageByVARefCount(raw, peFile.OptionalHeader.ImageBase, section);
+			string message = TryExtractCompressedTinySharp(raw, peFile.OptionalHeader.ImageBase, section);
+			if (message == null)
+				message = FindMessageByVARefCount(raw, peFile.OptionalHeader.ImageBase, section);
 			if (string.IsNullOrEmpty(message))
 				throw new InvalidOperationException("TinySharpPayloadNotRecovered");
 
@@ -473,6 +476,101 @@ namespace exe21sp {
 			if (exitCode != 0)
 				builder.Append("\nexit ").Append(exitCode);
 			return builder.ToString();
+		}
+
+		[DllImport("cabinet.dll", SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		private static extern bool CreateDecompressor(uint algorithm, IntPtr allocationRoutines, out IntPtr decompressorHandle);
+
+		[DllImport("cabinet.dll", SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		private static extern bool Decompress(IntPtr decompressorHandle, IntPtr compressedData, IntPtr compressedDataSize, IntPtr uncompressedBuffer, IntPtr uncompressedBufferSize, out IntPtr uncompressedDataSize);
+
+		[DllImport("cabinet.dll", SetLastError = true)]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		private static extern bool CloseDecompressor(IntPtr decompressorHandle);
+
+		/// <summary>
+		/// 解压 TinySharp 的 XPRESS 常量负载。CIL 调用序列包含负载 VA、压缩长度和原始长度；同时要求元数据包含 cabinet 压缩 API 名称，避免把普通程序集误认为 TinySharp。
+		/// </summary>
+		private static string TryExtractCompressedTinySharp(byte[] raw, ulong imageBase, PESection section) {
+			if (!ContainsAscii(raw, "CreateDecompressor") || !ContainsAscii(raw, "CloseDecompressor"))
+				return null;
+			int scanEnd = Math.Min(raw.Length - 26, 2048);
+			ulong textVABase = imageBase + section.Rva;
+			string bestMessage = null;
+			for (int i = 19; i <= scanEnd; i++) {
+				// ldc.i4 payloadVA, ldc.i4 compressedLength, ldc.i4 outputVA, ldc.i4 uncompressedLength.
+				if (raw[i - 19] != 0x19 || raw[i - 18] != 0x16 || raw[i - 17] != 0x20 || raw[i - 12] != 0x28 || raw[i - 7] != 0x26 || raw[i - 6] != 0x20 || raw[i - 1] != 0x4D || raw[i] != 0x20 || raw[i + 5] != 0x20 || raw[i + 10] != 0x20 || raw[i + 15] != 0x20 || raw[i + 20] != 0x20 || raw[i + 25] != 0x28)
+					continue;
+				// The compressed helper invokes CreateDecompressor and then Decompress, whose MethodDef tokens are adjacent.
+				uint createToken = BitConverter.ToUInt32(raw, i - 11);
+				uint decompressToken = BitConverter.ToUInt32(raw, i + 26);
+				if (decompressToken != createToken + 1)
+					continue;
+				uint payloadOperand = (uint)BitConverter.ToInt32(raw, i + 1);
+				ulong payloadVa = (imageBase & 0xFFFFFFFF00000000UL) | payloadOperand;
+				if (payloadVa < textVABase)
+					continue;
+				ulong payloadOffset = payloadVa - textVABase;
+				int compressedLength = BitConverter.ToInt32(raw, i + 6);
+				int uncompressedLength = BitConverter.ToInt32(raw, i + 16);
+				if (payloadOffset > (ulong)raw.Length || compressedLength <= 0 || compressedLength > raw.Length - (long)payloadOffset || uncompressedLength <= 0 || uncompressedLength > 16 * 1024 * 1024)
+					continue;
+
+				var output = DecompressXpress(raw, (int)payloadOffset, compressedLength, uncompressedLength);
+				if (output == null)
+					continue;
+				var message = output.Length >= 2 && output[1] == 0
+					? TryReadNullTermUnicode(output, 0) ?? TryReadNullTermAscii(output, 0)
+					: TryReadNullTermAscii(output, 0) ?? TryReadNullTermUnicode(output, 0);
+				if (message != null && (bestMessage == null || message.Length > bestMessage.Length))
+					bestMessage = message;
+			}
+			return bestMessage;
+		}
+
+		private static byte[] DecompressXpress(byte[] input, int offset, int compressedLength, int uncompressedLength) {
+			IntPtr handle = IntPtr.Zero;
+			IntPtr compressed = IntPtr.Zero;
+			IntPtr output = IntPtr.Zero;
+			try {
+				if (!CreateDecompressor(3, IntPtr.Zero, out handle))
+					return null;
+				compressed = Marshal.AllocHGlobal(compressedLength);
+				output = Marshal.AllocHGlobal(uncompressedLength);
+				Marshal.Copy(input, offset, compressed, compressedLength);
+				IntPtr actualSize;
+				if (!Decompress(handle, compressed, new IntPtr(compressedLength), output, new IntPtr(uncompressedLength), out actualSize) || actualSize.ToInt64() != uncompressedLength)
+					return null;
+				var result = new byte[uncompressedLength];
+				Marshal.Copy(output, result, 0, result.Length);
+				return result;
+			}
+			catch (DllNotFoundException) {
+				return null;
+			}
+			catch (EntryPointNotFoundException) {
+				return null;
+			}
+			finally {
+				if (handle != IntPtr.Zero)
+					CloseDecompressor(handle);
+				if (compressed != IntPtr.Zero)
+					Marshal.FreeHGlobal(compressed);
+				if (output != IntPtr.Zero)
+					Marshal.FreeHGlobal(output);
+			}
+		}
+
+		private static bool ContainsAscii(byte[] bytes, string value) {
+			var needle = Encoding.ASCII.GetBytes(value);
+			for (int i = 0; i <= bytes.Length - needle.Length; i++) {
+				int j = 0;
+				while (j < needle.Length && bytes[i + j] == needle[j]) j++;
+				if (j == needle.Length) return true;
+			}
+			return false;
 		}
 
 		/// <summary>
@@ -563,7 +661,7 @@ namespace exe21sp {
 			if (offset < 0 || offset + 2 > raw.Length) return null;
 			int end = offset;
 			while (end + 1 < raw.Length && (raw[end] != 0 || raw[end + 1] != 0)) end += 2;
-			if (end == offset || end - offset > 8192) return null;
+			if (end == offset || end - offset > 16 * 1024 * 1024) return null;
 			var s = Encoding.Unicode.GetString(raw, offset, end - offset);
 			return IsPrintableUnicode(s) ? s : null;
 		}
@@ -572,7 +670,7 @@ namespace exe21sp {
 			if (offset < 0 || offset >= raw.Length) return null;
 			int end = offset;
 			while (end < raw.Length && raw[end] != 0) end++;
-			if (end == offset || end - offset > 8192) return null;
+			if (end == offset || end - offset > 16 * 1024 * 1024) return null;
 			var s = Encoding.ASCII.GetString(raw, offset, end - offset);
 			return IsPrintableAscii(s) ? s : null;
 		}
