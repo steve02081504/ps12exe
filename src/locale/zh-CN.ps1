@@ -24,164 +24,164 @@
 	AskSaveCfgTitle                = "保存配置文件"
 	CfgFileLabelHead               = "配置文件："
 	# GUI 文本
-	GUI = @{
-		Page = @{
-			General = "通用"
-			App = "应用"
-			OS = "操作系统"
-			Build = "构建"
-			Core = "Core"
+	GUI                            = @{
+		Page   = @{
+			General   = "通用"
+			App       = "应用"
+			OS        = "操作系统"
+			Build     = "构建"
+			Core      = "Core"
 			Resources = "资源"
-			Signing = "签名"
-			Modes = "模式"
+			Signing   = "签名"
+			Modes     = "模式"
 		}
-		Group = @{
-			IO = "输入输出"
-			Target = "目标"
-			Silence = "静默"
-			Console = "控制台"
-			Windowed = "窗口"
-			OS = "系统"
-			Build = "构建"
-			ConstEval = "常量求值"
+		Group  = @{
+			IO         = "输入输出"
+			Target     = "目标"
+			Silence    = "静默"
+			Console    = "控制台"
+			Windowed   = "窗口"
+			OS         = "系统"
+			Build      = "构建"
+			ConstEval  = "常量求值"
 			DllExports = "原生 DLL 导出"
-			Core = "Core 选项"
-			Resources = "资源参数"
-			Signing = "代码签名"
-			Modes = "模式"
+			Core       = "Core 选项"
+			Resources  = "资源参数"
+			Signing    = "代码签名"
+			Modes      = "模式"
 		}
-		Field = @{
-			inputFile = "编译文件"
-			outputFile = "输出文件"
-			Build = @{
-				Target = "目标运行时"
-				Platform = "平台"
-				Apartment = "线程模型"
-				Culture = "区域"
-				Options = "编译参数"
+		Field  = @{
+			inputFile      = "编译文件"
+			outputFile     = "输出文件"
+			Build          = @{
+				Target     = "目标运行时"
+				Platform   = "平台"
+				Apartment  = "线程模型"
+				Culture    = "区域"
+				Options    = "编译参数"
 				KeepSource = "生成调试信息"
-				Minify = "最小化脚本"
-				TempDir = "临时目录"
-				ConstEval = @{
+				Minify     = "最小化脚本"
+				TempDir    = "临时目录"
+				ConstEval  = @{
 					Enabled = "启用常量求值"
 					Timeout = "常量求值超时"
 				}
 				DllExports = @{
-					Label = "原生 DLL 导出"
-					Help = "原生 DLL 导出数组（等价于脚本里的 #_DllExport）：每项为 @{funcName=...; returnType=...; params=@(@{type=...;name=...})}。仅 Framework4.0 + x86/x64 生效；AnyCPU 会自动选择位数并告警；arm64/Framework2.0/Core 直接报错。访客模式下被禁用。"
-					FuncName = "函数名"
+					Label      = "原生 DLL 导出"
+					Help       = "原生 DLL 导出数组（等价于脚本里的 #_DllExport）：每项为 @{funcName=...; returnType=...; params=@(@{type=...;name=...})}。仅 Framework4.0 + x86/x64 生效；AnyCPU 会自动选择位数并告警；arm64/Framework2.0/Core 直接报错。访客模式下被禁用。"
+					FuncName   = "函数名"
 					ReturnType = "返回类型"
-					Params = "参数"
+					Params     = "参数"
 				}
-				Core = @{
-					Backend = "后端"
-					TargetOs = "目标系统"
-					TargetFramework = "目标框架"
-					PowerShellVersion = "PowerShell 版本"
-					SingleFile = "单文件"
-					SelfContained = "自包含"
-					Trimmed = "裁剪"
-					TrimMode = "裁剪力度"
-					ReadyToRun = "ReadyToRun"
+				Core       = @{
+					Backend                = "后端"
+					TargetOs               = "目标系统"
+					TargetFramework        = "目标框架"
+					PowerShellVersion      = "PowerShell 版本"
+					SingleFile             = "单文件"
+					SelfContained          = "自包含"
+					Trimmed                = "裁剪"
+					TrimMode               = "裁剪力度"
+					ReadyToRun             = "ReadyToRun"
 					InvariantGlobalization = "固定区域化"
-					Aot = "Native AOT"
+					Aot                    = "Native AOT"
 				}
 			}
-			App = @{
-				Windowed = "窗口应用"
-				Silence = "静默输出流"
-				OutputEncoding = "强制 Unicode 输出"
-				CredentialGUI = "凭据 GUI"
-				ConHost = "ConHost 控制台"
-				VisualStyles = "视觉样式"
-				DarkMode = "深色模式"
-				ExitOnCancel = "取消时退出"
-				DpiAware = "DPI 感知"
+			App            = @{
+				Windowed         = "窗口应用"
+				Silence          = "静默输出流"
+				OutputEncoding   = "强制 Unicode 输出"
+				CredentialGUI    = "凭据 GUI"
+				ConHost          = "ConHost 控制台"
+				VisualStyles     = "视觉样式"
+				DarkMode         = "深色模式"
+				ExitOnCancel     = "取消时退出"
+				DpiAware         = "DPI 感知"
 				WinFormsDpiAware = "WinForms DPI 感知"
 			}
-			Os = @{
-				Admin = "请求管理员"
-				ModernOS = "更多 OS 特性"
-				LongPaths = "长路径支持"
+			Os             = @{
+				Admin      = "请求管理员"
+				ModernOS   = "更多 OS 特性"
+				LongPaths  = "长路径支持"
 				Virtualize = "启用虚拟化"
 			}
-			ConfigFile = "生成配置文件"
-			Resources = @{
-				Icon = "图标文件"
-				Title = "标题"
+			ConfigFile     = "生成配置文件"
+			Resources      = @{
+				Icon        = "图标文件"
+				Title       = "标题"
 				Description = "描述"
-				Company = "公司"
-				Product = "产品名"
-				Copyright = "版权信息"
-				Trademark = "商标信息"
-				Version = "版本"
+				Company     = "公司"
+				Product     = "产品名"
+				Copyright   = "版权信息"
+				Trademark   = "商标信息"
+				Version     = "版本"
 			}
-			Signing = @{
-				Enabled = "启用代码签名"
+			Signing        = @{
+				Enabled     = "启用代码签名"
 				Certificate = "证书路径 (PFX)"
-				Password = "密码"
-				Thumbprint = "指纹"
-				Timestamp = "时间戳服务器"
+				Password    = "密码"
+				Thumbprint  = "指纹"
+				Timestamp   = "时间戳服务器"
 			}
 			PreprocessOnly = "仅预处理"
-			Golf = "Golf 模式"
-			Sandbox = "沙盒模式"
-			NoUpdateCheck = "跳过更新检查"
-			Quiet = "静默"
+			Golf           = "Golf 模式"
+			Sandbox        = "沙盒模式"
+			NoUpdateCheck  = "跳过更新检查"
+			Quiet          = "静默"
 		}
 		Button = @{
-			Compile = "编译"
-			Cancel = "取消"
-			LoadCfg = "加载配置"
-			SaveCfg = "保存配置"
-			SaveAsCfg = "配置另存为"
-			Browse = "浏览..."
-			DarkMode = "深色模式"
-			BGM = "背景音乐"
-			AddExport = "添加导出"
-			EditExport = "编辑导出"
+			Compile      = "编译"
+			Cancel       = "取消"
+			LoadCfg      = "加载配置"
+			SaveCfg      = "保存配置"
+			SaveAsCfg    = "配置另存为"
+			Browse       = "浏览..."
+			DarkMode     = "深色模式"
+			BGM          = "背景音乐"
+			AddExport    = "添加导出"
+			EditExport   = "编辑导出"
 			RemoveExport = "移除导出"
 		}
 		Dialog = @{
-			Compile = @{
-				Title = "选择编译文件"
+			Compile     = @{
+				Title  = "选择编译文件"
 				Filter = "powershell文件(*.ps1)|*.ps1|powershell数据文件(*.psd1)|*.psd1"
 			}
-			Output = @{
-				Title = "选择输出文件"
+			Output      = @{
+				Title  = "选择输出文件"
 				Filter = "可执行文件(*.exe)|*.exe"
 			}
-			Icon = @{
-				Title = "选择图标文件"
+			Icon        = @{
+				Title  = "选择图标文件"
 				Filter = "图标文件(*.ico)|*.ico"
 			}
 			Certificate = @{
-				Title = "选择证书文件"
+				Title  = "选择证书文件"
 				Filter = "证书文件(*.pfx)|*.pfx|所有文件(*.*)|*.*"
 			}
-			OpenCfg = @{
-				Title = "选择配置文件"
+			OpenCfg     = @{
+				Title  = "选择配置文件"
 				Filter = "配置文件(*.psccfg)|*.psccfg"
 			}
-			SaveCfg = @{
-				Title = "保存配置文件"
+			SaveCfg     = @{
+				Title  = "保存配置文件"
 				Filter = "配置文件(*.psccfg)|*.psccfg"
 			}
-			Folder = @{
+			Folder      = @{
 				Title = "选择文件夹"
 			}
 		}
 		Window = @{
 			Title = "ps12exe GUI"
 		}
-		Log = @{
-			Ready = "就绪"
-			Compiling = "编译中..."
-			Cancelled = "已取消"
-			Done = "完成"
+		Log    = @{
+			Ready         = "就绪"
+			Compiling     = "编译中..."
+			Cancelled     = "已取消"
+			Done          = "完成"
 			CfgLoadFailed = "加载配置文件失败："
 		}
-		Label = @{
+		Label  = @{
 			CfgFileHead = "配置文件："
 		}
 	}

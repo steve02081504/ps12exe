@@ -21,164 +21,164 @@
 	AskSaveCfgTitle                = "設定ファイルの保存"
 	CfgFileLabelHead               = "設定ファイル："
 	# GUI テキスト
-	GUI = @{
-		Page = @{
-			General = "一般"
-			App = "アプリ"
-			OS = "OS"
-			Build = "ビルド"
-			Core = "Core"
+	GUI                            = @{
+		Page   = @{
+			General   = "一般"
+			App       = "アプリ"
+			OS        = "OS"
+			Build     = "ビルド"
+			Core      = "Core"
 			Resources = "リソース"
-			Signing = "署名"
-			Modes = "モード"
+			Signing   = "署名"
+			Modes     = "モード"
 		}
-		Group = @{
-			IO = "入力 / 出力"
-			Target = "ターゲット"
-			Silence = "サイレント"
-			Console = "コンソール"
-			Windowed = "ウィンドウ"
-			OS = "システム"
-			Build = "ビルド"
-			ConstEval = "定数評価"
+		Group  = @{
+			IO         = "入力 / 出力"
+			Target     = "ターゲット"
+			Silence    = "サイレント"
+			Console    = "コンソール"
+			Windowed   = "ウィンドウ"
+			OS         = "システム"
+			Build      = "ビルド"
+			ConstEval  = "定数評価"
 			DllExports = "ネイティブ DLL エクスポート"
-			Core = "Core オプション"
-			Resources = "リソースパラメータ"
-			Signing = "コード署名"
-			Modes = "モード"
+			Core       = "Core オプション"
+			Resources  = "リソースパラメータ"
+			Signing    = "コード署名"
+			Modes      = "モード"
 		}
-		Field = @{
-			inputFile = "コンパイルファイル"
-			outputFile = "出力ファイル"
-			Build = @{
-				Target = "ターゲットランタイム"
-				Platform = "プラットフォーム"
-				Apartment = "スレッドモデル"
-				Culture = "カルチャ"
-				Options = "コンパイルパラメータ"
+		Field  = @{
+			inputFile      = "コンパイルファイル"
+			outputFile     = "出力ファイル"
+			Build          = @{
+				Target     = "ターゲットランタイム"
+				Platform   = "プラットフォーム"
+				Apartment  = "スレッドモデル"
+				Culture    = "カルチャ"
+				Options    = "コンパイルパラメータ"
 				KeepSource = "デバッグ情報"
-				Minify = "スクリプトを最小化"
-				TempDir = "一時ディレクトリ"
-				ConstEval = @{
+				Minify     = "スクリプトを最小化"
+				TempDir    = "一時ディレクトリ"
+				ConstEval  = @{
 					Enabled = "定数評価を有効にする"
 					Timeout = "評価タイムアウト"
 				}
 				DllExports = @{
-					Label = "ネイティブ DLL エクスポート"
-					Help = "ネイティブ DLL エクスポートの配列（スクリプトの #_DllExport と同等）：各項目は @{funcName=...; returnType=...; params=@(@{type=...;name=...})} です。Framework4.0 と x86/x64 でのみ有効です。AnyCPU はビット数を自動選択して警告します。arm64/Framework2.0/Core はエラーになります。Sandbox モードでは無効です。"
-					FuncName = "関数名"
+					Label      = "ネイティブ DLL エクスポート"
+					Help       = "ネイティブ DLL エクスポートの配列（スクリプトの #_DllExport と同等）：各項目は @{funcName=...; returnType=...; params=@(@{type=...;name=...})} です。Framework4.0 と x86/x64 でのみ有効です。AnyCPU はビット数を自動選択して警告します。arm64/Framework2.0/Core はエラーになります。Sandbox モードでは無効です。"
+					FuncName   = "関数名"
 					ReturnType = "戻り値の型"
-					Params = "パラメーター"
+					Params     = "パラメーター"
 				}
-				Core = @{
-					Backend = "バックエンド"
-					TargetOs = "ターゲット OS"
-					TargetFramework = "ターゲット フレームワーク"
-					PowerShellVersion = "PowerShell バージョン"
-					SingleFile = "単一ファイル"
-					SelfContained = "自己完結"
-					Trimmed = "トリミング"
-					TrimMode = "トリミング モード"
-					ReadyToRun = "ReadyToRun"
+				Core       = @{
+					Backend                = "バックエンド"
+					TargetOs               = "ターゲット OS"
+					TargetFramework        = "ターゲット フレームワーク"
+					PowerShellVersion      = "PowerShell バージョン"
+					SingleFile             = "単一ファイル"
+					SelfContained          = "自己完結"
+					Trimmed                = "トリミング"
+					TrimMode               = "トリミング モード"
+					ReadyToRun             = "ReadyToRun"
 					InvariantGlobalization = "インバリアント グローバリゼーション"
-					Aot = "Native AOT"
+					Aot                    = "Native AOT"
 				}
 			}
-			App = @{
-				Windowed = "ウィンドウアプリ"
-				Silence = "ストリームを抑制"
-				OutputEncoding = "Unicode 出力を強制"
-				CredentialGUI = "クレデンシャル GUI"
-				ConHost = "ConHost コンソール"
-				VisualStyles = "ビジュアルスタイル"
-				DarkMode = "ダークモード"
-				ExitOnCancel = "キャンセル時に終了"
-				DpiAware = "DPI 認識"
+			App            = @{
+				Windowed         = "ウィンドウアプリ"
+				Silence          = "ストリームを抑制"
+				OutputEncoding   = "Unicode 出力を強制"
+				CredentialGUI    = "クレデンシャル GUI"
+				ConHost          = "ConHost コンソール"
+				VisualStyles     = "ビジュアルスタイル"
+				DarkMode         = "ダークモード"
+				ExitOnCancel     = "キャンセル時に終了"
+				DpiAware         = "DPI 認識"
 				WinFormsDpiAware = "WinForms DPI 認識"
 			}
-			Os = @{
-				Admin = "管理者権限を要求"
-				ModernOS = "その他の OS 特性"
-				LongPaths = "長いパスのサポート"
+			Os             = @{
+				Admin      = "管理者権限を要求"
+				ModernOS   = "その他の OS 特性"
+				LongPaths  = "長いパスのサポート"
 				Virtualize = "仮想化を有効にする"
 			}
-			ConfigFile = "設定ファイルを生成"
-			Resources = @{
-				Icon = "アイコンファイル"
-				Title = "タイトル"
+			ConfigFile     = "設定ファイルを生成"
+			Resources      = @{
+				Icon        = "アイコンファイル"
+				Title       = "タイトル"
 				Description = "説明"
-				Company = "会社"
-				Product = "製品名"
-				Copyright = "著作権情報"
-				Trademark = "商標情報"
-				Version = "バージョン"
+				Company     = "会社"
+				Product     = "製品名"
+				Copyright   = "著作権情報"
+				Trademark   = "商標情報"
+				Version     = "バージョン"
 			}
-			Signing = @{
-				Enabled = "コード署名を有効にする"
+			Signing        = @{
+				Enabled     = "コード署名を有効にする"
 				Certificate = "証明書パス (PFX)"
-				Password = "パスワード"
-				Thumbprint = "拇印"
-				Timestamp = "タイムスタンプサーバー"
+				Password    = "パスワード"
+				Thumbprint  = "拇印"
+				Timestamp   = "タイムスタンプサーバー"
 			}
 			PreprocessOnly = "前処理のみ"
-			Golf = "Golf モード"
-			Sandbox = "Sandbox モード"
-			NoUpdateCheck = "更新チェックをスキップ"
-			Quiet = "サイレント"
+			Golf           = "Golf モード"
+			Sandbox        = "Sandbox モード"
+			NoUpdateCheck  = "更新チェックをスキップ"
+			Quiet          = "サイレント"
 		}
 		Button = @{
-			Compile = "コンパイル"
-			Cancel = "キャンセル"
-			LoadCfg = "設定を読み込む"
-			SaveCfg = "設定を保存"
-			SaveAsCfg = "設定を別名で保存"
-			Browse = "参照..."
-			DarkMode = "ダークモード"
-			BGM = "BGM"
-			AddExport = "エクスポートを追加"
-			EditExport = "エクスポートを編集"
+			Compile      = "コンパイル"
+			Cancel       = "キャンセル"
+			LoadCfg      = "設定を読み込む"
+			SaveCfg      = "設定を保存"
+			SaveAsCfg    = "設定を別名で保存"
+			Browse       = "参照..."
+			DarkMode     = "ダークモード"
+			BGM          = "BGM"
+			AddExport    = "エクスポートを追加"
+			EditExport   = "エクスポートを編集"
 			RemoveExport = "エクスポートを削除"
 		}
 		Dialog = @{
-			Compile = @{
-				Title = "コンパイルファイルを選択"
+			Compile     = @{
+				Title  = "コンパイルファイルを選択"
 				Filter = "powershellファイル(*.ps1)|*.ps1|powershellデータファイル(*.psd1)|*.psd1"
 			}
-			Output = @{
-				Title = "出力ファイルを選択"
+			Output      = @{
+				Title  = "出力ファイルを選択"
 				Filter = "実行可能ファイル(*.exe)|*.exe"
 			}
-			Icon = @{
-				Title = "アイコンファイルを選択"
+			Icon        = @{
+				Title  = "アイコンファイルを選択"
 				Filter = "アイコンファイル(*.ico)|*.ico"
 			}
 			Certificate = @{
-				Title = "証明書ファイルを選択"
+				Title  = "証明書ファイルを選択"
 				Filter = "証明書ファイル(*.pfx)|*.pfx|すべてのファイル(*.*)|*.*"
 			}
-			OpenCfg = @{
-				Title = "設定ファイルを選択"
+			OpenCfg     = @{
+				Title  = "設定ファイルを選択"
 				Filter = "設定ファイル(*.psccfg)|*.psccfg"
 			}
-			SaveCfg = @{
-				Title = "設定ファイルを保存"
+			SaveCfg     = @{
+				Title  = "設定ファイルを保存"
 				Filter = "設定ファイル(*.psccfg)|*.psccfg"
 			}
-			Folder = @{
+			Folder      = @{
 				Title = "フォルダーを選択"
 			}
 		}
 		Window = @{
 			Title = "ps12exe GUI"
 		}
-		Log = @{
-			Ready = "準備完了"
-			Compiling = "コンパイル中..."
-			Cancelled = "キャンセルされました"
-			Done = "完了"
+		Log    = @{
+			Ready         = "準備完了"
+			Compiling     = "コンパイル中..."
+			Cancelled     = "キャンセルされました"
+			Done          = "完了"
 			CfgLoadFailed = "設定ファイルの読み込みに失敗しました："
 		}
-		Label = @{
+		Label  = @{
 			CfgFileHead = "設定ファイル："
 		}
 	}

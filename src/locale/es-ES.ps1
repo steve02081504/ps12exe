@@ -21,164 +21,164 @@
 	AskSaveCfgTitle                = "Guardar archivo de configuración"
 	CfgFileLabelHead               = "Archivo de configuración:"
 	# Texto de la GUI
-	GUI = @{
-		Page = @{
-			General = "General"
-			App = "Aplicación"
-			OS = "SO"
-			Build = "Compilación"
-			Core = "Core"
+	GUI                            = @{
+		Page   = @{
+			General   = "General"
+			App       = "Aplicación"
+			OS        = "SO"
+			Build     = "Compilación"
+			Core      = "Core"
 			Resources = "Recursos"
-			Signing = "Firma"
-			Modes = "Modos"
+			Signing   = "Firma"
+			Modes     = "Modos"
 		}
-		Group = @{
-			IO = "Entrada / Salida"
-			Target = "Destino"
-			Silence = "Silencio"
-			Console = "Consola"
-			Windowed = "Ventana"
-			OS = "Sistema"
-			Build = "Compilación"
-			ConstEval = "Evaluación de constantes"
+		Group  = @{
+			IO         = "Entrada / Salida"
+			Target     = "Destino"
+			Silence    = "Silencio"
+			Console    = "Consola"
+			Windowed   = "Ventana"
+			OS         = "Sistema"
+			Build      = "Compilación"
+			ConstEval  = "Evaluación de constantes"
 			DllExports = "Exportaciones DLL nativas"
-			Core = "Opciones de Core"
-			Resources = "Parámetros de recursos"
-			Signing = "Firma de código"
-			Modes = "Modos"
+			Core       = "Opciones de Core"
+			Resources  = "Parámetros de recursos"
+			Signing    = "Firma de código"
+			Modes      = "Modos"
 		}
-		Field = @{
-			inputFile = "Archivo de compilación"
-			outputFile = "Archivo de salida"
-			Build = @{
-				Target = "Runtime de destino"
-				Platform = "Plataforma"
-				Apartment = "Modelo de hilos"
-				Culture = "Cultura"
-				Options = "Parámetros de compilación"
+		Field  = @{
+			inputFile      = "Archivo de compilación"
+			outputFile     = "Archivo de salida"
+			Build          = @{
+				Target     = "Runtime de destino"
+				Platform   = "Plataforma"
+				Apartment  = "Modelo de hilos"
+				Culture    = "Cultura"
+				Options    = "Parámetros de compilación"
 				KeepSource = "Información de depuración"
-				Minify = "Minimizar script"
-				TempDir = "Directorio temporal"
-				ConstEval = @{
+				Minify     = "Minimizar script"
+				TempDir    = "Directorio temporal"
+				ConstEval  = @{
 					Enabled = "Habilitar evaluación de constantes"
 					Timeout = "Evaluación agotada"
 				}
 				DllExports = @{
-					Label = "Exportaciones DLL nativas"
-					Help = "Matriz de exportaciones DLL nativas (equivalente a #_DllExport en el script): cada elemento es @{funcName=...; returnType=...; params=@(@{type=...;name=...})}. Solo funciona con Framework4.0 + x86/x64; AnyCPU elige la arquitectura automáticamente y avisa; arm64/Framework2.0/Core dan error. Deshabilitado en modo Sandbox."
-					FuncName = "Nombre de función"
+					Label      = "Exportaciones DLL nativas"
+					Help       = "Matriz de exportaciones DLL nativas (equivalente a #_DllExport en el script): cada elemento es @{funcName=...; returnType=...; params=@(@{type=...;name=...})}. Solo funciona con Framework4.0 + x86/x64; AnyCPU elige la arquitectura automáticamente y avisa; arm64/Framework2.0/Core dan error. Deshabilitado en modo Sandbox."
+					FuncName   = "Nombre de función"
 					ReturnType = "Tipo de retorno"
-					Params = "Parámetros"
+					Params     = "Parámetros"
 				}
-				Core = @{
-					Backend = "Backend"
-					TargetOs = "SO de destino"
-					TargetFramework = "Framework de destino"
-					PowerShellVersion = "Versión de PowerShell"
-					SingleFile = "Archivo único"
-					SelfContained = "Autocontenido"
-					Trimmed = "Recortado"
-					TrimMode = "Modo de recorte"
-					ReadyToRun = "ReadyToRun"
+				Core       = @{
+					Backend                = "Backend"
+					TargetOs               = "SO de destino"
+					TargetFramework        = "Framework de destino"
+					PowerShellVersion      = "Versión de PowerShell"
+					SingleFile             = "Archivo único"
+					SelfContained          = "Autocontenido"
+					Trimmed                = "Recortado"
+					TrimMode               = "Modo de recorte"
+					ReadyToRun             = "ReadyToRun"
 					InvariantGlobalization = "Globalización invariable"
-					Aot = "Native AOT"
+					Aot                    = "Native AOT"
 				}
 			}
-			App = @{
-				Windowed = "Aplicación de ventana"
-				Silence = "Silenciar flujos"
-				OutputEncoding = "Forzar salida Unicode"
-				CredentialGUI = "GUI de credenciales"
-				ConHost = "Consola ConHost"
-				VisualStyles = "Estilos visuales"
-				DarkMode = "Modo oscuro"
-				ExitOnCancel = "Salir al cancelar"
-				DpiAware = "DPI consciente"
+			App            = @{
+				Windowed         = "Aplicación de ventana"
+				Silence          = "Silenciar flujos"
+				OutputEncoding   = "Forzar salida Unicode"
+				CredentialGUI    = "GUI de credenciales"
+				ConHost          = "Consola ConHost"
+				VisualStyles     = "Estilos visuales"
+				DarkMode         = "Modo oscuro"
+				ExitOnCancel     = "Salir al cancelar"
+				DpiAware         = "DPI consciente"
 				WinFormsDpiAware = "WinForms DPI consciente"
 			}
-			Os = @{
-				Admin = "Solicitar administrador"
-				ModernOS = "Más funciones del sistema"
-				LongPaths = "Soporte de rutas largas"
+			Os             = @{
+				Admin      = "Solicitar administrador"
+				ModernOS   = "Más funciones del sistema"
+				LongPaths  = "Soporte de rutas largas"
 				Virtualize = "Habilitar virtualización"
 			}
-			ConfigFile = "Generar archivo de configuración"
-			Resources = @{
-				Icon = "Archivo de icono"
-				Title = "Título"
+			ConfigFile     = "Generar archivo de configuración"
+			Resources      = @{
+				Icon        = "Archivo de icono"
+				Title       = "Título"
 				Description = "Descripción"
-				Company = "Compañía"
-				Product = "Nombre del producto"
-				Copyright = "Información de derechos de autor"
-				Trademark = "Información de marca registrada"
-				Version = "Versión"
+				Company     = "Compañía"
+				Product     = "Nombre del producto"
+				Copyright   = "Información de derechos de autor"
+				Trademark   = "Información de marca registrada"
+				Version     = "Versión"
 			}
-			Signing = @{
-				Enabled = "Habilitar firma de código"
+			Signing        = @{
+				Enabled     = "Habilitar firma de código"
 				Certificate = "Ruta del certificado (PFX)"
-				Password = "Contraseña"
-				Thumbprint = "Huella digital"
-				Timestamp = "Servidor de marca de tiempo"
+				Password    = "Contraseña"
+				Thumbprint  = "Huella digital"
+				Timestamp   = "Servidor de marca de tiempo"
 			}
 			PreprocessOnly = "Solo preprocesar"
-			Golf = "Modo golf"
-			Sandbox = "Modo Sandbox"
-			NoUpdateCheck = "Omitir comprobación de actualizaciones"
-			Quiet = "Silencioso"
+			Golf           = "Modo golf"
+			Sandbox        = "Modo Sandbox"
+			NoUpdateCheck  = "Omitir comprobación de actualizaciones"
+			Quiet          = "Silencioso"
 		}
 		Button = @{
-			Compile = "Compilar"
-			Cancel = "Cancelar"
-			LoadCfg = "Cargar configuración"
-			SaveCfg = "Guardar configuración"
-			SaveAsCfg = "Guardar configuración como"
-			Browse = "Examinar..."
-			DarkMode = "Modo oscuro"
-			BGM = "Música de fondo"
-			AddExport = "Agregar exportación"
-			EditExport = "Editar exportación"
+			Compile      = "Compilar"
+			Cancel       = "Cancelar"
+			LoadCfg      = "Cargar configuración"
+			SaveCfg      = "Guardar configuración"
+			SaveAsCfg    = "Guardar configuración como"
+			Browse       = "Examinar..."
+			DarkMode     = "Modo oscuro"
+			BGM          = "Música de fondo"
+			AddExport    = "Agregar exportación"
+			EditExport   = "Editar exportación"
 			RemoveExport = "Eliminar exportación"
 		}
 		Dialog = @{
-			Compile = @{
-				Title = "Seleccionar archivo de compilación"
+			Compile     = @{
+				Title  = "Seleccionar archivo de compilación"
 				Filter = "Archivos de powershell(*.ps1)|*.ps1|Archivos de datos de powershell(*.psd1)|*.psd1"
 			}
-			Output = @{
-				Title = "Seleccionar archivo de salida"
+			Output      = @{
+				Title  = "Seleccionar archivo de salida"
 				Filter = "Archivos ejecutables(*.exe)|*.exe"
 			}
-			Icon = @{
-				Title = "Seleccionar archivo de icono"
+			Icon        = @{
+				Title  = "Seleccionar archivo de icono"
 				Filter = "Archivos de icono(*.ico)|*.ico"
 			}
 			Certificate = @{
-				Title = "Seleccionar archivo de certificado"
+				Title  = "Seleccionar archivo de certificado"
 				Filter = "Archivos de certificado(*.pfx)|*.pfx|Todos los archivos(*.*)|*.*"
 			}
-			OpenCfg = @{
-				Title = "Seleccionar archivo de configuración"
+			OpenCfg     = @{
+				Title  = "Seleccionar archivo de configuración"
 				Filter = "Archivos de configuración(*.psccfg)|*.psccfg"
 			}
-			SaveCfg = @{
-				Title = "Guardar archivo de configuración"
+			SaveCfg     = @{
+				Title  = "Guardar archivo de configuración"
 				Filter = "Archivos de configuración(*.psccfg)|*.psccfg"
 			}
-			Folder = @{
+			Folder      = @{
 				Title = "Seleccionar carpeta"
 			}
 		}
 		Window = @{
 			Title = "ps12exe GUI"
 		}
-		Log = @{
-			Ready = "Listo"
-			Compiling = "Compilando..."
-			Cancelled = "Cancelado"
-			Done = "Hecho"
+		Log    = @{
+			Ready         = "Listo"
+			Compiling     = "Compilando..."
+			Cancelled     = "Cancelado"
+			Done          = "Hecho"
 			CfgLoadFailed = "No se pudo cargar el archivo de configuración: "
 		}
-		Label = @{
+		Label  = @{
 			CfgFileHead = "Archivo de configuración:"
 		}
 	}

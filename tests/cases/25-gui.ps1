@@ -192,14 +192,14 @@ Add-Test @{
 				}
 
 				$results += @{
-					Locale      = $file.BaseName
-					TabPages    = $Script:refs.TabsControl.TabPages.Count
-					Fields      = $Script:FieldControls.Count
-					Groups      = $groupBoxes.Count
-					Clip        = $clip
-					Overlap     = $overlap
-					Collapse    = $collapse
-					Unreachable = $unreachable
+					Locale       = $file.BaseName
+					TabPages     = $Script:refs.TabsControl.TabPages.Count
+					Fields       = $Script:FieldControls.Count
+					Groups       = $groupBoxes.Count
+					Clip         = $clip
+					Overlap      = $overlap
+					Collapse     = $collapse
+					Unreachable  = $unreachable
 					PageMismatch = $pageMismatch
 				}
 				$form.Dispose()
@@ -254,14 +254,14 @@ Add-Test @{
 				$palette = Get-GUIThemePalette -Dark $dark
 				$key = if ($dark) { 'Dark' } else { 'Light' }
 				$themes[$key] = @{
-					FormBack   = $form.BackColor.ToArgb()
-					WindowBack = (ConvertTo-GUIColor $palette.WindowBack).ToArgb()
-					LogBack    = $Script:refs.LogTextBox.BackColor.ToArgb()
-					PaletteLog = (ConvertTo-GUIColor $palette.LogBack).ToArgb()
-					InputBack  = (Get-FieldControl 'inputFile').BackColor.ToArgb()
-					Accent     = (ConvertTo-GUIColor $palette.Accent).ToArgb()
+					FormBack    = $form.BackColor.ToArgb()
+					WindowBack  = (ConvertTo-GUIColor $palette.WindowBack).ToArgb()
+					LogBack     = $Script:refs.LogTextBox.BackColor.ToArgb()
+					PaletteLog  = (ConvertTo-GUIColor $palette.LogBack).ToArgb()
+					InputBack   = (Get-FieldControl 'inputFile').BackColor.ToArgb()
+					Accent      = (ConvertTo-GUIColor $palette.Accent).ToArgb()
 					CompileBack = $Script:refs.CompileButton.BackColor.ToArgb()
-					DrawMode   = $Script:refs.TabsControl.DrawMode.ToString()
+					DrawMode    = $Script:refs.TabsControl.DrawMode.ToString()
 				}
 			}
 			$form.Dispose()
@@ -319,12 +319,12 @@ Add-Test @{
 			$afterSystemBack = $Script:DarkMode
 
 			@{
-				AfterManualSameSystem   = $afterManualSameSystem
-				OverrideAfterManual     = $overrideAfterManual
-				AfterSecondTick         = $afterSecondTick
-				AfterSystemChange       = $afterSystemChange
+				AfterManualSameSystem     = $afterManualSameSystem
+				OverrideAfterManual       = $overrideAfterManual
+				AfterSecondTick           = $afterSecondTick
+				AfterSystemChange         = $afterSystemChange
 				OverrideAfterSystemChange = $overrideAfterSystemChange
-				AfterSystemBack         = $afterSystemBack
+				AfterSystemBack           = $afterSystemBack
 			}
 		}
 
