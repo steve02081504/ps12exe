@@ -606,7 +606,7 @@ PS2EXE 编译 hello world 更快，因为它只是 Windows 内置 .NET Framework
 
 | 编译器包               | 解压后   | 压缩后  |
 | ---------------------- | -------- | ------- |
-| ps12exe（当前 master） | ~1.64 MB | ~629 KB |
+| ps12exe（当前 master） | ~1.79 MB | ~649 KB |
 | PS2EXE 1.0.18          | ~171 KB  | ~46 KB  |
 
 ps12exe 的模块更大，因为它是无外部依赖的纯脚本编译器，随附精简过的 [AsmResolver](https://github.com/Washi1337/AsmResolver) 二进制、7 种本地化以及纯脚本 GUI；而 PS2EXE 几乎不带任何东西，直接复用 Windows 内置的 .NET Framework 编译器。

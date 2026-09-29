@@ -606,7 +606,7 @@ El compilador en sí se distribuye como módulo de PowerShell:
 
 | Paquete del compilador  | Descomprimido | Comprimido |
 | ----------------------- | ------------- | ---------- |
-| ps12exe (master actual) | ~1,64 MB      | ~629 KB    |
+| ps12exe (master actual) | ~1,79 MB      | ~649 KB    |
 | PS2EXE 1.0.18           | ~171 KB       | ~46 KB     |
 
 El módulo de ps12exe es más grande porque es un compilador de script puro y sin dependencias que incluye binarios [AsmResolver](https://github.com/Washi1337/AsmResolver) recortados, 7 localizaciones y una GUI de script puro; PS2EXE casi no incluye nada y se apoya en el compilador de .NET Framework integrado en Windows.

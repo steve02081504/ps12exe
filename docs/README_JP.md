@@ -604,7 +604,7 @@ PS2EXE が hello world を速くコンパイルできるのは、Windows 内蔵�
 
 | コンパイラパッケージ     | 展開後   | 圧縮後  |
 | ------------------------ | -------- | ------- |
-| ps12exe（現在の master） | ~1.64 MB | ~629 KB |
+| ps12exe（現在の master） | ~1.79 MB | ~649 KB |
 | PS2EXE 1.0.18            | ~171 KB  | ~46 KB  |
 
 ps12exe のモジュールが大きいのは、依存関係のない純スクリプトコンパイラであり、トリミング済みの [AsmResolver](https://github.com/Washi1337/AsmResolver) バイナリ、7 言語のローカライズ、純スクリプト GUI を同梱しているためです。PS2EXE はほとんど同梱せず、Windows 内蔵の .NET Framework コンパイラに依存しています。
