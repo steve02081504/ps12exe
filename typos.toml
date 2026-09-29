@@ -5,15 +5,10 @@
 extend-exclude = [
 	# 非英语本地化文件与翻译文档由译者维护，英语拼写检查不适用
 	"/src/locale/fr-FR.ps1",
-	"/src/locale/fr-FR.fbs",
 	"/src/locale/es-ES.ps1",
-	"/src/locale/es-ES.fbs",
 	"/src/locale/ja-JP.ps1",
-	"/src/locale/ja-JP.fbs",
 	"/src/locale/hi-IN.ps1",
-	"/src/locale/hi-IN.fbs",
 	"/src/locale/zh-CN.ps1",
-	"/src/locale/zh-CN.fbs",
 	"/docs/README_CN.md",
 	"/docs/README_ES.md",
 	"/docs/README_FR.md",

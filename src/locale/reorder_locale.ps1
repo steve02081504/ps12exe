@@ -13,7 +13,7 @@ $RefKeyOrder = @(
 	'VSCodeExtensionUninstalling', 'VSCodeExtensionUninstallFailed',
 	'AgentSkillInstalling', 'AgentSkillInstallFailed',
 	'AgentSkillUninstalling', 'AgentSkillUninstallFailed',
-	'ErrorHead', 'CompileResult', 'DefaultResult', 'AskSaveCfg', 'AskSaveCfgTitle', 'CfgFileLabelHead',
+	'ErrorHead', 'CompileResult', 'DefaultResult', 'AskSaveCfg', 'AskSaveCfgTitle', 'CfgFileLabelHead', 'GUI',
 	'ServerStarted', 'ServerStopped', 'ServerStartFailed', 'TryRunAsRoot', 'ServerListening', 'ExitServerTip',
 	'ConsoleHelpData', 'GUIHelpData', 'IntegrationHelpData', 'WebServerHelpData', 'exe21spHelpData',
 	'CompilingI18nData', 'WebServerI18nData', 'InteractI18nData', 'exe21spInteractI18nData', 'exe21spI18nData'

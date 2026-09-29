@@ -46,7 +46,8 @@ $LocalizeDir = "$PSScriptRoot/locale"
 
 &$LoadLocaleData $Locale
 if (!(&$CheckLocaleData)) {
-	$LocalizeList = Get-ChildItem $LocalizeDir | Where-Object { $_.Name -like '*.fbs' } | ForEach-Object { $_.BaseName }
+	# 只枚举真正的 locale 文件（如 en-US、zh-Hant-TW），排除 reorder_locale.ps1 等维护脚本。
+	$LocalizeList = Get-ChildItem $LocalizeDir | Where-Object { $_.Name -match '^[A-Za-z]{2,3}(-[A-Za-z0-9]+)*\.ps1$' } | ForEach-Object { $_.BaseName }
 	$LocalizeHead = $Locale.Split('-')[0]
 	$SimilarLocalize = $LocalizeList | Where-Object { $_.StartsWith($LocalizeHead) }
 	if ($LocalizeHead -ne $Locale) { &$FailedLoadLocaleData $Locale }

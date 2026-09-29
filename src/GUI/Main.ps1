@@ -100,9 +100,9 @@ param(
 #_else
 	#_require ps12exe
 	#_pragma App.Windowed
-	#_pragma Resources.iconFile $PSScriptRoot/../../img/icon.ico
-	#_pragma Resources.title ps12exeGUI
-	#_pragma Resources.description 'A super cool GUI for compile powershell scripts'
+	#_pragma Resources.Icon $PSScriptRoot/../../img/icon.ico
+	#_pragma Resources.Title ps12exeGUI
+	#_pragma Resources.Description 'A super cool GUI for compile powershell scripts'
 	#_!!if (!(Test-Path -LiteralPath "Registry::HKEY_CURRENT_USER\Software\Classes\ps12exeGUI.psccfg")){
 	#_!!	Set-ps12exeIntegration 1
 	#_!!}

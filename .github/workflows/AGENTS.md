@@ -51,7 +51,7 @@ GitHub 托管 Windows runner 默认开实时防护。本流水线会拉起 ~百�
 
 ### 6. 发布包只保留运行时文件
 
-`Publish.ps1` 先递归删掉所有 `.` 开头的文件/目录（`.git`/`.github`/`.esh`/`.vscode`/`src/.subrepo` 等）、`docs/`，再按 `$devOnlyPaths` 删开发期文件。判断某文件是否该删：模块运行时入口只有 `ps12exe.psm1`，它点源的 `ps12exe.ps1`/`exe21sp.ps1` 及其 `src/**` 依赖链是唯一真源；只要不被这条链读取（`tests/`、`AGENTS.md`、`eslint.config.mjs`、`src/csdn_get_away.txt`、locale 维护脚本等）就该删。`src/locale/*.fbs` 要保留——`LocaleLoader`/`LocaleArgCompleter` 运行时会枚举它。改完后可靠验证：`git archive HEAD | tar -x -C <tmp>` 复制一份，跑一遍同样的删除逻辑，`Import-Module` 该副本并执行 `ps12exe -help`、`exe21sp -help`。
+`Publish.ps1` 先递归删掉所有 `.` 开头的文件/目录（`.git`/`.github`/`.esh`/`.vscode`/`src/.subrepo` 等）、`docs/`，再按 `$devOnlyPaths` 删开发期文件。判断某文件是否该删：模块运行时入口只有 `ps12exe.psm1`，它点源的 `ps12exe.ps1`/`exe21sp.ps1` 及其 `src/**` 依赖链是唯一真源；只要不被这条链读取（`tests/`、`AGENTS.md`、`eslint.config.mjs`、`src/csdn_get_away.txt`、locale 维护脚本等）就该删。`src/locale/*.ps1` 要保留——`LocaleLoader`/`LocaleArgCompleter` 运行时会枚举它（旧的 `*.fbs` 布局已废弃删除）。改完后可靠验证：`git archive HEAD | tar -x -C <tmp>` 复制一份，跑一遍同样的删除逻辑，`Import-Module` 该副本并执行 `ps12exe -help`、`exe21sp -help`。
 
 ### 7. 发布作业的健壮性与补发
 

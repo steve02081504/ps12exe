@@ -35,7 +35,7 @@ Add-Test @{
 		Assert-True ($missing.Count -eq 0) ("PowerShell/C# 源缺少 UTF-8 BOM：`n" + ($missing -join "`n"))
 
 		$unexpected = @()
-		foreach ($f in (Get-RepoFiles -RepoRoot $ctx.RepoRoot -Extensions @('.md', '.json', '.yaml', '.yml', '.fbs', '.txt', '.html'))) {
+		foreach ($f in (Get-RepoFiles -RepoRoot $ctx.RepoRoot -Extensions @('.md', '.json', '.yaml', '.yml', '.txt', '.html'))) {
 			$b = [System.IO.File]::ReadAllBytes($f.FullName)
 			if ($b.Length -ge 3 -and $b[0] -eq 0xEF -and $b[1] -eq 0xBB -and $b[2] -eq 0xBF) {
 				$unexpected += $f.FullName.Substring($ctx.RepoRoot.Length + 1)

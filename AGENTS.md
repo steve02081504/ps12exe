@@ -4,6 +4,7 @@
 
 - `ps12exe.ps1`：CLI 入口与参数解析；公开的对象式参数在此适配为内部规范变量。
 - `src/`：编译器与运行时（`CoreCompiler.ps1` + `CoreBundledCompiler.ps1` + 共用辅助 `CoreProject.ps1`、`CodeDomCompiler.ps1`、`TinySharpCompiler.ps1`、`DllExportCompiler.ps1`、`BuildFrame.ps1`、`Lzma.ps1`（打包时按需启用 LZMA）、`programFrames/*.cs`）、GUI、WebServer、Interact、locale。
+- `src/GUI/`：ps12exeGUI 由 `Schema.ps1`（字段↔参数 schema）动态生成，界面文案放在各语言 `src/locale/<lang>.ps1` 的 `GUI`；新增参数需同步 `Schema.ps1` + `GUI` + locale `Usage`/`PrarmsData` + 各语言 README 参数表。细节见 [docs/dev/gui-internals.md](docs/dev/gui-internals.md)。
 - `src/Integration/`：右键菜单 / Agent Skill / VS Code 扩展三套集成，各为独立脚本（均不导出为命令），仅导出总入口 `Set-ps12exeIntegration` 直接调用它们。
 - `src/AgentSkill/SKILL.md`：安装到 `~/.agents/skills/ps12exe/` 的通用 Agent Skill 模板，也是 VS Code 扩展内置 skill 的唯一源（扩展构建/测试前由 `src/.subrepo/vscode-plug/ps12exe/scripts/sync-skill.mjs` 复制过去，扩展内那份已 gitignore）。
 - `src/locale/<lang>.ps1`：各语言界面文案与帮助数据。

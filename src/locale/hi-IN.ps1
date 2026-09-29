@@ -20,6 +20,168 @@
 	AskSaveCfg                     = "क्या आप कॉन्फ़िगरेशन फ़ाइल को सहेजना चाहते हैं?"
 	AskSaveCfgTitle                = "कॉन्फ़िगरेशन फ़ाइल सहेजें"
 	CfgFileLabelHead               = "कॉन्फ़िगरेशन फ़ाइल:"
+	# GUI पाठ
+	GUI = @{
+		Page = @{
+			General = "सामान्य"
+			App = "ऐप"
+			OS = "OS"
+			Build = "बिल्ड"
+			Core = "Core"
+			Resources = "संसाधन"
+			Signing = "हस्ताक्षर"
+			Modes = "मोड"
+		}
+		Group = @{
+			IO = "इनपुट / आउटपुट"
+			Target = "लक्ष्य"
+			Silence = "शांत"
+			Console = "कंसोल"
+			Windowed = "विंडो"
+			OS = "सिस्टम"
+			Build = "बिल्ड"
+			ConstEval = "स्थिरांक मूल्यांकन"
+			DllExports = "नेटिव DLL निर्यात"
+			Core = "Core विकल्प"
+			Resources = "संसाधन पैरामीटर"
+			Signing = "कोड हस्ताक्षर"
+			Modes = "मोड"
+		}
+		Field = @{
+			inputFile = "कंपाइल फ़ाइल"
+			outputFile = "आउटपुट फ़ाइल"
+			Build = @{
+				Target = "लक्ष्य रनटाइम"
+				Platform = "प्लेटफ़ॉर्म"
+				Apartment = "थ्रेड मॉडल"
+				Culture = "संस्कृति"
+				Options = "कंपाइल पैरामीटर"
+				KeepSource = "डिबग जानकारी"
+				Minify = "स्क्रिप्ट को कम करें"
+				TempDir = "अस्थायी डिरेक्टरी"
+				ConstEval = @{
+					Enabled = "स्थिरांक मूल्यांकन सक्षम करें"
+					Timeout = "मूल्यांकन समय समाप्त"
+				}
+				DllExports = @{
+					Label = "नेटिव DLL निर्यात"
+					Help = "नेटिव DLL निर्यात सरणी (स्क्रिप्ट में #_DllExport के समान): प्रत्येक आइटम @{funcName=...; returnType=...; params=@(@{type=...;name=...})} है। केवल Framework4.0 + x86/x64 के साथ काम करता है; AnyCPU स्वतः बिटनेस चुनता है और चेतावनी देता है; arm64/Framework2.0/Core त्रुटि देते हैं। Sandbox मोड में अक्षम।"
+					FuncName = "फ़ंक्शन नाम"
+					ReturnType = "रिटर्न प्रकार"
+					Params = "पैरामीटर"
+				}
+				Core = @{
+					Backend = "बैकएंड"
+					TargetOs = "लक्ष्य OS"
+					TargetFramework = "लक्ष्य फ्रेमवर्क"
+					PowerShellVersion = "PowerShell संस्करण"
+					SingleFile = "एकल फ़ाइल"
+					SelfContained = "स्व-निहित"
+					Trimmed = "ट्रिम किया गया"
+					TrimMode = "ट्रिम मोड"
+					ReadyToRun = "ReadyToRun"
+					InvariantGlobalization = "इनवेरिएंट ग्लोबलाइज़ेशन"
+					Aot = "Native AOT"
+				}
+			}
+			App = @{
+				Windowed = "विंडो ऐप्लिकेशन"
+				Silence = "स्ट्रीम शांत करें"
+				OutputEncoding = "Unicode आउटपुट बाध्य करें"
+				CredentialGUI = "क्रेडेंशियल GUI"
+				ConHost = "ConHost कंसोल"
+				VisualStyles = "विजुअल स्टाइल"
+				DarkMode = "डार्क मोड"
+				ExitOnCancel = "रद्द करने पर बंद करें"
+				DpiAware = "DPI जागरूक"
+				WinFormsDpiAware = "WinForms DPI जागरूक"
+			}
+			Os = @{
+				Admin = "व्यवस्थापक अनुरोध"
+				ModernOS = "अधिक OS सुविधाएँ"
+				LongPaths = "लंबी पथ समर्थन"
+				Virtualize = "वर्चुअलाइजेशन सक्षम करें"
+			}
+			ConfigFile = "कॉन्फ़िगरेशन फ़ाइल उत्पन्न करें"
+			Resources = @{
+				Icon = "आइकन फ़ाइल"
+				Title = "शीर्षक"
+				Description = "विवरण"
+				Company = "कंपनी"
+				Product = "उत्पाद का नाम"
+				Copyright = "कॉपीराइट जानकारी"
+				Trademark = "ट्रेडमार्क जानकारी"
+				Version = "संस्करण"
+			}
+			Signing = @{
+				Enabled = "कोड हस्ताक्षर सक्षम करें"
+				Certificate = "प्रमाणपत्र पथ (PFX)"
+				Password = "पासवर्ड"
+				Thumbprint = "अंगूठे का निशान"
+				Timestamp = "टाइमस्टैम्प सर्वर"
+			}
+			PreprocessOnly = "केवल प्रीप्रोसेस"
+			Golf = "Golf मोड"
+			Sandbox = "Sandbox मोड"
+			NoUpdateCheck = "अद्यतन जाँच छोड़ें"
+			Quiet = "शांत"
+		}
+		Button = @{
+			Compile = "कंपाइल"
+			Cancel = "रद्द करें"
+			LoadCfg = "कॉन्फ़िगरेशन लोड करें"
+			SaveCfg = "कॉन्फ़िगरेशन सहेजें"
+			SaveAsCfg = "कॉन्फ़िगरेशन को अलग से सहेजें"
+			Browse = "ब्राउज़ करें..."
+			DarkMode = "डार्क मोड"
+			BGM = "पृष्ठभूमि संगीत"
+			AddExport = "निर्यात जोड़ें"
+			EditExport = "निर्यात संपादित करें"
+			RemoveExport = "निर्यात हटाएँ"
+		}
+		Dialog = @{
+			Compile = @{
+				Title = "कंपाइल फ़ाइल चुनें"
+				Filter = "पॉवरशेल फ़ाइलें (*.ps1)|*.ps1|पॉवरशेल डेटा फ़ाइलें (*.psd1)|*.psd1"
+			}
+			Output = @{
+				Title = "आउटपुट फ़ाइल चुनें"
+				Filter = "एक्ज़िक्यूटेबल फ़ाइलें (*.exe)|*.exe"
+			}
+			Icon = @{
+				Title = "आइकन फ़ाइल चुनें"
+				Filter = "आइकन फ़ाइलें (*.ico)|*.ico"
+			}
+			Certificate = @{
+				Title = "प्रमाणपत्र फ़ाइल चुनें"
+				Filter = "प्रमाणपत्र फ़ाइलें (*.pfx)|*.pfx|सभी फ़ाइलें (*.*)|*.*"
+			}
+			OpenCfg = @{
+				Title = "कॉन्फ़िगरेशन फ़ाइल चुनें"
+				Filter = "कॉन्फ़िगरेशन फ़ाइल (*.psccfg)|*.psccfg"
+			}
+			SaveCfg = @{
+				Title = "कॉन्फ़िगरेशन फ़ाइल सहेजें"
+				Filter = "कॉन्फ़िगरेशन फ़ाइल (*.psccfg)|*.psccfg"
+			}
+			Folder = @{
+				Title = "फ़ोल्डर चुनें"
+			}
+		}
+		Window = @{
+			Title = "ps12exe GUI"
+		}
+		Log = @{
+			Ready = "तैयार"
+			Compiling = "संकलन हो रहा है..."
+			Cancelled = "रद्द किया गया"
+			Done = "पूर्ण"
+			CfgLoadFailed = "कॉन्फ़िगरेशन फ़ाइल लोड करने में विफल: "
+		}
+		Label = @{
+			CfgFileHead = "कॉन्फ़िगरेशन फ़ाइल:"
+		}
+	}
 	# Console
 	ServerStarted                  = "HTTP सर्वर शुरू हो गया है!"
 	ServerStopped                  = "HTTP सर्वर बंद हो गया है!"
@@ -38,7 +200,8 @@
 	Culture='<संस्कृति>'; Options='<विकल्प>'; KeepSource=`$true; Minify={<स्क्रिप्टब्लॉक>}; TempDir='<फ़ोल्डर>';
 	ConstEval=@{Enabled=`$true; Timeout=`$true};
 	Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>';
-	SingleFile=`$true; SelfContained=`$true; Trimmed=`$true; TrimMode='partial'|'full'; ReadyToRun=`$true; InvariantGlobalization=`$true; Aot=`$true}}]
+	SingleFile=`$true; SelfContained=`$true; Trimmed=`$true; TrimMode='partial'|'full'; ReadyToRun=`$true; InvariantGlobalization=`$true; Aot=`$true};
+	DllExports=@(@{funcName='<फ़ंक्शन नाम>'; returnType='<प्रकार>'; params=@(@{type='<प्रकार>';name='<पैरामीटर नाम>'})})}]
 	[-Resources @{Icon='<फ़ाइल नाम|url>'; Title='<शीर्षक>'; Description='<सारांश>'; Company='<कंपनी>';
 	Product='<उत्पाद>'; Copyright='<कॉपीराइट>'; Trademark='<नामकरण>'; Version='<संस्करण>'}]
 	[-Signing @{Certificate='<PFX फ़ाइल पथ>'; Password='<PFX पासवर्ड>'; Thumbprint='<प्रमाणपत्र फ़िंगरप्रिंट>'; Timestamp='<समय चिह्न सर्वर>'}]
@@ -92,6 +255,7 @@
 					InvariantGlobalization = "इनवेरिएंट ग्लोबलाइज़ेशन का उपयोग करें, स्व-निहित बिल्ड से ICU लाइब्रेरी हटाएँ (केवल Bundled बैकएंड)। संस्कृति-विशिष्ट स्वरूपण टूट सकता है।"
 					Aot                    = "JIT-रहित बाइनरी के लिए प्रायोगिक Native AOT संकलन (केवल Bundled बैकएंड; ``SelfContained`` आवश्यक)। PowerShell द्वारा उपयोग किया जाने वाला भारी प्रतिबिंब कुछ स्क्रिप्ट तोड़ सकता है।"
 				}
+				DllExports = "नेटिव DLL निर्यात सरणी (स्क्रिप्ट में #_DllExport के समान): प्रत्येक आइटम @{funcName=...; returnType=...; params=@(@{type=...;name=...})} है। केवल Framework4.0 + x86/x64 के साथ काम करता है; AnyCPU स्वतः बिटनेस चुनता है और चेतावनी देता है; arm64/Framework2.0/Core त्रुटि देते हैं। Sandbox मोड में अक्षम।"
 			}
 			Resources      = [ordered]@{
 				Icon        = "एक्सीक्यूटेबल का आइकन; एक फ़ाइल पथ या URL हो सकता है। .exe/.dll के लिए ,<index> जोड़कर संसाधन आइकन चुनें (डिफ़ॉल्ट 0), जैसे shell32.dll,3।"

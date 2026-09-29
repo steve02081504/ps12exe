@@ -147,7 +147,8 @@ help       : Shows this help message.
         [-Os @{Admin=$true; ModernOS=$true; LongPaths=$true; Virtualize=$true}]
         [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
         Culture='<culture>'; Options='<options>'; KeepSource=$true; Minify={<scriptblock>}; TempDir='<directory>';
-        Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>'; SingleFile=$true; SelfContained=$true; Trimmed=$true; TrimMode='partial'|'full'; ReadyToRun=$true; InvariantGlobalization=$true; Aot=$true}}]
+        Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>'; SingleFile=$true; SelfContained=$true; Trimmed=$true; TrimMode='partial'|'full'; ReadyToRun=$true; InvariantGlobalization=$true; Aot=$true};
+        DllExports=@(@{funcName='<function name>'; returnType='<type>'; params=@(@{type='<type>';name='<param name>'})})}]
         [-Resources @{Icon='<file|url>'; Title='<title>'; Description='<description>'; Company='<company>';
         Product='<product>'; Copyright='<copyright>'; Trademark='<trademark>'; Version='<version>'}]
         [-Signing @{Certificate='<PFX path>'; Password='<password>'; Thumbprint='<thumbprint>'; Timestamp='<timestamp server>'}]
@@ -196,6 +197,7 @@ Build            : A hashtable of build options. Supported keys:
                                       ReadyToRun             : Pre-compile assemblies for faster startup (Bundled only).
                                       InvariantGlobalization : Use invariant globalization, removing ICU libraries from self-contained builds (Bundled only).
                                       Aot                    : Experimental Native AOT compilation (Bundled only; requires SelfContained). Heavy reflection used by PowerShell may break some scripts.
+                   DllExports       : Native DLL export array (equivalent to #_DllExport in the script): each item is @{funcName=...; returnType=...; params=@(@{type=...;name=...})}. Only Framework4.0 plus x86/x64; AnyCPU picks the bitness automatically and warns; arm64/Framework2.0/Core error out. Disabled in Sandbox mode.
 Resources        : A hashtable of version resources embedded into the executable (Icon, Title, Description, Company, Product, Copyright, Trademark, Version). Icon can be a file path or URL; for .exe/.dll append ,<index> to pick a resource icon (default 0), e.g. shell32.dll,3.
 Signing          : A hashtable of code signing options (Certificate, Password, Thumbprint, Timestamp). Either Certificate or Thumbprint must be specified.
 PreprocessOnly   : Preprocess the input script and return it without compiling.

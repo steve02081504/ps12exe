@@ -147,7 +147,8 @@ help       : Mostrar esta información de ayuda.
         [-Os @{Admin=$true; ModernOS=$true; LongPaths=$true; Virtualize=$true}]
         [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
         Culture='<cultura>'; Options='<opciones>'; KeepSource=$true; Minify={<scriptblock>}; TempDir='<carpeta>';
-        Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>'; SingleFile=$true; SelfContained=$true; Trimmed=$true; TrimMode='partial'|'full'; ReadyToRun=$true; InvariantGlobalization=$true; Aot=$true}}]
+        Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>'; SingleFile=$true; SelfContained=$true; Trimmed=$true; TrimMode='partial'|'full'; ReadyToRun=$true; InvariantGlobalization=$true; Aot=$true};
+        DllExports=@(@{funcName='<nombre de función>'; returnType='<tipo>'; params=@(@{type='<tipo>';name='<nombre del parámetro>'})})}]
         [-Resources @{Icon='<nombre de archivo|url>'; Title='<título>'; Description='<descripción>'; Company='<compañía>';
         Product='<producto>'; Copyright='<derechos de autor>'; Trademark='<marca>'; Version='<versión>'}]
         [-Signing @{Certificate='<ruta del archivo PFX>'; Password='<contraseña PFX>'; Thumbprint='<huella digital del certificado>'; Timestamp='<servidor de marca de tiempo>'}]
@@ -196,6 +197,7 @@ Build            : Una tabla hash de opciones de compilación. Claves admitidas:
                                       ReadyToRun             : Precompilar los ensamblados para un inicio más rápido (sólo Bundled).
                                       InvariantGlobalization : Usar globalización invariable, eliminando las bibliotecas ICU de las compilaciones autocontenidas (sólo Bundled).
                                       Aot                    : Compilación Native AOT experimental (sólo Bundled; requiere SelfContained). El uso intensivo de reflexión de PowerShell puede romper algunos scripts.
+                   DllExports       : Matriz de exportaciones DLL nativas (equivalente a #_DllExport en el script): cada elemento es @{funcName=...; returnType=...; params=@(@{type=...;name=...})}. Solo funciona con Framework4.0 + x86/x64; AnyCPU elige la arquitectura automáticamente y avisa; arm64/Framework2.0/Core dan error. Deshabilitado en modo Sandbox.
 Resources        : Una tabla hash de recursos de versión incrustados en el ejecutable (Icon, Title, Description, Company, Product, Copyright, Trademark, Version). Icon puede ser una ruta de archivo o URL. En .exe/.dll, añada ,<índice> para elegir un icono de recurso (por defecto 0), p. ej. shell32.dll,3.
 Signing          : Una tabla hash de opciones de firma de código (Certificate, Password, Thumbprint, Timestamp). Se debe especificar Certificate o Thumbprint.
 PreprocessOnly   : Preprocesa el script de entrada y devuélvelo sin compilar.

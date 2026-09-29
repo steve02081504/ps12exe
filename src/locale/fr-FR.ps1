@@ -20,6 +20,168 @@
 	AskSaveCfg                     = "Faut-il enregistrer le fichier de configuration ?"
 	AskSaveCfgTitle                = "Enregistrer le fichier de configuration"
 	CfgFileLabelHead               = "Fichier de configuration :"
+	# Textes de l'interface
+	GUI = @{
+		Page = @{
+			General = "Général"
+			App = "Application"
+			OS = "OS"
+			Build = "Compilation"
+			Core = "Core"
+			Resources = "Ressources"
+			Signing = "Signature"
+			Modes = "Modes"
+		}
+		Group = @{
+			IO = "Entrée / Sortie"
+			Target = "Cible"
+			Silence = "Silence"
+			Console = "Console"
+			Windowed = "Fenêtre"
+			OS = "Système"
+			Build = "Compilation"
+			ConstEval = "Évaluation des constantes"
+			DllExports = "Exports DLL natifs"
+			Core = "Options Core"
+			Resources = "Paramètres de ressources"
+			Signing = "Signature de code"
+			Modes = "Modes"
+		}
+		Field = @{
+			inputFile = "Fichier de compilation"
+			outputFile = "Fichier de sortie"
+			Build = @{
+				Target = "Runtime cible"
+				Platform = "Plateforme"
+				Apartment = "Modèle de thread"
+				Culture = "Culture"
+				Options = "Paramètres de compilation"
+				KeepSource = "Informations de débogage"
+				Minify = "Minifier le script"
+				TempDir = "Répertoire temporaire"
+				ConstEval = @{
+					Enabled = "Activer l'évaluation des constantes"
+					Timeout = "Évaluation expirée"
+				}
+				DllExports = @{
+					Label = "Exports DLL natifs"
+					Help = "Tableau d'exports DLL natifs (équivalent à #_DllExport dans le script) : chaque élément est @{funcName=...; returnType=...; params=@(@{type=...;name=...})}. Ne fonctionne qu'avec Framework4.0 + x86/x64 ; AnyCPU choisit automatiquement l'architecture et avertit ; arm64/Framework2.0/Core échouent. Désactivé en mode Sandbox."
+					FuncName = "Nom de la fonction"
+					ReturnType = "Type de retour"
+					Params = "Paramètres"
+				}
+				Core = @{
+					Backend = "Backend"
+					TargetOs = "OS cible"
+					TargetFramework = "Framework cible"
+					PowerShellVersion = "Version de PowerShell"
+					SingleFile = "Fichier unique"
+					SelfContained = "Autonome"
+					Trimmed = "Découpé"
+					TrimMode = "Mode de découpage"
+					ReadyToRun = "ReadyToRun"
+					InvariantGlobalization = "Globalisation invariante"
+					Aot = "Native AOT"
+				}
+			}
+			App = @{
+				Windowed = "Application fenêtrée"
+				Silence = "Rendre les flux silencieux"
+				OutputEncoding = "Forcer la sortie Unicode"
+				CredentialGUI = "GUI des informations d'identification"
+				ConHost = "Console ConHost"
+				VisualStyles = "Styles visuels"
+				DarkMode = "Thème sombre"
+				ExitOnCancel = "Quitter si Annuler"
+				DpiAware = "Compatible DPI"
+				WinFormsDpiAware = "WinForms compatible DPI"
+			}
+			Os = @{
+				Admin = "Demander l'administrateur"
+				ModernOS = "Plus de fonctionnalités du SE"
+				LongPaths = "Prise en charge des chemins longs"
+				Virtualize = "Activer la virtualisation"
+			}
+			ConfigFile = "Générer un fichier de configuration"
+			Resources = @{
+				Icon = "Fichier d'icône"
+				Title = "Titre"
+				Description = "Description"
+				Company = "Société"
+				Product = "Nom du produit"
+				Copyright = "Informations sur le copyright"
+				Trademark = "Informations sur la marque déposée"
+				Version = "Version"
+			}
+			Signing = @{
+				Enabled = "Activer la signature de code"
+				Certificate = "Chemin du certificat (PFX)"
+				Password = "Mot de passe"
+				Thumbprint = "Empreinte"
+				Timestamp = "Serveur d'horodatage"
+			}
+			PreprocessOnly = "Prétraiter seulement"
+			Golf = "Mode golf"
+			Sandbox = "Mode Sandbox"
+			NoUpdateCheck = "Ignorer la vérification des mises à jour"
+			Quiet = "Silencieux"
+		}
+		Button = @{
+			Compile = "Compiler"
+			Cancel = "Annuler"
+			LoadCfg = "Charger la configuration"
+			SaveCfg = "Enregistrer la configuration"
+			SaveAsCfg = "Enregistrer la configuration sous"
+			Browse = "Parcourir..."
+			DarkMode = "Thème sombre"
+			BGM = "Musique de fond"
+			AddExport = "Ajouter une exportation"
+			EditExport = "Modifier l'exportation"
+			RemoveExport = "Supprimer l'exportation"
+		}
+		Dialog = @{
+			Compile = @{
+				Title = "Sélectionner le fichier à compiler"
+				Filter = "Fichier PowerShell(*.ps1)|*.ps1|Fichier de données PowerShell(*.psd1)|*.psd1"
+			}
+			Output = @{
+				Title = "Sélectionner le fichier de sortie"
+				Filter = "Fichier exécutable(*.exe)|*.exe"
+			}
+			Icon = @{
+				Title = "Sélectionner le fichier d'icône"
+				Filter = "Fichier d'icône(*.ico)|*.ico"
+			}
+			Certificate = @{
+				Title = "Sélectionner le fichier de certificat"
+				Filter = "Fichier de certificat(*.pfx)|*.pfx|Tous les fichiers(*.*)|*.*"
+			}
+			OpenCfg = @{
+				Title = "Sélectionner un fichier de configuration"
+				Filter = "Fichier de configuration(*.psccfg)|*.psccfg"
+			}
+			SaveCfg = @{
+				Title = "Enregistrer le fichier de configuration"
+				Filter = "Fichier de configuration(*.psccfg)|*.psccfg"
+			}
+			Folder = @{
+				Title = "Sélectionner un dossier"
+			}
+		}
+		Window = @{
+			Title = "ps12exe GUI"
+		}
+		Log = @{
+			Ready = "Prêt"
+			Compiling = "Compilation..."
+			Cancelled = "Annulé"
+			Done = "Terminé"
+			CfgLoadFailed = "Échec du chargement du fichier de configuration : "
+		}
+		Label = @{
+			CfgFileHead = "Fichier de configuration :"
+		}
+	}
 	# Console
 	ServerStarted                  = "Serveur HTTP démarré !"
 	ServerStopped                  = "Serveur HTTP arrêté !"
@@ -38,7 +200,8 @@
 	Culture='<culture>'; Options='<options>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<dossier>';
 	ConstEval=@{Enabled=`$true; Timeout=`$true};
 	Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>';
-	SingleFile=`$true; SelfContained=`$true; Trimmed=`$true; TrimMode='partial'|'full'; ReadyToRun=`$true; InvariantGlobalization=`$true; Aot=`$true}}]
+	SingleFile=`$true; SelfContained=`$true; Trimmed=`$true; TrimMode='partial'|'full'; ReadyToRun=`$true; InvariantGlobalization=`$true; Aot=`$true};
+	DllExports=@(@{funcName='<nom de la fonction>'; returnType='<type>'; params=@(@{type='<type>';name='<nom du paramètre>'})})}]
 	[-Resources @{Icon='<nom_de_fichier|url>'; Title='<titre>'; Description='<description>'; Company='<société>';
 	Product='<produit>'; Copyright='<copyright>'; Trademark='<marque_déposée>'; Version='<version>'}]
 	[-Signing @{Certificate='<chemin_du_fichier_PFX>'; Password='<mot_de_passe_PFX>'; Thumbprint='<empreinte_numérique_de_certificat>'; Timestamp='<serveur_de_timestamp>'}]
@@ -92,6 +255,7 @@
 					InvariantGlobalization = "Utilise la globalisation invariante, en supprimant les bibliothèques ICU des builds autonomes (backend Bundled uniquement). Le formatage propre à une culture peut être cassé."
 					Aot                    = "Compilation Native AOT expérimentale pour un binaire sans JIT (backend Bundled uniquement ; nécessite ``SelfContained``). La réflexion intensive utilisée par PowerShell peut casser certains scripts."
 				}
+				DllExports = "Tableau d'exports DLL natifs (équivalent à #_DllExport dans le script) : chaque élément est @{funcName=...; returnType=...; params=@(@{type=...;name=...})}. Ne fonctionne qu'avec Framework4.0 + x86/x64 ; AnyCPU choisit automatiquement l'architecture et avertit ; arm64/Framework2.0/Core échouent. Désactivé en mode Sandbox."
 			}
 			Resources      = [ordered]@{
 				Icon        = "Icône de l'exécutable ; peut être un chemin de fichier ou une URL. Pour un .exe/.dll, ajoutez ,<index> pour choisir une icône de ressource (0 par défaut), par ex. shell32.dll,3."

@@ -1,195 +1,431 @@
-﻿function Get-UIData {
-	@{
-		inputFile  = $Script:refs.CompileFileTextBox.Text
-		outputFile = $Script:refs.OutputFileTextBox.Text
-		App        = @{
-			Windowed         = -not $Script:refs.ConsoleAppCheckBox.Checked
-			Silence          = @(
-				if ($Script:refs.DisableOutputStreamCheckBox.Checked) { 'Output'; 'Verbose' }
-				if ($Script:refs.DisableErrorStreamCheckBox.Checked) { 'Error'; 'Warning'; 'Debug' }
-			)
-			OutputEncoding   = if ($Script:refs.UnicodeEncodingCheckBox.Enabled -and $Script:refs.UnicodeEncodingCheckBox.Checked) { 'UTF16LE' } else { 'Default' }
-			VisualStyles     = -not ($Script:refs.IgnoreVisualStylesCheckBox.Enabled -and $Script:refs.IgnoreVisualStylesCheckBox.Checked)
-			ExitOnCancel     = $Script:refs.ExitOnCancelCheckBox.Enabled -and $Script:refs.ExitOnCancelCheckBox.Checked
-			CredentialGUI    = $Script:refs.CredentialGUICheckBox.Enabled -and $Script:refs.CredentialGUICheckBox.Checked
-			DpiAware         = $Script:refs.DPIAwareCheckBox.Enabled -and $Script:refs.DPIAwareCheckBox.Checked
-			WinFormsDpiAware = $Script:refs.WinFormsDPIAwareCheckBox.Enabled -and $Script:refs.WinFormsDPIAwareCheckBox.Checked
-		}
-		Os         = @{
-			Admin      = $Script:refs.RequestAdminCheckBox.Checked
-			ModernOS   = $Script:refs.MoreOSFeaturesCheckBox.Checked
-			LongPaths  = $Script:refs.LongPathSupportCheckBox.Checked
-			Virtualize = $Script:refs.EnableVirtualizationCheckBox.Checked
-		}
-		Build      = @{
-			Target     = 'Framework4.0'
-			Platform   = if ($Script:refs.x64CheckBox.Checked) { 'x64' } elseif ($Script:refs.x86CheckBox.Checked) { 'x86' } else { 'AnyCpu' }
-			Apartment  = if ($Script:refs.SingleThreadCheckBox.Checked) { 'STA' } else { 'MTA' }
-			Culture    = $Script:refs.RegionIDTextBox.Text
-			Options    = $Script:refs.CompileParamsTextBox.Text
-			KeepSource = $Script:refs.DebugInfoCheckBox.Checked
-			Minify     = $Script:refs.MinifyScriptTextBox.Text
-			TempDir    = $Script:refs.TempDirTextBox.Text
-		}
-		Resources  = @{
-			Icon        = $Script:refs.IconFileTextBox.Text
-			Title       = $Script:refs.TitleTextBox.Text
-			Description = $Script:refs.DescriptionTextBox.Text
-			Company     = $Script:refs.CompanyTextBox.Text
-			Product     = $Script:refs.ProductNameTextBox.Text
-			Copyright   = $Script:refs.CopyrightInfoTextBox.Text
-			Trademark   = $Script:refs.TrademarkInfoTextBox.Text
-			Version     = $Script:refs.VersionTextBox.Text
-		}
-		Signing    = if ($Script:refs.EnableCodeSigningCheckBox.Checked) {
-			$signing = @{}
-			if ($Script:refs.CertificatePathTextBox.Text) {
-				$signing.Certificate = $Script:refs.CertificatePathTextBox.Text
-				if ($Script:refs.CertificatePasswordTextBox.Text) {
-					$signing.Password = ConvertTo-SecureString $Script:refs.CertificatePasswordTextBox.Text -AsPlainText -Force
+﻿# GUI 的 UIData ↔ 控件双向映射、点号路径工具、配置文件读写与 ps12exe 参数组装。
+
+# 遍历 schema 的所有字段并缓存，避免每次调用都重新展开。
+function Get-GUIAllFields {
+	if (-not $Script:GUISchemaFieldList) {
+		$list = New-Object System.Collections.ArrayList
+		$map = @{}
+		foreach ($page in (Get-GUISchema).Pages) {
+			foreach ($group in $page.Groups) {
+				foreach ($field in $group.Fields) {
+					[void]$list.Add($field)
+					$map[$field.Path] = $field
 				}
 			}
-			if ($Script:refs.CertificateThumbprintTextBox.Text) {
-				$signing.Thumbprint = $Script:refs.CertificateThumbprintTextBox.Text
-			}
-			if ($Script:refs.TimestampServerTextBox.Text) {
-				$signing.Timestamp = $Script:refs.TimestampServerTextBox.Text
-			}
-			if ($signing.Count) { $signing } else { $null }
 		}
-		else { $null }
-		ConfigFile = $Script:refs.ConfigFileCheckBox.Checked
+		$Script:GUISchemaFieldList = $list
+		$Script:GUISchemaFieldMap = $map
 	}
+	return $Script:GUISchemaFieldList
 }
-function Set-UIData {
-	param (
-		[Parameter(Mandatory = $true)]
-		[hashtable]$UIData
+
+function Get-GUIField {
+	param([string]$Path)
+	[void](Get-GUIAllFields)
+	return $Script:GUISchemaFieldMap[$Path]
+}
+
+# 点号路径读写嵌套哈希：中间层不存在则创建（只支持哈希表，不支持数组下标）。
+function Get-NestedValue {
+	param(
+		[System.Collections.IDictionary]$UIData,
+		[string]$Path
 	)
-	$Script:refs.CompileFileTextBox.Text = $UIData.inputFile
-	$Script:refs.OutputFileTextBox.Text = $UIData.outputFile
-	$Script:refs.CompileParamsTextBox.Text = $UIData.Build.Options
-	$Script:refs.TempDirTextBox.Text = $UIData.Build.TempDir
-	$Script:refs.MinifyScriptTextBox.Text = $UIData.Build.Minify
-	$Script:refs.DebugInfoCheckBox.Checked = $UIData.Build.KeepSource
-	$Script:refs.x64CheckBox.Checked = $UIData.Build.Platform -eq 'x64'
-	$Script:refs.x86CheckBox.Checked = $UIData.Build.Platform -eq 'x86'
-	$Script:refs.AnyCPUCheckBox.Checked = $UIData.Build.Platform -notin @('x64', 'x86')
-	$Script:refs.RegionIDTextBox.Text = $UIData.Build.Culture
-	$Script:refs.SingleThreadCheckBox.Checked = $UIData.Build.Apartment -ne 'MTA'
-	$Script:refs.MultiThreadCheckBox.Checked = $UIData.Build.Apartment -eq 'MTA'
-	$Script:refs.ConsoleAppCheckBox.Checked = -not $UIData.App.Windowed
-	$Script:refs.UnicodeEncodingCheckBox.Checked = $UIData.App.OutputEncoding -eq 'UTF16LE'
-	$Script:refs.CredentialGUICheckBox.Checked = $UIData.App.CredentialGUI
-	$Script:refs.IconFileTextBox.Text = $UIData.Resources.Icon
-	$Script:refs.TitleTextBox.Text = $UIData.Resources.Title
-	$Script:refs.DescriptionTextBox.Text = $UIData.Resources.Description
-	$Script:refs.CompanyTextBox.Text = $UIData.Resources.Company
-	$Script:refs.ProductNameTextBox.Text = $UIData.Resources.Product
-	$Script:refs.CopyrightInfoTextBox.Text = $UIData.Resources.Copyright
-	$Script:refs.TrademarkInfoTextBox.Text = $UIData.Resources.Trademark
-	$Script:refs.VersionTextBox.Text = $UIData.Resources.Version
-	$Script:refs.ConfigFileCheckBox.Checked = $UIData.ConfigFile
-	$Silence = @($UIData.App.Silence)
-	$Script:refs.DisableOutputStreamCheckBox.Checked = ($Silence -contains 'Output') -or ($Silence -contains '*')
-	$Script:refs.DisableErrorStreamCheckBox.Checked = ($Silence -contains 'Error') -or ($Silence -contains '*')
-	$Script:refs.IgnoreVisualStylesCheckBox.Checked = -not $UIData.App.VisualStyles
-	$Script:refs.ExitOnCancelCheckBox.Checked = $UIData.App.ExitOnCancel
-	$Script:refs.DPIAwareCheckBox.Checked = $UIData.App.DpiAware
-	$Script:refs.WinFormsDPIAwareCheckBox.Checked = $UIData.App.WinFormsDpiAware
-	$Script:refs.RequestAdminCheckBox.Checked = $UIData.Os.Admin
-	$Script:refs.MoreOSFeaturesCheckBox.Checked = $UIData.Os.ModernOS
-	$Script:refs.EnableVirtualizationCheckBox.Checked = $UIData.Os.Virtualize
-	$Script:refs.LongPathSupportCheckBox.Checked = $UIData.Os.LongPaths
-	if ($UIData.Signing) {
-		$Script:refs.EnableCodeSigningCheckBox.Checked = $true
-		$Script:refs.CertificatePathTextBox.Text = $UIData.Signing.Certificate
-		if ($UIData.Signing.Password) {
-			$BSTR = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($UIData.Signing.Password)
-			$Script:refs.CertificatePasswordTextBox.Text = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($BSTR)
-			[System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($BSTR)
-		}
-		$Script:refs.CertificateThumbprintTextBox.Text = $UIData.Signing.Thumbprint
-		$Script:refs.TimestampServerTextBox.Text = $UIData.Signing.Timestamp
+	$current = $UIData
+	foreach ($part in ($Path -split '\.')) {
+		if ($current -isnot [System.Collections.IDictionary]) { return $null }
+		if (-not $current.Contains($part)) { return $null }
+		$current = $current[$part]
 	}
-	else {
-		$Script:refs.EnableCodeSigningCheckBox.Checked = $false
-		$Script:refs.CertificatePathTextBox.Text = ""
-		$Script:refs.CertificatePasswordTextBox.Text = ""
-		$Script:refs.CertificateThumbprintTextBox.Text = ""
-		$Script:refs.TimestampServerTextBox.Text = ""
+	return $current
+}
+
+function Set-NestedValue {
+	param(
+		[System.Collections.IDictionary]$UIData,
+		[string]$Path,
+		$Value
+	)
+	$parts = $Path -split '\.'
+	$current = $UIData
+	for ($i = 0; $i -lt $parts.Count - 1; $i++) {
+		$part = $parts[$i]
+		if (-not $current.Contains($part) -or $current[$part] -isnot [System.Collections.IDictionary]) {
+			$current[$part] = @{}
+		}
+		$current = $current[$part]
+	}
+	$current[$parts[-1]] = $Value
+}
+
+# 从以点号路径/键名为索引的哈希取引用，未就绪时安全返回 $null。
+function Get-GUIRef {
+	param($Table, [string]$Key)
+	if ($Table -is [System.Collections.IDictionary] -and $Table.Contains($Key)) { return $Table[$Key] }
+	return $null
+}
+
+function Get-FieldControl {
+	param([string]$Path)
+	return Get-GUIRef $Script:FieldControls $Path
+}
+
+function Get-FieldBrowseControl {
+	param([string]$Path)
+	return Get-GUIRef $Script:FieldBrowse $Path
+}
+
+# 递归枚举某个容器下的所有子控件（Flags 的选项 CheckBox 可能嵌在面板里）。
+function Get-DescendantControls {
+	param([System.Windows.Forms.Control]$Control)
+	foreach ($child in $Control.Controls) {
+		$child
+		if ($child.HasChildren) { Get-DescendantControls $child }
 	}
 }
 
-function Get-ps12exeArgs {
-	$UIData = Get-UIData
-	$result = $UIData.Clone()
-	$result.Build.Minify = [System.Management.Automation.Language.Parser]::ParseInput($UIData.Build.Minify, [ref]$null, [ref]$null).GetScriptBlock()
-	if ($ConfigFile) {
-		# 若 inputFile、outputFile、Build.TempDir 为相对路径，转换为绝对路径
-		@('inputFile', 'outputFile') | ForEach-Object {
-			if ($UIData.$_ -and -not [System.IO.Path]::IsPathRooted($UIData.$_)) {
-				$UIData.$_ = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfigFile -ChildPath $UIData.$_))
+function Get-FlagValues {
+	param($Container)
+	@(Get-DescendantControls $Container | Where-Object { $_ -is [System.Windows.Forms.CheckBox] -and $_.Checked } | ForEach-Object { $_.Text })
+}
+
+function Get-DllExportCellText {
+	param($Row, [string]$ColumnName)
+	return [string]$Row.Cells[$Row.DataGridView.Columns[$ColumnName].Index].Value
+}
+
+# DataGridView → DllExports 数组。Params 为逗号分隔的 "type name"，缺名字时自动 argN。
+function Get-DllExportsValue {
+	param($Grid)
+	$result = @()
+	foreach ($row in $Grid.Rows) {
+		if ($row.IsNewRow) { continue }
+		$funcName = Get-DllExportCellText $row 'FuncName'
+		if (-not $funcName) { continue }
+		$returnType = Get-DllExportCellText $row 'ReturnType'
+		$paramsText = Get-DllExportCellText $row 'Params'
+		$params = @()
+		$index = 0
+		foreach ($item in ($paramsText -split ',')) {
+			$item = $item.Trim()
+			if (-not $item) { continue }
+			$index++
+			$tokens = @($item -split '\s+' | Where-Object { $_ })
+			if ($tokens.Count -ge 2) {
+				$type = $tokens[0]
+				$name = ($tokens[1..($tokens.Count - 1)] -join ' ')
+			}
+			else {
+				$type = $tokens[0]
+				$name = "arg$index"
+			}
+			$params += @{ type = $type; name = $name }
+		}
+		$result += @{ funcName = $funcName; returnType = $returnType; params = $params }
+	}
+	return $result
+}
+
+function Get-FieldValue {
+	param($Field, $Control)
+	if (-not $Control) { return $Field.Default }
+	switch ($Field.Kind) {
+		'Bool' { return [bool]$Control.Checked }
+		'Choice' {
+			if ($null -ne $Control.SelectedItem) { return [string]$Control.SelectedItem }
+			return [string]$Control.Text
+		}
+		'Flags' { return @(Get-FlagValues $Control) }
+		'DllExports' { return @(Get-DllExportsValue $Control) }
+		default { return [string]$Control.Text }
+	}
+}
+
+function Set-DllExportsValue {
+	param($Grid, $Exports)
+	$Grid.Rows.Clear()
+	foreach ($export in $Exports) {
+		$paramsText = (@($export.params) | ForEach-Object { "$($_.type) $($_.name)".Trim() }) -join ', '
+		[void]$Grid.Rows.Add($export.funcName, $export.returnType, $paramsText)
+	}
+}
+
+function Set-FieldValue {
+	param($Field, $Value)
+	$control = Get-FieldControl $Field.Path
+	if (-not $control) { return }
+	switch ($Field.Kind) {
+		'Bool' { $control.Checked = [bool]$Value }
+		'Choice' {
+			$text = [string]$Value
+			$items = @($control.Items | ForEach-Object { [string]$_ })
+			if ($items -contains $text) { $control.SelectedItem = $text }
+			else { $control.Text = $text }
+		}
+		'Flags' {
+			$selected = @($Value | ForEach-Object { [string]$_ })
+			foreach ($box in (Get-DescendantControls $control | Where-Object { $_ -is [System.Windows.Forms.CheckBox] })) {
+				$box.Checked = $selected -contains $box.Text
 			}
 		}
-		if ($UIData.Build.TempDir -and -not [System.IO.Path]::IsPathRooted($UIData.Build.TempDir)) {
-			$UIData.Build.TempDir = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfigFile -ChildPath $UIData.Build.TempDir))
-		}
-		# 若资源图标为相对路径，转换为绝对路径
-		if ($UIData.Resources.Icon -and -not [System.IO.Path]::IsPathRooted($UIData.Resources.Icon)) {
-			$UIData.Resources.Icon = [System.IO.Path]::GetFullPath((Join-Path -Path $ConfigFile -ChildPath $UIData.Resources.Icon))
-		}
-		# 处理 Signing 中 Certificate 的相对路径
-		if ($UIData.Signing -and $UIData.Signing.Certificate -and -not [System.IO.Path]::IsPathRooted($UIData.Signing.Certificate)) {
-			$UIData.Signing.Certificate = [System.IO.Path]::GetFullPath((Join-Path -Path (Split-Path $ConfigFile -Parent) -ChildPath $UIData.Signing.Certificate))
-		}
-	}
-	# 清理各对象中的空值
-	foreach ($groupName in @('App', 'Os', 'Build', 'Resources', 'Signing')) {
-		$group = $result[$groupName]
-		if ($group -isnot [hashtable]) { continue }
-		@($group.Keys) | ForEach-Object {
-			if ($group[$_] -eq '' -or $null -eq $group[$_]) { $group.Remove($_) }
-		}
-		if ($group.Count -eq 0) { $result.Remove($groupName) }
-	}
-	$result
-}
-function SetCfgFile([string]$ConfigFile) {
-	$Script:refs.CfgFileLabel.Text = $Script:LocalizeData.CfgFileLabelHead + $ConfigFile
-	$script:ConfigFile = $ConfigFile
-}
-function LoadCfgFile([string]$ConfigFile) {
-	if (!$ConfigFile) {
-		$OpenCfgFileDialog.ShowDialog() | Out-Null
-		$ConfigFile = $OpenCfgFileDialog.FileName
-	}
-	if ($ConfigFile) {
-		SetCfgFile $ConfigFile
-		$UIData = Import-Clixml $ConfigFile
-		Set-UIData -UIData $UIData
+		'DllExports' { Set-DllExportsValue $control @($Value) }
+		default { $control.Text = [string]$Value }
 	}
 }
-function SaveCfgFileAs([string]$ConfigFile) {
-	if (!$ConfigFile) {
-		$SaveCfgFileDialog.ShowDialog() | Out-Null
-		$ConfigFile = $SaveCfgFileDialog.FileName
+
+# 按 schema 默认值构造完整的 UIData（含被禁用字段）。
+function Get-DefaultUIData {
+	$data = @{ inputFile = ''; outputFile = ''; SchemaVersion = 2 }
+	foreach ($field in Get-GUIAllFields) {
+		Set-NestedValue $data $field.Path $field.Default
 	}
-	if ($ConfigFile) {
-		SetCfgFile $ConfigFile
-		$UIData = Get-UIData
-		$UIData | Export-Clixml $ConfigFile
+	return $data
+}
+
+# 从控件读值，得到完整 UIData。
+function Get-UIData {
+	$data = @{ inputFile = ''; outputFile = ''; SchemaVersion = 2 }
+	foreach ($field in Get-GUIAllFields) {
+		$control = Get-FieldControl $field.Path
+		Set-NestedValue $data $field.Path (Get-FieldValue $field $control)
+	}
+	return $data
+}
+
+# 把 UIData 写回控件（缺失键用 schema 默认值），随后刷新界面可用状态。
+function Set-UIData {
+	param(
+		[Parameter(Mandatory = $true)]
+		[System.Collections.IDictionary]$UIData
+	)
+	foreach ($field in Get-GUIAllFields) {
+		$value = Get-NestedValue $UIData $field.Path
+		if ($null -eq $value) { $value = $field.Default }
+		Set-FieldValue $field $value
+	}
+	Update-UIState
+}
+
+function Update-ChoiceItems {
+	param($Control, $Choices)
+	$currentItems = @($Control.Items | ForEach-Object { [string]$_ })
+	$same = $currentItems.Count -eq $Choices.Count
+	if ($same) {
+		for ($i = 0; $i -lt $Choices.Count; $i++) {
+			if ($currentItems[$i] -ne $Choices[$i]) { $same = $false; break }
+		}
+	}
+	if (-not $same) {
+		$Control.BeginUpdate()
+		try {
+			$Control.Items.Clear()
+			foreach ($choice in $Choices) { [void]$Control.Items.Add($choice) }
+		}
+		finally { $Control.EndUpdate() }
+	}
+	$current = if ($null -ne $Control.SelectedItem) { [string]$Control.SelectedItem } else { [string]$Control.Text }
+	if ($Choices -contains $current) { $Control.SelectedItem = $current }
+	elseif ($Control.Items.Count -gt 0) { $Control.SelectedIndex = 0 }
+}
+
+# 按 EnabledWhen 刷新每个字段的 Enabled；Choice 字段按 ChoicesWhen 重建选项。
+function Update-UIState {
+	if ($Script:UpdatingUI) { return }
+	$Script:UpdatingUI = $true
+	try {
+		$data = Get-UIData
+		foreach ($field in Get-GUIAllFields) {
+			$control = Get-FieldControl $field.Path
+			if (-not $control) { continue }
+			$enabled = $true
+			if ($field.EnabledWhen) { $enabled = [bool](& $field.EnabledWhen $data) }
+			$control.Enabled = $enabled
+			$browse = Get-FieldBrowseControl $field.Path
+			if ($browse) { $browse.Enabled = $enabled }
+			if ($field.Kind -eq 'Choice' -and $field.ChoicesWhen -and $enabled) {
+				if (-not $control.Focused) {
+					$choices = @(& $field.ChoicesWhen $data | ForEach-Object { [string]$_ })
+					Update-ChoiceItems $control $choices
+				}
+			}
+		}
+	}
+	finally {
+		$Script:UpdatingUI = $false
 	}
 }
-function SaveCfgFile([string]$ConfigFile) {
-	if (!$ConfigFile) {
-		$ConfigFile = $Script:ConfigFile
+
+# URL 原样返回；',N' 资源索引只解析文件部分；相对路径以 BaseDir 为基准转绝对路径。
+function Resolve-ProjectPath {
+	param([string]$Path, [string]$BaseDir)
+	if (-not $Path) { return '' }
+	if ($Path -match '^[a-zA-Z][a-zA-Z0-9+.-]*://') { return $Path }
+	if (-not $BaseDir) { return $Path }
+	$suffix = ''
+	if ($Path -match '^(.*?)(,\d+)$') {
+		$Path = $Matches[1]
+		$suffix = $Matches[2]
 	}
+	if ([System.IO.Path]::IsPathRooted($Path)) { return [System.IO.Path]::GetFullPath($Path) + $suffix }
+	return [System.IO.Path]::GetFullPath((Join-Path $BaseDir $Path)) + $suffix
+}
+
+# 用 Uri.MakeRelativeUri 实现，兼容 Windows PowerShell 5.1。
+function Get-RelativePath {
+	param([string]$Path, [string]$BaseDir)
+	if (-not $Path) { return '' }
+	if (-not $BaseDir) { return $Path }
+	$baseFull = [System.IO.Path]::GetFullPath($BaseDir).TrimEnd('\') + '\'
+	$baseUri = [System.Uri]::new($baseFull)
+	$fileUri = [System.Uri]::new([System.IO.Path]::GetFullPath($Path))
+	$relative = [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($fileUri).ToString())
+	return ($relative -replace '/', '\')
+}
+
+function Test-ValueChanged {
+	param($Value, $Default)
+	if ($null -eq $Value) { return $false }
+	if ($Value -is [array] -or $Default -is [array]) {
+		return (ConvertTo-Json -InputObject @($Value) -Depth 16 -Compress) -ne (ConvertTo-Json -InputObject @($Default) -Depth 16 -Compress)
+	}
+	if ($Default -is [bool]) { return [bool]$Value -ne [bool]$Default }
+	return [string]$Value -ne [string]$Default
+}
+
+# 只输出「字段可用且值与默认不同」的项，组装成 ps12exe 对象式 API。
+function Get-ps12exeArgs {
+	$data = Get-UIData
+	$result = @{}
+	$baseDir = ''
+	if ($Script:ConfigFile) { $baseDir = Split-Path -Path $Script:ConfigFile -Parent }
+
+	foreach ($field in Get-GUIAllFields) {
+		$path = $field.Path
+		# Signing 是合成组，单独处理。
+		if ($path -like 'Signing.*') { continue }
+
+		$enabled = $true
+		if ($field.EnabledWhen) { $enabled = [bool](& $field.EnabledWhen $data) }
+		if (-not $enabled) { continue }
+
+		$value = Get-NestedValue $data $path
+		if (-not (Test-ValueChanged $value $field.Default)) { continue }
+
+		if ($path -eq 'Build.DllExports') {
+			Set-NestedValue $result $path @($value)
+			continue
+		}
+		if ($path -eq 'Build.Minify') {
+			$value = [System.Management.Automation.Language.Parser]::ParseInput([string]$value, [ref]$null, [ref]$null).GetScriptBlock()
+		}
+		elseif ($path -in @('inputFile', 'outputFile', 'Build.TempDir', 'Resources.Icon')) {
+			$value = Resolve-ProjectPath ([string]$value) $baseDir
+		}
+		Set-NestedValue $result $path $value
+	}
+
+	# Signing 合成组：Enabled 为假时整体不输出。
+	if ([bool](Get-NestedValue $data 'Signing.Enabled')) {
+		$signing = @{}
+		foreach ($path in @('Signing.Certificate', 'Signing.Password', 'Signing.Thumbprint', 'Signing.Timestamp')) {
+			$field = Get-GUIField $path
+			if (-not $field) { continue }
+			$enabled = $true
+			if ($field.EnabledWhen) { $enabled = [bool](& $field.EnabledWhen $data) }
+			if (-not $enabled) { continue }
+			$value = Get-NestedValue $data $path
+			if (-not (Test-ValueChanged $value $field.Default)) { continue }
+			if ($path -eq 'Signing.Password') {
+				$value = ConvertTo-SecureString ([string]$value) -AsPlainText -Force
+			}
+			elseif ($path -eq 'Signing.Certificate') {
+				$value = Resolve-ProjectPath ([string]$value) $baseDir
+			}
+			Set-NestedValue $signing ($path -replace '^Signing\.', '') $value
+		}
+		$result.Signing = $signing
+	}
+
+	return $result
+}
+
+# 取 Layout 建好的文件/文件夹对话框（New-GUIDialogs 写入 $Script:dialogs）。
+function Get-GUIDialog {
+	param([string]$Key)
+	return Get-GUIRef $Script:dialogs $Key
+}
+
+function SetCfgFile {
+	param([string]$ConfigFile)
+	$Script:ConfigFile = $ConfigFile
+	if ($Script:refs -and $Script:refs.CfgFileLabel) {
+		$Script:refs.CfgFileLabel.Text = (Get-GUIText 'Label.CfgFileHead') + $ConfigFile
+	}
+}
+
+function LoadCfgFile {
+	param([string]$ConfigFile)
+	if (-not $ConfigFile) {
+		$dialog = Get-GUIDialog 'OpenCfg'
+		if (-not $dialog) { return }
+		$previous = $dialog.FileName
+		if ($dialog.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) { return }
+		$ConfigFile = $dialog.FileName
+		if (-not $ConfigFile -or $ConfigFile -eq $previous) { return }
+	}
+	try {
+		$UIData = Import-Clixml -LiteralPath $ConfigFile
+	}
+	catch {
+		[System.Windows.Forms.MessageBox]::Show((Get-GUIText 'Log.CfgLoadFailed') + $_.Exception.Message, (Get-GUIText 'Window.Title'), [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
+		return
+	}
+	SetCfgFile $ConfigFile
+	Set-UIData -UIData $UIData
+	$Script:SavedSnapshot = Get-UIData
+}
+
+function SaveCfgFileAs {
+	param([string]$ConfigFile)
+	if (-not $ConfigFile) {
+		$dialog = Get-GUIDialog 'SaveCfg'
+		if (-not $dialog) { return }
+		$previous = $dialog.FileName
+		if ($dialog.ShowDialog() -ne [System.Windows.Forms.DialogResult]::OK) { return }
+		$ConfigFile = $dialog.FileName
+		if (-not $ConfigFile -or $ConfigFile -eq $previous) { return }
+	}
+	Get-UIData | Export-Clixml -LiteralPath $ConfigFile
+	SetCfgFile $ConfigFile
+	$Script:SavedSnapshot = Get-UIData
+}
+
+function SaveCfgFile {
+	param([string]$ConfigFile)
+	if (-not $ConfigFile) { $ConfigFile = $Script:ConfigFile }
+	if (-not $ConfigFile) { SaveCfgFileAs; return }
 	SaveCfgFileAs $ConfigFile
 }
 
 function AskSaveCfg {
-	[System.Windows.Forms.MessageBox]::Show([string]$Script:LocalizeData.AskSaveCfg, [string]$Script:LocalizeData.AskSaveCfgTitle, [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question) -eq 'Yes'
+	$localize = $Script:LocalizeData
+	return [System.Windows.Forms.MessageBox]::Show([string]$localize.AskSaveCfg, [string]$localize.AskSaveCfgTitle, [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question) -eq [System.Windows.Forms.DialogResult]::Yes
+}
+
+function Test-UIDirty {
+	if ($null -eq $Script:SavedSnapshot) { return $false }
+	$current = ConvertTo-Json -InputObject (Get-UIData) -Depth 16 -Compress
+	$saved = ConvertTo-Json -InputObject $Script:SavedSnapshot -Depth 16 -Compress
+	return $current -ne $saved
+}
+
+function Write-GUILog {
+	param([string]$Text)
+	$box = $Script:refs.LogTextBox
+	if (-not $box) { return }
+	$box.Text += "$Text`r`n"
+	$box.SelectionStart = $box.Text.Length
+	$box.ScrollToCaret()
 }
 
 function PauseMusic {

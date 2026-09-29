@@ -25,7 +25,6 @@ try {
 	$packData.ModuleVersion = $version
 	# 更新 psd1
 	Set-Content -Path "$repoPath/ps12exe.psd1" -Value $(PSObjectToString($packData)) -NoNewline -Encoding UTF8 -Force
-	# 对于每个fbs文件，以xml格式读取，再用linux换行符+tab缩进写回源文件
 	. $PSScriptRoot/../../.esh/commands/lint.ps1
 	# 遍历文件列表，移除.开头的文件和文件夹
 	Get-ChildItem -Path $repoPath -Recurse | Where-Object { $_.Name -match '^\.' } | ForEach-Object { Remove-Item -Path $_.FullName -Force -Recurse }
@@ -41,8 +40,6 @@ try {
 		"$repoPath/AGENTS.md"
 		"$repoPath/eslint.config.mjs"
 		"$repoPath/typos.toml"
-		"$repoPath/src/locale/_fbs2txt.ps1"
-		"$repoPath/src/locale/_txt2fbs.ps1"
 		"$repoPath/src/locale/reorder_locale.ps1"
 	)
 	$devOnlyPaths | Where-Object { Test-Path -LiteralPath $_ } | ForEach-Object { Remove-Item -LiteralPath $_ -Recurse -Force }

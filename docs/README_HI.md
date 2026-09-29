@@ -147,7 +147,8 @@ help       : इस मदद सूचना को दिखाएँ।
         [-Os @{Admin=$true; ModernOS=$true; LongPaths=$true; Virtualize=$true}]
         [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
         Culture='<संस्कृति>'; Options='<विकल्प>'; KeepSource=$true; Minify={<स्क्रिप्टब्लॉक>}; TempDir='<फ़ोल्डर>';
-        Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>'; SingleFile=$true; SelfContained=$true; Trimmed=$true; TrimMode='partial'|'full'; ReadyToRun=$true; InvariantGlobalization=$true; Aot=$true}}]
+        Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>'; SingleFile=$true; SelfContained=$true; Trimmed=$true; TrimMode='partial'|'full'; ReadyToRun=$true; InvariantGlobalization=$true; Aot=$true};
+        DllExports=@(@{funcName='<फ़ंक्शन नाम>'; returnType='<प्रकार>'; params=@(@{type='<प्रकार>';name='<पैरामीटर नाम>'})})}]
         [-Resources @{Icon='<फ़ाइल नाम|url>'; Title='<शीर्षक>'; Description='<सारांश>'; Company='<कंपनी>';
         Product='<उत्पाद>'; Copyright='<कॉपीराइट>'; Trademark='<नामकरण>'; Version='<संस्करण>'}]
         [-Signing @{Certificate='<PFX फ़ाइल पथ>'; Password='<PFX पासवर्ड>'; Thumbprint='<प्रमाणपत्र फ़िंगरप्रिंट>'; Timestamp='<समय चिह्न सर्वर>'}]
@@ -196,6 +197,7 @@ Build            : बिल्ड विकल्पों की हैश त
                                       ReadyToRun             : तेज़ स्टार्टअप के लिए असेंबली पूर्व-संकलित करें (केवल Bundled)।
                                       InvariantGlobalization : इनवेरिएंट ग्लोबलाइज़ेशन का उपयोग करें, स्व-निहित बिल्ड से ICU लाइब्रेरी हटाएँ (केवल Bundled)।
                                       Aot                    : प्रायोगिक Native AOT संकलन (केवल Bundled; SelfContained आवश्यक)। PowerShell द्वारा उपयोग किया जाने वाला भारी प्रतिबिंब कुछ स्क्रिप्ट तोड़ सकता है।
+                   DllExports       : नेटिव DLL निर्यात सरणी (स्क्रिप्ट में #_DllExport के समान): प्रत्येक आइटम @{funcName=...; returnType=...; params=@(@{type=...;name=...})} है। केवल Framework4.0 + x86/x64 के साथ काम करता है; AnyCPU स्वतः बिटनेस चुनता है और चेतावनी देता है; arm64/Framework2.0/Core त्रुटि देते हैं। Sandbox मोड में अक्षम।
 Resources        : संकलित एक्सीक्यूटेबल फ़ाइल में एम्बेड की गई संस्करण संसाधनों की हैश तालिका (Icon, Title, Description, Company, Product, Copyright, Trademark, Version)। Icon एक आइकन फ़ाइल पथ या URL हो सकता है। .exe/.dll के लिए ,<index> जोड़कर संसाधन आइकन चुनें (डिफ़ॉल्ट 0), जैसे shell32.dll,3।
 Signing          : कोड साइनिंग विकल्पों की हैश तालिका (Certificate, Password, Thumbprint, Timestamp)। Certificate या Thumbprint में से एक निर्दिष्ट करना आवश्यक है।
 PreprocessOnly   : इनपुट स्क्रिप्ट को प्रीप्रोसेस करें और इसे संकलित किए बिना वापस करें।

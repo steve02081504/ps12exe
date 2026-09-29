@@ -147,7 +147,8 @@ help       : 显示此帮助信息。
         [-Os @{Admin=$true; ModernOS=$true; LongPaths=$true; Virtualize=$true}]
         [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
         Culture='<文化>'; Options='<选项>'; KeepSource=$true; Minify={<scriptblock>}; TempDir='<文件夹>';
-        Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>'; SingleFile=$true; SelfContained=$true; Trimmed=$true; TrimMode='partial'|'full'; ReadyToRun=$true; InvariantGlobalization=$true; Aot=$true}}]
+        Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>'; SingleFile=$true; SelfContained=$true; Trimmed=$true; TrimMode='partial'|'full'; ReadyToRun=$true; InvariantGlobalization=$true; Aot=$true};
+        DllExports=@(@{funcName='<函数名>'; returnType='<类型>'; params=@(@{type='<类型>';name='<参数名>'})})}]
         [-Resources @{Icon='<文件名|url>'; Title='<标题>'; Description='<简介>'; Company='<公司>';
         Product='<产品>'; Copyright='<版权>'; Trademark='<水印>'; Version='<版本>'}]
         [-Signing @{Certificate='<PFX文件路径>'; Password='<PFX密码>'; Thumbprint='<证书指纹>'; Timestamp='<时间戳服务器>'}]
@@ -196,6 +197,7 @@ Build            : 构建选项的哈希表。支持的键：
                                       ReadyToRun             : 预编译程序集以加快启动（仅 Bundled）。
                                       InvariantGlobalization : 使用固定全球化，从自包含构建中移除 ICU 库（仅 Bundled）。
                                       Aot                    : 实验性 Native AOT 编译（仅 Bundled；需要 SelfContained）。PowerShell 大量使用反射，可能破坏某些脚本。
+                   DllExports       : 原生 DLL 导出数组（等价于脚本里的 #_DllExport）：每项为 @{funcName=...; returnType=...; params=@(@{type=...;name=...})}；仅 Framework4.0 + x86/x64 生效，AnyCPU 会自动选择位数并告警，arm64/Framework2.0/Core 直接报错。访客模式下被禁用。
 Resources        : 编译的可执行文件的版本资源哈希表（Icon、Title、Description、Company、Product、Copyright、Trademark、Version）。Icon 可以是图标文件路径或URL；对 .exe/.dll 可用 ,<索引> 指定资源图标（默认 0），如 shell32.dll,3。
 Signing          : 编译的可执行文件的代码签名选项哈希表（Certificate、Password、Thumbprint、Timestamp）。必须指定 Certificate 或 Thumbprint 之一。
 PreprocessOnly   : 预处理输入脚本并在不编译的情况下返回它。

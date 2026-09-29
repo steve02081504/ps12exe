@@ -20,6 +20,168 @@
 	AskSaveCfg                     = "Save the configuration file?"
 	AskSaveCfgTitle                = "Save configuration file"
 	CfgFileLabelHead               = "Configuration file:"
+	# GUI text
+	GUI = @{
+		Page = @{
+			General = "General"
+			App = "App"
+			OS = "OS"
+			Build = "Build"
+			Core = "Core"
+			Resources = "Resources"
+			Signing = "Signing"
+			Modes = "Modes"
+		}
+		Group = @{
+			IO = "Input / Output"
+			Target = "Target"
+			Silence = "Silence"
+			Console = "Console"
+			Windowed = "Windowed"
+			OS = "Operating System"
+			Build = "Build"
+			ConstEval = "Constant Evaluation"
+			DllExports = "Native DLL Exports"
+			Core = "Core Options"
+			Resources = "Resource Params"
+			Signing = "Code Signing"
+			Modes = "Modes"
+		}
+		Field = @{
+			inputFile = "Input File"
+			outputFile = "Output File"
+			Build = @{
+				Target = "Target runtime"
+				Platform = "Platform"
+				Apartment = "Apartment"
+				Culture = "Culture"
+				Options = "Compile options"
+				KeepSource = "Debug info"
+				Minify = "Minify script"
+				TempDir = "Temp dir"
+				ConstEval = @{
+					Enabled = "Enable constant evaluation"
+					Timeout = "Evaluation timed out"
+				}
+				DllExports = @{
+					Label = "Native DLL exports"
+					Help = "Native DLL export array (equivalent to #_DllExport in the script): each item is @{funcName=...; returnType=...; params=@(@{type=...;name=...})}. Only Framework4.0 plus x86/x64; AnyCPU picks the bitness automatically and warns; arm64/Framework2.0/Core error out. Disabled in Sandbox mode."
+					FuncName = "Function name"
+					ReturnType = "Return type"
+					Params = "Parameters"
+				}
+				Core = @{
+					Backend = "Backend"
+					TargetOs = "Target OS"
+					TargetFramework = "Target framework"
+					PowerShellVersion = "PowerShell version"
+					SingleFile = "Single file"
+					SelfContained = "Self-contained"
+					Trimmed = "Trimmed"
+					TrimMode = "Trim mode"
+					ReadyToRun = "ReadyToRun"
+					InvariantGlobalization = "Invariant globalization"
+					Aot = "Native AOT"
+				}
+			}
+			App = @{
+				Windowed = "Windowed app"
+				Silence = "Silence streams"
+				OutputEncoding = "Force Unicode output"
+				CredentialGUI = "Credential GUI"
+				ConHost = "ConHost console"
+				VisualStyles = "Visual styles"
+				DarkMode = "Dark mode"
+				ExitOnCancel = "Exit on cancel"
+				DpiAware = "DPI aware"
+				WinFormsDpiAware = "WinForms DPI aware"
+			}
+			Os = @{
+				Admin = "Request admin"
+				ModernOS = "More OS features"
+				LongPaths = "Long path support"
+				Virtualize = "Enable virtualization"
+			}
+			ConfigFile = "Generate config"
+			Resources = @{
+				Icon = "Icon file"
+				Title = "Title"
+				Description = "Description"
+				Company = "Company"
+				Product = "Product name"
+				Copyright = "Copyright"
+				Trademark = "Trademark"
+				Version = "Version"
+			}
+			Signing = @{
+				Enabled = "Enable code signing"
+				Certificate = "Certificate path (PFX)"
+				Password = "Password"
+				Thumbprint = "Thumbprint"
+				Timestamp = "Timestamp server"
+			}
+			PreprocessOnly = "Preprocess only"
+			Golf = "Golf mode"
+			Sandbox = "Sandbox mode"
+			NoUpdateCheck = "Skip update check"
+			Quiet = "Quiet"
+		}
+		Button = @{
+			Compile = "Compile"
+			Cancel = "Cancel"
+			LoadCfg = "Load Config"
+			SaveCfg = "Save Config"
+			SaveAsCfg = "Save Config As"
+			Browse = "Browse..."
+			DarkMode = "Dark mode"
+			BGM = "Background music"
+			AddExport = "Add export"
+			EditExport = "Edit export"
+			RemoveExport = "Remove export"
+		}
+		Dialog = @{
+			Compile = @{
+				Title = "Select a compilation file"
+				Filter = "Powershell Files (*.ps1)|*.ps1|Powershell Data Files (*.psd1)|*.psd1"
+			}
+			Output = @{
+				Title = "Select an output file"
+				Filter = "Executable Files (*.exe)|*.exe"
+			}
+			Icon = @{
+				Title = "Select an icon file"
+				Filter = "Icon Files (*.ico)|*.ico"
+			}
+			Certificate = @{
+				Title = "Select a certificate file"
+				Filter = "Certificate Files (*.pfx)|*.pfx|All Files (*.*)|*.*"
+			}
+			OpenCfg = @{
+				Title = "Select a config file"
+				Filter = "Configuration Files (*.psccfg)|*.psccfg"
+			}
+			SaveCfg = @{
+				Title = "Save the config file"
+				Filter = "Configuration Files (*.psccfg)|*.psccfg"
+			}
+			Folder = @{
+				Title = "Select a folder"
+			}
+		}
+		Window = @{
+			Title = "ps12exe GUI"
+		}
+		Log = @{
+			Ready = "Ready."
+			Compiling = "Compiling..."
+			Cancelled = "Cancelled."
+			Done = "Done."
+			CfgLoadFailed = "Failed to load config file: "
+		}
+		Label = @{
+			CfgFileHead = "Configuration file:"
+		}
+	}
 	# Console
 	ServerStarted                  = "HTTP server started."
 	ServerStopped                  = "HTTP server stopped."
@@ -38,7 +200,8 @@
 	Culture='<culture>'; Options='<options>'; KeepSource=`$true; Minify={<scriptblock>}; TempDir='<directory>';
 	ConstEval=@{Enabled=`$true; Timeout=`$true};
 	Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>';
-	SingleFile=`$true; SelfContained=`$true; Trimmed=`$true; TrimMode='partial'|'full'; ReadyToRun=`$true; InvariantGlobalization=`$true; Aot=`$true}}]
+	SingleFile=`$true; SelfContained=`$true; Trimmed=`$true; TrimMode='partial'|'full'; ReadyToRun=`$true; InvariantGlobalization=`$true; Aot=`$true};
+	DllExports=@(@{funcName='<function name>'; returnType='<type>'; params=@(@{type='<type>';name='<param name>'})})}]
 	[-Resources @{Icon='<filename|url>'; Title='<title>'; Description='<description>'; Company='<company>';
 	Product='<product>'; Copyright='<copyright>'; Trademark='<trademark>'; Version='<version>'}]
 	[-Signing @{Certificate='<PFX file path>'; Password='<PFX password>'; Thumbprint='<certificate thumbprint>'; Timestamp='<timestamp server>'}]
@@ -92,6 +255,7 @@
 					InvariantGlobalization = "Use invariant globalization, removing ICU libraries from self-contained builds (Bundled backend only). Culture-specific formatting may break."
 					Aot                    = "Experimental Native AOT compilation for a JIT-free binary (Bundled backend only; requires ``SelfContained``). Heavy reflection used by PowerShell may break some scripts."
 				}
+				DllExports = "Native DLL export array (equivalent to #_DllExport in the script): each item is @{funcName=...; returnType=...; params=@(@{type=...;name=...})}. Only Framework4.0 plus x86/x64; AnyCPU picks the bitness automatically and warns; arm64/Framework2.0/Core error out. Disabled in Sandbox mode."
 			}
 			Resources      = [ordered]@{
 				Icon        = "Icon of the executable; can be a file path or URL. For .exe/.dll, append ,<index> to pick a resource icon (default 0), e.g. shell32.dll,3."

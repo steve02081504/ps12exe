@@ -147,7 +147,8 @@ help       : このヘルプ情報を表示します。
         [-Os @{Admin=$true; ModernOS=$true; LongPaths=$true; Virtualize=$true}]
         [-Build @{Target='Framework4.0'|'Framework2.0'|'Core'; Platform='AnyCpu'|'x64'|'x86'|'arm64'; Apartment='STA'|'MTA';
         Culture='<カルチャ>'; Options='<オプション>'; KeepSource=$true; Minify={<scriptblock>}; TempDir='<ディレクトリ>';
-        Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>'; SingleFile=$true; SelfContained=$true; Trimmed=$true; TrimMode='partial'|'full'; ReadyToRun=$true; InvariantGlobalization=$true; Aot=$true}}]
+        Core=@{Backend='Shared'|'Bundled'; TargetOs='Windows'|'Linux'|'MacOS'; TargetFramework='<net8.0>'; PowerShellVersion='<version>'; SingleFile=$true; SelfContained=$true; Trimmed=$true; TrimMode='partial'|'full'; ReadyToRun=$true; InvariantGlobalization=$true; Aot=$true};
+        DllExports=@(@{funcName='<関数名>'; returnType='<型>'; params=@(@{type='<型>';name='<パラメーター名>'})})}]
         [-Resources @{Icon='<ファイル名|url>'; Title='<タイトル>'; Description='<説明>'; Company='<会社>';
         Product='<製品>'; Copyright='<著作権>'; Trademark='<商標>'; Version='<バージョン>'}]
         [-Signing @{Certificate='<PFXファイルパス>'; Password='<PFXパスワード>'; Thumbprint='<証明書指紋>'; Timestamp='<時刻同期サーバー>'}]
@@ -196,6 +197,7 @@ Build            : ビルドオプションのハッシュテーブル。サポ�
                                       ReadyToRun             : 起動を高速化するためにアセンブリを事前コンパイルします（Bundled のみ）。
                                       InvariantGlobalization : インバリアント グローバリゼーションを使用し、自己完結型ビルドから ICU ライブラリを削除します（Bundled のみ）。
                                       Aot                    : 実験的な Native AOT コンパイル（Bundled のみ、SelfContained が必要）。PowerShell が多用するリフレクションにより一部のスクリプトが壊れる可能性があります。
+                   DllExports       : ネイティブ DLL エクスポートの配列（スクリプトの #_DllExport と同等）：各項目は @{funcName=...; returnType=...; params=@(@{type=...;name=...})} です。Framework4.0 と x86/x64 でのみ有効です。AnyCPU はビット数を自動選択して警告します。arm64/Framework2.0/Core はエラーになります。Sandbox モードでは無効です。
 Resources        : 実行可能ファイルに埋め込むバージョンリソースのハッシュテーブル（Icon、Title、Description、Company、Product、Copyright、Trademark、Version）。Icon はアイコンファイルのパスまたは URL にできます。.exe/.dll は ,<index> でリソースアイコンを指定できます（既定 0、例：shell32.dll,3）。
 Signing          : コード署名オプションのハッシュテーブル（Certificate、Password、Thumbprint、Timestamp）。Certificate または Thumbprint のいずれかを指定する必要があります。
 PreprocessOnly   : 入力スクリプトをプリプロセス処理し、コンパイルせずに返します。
