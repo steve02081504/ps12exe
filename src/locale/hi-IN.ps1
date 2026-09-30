@@ -31,6 +31,7 @@
 			Resources = "संसाधन"
 			Signing   = "हस्ताक्षर"
 			Modes     = "मोड"
+			About     = "परिचय"
 		}
 		Group  = @{
 			IO         = "इनपुट / आउटपुट"
@@ -177,9 +178,20 @@
 			Cancelled     = "रद्द किया गया"
 			Done          = "पूर्ण"
 			CfgLoadFailed = "कॉन्फ़िगरेशन फ़ाइल लोड करने में विफल: "
+			InvalidFile   = "फ़ाइल नहीं मिली"
+			InvalidDir    = "फ़ोल्डर नहीं मिला"
+			InvalidValue  = "अमान्य मान"
 		}
 		Label  = @{
 			CfgFileHead = "कॉन्फ़िगरेशन फ़ाइल:"
+		}
+		About  = @{
+			Title         = "ps12exe"
+			Version       = "संस्करण"
+			Description   = "PowerShell स्क्रिप्ट को स्वतंत्र Windows निष्पादन योग्य फ़ाइलों में संकलित करें, शुद्ध स्क्रिप्ट GUI, क्रॉस-प्लेटफ़ॉर्म Core लक्ष्य आदि के साथ।"
+			Repository    = "रिपॉज़िटरी"
+			Issues        = "समस्या की रिपोर्ट करें"
+			Documentation = "दस्तावेज़"
 		}
 	}
 	# Console

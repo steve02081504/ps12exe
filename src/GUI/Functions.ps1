@@ -249,6 +249,7 @@ function Update-UIState {
 				}
 			}
 		}
+		Update-GUIValidation $data
 	}
 	finally {
 		$Script:UpdatingUI = $false
@@ -282,6 +283,87 @@ function Get-RelativePath {
 	return ($relative -replace '/', '\')
 }
 
+# 配置文件所在目录；无配置文件时返回空，此时相对路径按当前目录解析。
+function Get-GUIConfigDir {
+	if ($Script:ConfigFile) { return Split-Path -Path $Script:ConfigFile -Parent }
+	return ''
+}
+
+# 空值与 URL 不是本地路径，跳过存在性校验。
+function Test-GUIPathSkipped {
+	param([string]$Value)
+	return (-not $Value) -or ($Value -match '^[a-zA-Z][a-zA-Z0-9+.-]*://')
+}
+
+# 校验用路径：,N 图标索引只检查文件部分；相对路径以配置文件目录为基准转绝对。
+function Resolve-GUIPathForCheck {
+	param([string]$Value)
+	$path = $Value -replace ',\d+$', ''
+	$baseDir = Get-GUIConfigDir
+	try {
+		if ($baseDir -and -not [System.IO.Path]::IsPathRooted($path)) { $path = Join-Path $baseDir $path }
+		return [System.IO.Path]::GetFullPath($path)
+	}
+	catch { return '' }
+}
+
+function Test-GUIPathExists {
+	param([string]$Value, [string]$PathType)
+	if (Test-GUIPathSkipped $Value) { return $true }
+	$resolved = Resolve-GUIPathForCheck $Value
+	return $resolved -and (Test-Path -LiteralPath $resolved -PathType $PathType)
+}
+
+function Test-GUIFileExists {
+	param([string]$Value)
+	return Test-GUIPathExists $Value 'Leaf'
+}
+
+function Test-GUIDirectoryExists {
+	param([string]$Value)
+	return Test-GUIPathExists $Value 'Container'
+}
+
+# 输出文件是保存目标，只需其父目录存在。
+function Test-GUIOutputDirExists {
+	param([string]$Value)
+	if (Test-GUIPathSkipped $Value) { return $true }
+	$dir = Split-Path -Path $Value -Parent
+	return (-not $dir) -or (Test-GUIDirectoryExists $dir)
+}
+
+# 裸文件名（如 shell32.dll）由 Windows 自行解析，无法预判，跳过校验。
+function Test-GUIIconExists {
+	param([string]$Value)
+	if (Test-GUIPathSkipped $Value) { return $true }
+	if ($Value -notmatch '[\\/:]') { return $true }
+	return Test-GUIFileExists $Value
+}
+
+# 按字段 Validate 把非法值标红，并把错误文案与帮助一起挂到 ToolTip；换肤覆盖底色后需重新调用。
+function Update-GUIValidation {
+	param($Data)
+	$theme = $Script:GUITheme
+	$base = if ($theme) { ConvertTo-GUIColor $theme.InputBack }
+	$invalid = if ($theme) { ConvertTo-GUIColor $theme.InvalidBack } else { [System.Drawing.Color]::FromArgb(0xFF, 0xF2, 0xF2) }
+	if (-not $Data) { $Data = Get-UIData }
+	foreach ($field in Get-GUIAllFields) {
+		if (-not $field.Validate) { continue }
+		$control = Get-FieldControl $field.Path
+		if (-not $control) { continue }
+		$message = if ($control.Enabled) { & $field.Validate (Get-NestedValue $Data $field.Path) $Data }
+		$help = Get-FieldHelp $field
+		if ($message) {
+			$control.BackColor = $invalid
+			if ($Script:GUIToolTip) { $Script:GUIToolTip.SetToolTip($control, "$message`r`n$help") }
+		}
+		else {
+			if ($base) { $control.BackColor = $base }
+			if ($Script:GUIToolTip) { $Script:GUIToolTip.SetToolTip($control, $help) }
+		}
+	}
+}
+
 function Test-ValueChanged {
 	param($Value, $Default)
 	if ($null -eq $Value) { return $false }
@@ -296,8 +378,7 @@ function Test-ValueChanged {
 function Get-ps12exeArgs {
 	$data = Get-UIData
 	$result = @{}
-	$baseDir = ''
-	if ($Script:ConfigFile) { $baseDir = Split-Path -Path $Script:ConfigFile -Parent }
+	$baseDir = Get-GUIConfigDir
 
 	foreach ($field in Get-GUIAllFields) {
 		$path = $field.Path
@@ -426,6 +507,32 @@ function Write-GUILog {
 	$box.Text += "$Text`r`n"
 	$box.SelectionStart = $box.Text.Length
 	$box.ScrollToCaret()
+}
+
+# 用系统默认浏览器打开链接；失败时静默，避免关于页点击把 GUI 弄崩。
+function Open-GUIUrl {
+	param([string]$Url)
+	if (-not $Url) { return }
+	try { Start-Process $Url } catch { }
+}
+
+# 已安装时取模块版本；开发版（0.0.0）用 git 短 commit 标识，取不到则返回空、不显示版本行。
+function Get-ps12exeVersion {
+	try {
+		$module = Get-Module -ListAvailable ps12exe | Sort-Object -Property Version -Descending | Select-Object -First 1
+		if ($module -and [string]$module.Version -ne '0.0.0') { return [string]$module.Version }
+	}
+	catch { }
+	try {
+		$git = Get-Command git -ErrorAction Ignore
+		if ($git) {
+			$repoRoot = (Resolve-Path "$PSScriptRoot/../.." -ErrorAction Stop).Path
+			$hash = (& $git.Source -C $repoRoot rev-parse --short HEAD 2>$null)
+			if ($LASTEXITCODE -eq 0 -and $hash) { return $hash.Trim() }
+		}
+	}
+	catch { }
+	return ''
 }
 
 function PauseMusic {

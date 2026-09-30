@@ -31,6 +31,7 @@
 			Resources = "Ressources"
 			Signing   = "Signature"
 			Modes     = "Modes"
+			About     = "À propos"
 		}
 		Group  = @{
 			IO         = "Entrée / Sortie"
@@ -177,9 +178,20 @@
 			Cancelled     = "Annulé"
 			Done          = "Terminé"
 			CfgLoadFailed = "Échec du chargement du fichier de configuration : "
+			InvalidFile   = "Fichier introuvable"
+			InvalidDir    = "Dossier introuvable"
+			InvalidValue  = "Valeur non valide"
 		}
 		Label  = @{
 			CfgFileHead = "Fichier de configuration :"
+		}
+		About  = @{
+			Title         = "ps12exe"
+			Version       = "Version"
+			Description   = "Compilez des scripts PowerShell en exécutables Windows autonomes, avec une interface en pur script, une cible Core multiplateforme, etc."
+			Repository    = "Dépôt"
+			Issues        = "Signaler un problème"
+			Documentation = "Documentation"
 		}
 	}
 	# Console

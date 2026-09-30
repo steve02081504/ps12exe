@@ -41,6 +41,13 @@ function Get-ParamHelp {
 	return ($help -replace '`', '').Trim()
 }
 
+# 字段帮助文案：schema 显式指定 Help 时取 GUI 文案，否则按 Path 从参数帮助取。
+function Get-FieldHelp {
+	param($Field)
+	if ($Field.Help) { return Get-GUIText $Field.Help }
+	return Get-ParamHelp $Field.Path
+}
+
 function New-GUIRowStyle {
 	return New-Object System.Windows.Forms.RowStyle([System.Windows.Forms.SizeType]::AutoSize)
 }
@@ -95,7 +102,7 @@ function New-GUIFieldRow {
 	$path = $Field.Path
 	$labelKey = if ($Field.Label) { $Field.Label } else { "Field.$path" }
 	$labelText = Get-GUIText $labelKey
-	$help = if ($Field.Help) { Get-GUIText $Field.Help } else { Get-ParamHelp $path }
+	$help = Get-FieldHelp $Field
 	$toolTip = $Script:GUIToolTip
 
 	switch ($Field.Kind) {
@@ -274,6 +281,70 @@ function New-GUIFieldRow {
 	}
 }
 
+# 可点击链接：整段文字作为 LinkData 区域，点击用系统浏览器打开。
+function New-GUILinkLabel {
+	param([string]$Text, [string]$Url)
+	$link = New-Object System.Windows.Forms.LinkLabel
+	$link.Text = $Text
+	$link.AutoSize = $true
+	[void]$link.Links.Add(0, $Text.Length, $Url)
+	$link.add_LinkClicked({ param($sender, $e) Open-GUIUrl ([string]$e.Link.LinkData) })
+	return $link
+}
+
+# 关于页：应用名（含版本）+ 描述 + 仓库/Issue/文档链接，无参数字段。
+# 沿用其它页的「AutoScroll 宿主 Panel + AutoSize 内容表格」约定（见 gui.layout 的可达性校验）。
+function New-GUIAboutPanel {
+	$panel = New-Object System.Windows.Forms.Panel
+	$panel.Dock = 'Fill'
+	$panel.AutoScroll = $true
+
+	$grid = New-Object System.Windows.Forms.TableLayoutPanel
+	$grid.Dock = 'Top'
+	$grid.AutoSize = $true
+	$grid.AutoSizeMode = 'GrowAndShrink'
+	$grid.Padding = New-Object System.Windows.Forms.Padding(20, 16, 20, 16)
+	$grid.ColumnCount = 1
+	[void]$grid.ColumnStyles.Add((New-Object System.Windows.Forms.ColumnStyle([System.Windows.Forms.SizeType]::Percent, 100)))
+	$panel.Controls.Add($grid)
+
+	# 单列表格，每个控件占一行；行号即已有控件数。
+	function Add-GUIAboutRow($Control) {
+		$Control.AutoSize = $true
+		$Control.Anchor = [System.Windows.Forms.AnchorStyles]::Left
+		$Control.Margin = New-Object System.Windows.Forms.Padding(3, 8, 3, 0)
+		$grid.Controls.Add($Control, 0, $grid.Controls.Count)
+		[void]$grid.RowStyles.Add((New-GUIRowStyle))
+	}
+
+	$title = New-Object System.Windows.Forms.Label
+	$title.Text = Get-GUIText 'About.Title'
+	try { $title.Font = New-Object System.Drawing.Font($Script:refs.MainForm.Font.FontFamily, 16, [System.Drawing.FontStyle]::Bold) } catch { }
+	Add-GUIAboutRow $title
+
+	$version = Get-ps12exeVersion
+	if ($version) {
+		$versionLabel = New-Object System.Windows.Forms.Label
+		$versionLabel.Text = "$(Get-GUIText 'About.Version') $version"
+		Add-GUIAboutRow $versionLabel
+	}
+
+	$description = New-Object System.Windows.Forms.Label
+	$description.Text = Get-GUIText 'About.Description'
+	$description.MaximumSize = New-Object System.Drawing.Size(640, 0)
+	Add-GUIAboutRow $description
+
+	foreach ($link in @(
+			@{ Text = 'About.Repository'; Url = 'https://github.com/steve02081504/ps12exe' }
+			@{ Text = 'About.Issues'; Url = 'https://github.com/steve02081504/ps12exe/issues' }
+			@{ Text = 'About.Documentation'; Url = 'https://github.com/steve02081504/ps12exe#readme' }
+		)) {
+		Add-GUIAboutRow (New-GUILinkLabel -Text (Get-GUIText $link.Text) -Url $link.Url)
+	}
+
+	return $panel
+}
+
 function New-GUIForm {
 	$Script:refs = @{}
 	$Script:FieldControls = @{}
@@ -307,6 +378,12 @@ function New-GUIForm {
 	foreach ($page in $Script:GUISchema.Pages) {
 		$tabPage = New-Object System.Windows.Forms.TabPage
 		$tabPage.Text = Get-GUIText $page.Label
+
+		if ($page.Type -eq 'About') {
+			$tabPage.Controls.Add((New-GUIAboutPanel))
+			$tabs.TabPages.Add($tabPage)
+			continue
+		}
 
 		# TableLayoutPanel 的 AutoScroll 在 Dock=Fill + Percent 行的组合下不会为 AutoSize 分组撑出滚动条，
 		# 导致靠下的分组（如 DLL 导出）被裁掉且无法滚动到。改为外层 Panel 负责滚动、内层 AutoSize 表格随内容长高。

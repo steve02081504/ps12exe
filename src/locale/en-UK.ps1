@@ -31,6 +31,7 @@
 			Resources = "Resources"
 			Signing = "Signing"
 			Modes = "Modes"
+			About = "About"
 		}
 		Group = @{
 			IO = "Input / Output"
@@ -177,9 +178,20 @@
 			Cancelled = "Cancelled."
 			Done = "Done."
 			CfgLoadFailed = "Failed to load config file: "
+			InvalidFile = "File not found"
+			InvalidDir = "Folder not found"
+			InvalidValue = "Invalid value"
 		}
 		Label = @{
 			CfgFileHead = "Configuration file:"
+		}
+		About = @{
+			Title = "ps12exe"
+			Version = "Version"
+			Description = "Compile PowerShell scripts into standalone Windows executables, with a pure-script GUI, a cross-platform Core target and all that jazz."
+			Repository = "Repository"
+			Issues = "Report an issue"
+			Documentation = "Documentation"
 		}
 	}
 	# Console

@@ -31,6 +31,7 @@
 			Resources = "リソース"
 			Signing   = "署名"
 			Modes     = "モード"
+			About     = "このアプリについて"
 		}
 		Group  = @{
 			IO         = "入力 / 出力"
@@ -177,9 +178,20 @@
 			Cancelled     = "キャンセルされました"
 			Done          = "完了"
 			CfgLoadFailed = "設定ファイルの読み込みに失敗しました："
+			InvalidFile   = "ファイルが見つかりません"
+			InvalidDir    = "フォルダーが見つかりません"
+			InvalidValue  = "無効な値"
 		}
 		Label  = @{
 			CfgFileHead = "設定ファイル："
+		}
+		About  = @{
+			Title         = "ps12exe"
+			Version       = "バージョン"
+			Description   = "PowerShell スクリプトを単体の Windows 実行ファイルにコンパイルします。純スクリプト GUI、クロスプラットフォーム Core ターゲットなどを備えます。"
+			Repository    = "リポジトリ"
+			Issues        = "問題を報告"
+			Documentation = "ドキュメント"
 		}
 	}
 	# コンソール

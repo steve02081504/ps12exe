@@ -63,7 +63,9 @@ Add-Test @{
 			'Dialog.Icon.Title', 'Dialog.Icon.Filter', 'Dialog.Certificate.Title', 'Dialog.Certificate.Filter',
 			'Dialog.OpenCfg.Title', 'Dialog.OpenCfg.Filter', 'Dialog.SaveCfg.Title', 'Dialog.SaveCfg.Filter',
 			'Dialog.Folder.Title',
-			'Window.Title', 'Log.Ready', 'Log.Compiling', 'Log.Cancelled', 'Log.Done', 'Log.CfgLoadFailed', 'Label.CfgFileHead'
+			'Window.Title', 'Log.Ready', 'Log.Compiling', 'Log.Cancelled', 'Log.Done', 'Log.CfgLoadFailed',
+			'Log.InvalidFile', 'Log.InvalidDir', 'Log.InvalidValue', 'Label.CfgFileHead',
+			'About.Title', 'About.Version', 'About.Description', 'About.Repository', 'About.Issues', 'About.Documentation'
 		)
 		$required = @($required | Select-Object -Unique)
 
@@ -213,7 +215,7 @@ Add-Test @{
 
 		Assert-True ($results.Count -ge 6) "未遍历到足够 locale：$($results.Count)"
 		foreach ($result in $results) {
-			Assert-Equal 8 $result.TabPages "$($result.Locale) 的 TabPage 数不符"
+			Assert-Equal 9 $result.TabPages "$($result.Locale) 的 TabPage 数不符"
 			Assert-Equal 57 $result.Fields "$($result.Locale) 的字段控件数不符"
 			Assert-Equal $expectedGroups $result.Groups "$($result.Locale) 的 GroupBox 数不符"
 			Assert-True ($result.Clip.Count -eq 0) "$($result.Locale) 文本被截断：`n" + ($result.Clip -join "`n")
@@ -518,5 +520,116 @@ Add-Test @{
 		Assert-True ($result.Log.Length -gt 0) '编译日志为空'
 		Assert-True ($result.Message.Length -gt 0) '编译结果消息为空'
 		Assert-True ([bool]$result.BadFinished) '非法脚本编译超时未结束（对话框应被抑制而不阻塞）'
+	}
+}
+
+# 关于页：最后一页，含仓库/Issue/文档三个链接且不混入参数字段（GroupBox）。
+Add-Test @{
+	Name  = 'gui.about'
+	Group = 'gui'
+	Deps  = @('src/GUI/', 'src/locale/', 'src/LocaleLoader.ps1')
+	Run   = {
+		param($ctx)
+		$result = Invoke-GUIScriptBlock -Variables @{ RepoRoot = $ctx.RepoRoot } -Script {
+			$gui = Join-Path $RepoRoot 'src/GUI'
+			. (Join-Path $gui 'UItools.ps1')
+			. (Join-Path $gui 'Schema.ps1')
+			. (Join-Path $gui 'Functions.ps1')
+			. (Join-Path $gui 'Layout.ps1')
+			$Script:GUISchema = Get-GUISchema
+			$Script:LocalizeData = & (Join-Path $RepoRoot 'src/locale/en-US.ps1')
+			$Script:refs = @{}
+			$Script:FieldControls = @{}
+			$Script:FieldBrowse = @{}
+			$form = New-GUIForm
+
+			function Get-GUIDescendants($control) {
+				foreach ($child in $control.Controls) {
+					$child
+					if ($child.HasChildren) { Get-GUIDescendants $child }
+				}
+			}
+
+			$tabPages = @($Script:refs.TabsControl.TabPages)
+			$aboutPage = $tabPages[$tabPages.Count - 1]
+			$descendants = @(Get-GUIDescendants $aboutPage)
+			$output = @{
+				PageText   = $aboutPage.Text
+				Expected   = Get-GUIText 'Page.About'
+				Links      = @($descendants | Where-Object { $_ -is [System.Windows.Forms.LinkLabel] } | ForEach-Object {
+						@($_.Links | ForEach-Object { [string]$_.LinkData })
+					})
+				GroupBoxes = @($descendants | Where-Object { $_ -is [System.Windows.Forms.GroupBox] }).Count
+			}
+			$form.Dispose()
+			$output
+		}
+
+		$urls = @($result.Links)
+		Assert-Equal $result.Expected $result.PageText '最后一页不是关于页'
+		Assert-Equal 0 $result.GroupBoxes '关于页混入了参数字段分组'
+		Assert-True ($urls -contains 'https://github.com/steve02081504/ps12exe') '关于页缺少仓库链接'
+		Assert-True ($urls -contains 'https://github.com/steve02081504/ps12exe/issues') '关于页缺少 Issue 链接'
+		Assert-True ($urls -contains 'https://github.com/steve02081504/ps12exe#readme') '关于页缺少文档链接'
+	}
+}
+
+# 非法值标红：路径不存在时输入框用调色板 InvalidBack，改正后恢复 InputBack，ToolTip 带上错误文案。
+Add-Test @{
+	Name  = 'gui.validation'
+	Group = 'gui'
+	Deps  = @('src/GUI/', 'src/locale/', 'src/LocaleLoader.ps1')
+	Run   = {
+		param($ctx)
+		$result = Invoke-GUIScriptBlock -Variables @{ RepoRoot = $ctx.RepoRoot; WorkDir = $ctx.WorkDir } -Script {
+			$gui = Join-Path $RepoRoot 'src/GUI'
+			. (Join-Path $gui 'UItools.ps1')
+			. (Join-Path $gui 'Schema.ps1')
+			. (Join-Path $gui 'Functions.ps1')
+			. (Join-Path $gui 'Layout.ps1')
+			$UIMode = 'Light'
+			. (Join-Path $gui 'DarkMode.ps1')
+			$Script:GUISchema = Get-GUISchema
+			$Script:LocalizeData = & (Join-Path $RepoRoot 'src/locale/en-US.ps1')
+			$Script:refs = @{}
+			$Script:FieldControls = @{}
+			$Script:FieldBrowse = @{}
+			$form = New-GUIForm
+			Set-DarkMode $false
+
+			$invalidColor = (ConvertTo-GUIColor $Script:GUITheme.InvalidBack).ToArgb()
+			$baseColor = (ConvertTo-GUIColor $Script:GUITheme.InputBack).ToArgb()
+			$inputControl = Get-FieldControl 'inputFile'
+			$badMessage = Get-GUIText 'Log.InvalidFile'
+
+			# 非法路径：标红并提示。
+			Set-UIData -UIData @{ inputFile = (Join-Path $WorkDir 'does-not-exist.ps1') }
+			$badColor = $inputControl.BackColor.ToArgb()
+			$badTip = [string]$Script:GUIToolTip.GetToolTip($inputControl)
+
+			# 合法路径：恢复底色，错误文案消失。
+			$good = Join-Path $WorkDir 'valid-input.ps1'
+			[System.IO.File]::WriteAllText($good, "'x'", [System.Text.UTF8Encoding]::new($true))
+			Set-UIData -UIData @{ inputFile = $good }
+			$goodColor = $inputControl.BackColor.ToArgb()
+			$goodTip = [string]$Script:GUIToolTip.GetToolTip($inputControl)
+
+			$output = @{
+				InvalidColor = $invalidColor
+				BaseColor    = $baseColor
+				BadColor     = $badColor
+				GoodColor    = $goodColor
+				BadTip       = $badTip
+				GoodTip      = $goodTip
+				BadMessage   = $badMessage
+			}
+			$form.Dispose()
+			$output
+		}
+
+		Assert-Equal $result.InvalidColor $result.BadColor '非法 inputFile 未标红'
+		Assert-Equal $result.BaseColor $result.GoodColor '合法 inputFile 未恢复底色'
+		Assert-True ($result.BadTip.Contains($result.BadMessage)) '非法 inputFile 的 ToolTip 未包含错误文案'
+		Assert-False ($result.GoodTip.Contains($result.BadMessage)) '合法 inputFile 的 ToolTip 仍带错误文案'
 	}
 }

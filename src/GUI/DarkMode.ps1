@@ -38,6 +38,7 @@ function Get-GUIThemePalette {
 			LogBack      = '#141415'
 			LogText      = '#c8c8c8'
 			GridLine     = '#3f3f46'
+			InvalidBack  = '#5a1d1d'
 			BorderRgb    = 0x1e1e1e
 		}
 	}
@@ -60,6 +61,7 @@ function Get-GUIThemePalette {
 		LogBack      = '#ffffff'
 		LogText      = '#1f1f1f'
 		GridLine     = '#d6d6d6'
+		InvalidBack  = '#fde7e9'
 		BorderRgb    = 0xf3f3f3
 	}
 }
@@ -240,6 +242,13 @@ function Set-DarkMode {
 				$control.TitleColor = $mutedText
 			}
 		}
+		elseif ($control -is [System.Windows.Forms.LinkLabel]) {
+			$control.ForeColor = $text
+			$control.LinkColor = $accent
+			$control.ActiveLinkColor = $accent
+			$control.VisitedLinkColor = $accent
+			$control.BackColor = [System.Drawing.Color]::Transparent
+		}
 		elseif ($control -is [System.Windows.Forms.Label]) {
 			$control.ForeColor = $text
 			$control.BackColor = [System.Drawing.Color]::Transparent
@@ -276,6 +285,9 @@ function Set-DarkMode {
 	# 图标按钮的图标随主题前景色重新着色。
 	Set-GUIButtonIcon $Script:refs.DarkModeSetButton "$PSScriptRoot\..\..\img\darklight.png" $text
 	Set-GUIButtonIcon $Script:refs.BGMSetButton "$PSScriptRoot\..\..\img\music.png" $text
+
+	# 换肤会覆盖字段底色，重新应用非法值标红。
+	Update-GUIValidation
 
 	# DWMWA_USE_IMMERSIVE_DARK_MODE
 	[ps12exeGUI.Dwm]::SetWindowAttribute($mainForm.Handle, 20, [int]$dark)

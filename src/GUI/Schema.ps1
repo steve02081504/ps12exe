@@ -16,6 +16,7 @@
 #   Rows        Kind=Script 的行数。
 #   Options     Kind=Flags 时的选项数组。
 #   EnabledWhen 可选 scriptblock($UIData)，返回该控件是否可用。
+#   Validate   可选 scriptblock($Value,$UIData)；值非法时返回错误文案（合法返回空），GUI 据此把控件标红并把文案挂到 ToolTip。
 #   Help       可选 GUI 文案对象的点号路径；缺省从 ConsoleHelpData.PrarmsData 按 Path 自动取，取不到用 Label。
 #
 # Kind：
@@ -43,8 +44,8 @@ function Get-GUISchema {
 						Key    = 'IO'
 						Label  = 'Group.IO'
 						Fields = @(
-							@{ Path = 'inputFile'; Kind = 'Path'; Label = 'Field.inputFile'; Browse = 'Compile'; Default = '' }
-							@{ Path = 'outputFile'; Kind = 'Path'; Label = 'Field.outputFile'; Browse = 'Output'; Default = '' }
+							@{ Path = 'inputFile'; Kind = 'Path'; Label = 'Field.inputFile'; Browse = 'Compile'; Default = ''; Validate = { param($Value, $UIData) if (-not (Test-GUIFileExists $Value)) { Get-GUIText 'Log.InvalidFile' } } }
+							@{ Path = 'outputFile'; Kind = 'Path'; Label = 'Field.outputFile'; Browse = 'Output'; Default = ''; Validate = { param($Value, $UIData) if (-not (Test-GUIOutputDirExists $Value)) { Get-GUIText 'Log.InvalidDir' } } }
 						)
 					}
 					@{
@@ -121,7 +122,7 @@ function Get-GUISchema {
 							@{ Path = 'Build.Options'; Kind = 'Text'; Default = '/o+ /debug-' }
 							@{ Path = 'Build.KeepSource'; Kind = 'Bool'; Default = $false }
 							@{ Path = 'Build.Minify'; Kind = 'Script'; Multiline = $true; Rows = 4; Default = '' }
-							@{ Path = 'Build.TempDir'; Kind = 'Path'; Browse = 'Folder'; Default = '' }
+							@{ Path = 'Build.TempDir'; Kind = 'Path'; Browse = 'Folder'; Default = ''; Validate = { param($Value, $UIData) if (-not (Test-GUIDirectoryExists $Value)) { Get-GUIText 'Log.InvalidDir' } } }
 						)
 					}
 					@{
@@ -151,7 +152,7 @@ function Get-GUISchema {
 						Fields = @(
 							@{ Path = 'Build.Core.Backend'; Kind = 'Choice'; Choices = @('Shared', 'Bundled'); Default = 'Shared'; EnabledWhen = { param($UIData) $UIData.Build.Target -eq 'Core' } }
 							@{ Path = 'Build.Core.TargetOs'; Kind = 'ChoiceEdit'; Choices = @('', 'Windows', 'Linux', 'MacOS'); Default = ''; EnabledWhen = { param($UIData) $UIData.Build.Target -eq 'Core' } }
-							@{ Path = 'Build.Core.TargetFramework'; Kind = 'ChoiceEdit'; Choices = @('', 'net8.0', 'net9.0', 'net10.0'); Default = ''; EnabledWhen = { param($UIData) $UIData.Build.Target -eq 'Core' } }
+							@{ Path = 'Build.Core.TargetFramework'; Kind = 'ChoiceEdit'; Choices = @('', 'net8.0', 'net9.0', 'net10.0'); Default = ''; EnabledWhen = { param($UIData) $UIData.Build.Target -eq 'Core' }; Validate = { param($Value, $UIData) if ($Value -and $Value -notmatch '^net\d+\.\d+$') { Get-GUIText 'Log.InvalidValue' } } }
 							@{ Path = 'Build.Core.PowerShellVersion'; Kind = 'ChoiceEdit'; Choices = @(''); Default = ''; EnabledWhen = { param($UIData) $UIData.Build.Target -eq 'Core' -and $UIData.Build.Core.Backend -eq 'Bundled' } }
 							@{ Path = 'Build.Core.SingleFile'; Kind = 'Bool'; Default = $true; EnabledWhen = { param($UIData) $UIData.Build.Target -eq 'Core' } }
 							@{ Path = 'Build.Core.SelfContained'; Kind = 'Bool'; Default = $false; EnabledWhen = { param($UIData) $UIData.Build.Target -eq 'Core' -and $UIData.Build.Core.Backend -eq 'Bundled' } }
@@ -172,7 +173,7 @@ function Get-GUISchema {
 						Key    = 'Resources'
 						Label  = 'Group.Resources'
 						Fields = @(
-							@{ Path = 'Resources.Icon'; Kind = 'Path'; Browse = 'Icon'; Default = '' }
+							@{ Path = 'Resources.Icon'; Kind = 'Path'; Browse = 'Icon'; Default = ''; Validate = { param($Value, $UIData) if (-not (Test-GUIIconExists $Value)) { Get-GUIText 'Log.InvalidFile' } } }
 							@{ Path = 'Resources.Title'; Kind = 'Text'; Default = '' }
 							@{ Path = 'Resources.Description'; Kind = 'Text'; Default = '' }
 							@{ Path = 'Resources.Company'; Kind = 'Text'; Default = '' }
@@ -193,7 +194,7 @@ function Get-GUISchema {
 						Label  = 'Group.Signing'
 						Fields = @(
 							@{ Path = 'Signing.Enabled'; Kind = 'Bool'; Label = 'Field.Signing.Enabled'; Default = $false }
-							@{ Path = 'Signing.Certificate'; Kind = 'Path'; Browse = 'Certificate'; Default = ''; EnabledWhen = { param($UIData) $UIData.Signing.Enabled } }
+							@{ Path = 'Signing.Certificate'; Kind = 'Path'; Browse = 'Certificate'; Default = ''; EnabledWhen = { param($UIData) $UIData.Signing.Enabled }; Validate = { param($Value, $UIData) if (-not (Test-GUIFileExists $Value)) { Get-GUIText 'Log.InvalidFile' } } }
 							@{ Path = 'Signing.Password'; Kind = 'Password'; Default = ''; EnabledWhen = { param($UIData) $UIData.Signing.Enabled } }
 							@{ Path = 'Signing.Thumbprint'; Kind = 'Text'; Default = ''; EnabledWhen = { param($UIData) $UIData.Signing.Enabled } }
 							@{ Path = 'Signing.Timestamp'; Kind = 'Text'; Default = 'http://timestamp.digicert.com'; EnabledWhen = { param($UIData) $UIData.Signing.Enabled } }
@@ -217,6 +218,12 @@ function Get-GUISchema {
 						)
 					}
 				)
+			}
+			@{
+				Key    = 'About'
+				Label  = 'Page.About'
+				Type   = 'About'
+				Groups = @()
 			}
 		)
 	}

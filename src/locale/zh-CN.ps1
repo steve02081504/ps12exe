@@ -34,6 +34,7 @@
 			Resources = "资源"
 			Signing   = "签名"
 			Modes     = "模式"
+			About     = "关于"
 		}
 		Group  = @{
 			IO         = "输入输出"
@@ -180,9 +181,20 @@
 			Cancelled     = "已取消"
 			Done          = "完成"
 			CfgLoadFailed = "加载配置文件失败："
+			InvalidFile   = "文件不存在"
+			InvalidDir    = "文件夹不存在"
+			InvalidValue  = "值非法"
 		}
 		Label  = @{
 			CfgFileHead = "配置文件："
+		}
+		About  = @{
+			Title         = "ps12exe"
+			Version       = "版本"
+			Description   = "把 PowerShell 脚本编译成独立的 Windows 可执行文件，支持纯脚本 GUI、跨平台 Core 目标等。"
+			Repository    = "代码仓库"
+			Issues        = "反馈问题"
+			Documentation = "文档"
 		}
 	}
 

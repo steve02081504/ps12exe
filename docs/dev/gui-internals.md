@@ -26,7 +26,7 @@ GUI 界面不再由每种语言各写一份 `src/locale/*.fbs` 布局，而是�
 
 字段格式见 `src/GUI/Schema.ps1` 顶部注释。新增参数时：
 
-1. 在 `Schema.ps1` 加字段（`Path`、`Kind`、`Default`，必要时 `Choices`/`Browse`/`EnabledWhen`）。
+1. 在 `Schema.ps1` 加字段（`Path`、`Kind`、`Default`，必要时 `Choices`/`Browse`/`EnabledWhen`/`Validate`）。
 2. 在 7 份 `src/locale/<lang>.ps1` 的 `GUI` 里补 `Field.<Path>` 文案。
 3. 如果是新参数，按 AGENTS.md 同步 locale 的 `Usage`/`PrarmsData` 与各语言 README。
 
@@ -38,12 +38,15 @@ GUI 界面不再由每种语言各写一份 `src/locale/*.fbs` 布局，而是�
 
 ### GUI 必需的键
 
-- 页：`Page.General`、`Page.App`、`Page.OS`、`Page.Build`、`Page.Core`、`Page.Resources`、`Page.Signing`、`Page.Modes`
+- 页：`Page.General`、`Page.App`、`Page.OS`、`Page.Build`、`Page.Core`、`Page.Resources`、`Page.Signing`、`Page.Modes`、`Page.About`
 - 分组：`Group.IO`、`Group.Target`、`Group.Silence`、`Group.Console`、`Group.Windowed`、`Group.OS`、`Group.Build`、`Group.ConstEval`、`Group.DllExports`、`Group.Core`、`Group.Resources`、`Group.Signing`、`Group.Modes`
 - 字段：`Field.<schema 里的 Path>`；另加 `Field.Build.DllExports.Label`、`Field.Build.DllExports.Help`、`Field.Build.DllExports.FuncName`、`Field.Build.DllExports.ReturnType`、`Field.Build.DllExports.Params`
 - 按钮：`Button.Compile`、`Button.Cancel`、`Button.LoadCfg`、`Button.SaveCfg`、`Button.SaveAsCfg`、`Button.Browse`、`Button.DarkMode`、`Button.BGM`、`Button.AddExport`、`Button.EditExport`、`Button.RemoveExport`
 - 对话框：`Dialog.Compile.Title`、`Dialog.Compile.Filter`、`Dialog.Output.Title`、`Dialog.Output.Filter`、`Dialog.Icon.Title`、`Dialog.Icon.Filter`、`Dialog.Certificate.Title`、`Dialog.Certificate.Filter`、`Dialog.OpenCfg.Title`、`Dialog.OpenCfg.Filter`、`Dialog.SaveCfg.Title`、`Dialog.SaveCfg.Filter`、`Dialog.Folder.Title`
-- 其它：`Window.Title`、`Log.Ready`、`Log.Compiling`、`Log.Cancelled`、`Log.Done`、`Log.CfgLoadFailed`、`Label.CfgFileHead`（已有 `CfgFileLabelHead` 可复用，统一用 `Label.CfgFileHead`）
+- 其它：`Window.Title`、`Log.Ready`、`Log.Compiling`、`Log.Cancelled`、`Log.Done`、`Log.CfgLoadFailed`、`Log.InvalidFile`、`Log.InvalidDir`、`Log.InvalidValue`、`Label.CfgFileHead`（已有 `CfgFileLabelHead` 可复用，统一用 `Label.CfgFileHead`）
+- 关于页：`About.Title`、`About.Version`、`About.Description`、`About.Repository`、`About.Issues`、`About.Documentation`
+
+`schema.Pages` 里的最后一页是 `Type='About'` 的关于页（无 `Groups`、无字段），由 `New-GUIAboutPanel` 渲染应用名/版本与仓库、Issue、文档三个链接；版本号取自已安装模块版本，开发版（`0.0.0`）回退成 git 短 commit（`<hash>`），都取不到则不显示版本行。
 
 <a id="gui-theme"></a>
 
@@ -56,6 +59,7 @@ GUI 界面不再由每种语言各写一份 `src/locale/*.fbs` 布局，而是�
 - `TableLayoutPanel`/`FlowLayoutPanel`/`Panel` 按父控件底色继承，避免系统默认灰在深色下露馅。
 - TabControl 跟不了深色，由 `Initialize-GUITabTheme` 改成 `OwnerDrawFixed` 自绘（选中项加一条强调色下划线），只需挂钩一次，之后换肤靠 `Invalidate` 重绘。
 - 文本类控件用 `SetWindowTheme('DarkMode_Explorer')` 让滚动条跟着变暗。
+- `InvalidBack` 是非法字段的标红底色（亮 `#fde7e9`、暗 `#5a1d1d`），由 `Update-GUIValidation` 使用；`LinkLabel` 的 `LinkColor`/`ActiveLinkColor`/`VisitedLinkColor` 统一取强调色。
 - 深色/背景音乐按钮的图标源图是 256px 纯白透明 PNG，`Set-GUIButtonIcon` 会缩到 16px 并按当前主题前景色重新着色后挂到 `Button.Image`（`TextImageRelation=ImageBeforeText`），亮/暗下都清晰；不要在 Events 里再设 `BackgroundImage`。
 - 自动跟随：`UIMode=Auto` 时定时器每 2s 调 `Sync-GUIDarkMode`（读 `AppsUseLightTheme`）。只有**系统设置本身**变化才算「系统切换」；用户点深色按钮会置 `$Script:DarkModeOverride`，在系统设置不变期间保持手动结果，系统再变则清除覆盖、自动跟随重新接管（防止手动切到浅色后 2s 又被切回去）。`Sync-GUIDarkMode -SystemDark` 供测试注入系统值。
 - `Get-SystemDarkMode` 读 `HKCU:\...\Themes\Personalize\AppsUseLightTheme`，读不到按浅色。
@@ -82,7 +86,8 @@ GUI 界面不再由每种语言各写一份 `src/locale/*.fbs` 布局，而是�
 - `Get-DefaultUIData`：按 schema 的 `Default` 构造完整 UIData（含被禁用字段）。
 - `Get-UIData`：从控件读值，返回完整 UIData，附 `SchemaVersion = 2`。
 - `Set-UIData -UIData`：写回控件后调用 `Update-UIState`。
-- `Update-UIState`：按每个字段的 `EnabledWhen` 刷新 `Enabled`；`Choice` 字段按 `ChoicesWhen` 重建选项（保留当前值，若被过滤掉则回退到首项）。
+- `Update-UIState`：按每个字段的 `EnabledWhen` 刷新 `Enabled`；`Choice` 字段按 `ChoicesWhen` 重建选项（保留当前值，若被过滤掉则回退到首项）；最后调用 `Update-GUIValidation`。
+- 非法值标红：字段可选 `Validate = { param($Value,$UIData) ... }`，非法时返回错误文案（合法返回空）。`Update-GUIValidation` 遍历带 `Validate` 且已启用的字段，非法时把控件底色设为调色板 `InvalidBack` 并把「错误文案 + 帮助」写进 ToolTip，合法时恢复 `InputBack` 与帮助。`Set-DarkMode` 换肤会覆盖底色，故其末尾会再调一次。路径类字段用 `Test-GUIFileExists`/`Test-GUIDirectoryExists`/`Test-GUIOutputDirExists`/`Test-GUIIconExists`（空值与 URL 合法；相对路径按配置文件目录解析；`,N` 图标索引只查文件部分；裸 DLL 名跳过）。
 - `Get-ps12exeArgs`：只输出「字段可用且值与默认不同」的项，组装成 ps12exe 对象式 API（`inputFile`/`outputFile`/`App`/`Os`/`Build`/`Resources`/`Signing`/模式开关）。`Build.Minify` 转 scriptblock；`Build.DllExports` 直接是数组。被 `EnabledWhen` 判为不可用的字段不输出。
 - `Resolve-ProjectPath $Path $BaseDir`：URL（`^[a-z]+://`）原样返回；`,N` 形式的资源图标索引只解析路径部分；相对路径以 `$BaseDir`（配置文件所在目录）为基准转绝对路径。
 - `Get-RelativePath $Path $BaseDir`：用 `Uri.MakeRelativeUri` 实现，兼容 Windows PowerShell 5.1（不用 `Resolve-Path -RelativeBasePath`）。
@@ -90,7 +95,7 @@ GUI 界面不再由每种语言各写一份 `src/locale/*.fbs` 布局，而是�
 - 配置文件：`SetCfgFile`、`LoadCfgFile`、`SaveCfgFileAs`、`SaveCfgFile`、`AskSaveCfg`、`Test-UIDirty`。对话框取消（`FileName` 为空或与调用前相同）时直接返回；`Import-Clixml` 失败弹窗提示并写日志。
 - `Write-GUILog $Text`：把一行追加进 `LogTextBox` 并滚到底。
 
-`Layout.ps1`：`Resolve-NestedText`、`Get-GUIText`、`Get-ParamHelp`、`New-GUIForm`、`New-GUIDialogs`（返回哈希表，键 `Compile`/`Output`/`Icon`/`Certificate`/`Folder`/`OpenCfg`/`SaveCfg`）。
+`Layout.ps1`：`Resolve-NestedText`、`Get-GUIText`、`Get-ParamHelp`、`New-GUIForm`、`New-GUIDialogs`（返回哈希表，键 `Compile`/`Output`/`Icon`/`Certificate`/`Folder`/`OpenCfg`/`SaveCfg`）、`New-GUILinkLabel`、`New-GUIAboutPanel`。
 
 `Compile.ps1`：
 
