@@ -2991,7 +2991,8 @@ namespace PSRunnerNS {
 	}
 	#endif
 
-	static partial class PSRunnerEntry {
+	// public：压缩版 DllExport 的 launcher 需要直接静态调用 payload 里的导出包装（见 DllExportPack.cs）。
+	public static partial class PSRunnerEntry {
 		static PSRunner runner;
 
 		#if ScriptHasParam

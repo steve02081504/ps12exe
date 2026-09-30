@@ -618,7 +618,7 @@ A script with `#_DllExport` is compiled into a Win32 DLL callable through `LoadL
 
 | Build                               | Output size | Warm compile |
 | ----------------------------------- | ----------- | ------------ |
-| ps12exe · DLL export · Framework4.0 | 28160 bytes | ~2.8 s       |
+| ps12exe · DLL export · Framework4.0 | 17920 bytes | ~1.8 s       |
 | PS2EXE 1.0.18 · DLL export          | not support | not support  |
 
 ### Compiled-EXE Runtime Behaviour 🖥️

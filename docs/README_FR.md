@@ -617,7 +617,7 @@ Un script avec `#_DllExport` est compilé en DLL Win32 appelable via `LoadLibrar
 
 | Build                               | Taille de sortie   | Compilation à chaud |
 | ----------------------------------- | ------------------ | ------------------- |
-| ps12exe · export DLL · Framework4.0 | 28 160 octets      | ~2,8 s              |
+| ps12exe · export DLL · Framework4.0 | 17 920 octets      | ~1,8 s              |
 | PS2EXE 1.0.18 · export DLL          | non pris en charge | non pris en charge  |
 
 ### Comportement d'exécution des EXE compilés 🖥️

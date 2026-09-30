@@ -22,11 +22,14 @@
 
 - 目标：一步产出可被 native `LoadLibrary`/`GetProcAddress` 调用的 Win32 DLL，导出函数转发到脚本里的同名 PowerShell 函数。
 - 仅支持 Framework4.0 + x86/x64：`AnyCPU` 会自动选宿主位数并告警；`arm64`/`Framework2.0`/`Core` 直接报错；访客模式忽略该指令（避免编译期联网下载并执行工具）。
-- 实现（`src/DllExportCompiler.ps1` + `src/programFrames/DllExport.cs`）：
-  1. CodeDom 把 `default.cs` 与 `DllExport.cs` 两个源文件（同一个 `PSRunnerEntry` partial 类）按 `/target:library` 编译成普通类库；每个导出声明生成一个 `PS12ExeDllExport<i>` 包装方法，首次调用时 `DllInitChecker` 惰性建宿主并以点源方式在全局作用域运行脚本（函数定义在 `PSEXEMainFunction` 体内是局部的，导出必须走顶层/点源）。
-  2. 用 AsmResolver 读取该类库，给每个包装方法设 `MethodDefinition.ExportInfo = new UnmanagedExportInfo(名字, VTableFromUnmanaged | (x86 ? VTable32Bit : VTable64Bit))`，清掉 module 的 `ILOnly` 标志后 `ModuleDefinition.Write` 重写：AsmResolver 的托管 PE 写出器据此生成 native 导出桩、`mscoree.dll!_CorDllMain` 引导桩与 CLR vtable fixup（与 ilasm 对 `.export` 的处理同机制），位数由 vtable 项的 32/64 位区分。
-  3. 该路径跳过 pack 与 `ExeSinker`（后者重建 PE 会覆盖刚生成的导出表/引导桩），也不写产物缓存。
-- 必须清 `DotNetDirectoryFlags.ILOnly`，否则不写 CLR 引导桩、`LoadLibrary` 起不来 CLR。`src/bin/AsmResolver.dll` 目前是含上游修复（[Washi1337/AsmResolver#793](https://github.com/Washi1337/AsmResolver/pull/793)：导出名指针表按名排序）的本地构建；若换回不含该修复的版本，`New-DllExportMethods` 必须按导出名有序生成包装方法，否则 `GetProcAddress` 按名解析会漏掉部分导出。
+- 产物分两层（`src/CodeDomCompiler.ps1` 的 DllExport 分支）：
+  1. **payload**：CodeDom 把 `default.cs` 与 `DllExport.cs` 两个源文件（同一个 `PSRunnerEntry` partial 类，现为 `public` 供 launcher 调用）按 `/target:library` 编译成普通类库；每个导出声明生成一个 `PS12ExeDllExport<i>` 包装方法，首次调用时 `DllInitChecker` 惰性建宿主并以点源方式在全局作用域运行脚本（函数定义在 `PSEXEMainFunction` 体内是局部的，导出必须走顶层/点源）。
+  2. **launcher**：gzip 上面那份 payload，编译 `src/programFrames/DllExportPack.cs`（`/target:library`，编译期引用 payload，内嵌 gzip 资源 `main`，携带最终 PE 的资源/图标）。其静态构造在首次导出调用前解压并 `Assembly.Load`，再挂 `AssemblyResolve`，让生成的转发包装直接静态调用 payload 的同名包装；静态构造由 CLR 保证只跑一次，因此每个导出调用没有额外检查/加锁。
+  3. 用 AsmResolver 读取 launcher，给每个转发包装设 `MethodDefinition.ExportInfo = new UnmanagedExportInfo(名字, VTableFromUnmanaged | (x86 ? VTable32Bit : VTable64Bit))`，清掉 module 的 `ILOnly` 标志后 `ModuleDefinition.Write` 重写：AsmResolver 的托管 PE 写出器据此生成 native 导出桩、`mscoree.dll!_CorDllMain` 引导桩与 CLR vtable fixup（与 ilasm 对 `.export` 的处理同机制），位数由 vtable 项的 32/64 位区分。
+  4. 该路径跳过 pack 与 `ExeSinker`（后者重建 PE 会覆盖刚生成的导出表/引导桩），也不写产物缓存。
+- 压缩收益：小脚本 ~26 KB → ~18 KB（payload gzip + launcher），脚本越大收益越明显。
+- 必须清 `DotNetDirectoryFlags.ILOnly`，否则不写 CLR 引导桩、`LoadLibrary` 起不来 CLR。
+- 导出名指针表必须按字典序升序（Windows 才能二分查找），`Sort-DllExports` 以序数、区分大小写排好元数据方法顺序作为兜底。`src/bin/AsmResolver.dll` 目前是含上游修复（[Washi1337/AsmResolver#793](https://github.com/Washi1337/AsmResolver/pull/793)：导出名指针表按名排序）的本地构建；若换回不含该修复的版本，这一步就是必需的，否则 `GetProcAddress` 按名解析会漏掉部分导出。
 - 用到的 AsmResolver.DotNet 写出器 API 需镜像在 `tools/AsmResolver/Root.cs`，否则会被 illink 裁掉（见 `#asmresolver-trim`）。
 - 导出包装方法把异常挡在 native 边界内：出错写 stderr 并返回默认值（托管异常穿过 native 边界会变成进程级崩溃）。
 

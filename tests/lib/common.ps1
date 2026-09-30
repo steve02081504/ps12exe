@@ -40,7 +40,7 @@ $script:BuildComponentPatterns = [ordered]@{
 		'src/ReadScriptFile.ps1', 'src/predicate.ps1', 'src/GuestUrlGuard.ps1',
 		'src/OutputCache.ps1', 'src/AsmWarmup.ps1', 'src/Lzma.ps1',
 		'src/programFrames/constexpr.cs', 'src/programFrames/CoreHost.cs',
-		'src/programFrames/default.cs', 'src/programFrames/DllExport.cs',
+		'src/programFrames/default.cs', 'src/programFrames/DllExport.cs', 'src/programFrames/DllExportPack.cs',
 		'src/programFrames/pack.cs', 'src/programFrames/TinySharp.cs',
 		'src/programFrames/AssemblyInfo.cs',
 		'src/programFrames/LzmaDecode.cs', 'src/programFrames/LzmaEncode.cs',

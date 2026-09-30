@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using System.Management.Automation;
 using System.Management.Automation.Runspaces;
 
-// 原生 DLL 导出层：与 default.cs 的 PSRunnerEntry 组成同一个 partial 类。
-// 工具（src/DllExportCompiler.ps1）会把每个 #_DllExport 声明生成一个包装方法，并注入到本文件末尾的
-// 导出方法标记处；编译成类库后再由 AsmResolver 给这些方法设置 UnmanagedExportInfo，写出原生导出表。
+// 原生 DLL 导出层（payload 侧）：与 default.cs 的 PSRunnerEntry 组成同一个 partial 类。
+// 工具（src/DllExportCompiler.ps1）会把每个 #_DllExport 声明生成一个包装方法，注入到本文件末尾的标记处；
+// 这份 payload 编成类库后被 gzip 进 launcher（DllExportPack.cs），由 launcher 携带原生导出表并转发调用。
 namespace PSRunnerNS {
-	static partial class PSRunnerEntry {
+	public static partial class PSRunnerEntry {
 		private static readonly object dllLock = new object();
 		private static bool dllInitialized = false;
 

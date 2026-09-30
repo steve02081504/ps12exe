@@ -99,6 +99,17 @@ function New-CompilerParameters([string]$outFile, [string[]]$opts, [bool]$debug,
 	return $p
 }
 
+# gzip 压缩字节（内存流，不落磁盘）。打包负载与 DllExport payload 共用。
+function Compress-Gzip([byte[]]$Data) {
+	$output = New-Object System.IO.MemoryStream
+	$gzip = New-Object System.IO.Compression.GZipStream($output, [System.IO.Compression.CompressionMode]::Compress, $true)
+	try { $gzip.Write($Data, 0, $Data.Length) }
+	finally { $gzip.Dispose() }
+	[byte[]]$bytes = $output.ToArray()
+	$output.Dispose()
+	return , $bytes
+}
+
 # ---------- 程序帧模板缓存 ----------
 # 打包路径要把「帧 + 脚本」编成 payload、再把 gzip(payload) 塞进 launcher，每次跑两次 csc；但帧的 IL
 # 只由「帧源码 + 编译选项 + 引用 + 编译器版本」决定，脚本 / gz 都只是内嵌资源。于是把帧预编成模板缓存：
@@ -144,7 +155,7 @@ function Get-FrameTemplate([string]$Key, [int]$Bucket, [string[]]$Options, [stri
 	}
 }
 
-# 默认路径：先编出普通托管程序集作为负载，gzip 后塞进一个极小的 launcher 里。launcher 启动时在内存中解压并用 Assembly.Load 载入负载，因此负载不会落到磁盘。仅当无法打包时才退化为普通编译（Build.KeepSource 需要负载源码/PDB、Build.DllExports、真实 PS2 SMA）。常量脚本的 constexpr.cs 入口是无参 Main()，与 pack launcher 的 Main(string[]) 调用约定不符，故不走 pack。
+# 默认路径：先编出普通托管程序集作为负载，gzip 后塞进一个极小的 launcher 里。launcher 启动时在内存中解压并用 Assembly.Load 载入负载，因此负载不会落到磁盘。仅当无法打包时才退化为普通编译（Build.KeepSource 需要负载源码/PDB、真实 PS2 SMA）。常量脚本的 constexpr.cs 入口是无参 Main()，与 pack launcher 的 Main(string[]) 调用约定不符，故不走 pack。DllExport 有自己的 launcher 分支（见下），也不走这里。
 $packEnabled = (
 	-not $prepareDebug -and
 	-not $isPwsh20Sma -and
@@ -156,16 +167,50 @@ $packEnabled = (
 # 帧里的资源/版本属性片段占位标记：payload 编译替换为空，launcher/直编替换为 $resourceAttributes（见 BuildFrame.ps1）。
 $assemblyAttributesMarker = '/*__ASSEMBLY_ATTRIBUTES__*/'
 
-# 原生 DLL 导出：default.cs 与 DllExport.cs 是同一个 PSRunnerEntry partial 类，按导出声明生成包装方法后一起编译。
-$dllExportMethods = $null
-$dllExportFrame = $null
 if ($DllExportList) {
+	# 原生 DLL 导出的压缩路径：default.cs 与 DllExport.cs 是同一个 PSRunnerEntry partial 类，按导出声明生成
+	# payload 侧包装方法后先编成普通托管类库（无导出表），gzip 后塞进一个极小的 launcher。
+	# launcher 带原生导出表，静态构造时在内存里解压并 Assembly.Load 出 payload，导出包装直接静态转发过去，
+	# 因此每个导出调用没有额外检查/加锁（见 src/programFrames/DllExportPack.cs）。
 	Write-I18n Host DllExportCompiling
-	$dllExportMethods = New-DllExportMethods $DllExportList
-	$dllExportFrame = (Get-Content "$PSScriptRoot/programFrames/DllExport.cs" -Raw -Encoding UTF8).Replace('/*__PS12EXE_DLL_EXPORTS__*/', $dllExportMethods.Code)
-}
+	$dllExportFrame = (Get-Content "$PSScriptRoot/programFrames/DllExport.cs" -Raw -Encoding UTF8).
+		Replace('/*__PS12EXE_DLL_EXPORTS__*/', (New-DllExportMethods $DllExportList).Code)
 
-if ($packEnabled) {
+	# payload 程序集名取自输出名（唯一），避免同进程加载多个 DllExport 产物时 AssemblyResolve 认错程序集。
+	$payloadPath = Join-Path $TempDir "$([System.IO.Path]::GetFileNameWithoutExtension($outputFile)).payload.dll"
+	$payloadOptions = @($BaseCompilerOptions) + @(
+		"/platform:$architecture",
+		"/target:library",
+		"/nowin32manifest",
+		"/define:$($Constants -join ';')"
+	)
+	$pcp = New-CompilerParameters $payloadPath $payloadOptions $prepareDebug $FALSE
+	[VOID]$pcp.EmbeddedResources.Add("$TempDir\main.ps1")
+	# 注意用 [string[]] 传入：内联 @(a,b) 会被 params string[] 绑成单元素（两段源码被拼成一个文件）。
+	[string[]]$payloadSources = @($programFrame.Replace($assemblyAttributesMarker, ''), $dllExportFrame)
+	$cr = $cop.CompileAssemblyFromSource($pcp, $payloadSources)
+	if ($cr.Errors.Count -gt 0) { throw $cr.Errors -join "`n" }
+
+	# 负载 gzip：小脚本用 gzip 即可（LZMA 自带解码器对 ~20KB 负载不划算）。
+	[byte[]]$gzBytes = Compress-Gzip ([System.IO.File]::ReadAllBytes($payloadPath))
+
+	# launcher：编译期引用 payload（运行时由 AssemblyResolve 从内嵌 gzip 提供），携带最终 PE 的资源/图标。
+	$forwardMethods = New-DllExportMethods $DllExportList -Forward
+	$launcherSource = (Get-Content "$PSScriptRoot/programFrames/DllExportPack.cs" -Raw -Encoding UTF8).
+		Replace('/*__PS12EXE_DLL_EXPORTS__*/', $forwardMethods.Code).
+		Replace($assemblyAttributesMarker, $resourceAttributes)
+	$launcherOptions = @($CompilerOptions) + "`"/reference:$payloadPath`""
+	$lcp = New-CompilerParameters $outputFile $launcherOptions $prepareDebug $FALSE
+	$resPath = Join-Path $TempDir 'main'
+	[System.IO.File]::WriteAllBytes($resPath, $gzBytes)
+	[VOID]$lcp.EmbeddedResources.Add($resPath)
+	[string[]]$launcherSources = @($launcherSource)
+	$lcr = $cop.CompileAssemblyFromSource($lcp, $launcherSources)
+	if ($lcr.Errors.Count -gt 0) { throw $lcr.Errors -join "`n" }
+
+	Add-DllExportsToAssembly -AssemblyPath $outputFile -Exports $forwardMethods.Map -Architecture $architecture
+}
+elseif ($packEnabled) {
 	$payloadSource = $programFrame.Replace($assemblyAttributesMarker, '')
 	$payloadOptions = @($BaseCompilerOptions) + @(
 		"/platform:$architecture",
@@ -212,12 +257,7 @@ if ($packEnabled) {
 
 	# 负载压缩：默认 gzip；大负载（默认压缩对大文本的长距重复抓不住）再试 LZMA。是否采用不靠估算，
 	# 而是把两种流的 launcher 都生成出来、比实际产物大小取小者（LZMA 自带解码器，固定更重，小脚本必然不划算）。
-	$gzMs = New-Object System.IO.MemoryStream
-	$gzip = New-Object System.IO.Compression.GZipStream($gzMs, [System.IO.Compression.CompressionMode]::Compress, $true)
-	try { $gzip.Write($payloadBytes, 0, $payloadBytes.Length) }
-	finally { $gzip.Dispose() }
-	[byte[]]$gzBytes = $gzMs.ToArray()
-	$gzMs.Dispose()
+	[byte[]]$gzBytes = Compress-Gzip $payloadBytes
 	[byte[]]$lzmaBytes = if ($payloadBytes.Length -ge $LzmaPackMinBytes) { Compress-Lzma $payloadBytes } else { $null }
 
 	# 和 default.cs 一样：编译进 ps12exe.exe 时内嵌 pack.cs，脚本模式从磁盘读取。
@@ -291,18 +331,15 @@ if ($packEnabled) {
 	[System.IO.File]::WriteAllBytes($outputFile, $launcherImage)
 }
 else {
-	$cp = New-CompilerParameters $outputFile $CompilerOptions $prepareDebug (-not $DllExportList)
+	$cp = New-CompilerParameters $outputFile $CompilerOptions $prepareDebug
 	if (!$AstAnalyzeResult.IsConst) {
 		[VOID]$cp.EmbeddedResources.Add("$TempDir\main.ps1")
 	}
 	$frameSource = $programFrame.Replace($assemblyAttributesMarker, $resourceAttributes)
-	[string[]]$sources = if ($DllExportList) { @($frameSource, $dllExportFrame) } else { @($frameSource) }
+	[string[]]$sources = @($frameSource)
 	$cr = $cop.CompileAssemblyFromSource($cp, $sources)
 	if ($cr.Errors.Count -gt 0) {
 		throw $cr.Errors -join "`n"
-	}
-	if ($DllExportList) {
-		Add-DllExportsToAssembly -AssemblyPath $outputFile -Exports $dllExportMethods.Map -Architecture $architecture
 	}
 }
 

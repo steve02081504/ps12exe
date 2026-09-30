@@ -1,9 +1,16 @@
 ﻿# 原生 DLL 导出（#_DllExport / Build.DllExports）实现。
 #
-# 机制：先用 CodeDom 把程序帧编译成普通 .NET 类库，再用 AsmResolver 给每个导出包装方法设置
-# UnmanagedExportInfo，由 AsmResolver 的托管 PE 写出器生成 native 导出桩 + CLR vtable fixup
+# 产物是两层：CodeDom 先把程序帧编成普通托管类库 payload（内含真正的导出实现），gzip 后内嵌进一个
+# 极小的 launcher（DllExportPack.cs）；launcher 的静态构造在首次导出调用前解压 Assembly.Load 出 payload，
+# 导出包装直接静态转发过去，所以每个导出调用没有额外检查/加锁（见 src/CodeDomCompiler.ps1 的 DllExport 分支）。
+#
+# 本文件负责：生成 payload 侧包装（初始化宿主并调用脚本函数）、生成 launcher 侧转发包装，以及用 AsmResolver
+# 给 launcher 的导出包装设置 UnmanagedExportInfo，由托管 PE 写出器生成 native 导出桩 + CLR vtable fixup
 # （VTableFromUnmanaged），使产物可被 native 的 LoadLibrary/GetProcAddress 直接加载。
 # 这正是 ilasm 对 `.export` 指令所做的事，但省掉了 ildasm→文本→ilasm 的往返与外部进程。
+#
+# 导出名指针表必须按字典序升序，Windows 才能二分查找：Sort-DllExports 让元数据方法顺序有序，作为
+# AsmResolver 未修复时的脚本层兜底（issue #792；当前 src/bin 的特供版内部已排序）。
 #
 # AsmResolver 与 ExeSinker 共用 src/bin 下 illink 裁剪并合并过的单个 AsmResolver.dll；本路径额外用到
 # DotNet 层的 module 写出器，相关 API 必须镜像在 tools/AsmResolver/Root.cs 中（见该文件）。
@@ -31,9 +38,23 @@ function Get-DllExportField {
 	return $Default
 }
 
-# 由导出声明生成 C# 包装方法源码；返回 @{ Code; Map }，Map 为 @(@{ Method; Export }) 供 AsmResolver 注入。
-function New-DllExportMethods {
+# 按导出函数名以序数、区分大小写排序。PE 导出名指针表必须按字典序升序，Windows 才能二分查找（GetProcAddress）。
+# 当前 AsmResolver 特供版内部已排序；这里排好元数据方法顺序，使未修复的上游版本也能正确产出（issue #792 的脚本层兜底）。
+function Sort-DllExports {
 	param([object[]]$Exports)
+	$sorted = @($Exports)
+	[Array]::Sort($sorted, [System.Comparison[object]]{
+			param($a, $b)
+			[string]::CompareOrdinal("$(Get-DllExportField $a 'funcname' '')".Trim(), "$(Get-DllExportField $b 'funcname' '')".Trim())
+		})
+	return , $sorted
+}
+
+# 由导出声明生成 C# 包装方法源码；返回 @{ Code; Map }，Map 为 @(@{ Method; Export }) 供 AsmResolver 注入。
+# 默认生成 payload 侧包装（初始化宿主并调用脚本函数）；-Forward 生成 launcher 侧包装（直接静态转发到 payload 的同名方法）。
+function New-DllExportMethods {
+	param([object[]]$Exports, [switch]$Forward)
+	$Exports = Sort-DllExports $Exports
 	$sb = [System.Text.StringBuilder]::new()
 	$map = @()
 	for ($i = 0; $i -lt $Exports.Count; $i++) {
@@ -64,7 +85,13 @@ function New-DllExportMethods {
 
 		[void]$sb.AppendLine()
 		[void]$sb.AppendLine("`t`tpublic static $returnType $methodName($paramList) {")
-		if ($returnType -ieq 'void') {
+		if ($Forward) {
+			# launcher 的导出包装：直接静态调用 payload 里的同名包装（payload 侧已吞掉异常并返回默认值）。
+			$forwardCall = "PSRunnerEntry.$methodName($($csArgs -join ', '))"
+			if ($returnType -ieq 'void') { [void]$sb.AppendLine("`t`t`t$forwardCall;") }
+			else { [void]$sb.AppendLine("`t`t`treturn $forwardCall;") }
+		}
+		elseif ($returnType -ieq 'void') {
 			[void]$sb.AppendLine("`t`t`ttry { DllInitChecker(); InvokePSFunction(`"$escapedFunc`", $argsList); }")
 			[void]$sb.AppendLine("`t`t`tcatch (System.Exception ex) { ReportDllExportError(`"$escapedFunc`", ex); }")
 		}
