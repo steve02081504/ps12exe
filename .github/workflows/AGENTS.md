@@ -57,7 +57,7 @@ GitHub 托管 Windows runner 默认开实时防护。本流水线会拉起 ~百�
 
 - `Publish.yml` 由 tag push 触发，也保留 `workflow_dispatch`（`version` 输入）。tag 那次失败后**不必 force-push 重打 tag**：`gh workflow run Publish.yml --ref master -f version=v0.6.2` 会用 master 上的脚本发布指定版本号；发布包会删掉 `.github`（含 `Publish.ps1`），所以只要代码本体一致，用哪个 commit 跑不影响产物内容，版本号由 `-version` 参数写进 psd1。
 - `Install-Module PowerShellGet` 会因 PSGallery 偶发超时/限流报 `No match was found ... 'PowerShellGet'`。`Publish.ps1` 现在先用 `Get-PSRepository` 补注册默认源，再带退避重试 5 次。注意 `-ErrorAction SilentlyContinue` 仍会把错误计入 `$Error`，可选探测要用 `Ignore` 并在成功安装后 `$Error.Clear()`，否则末尾的 `if ($error)` 会把已处理的异常误判为失败。
-- GitHub Release **不是 workflow 建的**（对比时间戳：v0.6.1 的 release 早于其 workflow 启动），是本地发布脚本/手动先建 release 再推 tag。补发版本时记得 `gh release create <tag>` 补上。
+- GitHub Release **不是 workflow 建的**，是本地发布脚本/手动先建 release 再推 tag。补发版本时记得 `gh release create <tag>` 补上。
 
 ## 为什么有时会全量跑（不是 bug）
 
@@ -81,4 +81,3 @@ gh api "repos/steve02081504/ps12exe/actions/caches" --jq '.total_count'  # 0 = �
 ## 已知限制
 
 - Windows runner 单构建仍比物理机慢 ~10×（进程创建 + Defender 扫描 + 共享盘）。`defender-exclusions` 是 best-effort，`Set-MpPreference -DisableRealtimeMonitoring` 常被 tamper protection 拒绝；可加一步诊断确认实时防护是否真的关闭。
-- Core 构建的 `dotnet publish` 依赖 NuGet 还原（已缓存 `~/.nuget/packages`）；若仍慢可考虑固定 TFM/RID、预置 runtime pack，或复用持久 MSBuild 项目目录 + `--no-restore` 让 publish 增量。

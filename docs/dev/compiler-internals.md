@@ -109,16 +109,14 @@
 
 `src/bin/AsmResolver.dll` 是单个合并后的程序集：由 `tools/AsmResolver/Update-AsmResolver.ps1` 先拉一份完整 AsmResolver，以 `Root.cs` + 运行时编译的 `TinySharp.cs`/`exe21sp.cs`/`LzmaDecode.cs` 为根跑 illink 裁剪，再用 ILRepack（`dotnet tool install --tool-path <work>/tools/ilrepack dotnet-ilrepack`）把裁剪后的 5 个程序集合并成单文件，直接写到 `src/bin` 下。
 
-- 合并省掉 4 份程序集清单/元数据表/重定位，原始字节 860 KB→763 KB、压缩后 nupkg 约小 30 KB（4.5%）；合并后产物仍是 netstandard2.0，PS 5.1 与 PS 7 都能加载，且 AsmResolver 内部跨程序集 `internal` 调用不受影响（类型都在同一程序集了）。
-- 常量字段不再整类保留：`LinkerRoots` 使用 SDK 自带 Roslyn，绑定根源码实际引用的 const/enum 字段（包括别名、`using static` 和嵌套类型），生成逐字段 linker descriptor。C# 会把这些常量内联到 IL，因此只从 IL 推导可达性会误删运行期 `Add-Type` 所需的字段。当前根包含 44 个字段，合并 DLL 从 763,392 降至 743,424 字节；PowerShell 直接访问的常量同样须在 `Root.cs` 镜像。
-- 单调用点内联实验：对 37 个同类型的私有静态 helper 做 IL 内联、保留参数求值顺序和分支目标，并重新运行 illink。压缩 IL 操作码后 DLL 为 761,856 字节，但最高强度 Deflate 仅比原 DLL 少 7 字节；第二次可达性分析也未继续缩小。未将这套 IL 重写纳入发布流程。
-- 发布包由 `tools/Packaging/New-Package.ps1` 在临时目录构建：按 Git 跟踪文件及发布排除规则取材，Windows PowerShell 5.1 的 `Publish-Module` 生成元数据，再用 7-Zip 的标准 ZIP Deflate（`-mx=9 -mfb=258 -mpass=15`）重压缩，逐条验证文件名、长度和 SHA-256。`.github/workflows/Publish.ps1` 直接推送验证后的 nupkg，避免再次默认压缩。可用 `pwsh tools/Packaging/New-Package.ps1 -OutputDirectory <目录>` 在本地重现，需 Windows PowerShell 5.1、Git 和 7-Zip。
+- 合并省掉 4 份程序集清单/元数据表/重定位（nupkg 约小 30 KB）；产物仍是 netstandard2.0，PS 5.1 与 PS 7 都能加载，跨程序集 `internal` 调用不受影响。
+- 常量字段不再整类保留：`LinkerRoots` 用 SDK 自带 Roslyn 绑定根源码实际引用的 const/enum 字段（含别名、`using static`、嵌套类型），生成逐字段 linker descriptor。C# 会把常量内联进 IL，只从 IL 推导可达性会误删运行期 `Add-Type` 所需的字段；PowerShell 直接访问的常量同样须在 `Root.cs` 镜像。
+- 发布包由 `tools/Packaging/New-Package.ps1` 在临时目录构建：按 Git 跟踪文件及发布排除规则取材，Windows PowerShell 5.1 的 `Publish-Module` 生成元数据，再用 7-Zip 标准 ZIP Deflate（`-mx=9 -mfb=258 -mpass=15`）重压缩并逐条校验文件名、长度与 SHA-256；`.github/workflows/Publish.ps1` 直接推送验证后的 nupkg。可用 `pwsh tools/Packaging/New-Package.ps1 -OutputDirectory <目录>` 本地重现（需 WinPS 5.1、Git、7-Zip）。
 - 加载点统一 `Add-Type -LiteralPath (Join-Path <...>/bin/AsmResolver.dll)`（`ExeSinker.ps1` 曾按分体文件名 `AsmResolver.PE*.dll` 枚举，合并后已改为直接加载单个文件）；新增加载点请沿用同一路径。
 - `AsmResolverTrimmer.csproj` 必须把 `LzmaCommon.cs` 和 `LzmaDecode.cs` 一起编译（`exe21sp.cs` 引用 `LzmaCodec`），否则根程序集构建失败。
 
-- 来源用 `-Source` 选：`NuGet`（默认，`-Version` 指定版本）、`Ci`（`-Ref` 分支最近一次成功的 `build-artifacts`）、`Pr`（`-Pr <n>` 的构建产物）、`Source`（git 取 `-Ref`/PR head 源码本地 `dotnet build`）；`-RunId` 可直接指定某次 CI run。CI 产物保留 7 天、fork PR 的 workflow 常需维护者批准，故 Ci/Pr 在产物缺失或过期时自动回退到 `Source`。
-- `-Source Local -AssemblyDirectory <目录>` 复用已有完整程序集（5 个 DLL），用于对同一上游版本比较裁剪规则。本轮使用原有 PR #793 构建，没有切换到稳定版或丢失导出名排序修复。
-- 当前 `src/bin/AsmResolver.dll` 是用 `-Source Source -Pr 793` 产出的本地构建（含导出名排序修复，上游 PR 未合并）；上游合并后应改回 `./Update-AsmResolver.ps1 -Source NuGet` 重跑。
+- 来源用 `-Source` 选：`NuGet`（默认，`-Version` 指定版本）、`Ci`/`Pr`（CI 构建产物，缺失或过期自动回退 `Source`）、`Source`（本地 `dotnet build`）、`Local`（`-AssemblyDirectory` 复用已有完整程序集）；`-RunId` 可指定某次 CI run。
+- 当前 `src/bin/AsmResolver.dll` 是 `-Source Source -Pr 793` 的本地构建（含导出名排序修复，上游 PR 未合并）；上游合并后应改回 `./Update-AsmResolver.ps1 -Source NuGet` 重跑。
 - 运行期要用到任何**新的** AsmResolver API（例如托管资源写入 `ModuleDefinition.FromFile` / `ManifestResource.EmbeddedDataSegment` setter / `DataSegment`），必须先在 `tools/AsmResolver/Root.cs` 里镜像一段该用法，再重跑 `./tools/AsmResolver/Update-AsmResolver.ps1 -Version 6.0.1`，否则对应成员会被裁掉、运行期 `Add-Type` 后调用报 MissingMethod/TypeLoad。
 - 裁剪版必须保留 netstandard2.0 引用以兼容 WinPS 5.1 与 pwsh 7。
 - 从 PowerShell 驱动 AsmResolver.DotNet 的两个坑：`MethodDefinition.Name`/`TypeDefinition.Name` 是 `Utf8String`，用 `-eq 'X'` 比较会失败（PS 会把它当字符枚举），要写 `$_.Name.ToString() -eq 'X'`；`[Flags]` 枚举的 `-bor`/`-bnot` 在本仓库的 StrictMode 下会抛 InvalidCastException，位运算前先 `[int]` 转换再用 `[枚举类型](...)` 转回。
