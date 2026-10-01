@@ -43,10 +43,10 @@ function Get-DllExportField {
 function Sort-DllExports {
 	param([object[]]$Exports)
 	$sorted = @($Exports)
-	[Array]::Sort($sorted, [System.Comparison[object]]{
-			param($a, $b)
-			[string]::CompareOrdinal("$(Get-DllExportField $a 'funcname' '')".Trim(), "$(Get-DllExportField $b 'funcname' '')".Trim())
-		})
+	[Array]::Sort($sorted, [System.Comparison[object]] {
+		param($a, $b)
+		[string]::CompareOrdinal("$(Get-DllExportField $a 'funcname' '')".Trim(), "$(Get-DllExportField $b 'funcname' '')".Trim())
+	})
 	return , $sorted
 }
 

@@ -21,176 +21,176 @@
 	AskSaveCfgTitle                = "Save configuration file"
 	CfgFileLabelHead               = "Configuration file:"
 	# GUI text
-	GUI = @{
-		Page = @{
-			General = "General"
-			App = "App"
-			OS = "OS"
-			Build = "Build"
-			Core = "Core"
+	GUI                            = @{
+		Page   = @{
+			General   = "General"
+			App       = "App"
+			OS        = "OS"
+			Build     = "Build"
+			Core      = "Core"
 			Resources = "Resources"
-			Signing = "Signing"
-			Modes = "Modes"
-			About = "About"
+			Signing   = "Signing"
+			Modes     = "Modes"
+			About     = "About"
 		}
-		Group = @{
-			IO = "Input / Output"
-			Target = "Target"
-			Silence = "Silence"
-			Console = "Console"
-			Windowed = "Windowed"
-			OS = "Operating System"
-			Build = "Build"
-			ConstEval = "Constant Evaluation"
+		Group  = @{
+			IO         = "Input / Output"
+			Target     = "Target"
+			Silence    = "Silence"
+			Console    = "Console"
+			Windowed   = "Windowed"
+			OS         = "Operating System"
+			Build      = "Build"
+			ConstEval  = "Constant Evaluation"
 			DllExports = "Native DLL Exports"
-			Core = "Core Options"
-			Resources = "Resource Params"
-			Signing = "Code Signing"
-			Modes = "Modes"
+			Core       = "Core Options"
+			Resources  = "Resource Params"
+			Signing    = "Code Signing"
+			Modes      = "Modes"
 		}
-		Field = @{
-			inputFile = "Input File"
-			outputFile = "Output File"
-			Build = @{
-				Target = "Target runtime"
-				Platform = "Platform"
-				Apartment = "Apartment"
-				Culture = "Culture"
-				Options = "Compile options"
+		Field  = @{
+			inputFile      = "Input File"
+			outputFile     = "Output File"
+			Build          = @{
+				Target     = "Target runtime"
+				Platform   = "Platform"
+				Apartment  = "Apartment"
+				Culture    = "Culture"
+				Options    = "Compile options"
 				KeepSource = "Debug info"
-				Minify = "Minify script"
-				TempDir = "Temp dir"
-				ConstEval = @{
+				Minify     = "Minify script"
+				TempDir    = "Temp dir"
+				ConstEval  = @{
 					Enabled = "Enable constant evaluation"
 					Timeout = "Evaluation timed out"
 				}
 				DllExports = @{
-					Label = "Native DLL exports"
-					Help = "Native DLL export array (equivalent to #_DllExport in the script): each item is @{funcName=...; returnType=...; params=@(@{type=...;name=...})}. Only Framework4.0 plus x86/x64; AnyCPU picks the bitness automatically and warns; arm64/Framework2.0/Core error out. Disabled in Sandbox mode."
-					FuncName = "Function name"
+					Label      = "Native DLL exports"
+					Help       = "Native DLL export array (equivalent to #_DllExport in the script): each item is @{funcName=...; returnType=...; params=@(@{type=...;name=...})}. Only Framework4.0 plus x86/x64; AnyCPU picks the bitness automatically and warns; arm64/Framework2.0/Core error out. Disabled in Sandbox mode."
+					FuncName   = "Function name"
 					ReturnType = "Return type"
-					Params = "Parameters"
+					Params     = "Parameters"
 				}
-				Core = @{
-					Backend = "Backend"
-					TargetOs = "Target OS"
-					TargetFramework = "Target framework"
-					PowerShellVersion = "PowerShell version"
-					SingleFile = "Single file"
-					SelfContained = "Self-contained"
-					Trimmed = "Trimmed"
-					TrimMode = "Trim mode"
-					ReadyToRun = "ReadyToRun"
+				Core       = @{
+					Backend                = "Backend"
+					TargetOs               = "Target OS"
+					TargetFramework        = "Target framework"
+					PowerShellVersion      = "PowerShell version"
+					SingleFile             = "Single file"
+					SelfContained          = "Self-contained"
+					Trimmed                = "Trimmed"
+					TrimMode               = "Trim mode"
+					ReadyToRun             = "ReadyToRun"
 					InvariantGlobalization = "Invariant globalization"
-					Aot = "Native AOT"
+					Aot                    = "Native AOT"
 				}
 			}
-			App = @{
-				Windowed = "Windowed app"
-				Silence = "Silence streams"
-				OutputEncoding = "Force Unicode output"
-				CredentialGUI = "Credential GUI"
-				ConHost = "ConHost console"
-				VisualStyles = "Visual styles"
-				DarkMode = "Dark mode"
-				ExitOnCancel = "Exit on cancel"
-				DpiAware = "DPI aware"
+			App            = @{
+				Windowed         = "Windowed app"
+				Silence          = "Silence streams"
+				OutputEncoding   = "Force Unicode output"
+				CredentialGUI    = "Credential GUI"
+				ConHost          = "ConHost console"
+				VisualStyles     = "Visual styles"
+				DarkMode         = "Dark mode"
+				ExitOnCancel     = "Exit on cancel"
+				DpiAware         = "DPI aware"
 				WinFormsDpiAware = "WinForms DPI aware"
 			}
-			Os = @{
-				Admin = "Request admin"
-				ModernOS = "More OS features"
-				LongPaths = "Long path support"
+			Os             = @{
+				Admin      = "Request admin"
+				ModernOS   = "More OS features"
+				LongPaths  = "Long path support"
 				Virtualize = "Enable virtualization"
 			}
-			ConfigFile = "Generate config"
-			Resources = @{
-				Icon = "Icon file"
-				Title = "Title"
+			ConfigFile     = "Generate config"
+			Resources      = @{
+				Icon        = "Icon file"
+				Title       = "Title"
 				Description = "Description"
-				Company = "Company"
-				Product = "Product name"
-				Copyright = "Copyright"
-				Trademark = "Trademark"
-				Version = "Version"
+				Company     = "Company"
+				Product     = "Product name"
+				Copyright   = "Copyright"
+				Trademark   = "Trademark"
+				Version     = "Version"
 			}
-			Signing = @{
-				Enabled = "Enable code signing"
+			Signing        = @{
+				Enabled     = "Enable code signing"
 				Certificate = "Certificate path (PFX)"
-				Password = "Password"
-				Thumbprint = "Thumbprint"
-				Timestamp = "Timestamp server"
+				Password    = "Password"
+				Thumbprint  = "Thumbprint"
+				Timestamp   = "Timestamp server"
 			}
 			PreprocessOnly = "Preprocess only"
-			Golf = "Golf mode"
-			Sandbox = "Sandbox mode"
-			NoUpdateCheck = "Skip update check"
-			Quiet = "Quiet"
+			Golf           = "Golf mode"
+			Sandbox        = "Sandbox mode"
+			NoUpdateCheck  = "Skip update check"
+			Quiet          = "Quiet"
 		}
 		Button = @{
-			Compile = "Compile"
-			Cancel = "Cancel"
-			LoadCfg = "Load Config"
-			SaveCfg = "Save Config"
-			SaveAsCfg = "Save Config As"
-			Browse = "Browse..."
-			DarkMode = "Dark mode"
-			BGM = "Background music"
-			AddExport = "Add export"
-			EditExport = "Edit export"
+			Compile      = "Compile"
+			Cancel       = "Cancel"
+			LoadCfg      = "Load Config"
+			SaveCfg      = "Save Config"
+			SaveAsCfg    = "Save Config As"
+			Browse       = "Browse..."
+			DarkMode     = "Dark mode"
+			BGM          = "Background music"
+			AddExport    = "Add export"
+			EditExport   = "Edit export"
 			RemoveExport = "Remove export"
 		}
 		Dialog = @{
-			Compile = @{
-				Title = "Select a compilation file, my good sir"
+			Compile     = @{
+				Title  = "Select a compilation file, my good sir"
 				Filter = "Powershell Files (*.ps1)|*.ps1|Powershell Data Files (*.psd1)|*.psd1"
 			}
-			Output = @{
-				Title = "Select an output file, if you please"
+			Output      = @{
+				Title  = "Select an output file, if you please"
 				Filter = "Executable Files (*.exe)|*.exe"
 			}
-			Icon = @{
-				Title = "Select an icon file, old bean"
+			Icon        = @{
+				Title  = "Select an icon file, old bean"
 				Filter = "Icon Files (*.ico)|*.ico"
 			}
 			Certificate = @{
-				Title = "Select a certificate file, old chap"
+				Title  = "Select a certificate file, old chap"
 				Filter = "Certificate Files (*.pfx)|*.pfx|All Files (*.*)|*.*"
 			}
-			OpenCfg = @{
-				Title = "Select a configuration file, if you'd be so kind"
+			OpenCfg     = @{
+				Title  = "Select a configuration file, if you'd be so kind"
 				Filter = "Configuration Files (*.psccfg)|*.psccfg"
 			}
-			SaveCfg = @{
-				Title = "Save the configuration file, old chap"
+			SaveCfg     = @{
+				Title  = "Save the configuration file, old chap"
 				Filter = "Configuration Files (*.psccfg)|*.psccfg"
 			}
-			Folder = @{
+			Folder      = @{
 				Title = "Select a folder"
 			}
 		}
 		Window = @{
 			Title = "ps12exe GUI"
 		}
-		Log = @{
-			Ready = "Ready."
-			Compiling = "Compiling..."
-			Cancelled = "Cancelled."
-			Done = "Done."
+		Log    = @{
+			Ready         = "Ready."
+			Compiling     = "Compiling..."
+			Cancelled     = "Cancelled."
+			Done          = "Done."
 			CfgLoadFailed = "Failed to load config file: "
-			InvalidFile = "File not found"
-			InvalidDir = "Folder not found"
-			InvalidValue = "Invalid value"
+			InvalidFile   = "File not found"
+			InvalidDir    = "Folder not found"
+			InvalidValue  = "Invalid value"
 		}
-		Label = @{
+		Label  = @{
 			CfgFileHead = "Configuration file:"
 		}
-		About = @{
-			Title = "ps12exe"
-			Version = "Version"
-			Description = "Compile PowerShell scripts into standalone Windows executables, with a pure-script GUI, a cross-platform Core target and all that jazz."
-			Repository = "Repository"
-			Issues = "Report an issue"
+		About  = @{
+			Title         = "ps12exe"
+			Version       = "Version"
+			Description   = "Compile PowerShell scripts into standalone Windows executables, with a pure-script GUI, a cross-platform Core target and all that jazz."
+			Repository    = "Repository"
+			Issues        = "Report an issue"
 			Documentation = "Documentation"
 		}
 	}
