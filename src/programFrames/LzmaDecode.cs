@@ -1,4 +1,4 @@
-﻿// 本文件由 7-Zip LZMA SDK 19.00 的 C# 源码（public domain）整并而来：
+// 本文件由 7-Zip LZMA SDK 19.00 的 C# 源码（public domain）整并而来：
 //   Compress/RangeCoder/*Decoder.cs、Compress/LZ/LzOutWindow.cs、Compress/LZMA/LzmaDecoder.cs；共用定义见 LzmaCommon.cs
 // 仅 LzmaCodec.Decompress 为 ps12exe 添加。SDK 原文见 https://www.7-zip.org/sdk.html
 using System;
@@ -12,8 +12,6 @@ namespace SevenZip
 }
 namespace SevenZip.Compression.RangeCoder
 {
-
-
 	class Decoder
 	{
 		public const uint kTopValue = (1 << 24);
@@ -130,7 +128,6 @@ namespace SevenZip.Compression.RangeCoder
 
 namespace SevenZip.Compression.RangeCoder
 {
-
 	struct BitDecoder
 	{
 		public const int kNumBitModelTotalBits = 11;
@@ -181,7 +178,6 @@ namespace SevenZip.Compression.RangeCoder
 
 namespace SevenZip.Compression.RangeCoder
 {
-
 	struct BitTreeDecoder
 	{
 		BitDecoder[] Models;

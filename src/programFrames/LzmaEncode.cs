@@ -1,4 +1,4 @@
-﻿// 本文件由 7-Zip LZMA SDK 19.00 的 C# 源码（public domain）整并而来（编码侧）：
+// 本文件由 7-Zip LZMA SDK 19.00 的 C# 源码（public domain）整并而来（编码侧）：
 //   CS/7zip/Common/CRC.cs、Common/OutBuffer.cs、Common/InBuffer.cs、Compress/LZ/IMatchFinder.cs、LzBinTree.cs、LzInWindow.cs、Compress/LZMA/LzmaEncoder.cs、Compress/RangeCoder/*Encoder.cs、编码属性接口；共用定义见 LzmaCommon.cs
 // 仅 LzmaPackCodec.Compress 为 ps12exe 添加。SDK 原文见 https://www.7-zip.org/sdk.html
 using System;
@@ -2571,5 +2571,4 @@ namespace SevenZip
 	{
 		void WriteCoderProperties(System.IO.Stream outStream);
 	}
-
 }

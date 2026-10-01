@@ -1,4 +1,4 @@
-﻿// Shared contracts and constants from 7-Zip LZMA SDK 19.00 (public domain).
+// Shared contracts and constants from 7-Zip LZMA SDK 19.00 (public domain).
 using System;
 using System.IO;
 namespace SevenZip
@@ -59,9 +59,6 @@ namespace SevenZip
 		void Code(System.IO.Stream inStream, System.IO.Stream outStream,
 			Int64 inSize, Int64 outSize, ICodeProgress progress);
 	}
-
-
-
 }
 
 namespace SevenZip.Compression.LZMA
