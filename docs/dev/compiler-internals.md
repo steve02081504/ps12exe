@@ -27,7 +27,6 @@
   2. **launcher**：gzip 上面那份 payload，编译 `src/programFrames/DllExportPack.cs`（`/target:library`，编译期引用 payload，内嵌 gzip 资源 `main`，携带最终 PE 的资源/图标）。其静态构造在首次导出调用前解压并 `Assembly.Load`，再挂 `AssemblyResolve`，让生成的转发包装直接静态调用 payload 的同名包装；静态构造由 CLR 保证只跑一次，因此每个导出调用没有额外检查/加锁。
   3. 用 AsmResolver 读取 launcher，给每个转发包装设 `MethodDefinition.ExportInfo = new UnmanagedExportInfo(名字, VTableFromUnmanaged | (x86 ? VTable32Bit : VTable64Bit))`，清掉 module 的 `ILOnly` 标志后 `ModuleDefinition.Write` 重写：AsmResolver 的托管 PE 写出器据此生成 native 导出桩、`mscoree.dll!_CorDllMain` 引导桩与 CLR vtable fixup（与 ilasm 对 `.export` 的处理同机制），位数由 vtable 项的 32/64 位区分。
   4. 该路径跳过 pack 与 `ExeSinker`（后者重建 PE 会覆盖刚生成的导出表/引导桩），也不写产物缓存。
-- 压缩收益：小脚本 ~26 KB → ~18 KB（payload gzip + launcher），脚本越大收益越明显。
 - 必须清 `DotNetDirectoryFlags.ILOnly`，否则不写 CLR 引导桩、`LoadLibrary` 起不来 CLR。
 - 导出名指针表必须按字典序升序（Windows 才能二分查找），`Sort-DllExports` 以序数、区分大小写排好元数据方法顺序作为兜底。`src/bin/AsmResolver.dll` 目前是含上游修复（[Washi1337/AsmResolver#793](https://github.com/Washi1337/AsmResolver/pull/793)：导出名指针表按名排序）的本地构建；若换回不含该修复的版本，这一步就是必需的，否则 `GetProcAddress` 按名解析会漏掉部分导出。
 - 用到的 AsmResolver.DotNet 写出器 API 需镜像在 `tools/AsmResolver/Root.cs`，否则会被 illink 裁掉（见 `#asmresolver-trim`）。
@@ -60,13 +59,16 @@
 - `Build.Core.Backend` 决定用哪个后端：`Shared`（默认）走 `CoreCompiler.ps1`，从目标机 `$PSHOME` 解析 SMA；`Bundled` 走 `CoreBundledCompiler.ps1`，打包 `Microsoft.PowerShell.SDK`，支持 `SelfContained`/`Trimmed`/`ReadyToRun`/`InvariantGlobalization`/`Aot` 与 `PowerShellVersion`。两个后端的工程文件每次编译都会重写，缓存键只收录还原输入，且 `--no-restore` 失败会自动退回完整还原，因此无需手动 bump 版本标记。
 - 两者共用 `Get-CacheRoot 'core'` 目录与 `Clear-StaleCache`：`src/CoreProject.ps1` 提供 `Get-CoreDotnet`/`Get-CoreBuildKey`/`Enter-CoreProject`（缓存工程目录 + 命名互斥量 + stale 清理）/`Invoke-CoreDotnet`（`--no-restore` 与失败重试）/`Copy-CorePublishOutput`（`SingleFile=$false` 时发布整个目录并拷到 `outputFile` 所在目录）与 `Get-GuiFrameworkUsage`。
 
-### 打包压缩与 LZMA（`cache\lzma`）
+### 打包压缩与 LZMA（`cache\gzip` / `cache\lzma`）
 
 - 非常量产物 = launcher（`src/programFrames/pack.cs`）+ 「main」资源（压缩后的 payload）。默认压缩是 Windows PowerShell（CodeDom）下 gzip、Core 下 Brotli。
-- 大脚本的长距重复会超出 gzip 的 32KB 窗口（Brotli 窗口大但仍逊于 LZMA 的大字典），因此打包时还会尝试 LZMA1：编码器来自 7-Zip LZMA SDK 19.00 的 C# 源码（public domain），按职责拆成 `src/programFrames/LzmaCommon.cs`（共用接口与常量）、`src/programFrames/LzmaDecode.cs`（解码器，随 launcher 编入）与 `src/programFrames/LzmaEncode.cs`（编码器，仅打包时用）。`src/Lzma.ps1` 把共用定义与编码器在宿主进程里按需 `Add-Type` 编译并缓存成 `cache\lzma` 下的 DLL（键含 PSEdition/版本/源码内容），跨进程复用；编译失败则回退默认压缩。
-- `pack.cs` 用 `#if CodecLzma` 选择 `LzmaCodec.DecompressStream`；负载容器是 `PS12LZMA` 魔数 + LZMA props + 未压缩长度 + 数据，`exe21sp.cs` 靠这个魔数识别（gzip 靠 `1F 8B`，否则按 Brotli 反射解压）。
-- 是否启用不是拍脑袋：CodeDom 会把 gzip/LZMA 两版 launcher 都生成出来、比最终字节数取小者（精简后的 LZMA 解码器增加约 10KB，小脚本通常回退 gzip）；Core 无帧模板可原地补丁、双次 `dotnet publish` 太贵，改用「LZMA 流 + 12KB 开销预算 < Brotli 流」的保守判据（约 10KB 实测增量外留 2KB 余量）。两条路径都只对 >=32KB 的负载尝试 LZMA，这一门槛用于控制编码成本。编码端需要的 RangeCoder Encoder/BitEncoder/BitTreeEncoder 仅放在 `LzmaEncode.cs`；launcher 只编译共用定义与解码器，不再依赖条件编译排除编码类型。
-- 解码器只保留独立流解码所需的入口；SDK 的通用区间解码、模型更新和字典训练方法不随 launcher 编入。对同一份 504832 字节负载做 Framework launcher 对比，裁剪前 26112 字节、裁剪后 25088 字节（均去掉 Win32 资源，压缩流完全相同），节省 1024 字节；实际产物收益受 PE 对齐影响。
+- Framework 的 gzip 由 `src/Gzip.ps1` 调用内置纯 C# 编码器 `src/programFrames/GzipEncode.cs`（移植自 7-Zip 的标准 Deflate 核心：level 9、fast bytes 258、passes 15，保留 Bt3Zip 二叉树匹配与多轮 Huffman），`GzipWrapper.cs` 写固定 gzip 头（无文件名、时间戳 0、XFL=2、OS=255）。无需原生辅助 EXE/P-Invoke/unsafe/本机 7-Zip；失败显式报错，不切换算法。普通 EXE 和原生导出 DLL 共用此路径，产物用 GZipStream 解码。
+- 编码器与 wrapper 按需 `Add-Type`，缓存到 `%TEMP%\ps12exe\cache\gzip`（键含固定源码与宿主 PowerShell 版本，受命名互斥量保护），压缩全在内存完成、不写临时文件；类型名含源码哈希避免模块重载误用旧实现，自编译时内嵌两份 C# 源码。LGPL-2.1-or-later 许可随 `GzipLicense.txt`/`GzipCopying.txt` 发布。
+- 已确定的帧裁剪：去掉未引用的私有 CredUI/控制台枚举字段与 `SetConsoleMode`；诊断流被 `App.Silence` 全禁用时不编译其上色 helper；原生导出 DLL 不编入 EXE 的私有 Main/命令行 PSD 入口。公共宿主接口不能仅凭 AST 未出现某个命令就移除（模块、动态命令和 `$Host.UI` 运行期可调用）。
+- `src/Cache.ps1` 的 `Set-DeterministicPeIdentity` 在 gzip/LZMA 前规范化 CodeDom 负载、在最终 ExeSinker/DLL 导出之后与签名之前规范化产物（清 COFF/资源目录/导出表时间戳、旧校验和与随机 MVID，用完整规范化镜像的 SHA-256 前 16 字节派生 MVID）；调试/KeepSource 跳过，Core/TinySharp 各走各的。固定工具链/引用/选项下可复现，但不同工具链、依赖版本、签名时间戳与外部资源仍属不同构建输入。
+- 大脚本长距重复超出 gzip 32KB 窗口，故打包时还尝试 LZMA1：编解码器来自 7-Zip LZMA SDK 19.00 C# 源码（public domain），拆成 `LzmaCommon.cs`（共用接口/常量）、`LzmaDecode.cs`（解码器，随 launcher 编入）、`LzmaEncode.cs`（编码器，仅打包用）。`src/Lzma.ps1` 把共用定义与编码器按需 `Add-Type` 编译并缓存成 `cache\lzma` 下的 DLL（键含 PSEdition/版本/源码内容），失败回退默认压缩；解码器只保留独立流解码入口。
+- `pack.cs` 用 `#if CodecLzma` 选择 `LzmaCodec.DecompressStream`；负载容器是 `PS12LZMA` 魔数 + LZMA props + 未压缩长度 + 数据，`exe21sp.cs` 靠魔数识别（gzip 靠 `1F 8B`，否则按 Brotli 反射解压）。
+- 启用判据：CodeDom 生成 gzip/LZMA 两版 launcher 取最终字节小者（LZMA 解码器约增 10KB，小脚本通常回退 gzip）；Core 无帧模板可原地补丁、双次 `dotnet publish` 太贵，改用「LZMA 流 + 12KB 开销预算 < Brotli 流」。两条路径都只对 >=32KB 负载尝试 LZMA 以控制编码成本。RangeCoder Encoder/BitEncoder/BitTreeEncoder 仅放在 `LzmaEncode.cs`。
 - 编码器类型名是 `LzmaPackCodec`（不是 `LzmaCodec`）：ps12exe 自身被编成 exe 且其 launcher 走 LZMA 时，产物里会带一个只有解码器的 `LzmaCodec`，按名字找编码器会误命中。
 
 <a id="core-gui-and-addtype"></a>

@@ -99,17 +99,6 @@ function New-CompilerParameters([string]$outFile, [string[]]$opts, [bool]$debug,
 	return $p
 }
 
-# gzip 压缩字节（内存流，不落磁盘）。打包负载与 DllExport payload 共用。
-function Compress-Gzip([byte[]]$Data) {
-	$output = New-Object System.IO.MemoryStream
-	$gzip = New-Object System.IO.Compression.GZipStream($output, [System.IO.Compression.CompressionMode]::Compress, $true)
-	try { $gzip.Write($Data, 0, $Data.Length) }
-	finally { $gzip.Dispose() }
-	[byte[]]$bytes = $output.ToArray()
-	$output.Dispose()
-	return , $bytes
-}
-
 # ---------- 程序帧模板缓存 ----------
 # 打包路径要把「帧 + 脚本」编成 payload、再把 gzip(payload) 塞进 launcher，每次跑两次 csc；但帧的 IL
 # 只由「帧源码 + 编译选项 + 引用 + 编译器版本」决定，脚本 / gz 都只是内嵌资源。于是把帧预编成模板缓存：
@@ -192,7 +181,9 @@ if ($DllExportList) {
 	if ($cr.Errors.Count -gt 0) { throw $cr.Errors -join "`n" }
 
 	# 负载 gzip：小脚本用 gzip 即可（LZMA 自带解码器对 ~20KB 负载不划算）。
-	[byte[]]$gzBytes = Compress-Gzip ([System.IO.File]::ReadAllBytes($payloadPath))
+	[byte[]]$payloadBytes = [System.IO.File]::ReadAllBytes($payloadPath)
+	if (-not $prepareDebug) { $payloadBytes = Set-DeterministicPeIdentity $payloadBytes }
+	[byte[]]$gzBytes = Compress-Gzip $payloadBytes
 
 	# launcher：编译期引用 payload（运行时由 AssemblyResolve 从内嵌 gzip 提供），携带最终 PE 的资源/图标。
 	$forwardMethods = New-DllExportMethods $DllExportList -Forward
@@ -254,6 +245,7 @@ elseif ($packEnabled) {
 		& $exeSinker $payloadPath -removeResources
 	}
 	$payloadBytes = [System.IO.File]::ReadAllBytes($payloadPath)
+	$payloadBytes = Set-DeterministicPeIdentity $payloadBytes
 
 	# 负载压缩：默认 gzip；大负载（默认压缩对大文本的长距重复抓不住）再试 LZMA。是否采用不靠估算，
 	# 而是把两种流的 launcher 都生成出来、比实际产物大小取小者（LZMA 自带解码器，固定更重，小脚本必然不划算）。

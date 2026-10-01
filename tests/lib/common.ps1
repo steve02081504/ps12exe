@@ -46,7 +46,11 @@ $script:BuildComponentPatterns = [ordered]@{
 		'src/programFrames/LzmaCommon.cs', 'src/programFrames/LzmaDecode.cs', 'src/programFrames/LzmaEncode.cs',
 		'src/RuntimePwsh2.0/'
 	)
-	codeDom   = @('src/CodeDomCompiler.ps1', 'src/ExeSinker.ps1', 'src/Cache.ps1', 'src/DllExportCompiler.ps1', 'src/bin/')
+	codeDom   = @(
+		'src/CodeDomCompiler.ps1', 'src/Gzip.ps1',
+		'src/programFrames/GzipEncode.cs', 'src/programFrames/GzipWrapper.cs',
+		'src/ExeSinker.ps1', 'src/Cache.ps1', 'src/DllExportCompiler.ps1', 'src/bin/'
+	)
 	tinySharp = @('src/TinySharpCompiler.ps1')
 	core      = @('src/CoreCompiler.ps1', 'src/CoreBundledCompiler.ps1', 'src/CoreProject.ps1', 'src/Cache.ps1')
 	ps2exe    = @('src/.subrepo/PS2EXE2ps12exe/')

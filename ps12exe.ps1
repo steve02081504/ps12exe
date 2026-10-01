@@ -229,6 +229,7 @@ $LocalizeData =
 . $PSScriptRoot\src\WriteI18n.ps1
 . $PSScriptRoot\src\Cache.ps1
 . $PSScriptRoot\src\Lzma.ps1
+. $PSScriptRoot\src\Gzip.ps1
 . $PSScriptRoot\src\OutputCache.ps1
 . $PSScriptRoot\src\AsmWarmup.ps1
 . $PSScriptRoot\src\DllExportCompiler.ps1
@@ -966,6 +967,9 @@ try {
 				) -removeVersionInfo:$($resourceParams.Count -eq 0)
 			}
 		#_endif
+		if (-not $TinySharpSuccess -and -not $isCoreTarget -and -not $prepareDebug) {
+			[IO.File]::WriteAllBytes($outputFile, (Set-DeterministicPeIdentity ([IO.File]::ReadAllBytes($outputFile))))
+		}
 		Write-TaskbarProgressClear
 		Write-I18n Host CompiledFileSize $((Get-Item $outputFile).Length)
 		Write-I18n Verbose OutputPath $outputFile

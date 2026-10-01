@@ -128,3 +128,65 @@ function Set-FrameResource([byte[]]$Template, [byte[]]$Data) {
 	# 前置逗号阻止 PowerShell 展开字节数组（否则被拆成 Object[]，大脚本会因逐字节装箱显著变慢）。
 	return , $Template
 }
+
+# 仅用于本项目生成、无 PDB/签名的 CodeDom 镜像。csc 的随机 MVID 与 PE 时间戳
+# 会让冷缓存/不同机器的同一帧产生不同负载；归零后由完整内容派生新的 MVID。
+# 不改变表、资源、程序集名称或布局；调试产物在调用方跳过，以保留 PDB 身份。
+function Set-DeterministicPeIdentity([byte[]]$Image) {
+	$pe = [BitConverter]::ToInt32($Image, 0x3c)
+	if ($pe -lt 0 -or $pe + 24 -gt $Image.Length -or [BitConverter]::ToUInt32($Image, $pe) -ne 0x4550) { throw 'Invalid generated PE image' }
+	$sectionCount = [BitConverter]::ToUInt16($Image, $pe + 6)
+	$optSize = [BitConverter]::ToUInt16($Image, $pe + 20)
+	$optional = $pe + 24
+	$magic = [BitConverter]::ToUInt16($Image, $optional)
+	$dd = if ($magic -eq 0x20b) { $optional + 112 } elseif ($magic -eq 0x10b) { $optional + 96 } else { throw 'Unsupported generated PE format' }
+	$sections = $optional + $optSize
+	$cli = Convert-RvaToOffset $Image $sectionCount $sections ([BitConverter]::ToUInt32($Image, $dd + 112))
+	if ($cli -lt 0) { throw 'Generated PE has no CLI header' }
+	$metadata = Convert-RvaToOffset $Image $sectionCount $sections ([BitConverter]::ToUInt32($Image, $cli + 8))
+	if ($metadata -lt 0 -or [BitConverter]::ToUInt32($Image, $metadata) -ne 0x424a5342) { throw 'Invalid generated CLI metadata' }
+	$streams = $metadata + 16 + [BitConverter]::ToUInt32($Image, $metadata + 12)
+	$streams = [int](($streams + 3) -band -4)
+	$count = [BitConverter]::ToUInt16($Image, $streams + 2)
+	$cursor = $streams + 4
+	$guidOffset = -1
+	for ($i = 0; $i -lt $count; $i++) {
+		$offset = [BitConverter]::ToUInt32($Image, $cursor)
+		$size = [BitConverter]::ToUInt32($Image, $cursor + 4)
+		$nameStart = $cursor + 8
+		$end = $nameStart
+		while ($end -lt $Image.Length -and $Image[$end] -ne 0) { $end++ }
+		$name = [Text.Encoding]::ASCII.GetString($Image, $nameStart, $end - $nameStart)
+		if ($name -eq '#GUID') {
+			# 非增量 csc 产物只有 Module.Mvid 一个 GUID；不要改写其他 GUID/EnC 身份。
+			if ($size -ne 16) { throw 'Unexpected GUID heap in generated CodeDom image' }
+			$guidOffset = $metadata + $offset
+		}
+		$cursor = [int](($end + 4) -band -4)
+	}
+	if ($guidOffset -lt 0) { throw 'Generated CodeDom image has no MVID' }
+	[Array]::Clear($Image, $guidOffset, 16)
+	[Array]::Clear($Image, $pe + 8, 4) # COFF TimeDateStamp
+	[Array]::Clear($Image, $optional + 64, 4) # checksum, recalculated by signing if requested
+	# Native resource directories and DLL export headers also have timestamps.
+	$resource = Convert-RvaToOffset $Image $sectionCount $sections ([BitConverter]::ToUInt32($Image, $dd + 16))
+	if ($resource -ge 0) {
+		$pending = [Collections.Generic.Stack[int]]::new()
+		$pending.Push(0)
+		while ($pending.Count) {
+			$directory = $resource + $pending.Pop()
+			[Array]::Clear($Image, $directory + 4, 4)
+			$entries = [int][BitConverter]::ToUInt16($Image, $directory + 12) + [int][BitConverter]::ToUInt16($Image, $directory + 14)
+			for ($entry = 0; $entry -lt $entries; $entry++) {
+				$child = [BitConverter]::ToUInt32($Image, $directory + 20 + 8 * $entry)
+				if ($child -band 0x80000000L) { $pending.Push([int]($child -band 0x7fffffff)) }
+			}
+		}
+	}
+	$export = Convert-RvaToOffset $Image $sectionCount $sections ([BitConverter]::ToUInt32($Image, $dd))
+	if ($export -ge 0) { [Array]::Clear($Image, $export + 4, 4) }
+	$sha = [Security.Cryptography.SHA256]::Create()
+	try { $hash = $sha.ComputeHash($Image); [Array]::Copy($hash, 0, $Image, $guidOffset, 16) }
+	finally { $sha.Dispose() }
+	return , $Image
+}
