@@ -535,7 +535,7 @@ $Host.UI.RawUI.FlushInputBuffer()
 | 纯脚本仓库 📦                        | ✔️除图片和随附的辅助 DLL 外全是文本文件                         | ❌ 仓库中含附带开源许可的 `Win-PS2EXE.exe`                                     |
 | 生成 hello world 所需要的命令 🌍     | 😎`'"Hello World!"' \| ps12exe`                                 | 🤔`echo "Hello World!" *> a.ps1; PS2EXE a.ps1; rm a.ps1`                       |
 | 生成的常量 hello world 文件大小 💾   | 🥰1024 字节（编译期常量求值）                                   | ❌ 不支持；25088 字节                                                          |
-| 生成的非常量 hello world 文件大小 💾 | 🥰14848 字节                                                    | 😨25088 字节                                                                   |
+| 生成的非常量 hello world 文件大小 💾 | 🥰13312 字节                                                    | 😨25088 字节                                                                   |
 | 编译期常量求值 ⚡                    | ✔️                                                              | ❌                                                                             |
 | PowerShell Core（7+）/ 跨平台目标 🧬 | ✔️ `Build.Target Core`（Windows / Linux / macOS）               | ❌ 仅支持 Windows PowerShell 5.1                                               |
 | GUI 多语言支持 🌐                    | ✔️（7 种语言、深色模式）                                        | ❌                                                                             |
@@ -549,24 +549,24 @@ ps12exe 的开发者不借本项目宣扬政治、DEI 或其他意识形态立�
 
 ### 体积与速度基准 🔬
 
-在 Windows 11 + PowerShell 7.6.6（.NET 10）+ Windows PowerShell 5.1 上测量，每项预热后运行 20 次。进程创建下限（`cmd /c exit`）约 15 ms。可用 `pwsh -File ../tools/Benchmark/Compare-Compilers.ps1 -IncludeCore` 复现（加 `-Compile` 可得到下方的编译速度表）。
+于 2026-10-01 在 Windows 11 + PowerShell 7.6.6（.NET 10）+ Windows PowerShell 5.1 上测量，每项预热后运行 20 次。进程创建下限（`cmd /c exit`）约 15 ms。可用 `pwsh -File ../tools/Benchmark/Compare-Compilers.ps1 -IncludeCore` 复现（加 `-Compile` 可得到下方的编译速度表）。
 
 | 构建                                     | 输出体积   | 预热启动 |
 | ---------------------------------------- | ---------- | -------- |
-| 直接用 Windows PowerShell 5.1 运行该脚本 | —          | ~406 ms  |
-| ps12exe · 常量 · Framework4.0            | 1024 字节  | ~54 ms   |
-| ps12exe · 非常量 · Framework4.0          | 14848 字节 | ~365 ms  |
-| PS2EXE 1.0.18 · 非常量                   | 25088 字节 | ~398 ms  |
-| ps12exe · 非常量 · 大脚本 · Framework4.0 | 27648 字节 | ~381 ms  |
-| PS2EXE 1.0.18 · 非常量 · 大脚本          | ~496 KB    | ~402 ms  |
+| 直接用 Windows PowerShell 5.1 运行该脚本 | —          | ~294 ms  |
+| ps12exe · 常量 · Framework4.0            | 1024 字节  | ~47 ms   |
+| ps12exe · 非常量 · Framework4.0          | 13312 字节 | ~248 ms  |
+| PS2EXE 1.0.18 · 非常量                   | 25088 字节 | ~261 ms  |
+| ps12exe · 非常量 · 大脚本 · Framework4.0 | 25088 字节 | ~293 ms  |
+| PS2EXE 1.0.18 · 非常量 · 大脚本          | ~496 KB    | ~275 ms  |
 | ---------------------------------------- | ---------- | -------- |
-| 直接以 pwsh 7 运行该脚本                 | —          | ~676 ms  |
-| ps12exe · 常量 · Core                    | ~165 KB    | ~104 ms  |
-| ps12exe · 非常量 · Core                  | ~181 KB    | ~621 ms  |
-| ps12exe · 非常量 · 大脚本 · Core         | ~187 KB    | ~637 ms  |
+| 直接以 pwsh 7 运行该脚本                 | —          | ~461 ms  |
+| ps12exe · 常量 · Core                    | ~165 KB    | ~86 ms   |
+| ps12exe · 非常量 · Core                  | ~180 KB    | ~370 ms  |
+| ps12exe · 非常量 · 大脚本 · Core         | ~188 KB    | ~401 ms  |
 | PS2EXE 1.0.18 · 非常量 · Core            | 不支持     | 不支持   |
 
-常量脚本在编译期求值，得到的 exe 仅 1 KB 且完全不启动 PowerShell——相比 PS2EXE 的 hello world 约小 24 倍、启动快 6 倍。非常量 exe 比 PS2EXE 小约 40%；对于大量使用顶层变量的脚本，由于脚本运行在函数内（局部作用域）而非全局作用域，执行还更快。非常量 exe 始终压缩，且压缩率随负载增大而更明显：约 0.5 MB 的脚本，Framework 产物仍只有约 27 KB，约为 PS2EXE 产物（约 496 KB）的 1/16；PS2EXE 几乎不压缩负载，产物随脚本膨胀。Core 产物仅比小脚本多约 6 KB，大负载也不会膨胀。
+常量脚本在编译期求值，得到的 exe 仅 1 KB 且完全不启动 PowerShell——相比 PS2EXE 的 hello world 约小 24 倍、启动快 6 倍。此次测试中，ps12exe 非常量 exe 也小于 PS2EXE；对于大量使用顶层变量的脚本，由于脚本运行在函数内（局部作用域）而非全局作用域，执行还可能更快。非常量 exe 始终压缩，约 482 KB 的大脚本生成 25 KB 的 Framework 产物，而 PS2EXE 产物约 496 KB；PS2EXE 几乎不压缩负载。Core 大脚本产物约比小脚本多 8 KB。
 
 ### 窗口化 GUI 启动 🪟
 
@@ -589,25 +589,25 @@ ps12exe 的开发者不借本项目宣扬政治、DEI 或其他意识形态立�
 
 | 构建                                     | 预热编译 |
 | ---------------------------------------- | -------- |
-| ps12exe · 常量 · Framework4.0            | ~2.3 s   |
-| ps12exe · 非常量 · Framework4.0          | ~1.3 s   |
-| PS2EXE · 非常量                          | ~0.9 s   |
-| ps12exe · 非常量 · 大脚本 · Framework4.0 | ~1.5 s   |
-| PS2EXE · 非常量 · 大脚本                 | ~0.7 s   |
+| ps12exe · 常量 · Framework4.0            | ~1466 ms |
+| ps12exe · 非常量 · Framework4.0          | ~900 ms  |
+| PS2EXE · 非常量                          | ~585 ms  |
+| ps12exe · 非常量 · 大脚本 · Framework4.0 | ~2063 ms |
+| PS2EXE · 非常量 · 大脚本                 | ~596 ms  |
 | ---------------------------------------- | -------- |
-| ps12exe · 常量 · Core                    | ~4.2 s   |
-| ps12exe · 非常量 · Core                  | ~5.7 s   |
-| ps12exe · 非常量 · 大脚本 · Core         | ~5.9 s   |
+| ps12exe · 常量 · Core                    | ~2742 ms |
+| ps12exe · 非常量 · Core                  | ~3633 ms |
+| ps12exe · 非常量 · 大脚本 · Core         | ~5402 ms |
 | PS2EXE · 非常量 · Core                   | 不支持   |
 
-PS2EXE 编译 hello world 更快，因为它只是 Windows 内置 .NET Framework 编译器的一层薄封装：只做一次 CodeDom 编译，别无其他。ps12exe 还会额外执行语法检查、对脚本分类，并对常量脚本求值，再把程序帧作为负载打包进启动器，因此其非常量编译约为 PS2EXE 的 1.4 倍。代价体现在产物上：ps12exe 输出 1024 / 14848 字节，而 PS2EXE 输出 25088 字节，且常量程序启动约快 6 倍。Core 编译主要耗时于 `dotnet publish`；某个配置的首次编译还会还原 NuGet 包，之后 ps12exe 复用已生成的工程目录并运行 `dotnet publish --no-restore`。
+PS2EXE 编译 hello world 更快，因为它只是 Windows 内置 .NET Framework 编译器的一层薄封装：只做一次 CodeDom 编译，别无其他。ps12exe 还会额外执行语法检查、对脚本分类，并对常量脚本求值，再把程序帧作为负载打包进启动器；本次非常量 hello world 编译约为 PS2EXE 的 1.5 倍。产物方面，ps12exe 输出 1024 / 13312 字节，而 PS2EXE 输出 25088 字节，且常量程序启动约快 6 倍。Core 编译主要耗时于 `dotnet publish`；某个配置的首次编译还会还原 NuGet 包，之后 ps12exe 复用已生成的工程目录并运行 `dotnet publish --no-restore`。
 
 编译器本身以 PowerShell 模块形式发布：
 
 | 编译器包               | 解压后   | 压缩后  |
 | ---------------------- | -------- | ------- |
-| ps12exe（当前 master） | ~1.78 MB | ~622 KB |
-| PS2EXE 1.0.18          | ~171 KB  | ~46 KB  |
+| ps12exe（当前工作区发布规则打包） | 1,899,082 字节 | 647,312 字节 |
+| PS2EXE 1.0.18（本机安装文件）     | 169,382 字节   | 44,082 字节  |
 
 ps12exe 的模块更大，因为它是无外部依赖的纯脚本编译器，随附精简过的 [AsmResolver](https://github.com/Washi1337/AsmResolver) 二进制、7 种本地化以及纯脚本 GUI；而 PS2EXE 几乎不带任何东西，直接复用 Windows 内置的 .NET Framework 编译器。
 
@@ -617,7 +617,7 @@ ps12exe 的模块更大，因为它是无外部依赖的纯脚本编译器，随
 
 | 构建                              | 输出体积   | 预热编译 |
 | --------------------------------- | ---------- | -------- |
-| ps12exe · DLL 导出 · Framework4.0 | 17920 字节 | ~1.8 s   |
+| ps12exe · DLL 导出 · Framework4.0 | 16384 字节 | ~1864 ms |
 | PS2EXE 1.0.18 · DLL 导出          | 不支持     | 不支持   |
 
 ### 编译产物的运行期行为 🖥️

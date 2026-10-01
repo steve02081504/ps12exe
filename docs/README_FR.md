@@ -535,7 +535,7 @@ Les deux sont analysés comme des pragmas imbriqués ordinaires lors du prétrai
 | Référentiel de script pur 📦                            | ✔️ Tous les fichiers sont des fichiers texte sauf les images et les DLL fournies                          | ❌ Fournit `Win-PS2EXE.exe` sous licence open source                                                          |
 | Commande requise pour générer hello world 🌍            | 😎`'"Bonjour le monde !"' \| ps12exe`                                                                     | 🤔`echo "Bonjour le monde !" *> a.ps1; PS2EXE a.ps1; rm a.ps1`                                                |
 | Exécutable hello world constant 💾                      | 🥰1 024 octets (évalué à la compilation)                                                                  | ❌ Non pris en charge ; 25 088 octets                                                                         |
-| Exécutable hello world non constant 💾                  | 🥰14 848 octets                                                                                           | 😨25 088 octets                                                                                               |
+| Exécutable hello world non constant 💾                  | 🥰13 312 octets                                                                                           | 😨25 088 octets                                                                                               |
 | Évaluation constante à la compilation ⚡                | ✔️                                                                                                        | ❌                                                                                                            |
 | Cible PowerShell Core (7+) / multiplateforme 🧬         | ✔️ `Build.Target Core` (Windows / Linux / macOS)                                                          | ❌ Windows PowerShell 5.1 uniquement                                                                          |
 | Prise en charge multilingue de l'interface graphique 🌐 | ✔️ (7 langues, mode sombre)                                                                               | ❌                                                                                                            |
@@ -549,24 +549,24 @@ Le développeur de ps12exe n'utilise pas ce projet pour promouvoir une position 
 
 ### Taille et vitesse 🔬
 
-Mesuré sous Windows 11 avec PowerShell 7.6.6 (.NET 10) et Windows PowerShell 5.1, 20 exécutions à chaud chacune. Le plancher de création de processus (`cmd /c exit`) est d'environ 15 ms. Reproduire avec `pwsh -File ../tools/Benchmark/Compare-Compilers.ps1 -IncludeCore` (ajoutez `-Compile` pour le tableau de vitesse de compilation ci-dessous).
+Mesuré sous Windows 11 avec PowerShell 7.6.6 (.NET 10) et Windows PowerShell 5.1 le 2026-10-01, 20 exécutions à chaud chacune. Le plancher de création de processus (`cmd /c exit`) est d'environ 15 ms. Reproduire avec `pwsh -File ../tools/Benchmark/Compare-Compilers.ps1 -IncludeCore` (ajoutez `-Compile` pour le tableau de vitesse de compilation ci-dessous).
 
 | Build                                                  | Taille de sortie   | Démarrage à chaud  |
 | ------------------------------------------------------ | ------------------ | ------------------ |
-| Windows PowerShell 5.1 exécutant le script directement | —                  | ~406 ms            |
-| ps12exe · constant · Framework4.0                      | 1 024 octets       | ~54 ms             |
-| ps12exe · non constant · Framework4.0                  | 14 848 octets      | ~365 ms            |
-| PS2EXE 1.0.18 · non constant                           | 25 088 octets      | ~398 ms            |
-| ps12exe · non constant · grand script · Framework4.0   | 27 648 octets      | ~381 ms            |
-| PS2EXE 1.0.18 · non constant · grand script            | ~496 Ko            | ~402 ms            |
+| Windows PowerShell 5.1 exécutant le script directement | —                  | ~294 ms            |
+| ps12exe · constant · Framework4.0                      | 1 024 octets       | ~47 ms             |
+| ps12exe · non constant · Framework4.0                  | 13 312 octets      | ~248 ms            |
+| PS2EXE 1.0.18 · non constant                           | 25 088 octets      | ~261 ms            |
+| ps12exe · non constant · grand script · Framework4.0   | 25 088 octets      | ~293 ms            |
+| PS2EXE 1.0.18 · non constant · grand script            | ~496 Ko            | ~275 ms            |
 | ------------------------------------------------------ | ------------------ | ------------------ |
-| pwsh 7 exécutant le script directement                 | —                  | ~676 ms            |
-| ps12exe · constant · Core                              | ~165 Ko            | ~104 ms            |
-| ps12exe · non constant · Core                          | ~181 Ko            | ~621 ms            |
-| ps12exe · non constant · grand script · Core           | ~187 Ko            | ~637 ms            |
+| pwsh 7 exécutant le script directement                 | —                  | ~461 ms            |
+| ps12exe · constant · Core                              | ~165 Ko            | ~86 ms            |
+| ps12exe · non constant · Core                          | ~180 Ko            | ~370 ms            |
+| ps12exe · non constant · grand script · Core           | ~188 Ko            | ~401 ms            |
 | PS2EXE 1.0.18 · non constant · Core                    | non pris en charge | non pris en charge |
 
-Un script constant est évalué à la compilation : son exe ne fait que 1 Ko et ne démarre jamais PowerShell — environ 24× plus petit et 6× plus rapide à lancer qu'un hello world PS2EXE. Les exe non constants sont ~40 % plus petits que ceux de PS2EXE, et pour les scripts utilisant massivement des variables de portée globale, ils s'exécutent aussi plus vite, car le script s'exécute dans une fonction (portée locale) plutôt qu'au niveau global. Les exe non constants sont toujours compressés, et l'avantage s'accentue avec la taille : un script d'environ 0,5 Mo donne toujours un exe Framework d'environ 27 Ko, soit environ 1/16 des ~496 Ko de PS2EXE, qui laisse sa charge utile quasiment non compressée et gonfle avec la taille du script. L'exe Core ne prend que ~6 Ko de plus que son équivalent pour petit script, donc les grosses charges utiles restent petites au lieu de gonfler.
+Un script constant est évalué à la compilation : son exe ne fait que 1 Ko et ne démarre jamais PowerShell — environ 24× plus petit et 6× plus rapide à lancer qu'un hello world PS2EXE. Les exe non constants sont plus petits que ceux de PS2EXE dans ces mesures, et pour les scripts utilisant massivement des variables de portée globale, ils s'exécutent aussi plus vite, car le script s'exécute dans une fonction (portée locale) plutôt qu'au niveau global. Les exe non constants sont toujours compressés, et l'avantage s'accentue avec la taille : un script d'environ 0,5 Mo donne toujours un exe Framework de 25 Ko, tandis que PS2EXE produit ~496 Ko, qui laisse sa charge utile quasiment non compressée et gonfle avec la taille du script. L'exe Core ne prend que ~8 Ko de plus que son équivalent pour petit script, donc les grosses charges utiles restent petites au lieu de gonfler.
 
 ### Démarrage des applications GUI fenêtrées 🪟
 
@@ -589,25 +589,25 @@ Mesuré avec le même outil (`-Compile -IncludeCore`). Chaque échantillon est u
 
 | Build                                                | Compilation à chaud |
 | ---------------------------------------------------- | ------------------- |
-| ps12exe · constant · Framework4.0                    | ~2,3 s              |
-| ps12exe · non constant · Framework4.0                | ~1,3 s              |
-| PS2EXE · non constant                                | ~0,9 s              |
-| ps12exe · non constant · grand script · Framework4.0 | ~1,5 s              |
-| PS2EXE · non constant · grand script                 | ~0,7 s              |
+| ps12exe · constant · Framework4.0                    | ~1466 ms              |
+| ps12exe · non constant · Framework4.0                | ~900 ms              |
+| PS2EXE · non constant                                | ~585 ms              |
+| ps12exe · non constant · grand script · Framework4.0 | ~2063 ms              |
+| PS2EXE · non constant · grand script                 | ~596 ms              |
 | ---------------------------------------------------- | ------------------- |
-| ps12exe · constant · Core                            | ~4,2 s              |
-| ps12exe · non constant · Core                        | ~5,7 s              |
-| ps12exe · non constant · grand script · Core         | ~5,9 s              |
+| ps12exe · constant · Core                            | ~2742 ms              |
+| ps12exe · non constant · Core                        | ~3633 ms              |
+| ps12exe · non constant · grand script · Core         | ~5402 ms              |
 | PS2EXE · non constant · Core                         | non pris en charge  |
 
-PS2EXE compile un hello world plus vite car ce n'est qu'une fine surcouche du compilateur .NET Framework intégré à Windows : il effectue une seule passe CodeDom et rien d'autre. ps12exe exécute en plus une vérification de syntaxe, classe le script et (pour les scripts constants) l'évalue, puis emballe la trame de programme comme charge utile dans un lanceur ; sa compilation non constante est donc ~1,4× celle de PS2EXE. Le compromis se voit dans la sortie : ps12exe produit 1 024 / 14 848 octets là où PS2EXE en produit 25 088, et les programmes constants se lancent environ 6× plus vite. La compilation Core est dominée par `dotnet publish` ; la première compilation d'une configuration donnée restaure aussi les paquets NuGet, après quoi ps12exe réutilise le répertoire de projet généré et lance `dotnet publish --no-restore`.
+PS2EXE compile un hello world plus vite car ce n'est qu'une fine surcouche du compilateur .NET Framework intégré à Windows : il effectue une seule passe CodeDom et rien d'autre. ps12exe exécute en plus une vérification de syntaxe, classe le script et (pour les scripts constants) l'évalue, puis emballe la trame de programme comme charge utile dans un lanceur ; sa compilation non constante est ~1,5× celle de PS2EXE dans cette mesure. Le compromis se voit dans la sortie : ps12exe produit 1 024 / 13 312 octets là où PS2EXE en produit 25 088, et les programmes constants se lancent environ 6× plus vite. La compilation Core est dominée par `dotnet publish` ; la première compilation d'une configuration donnée restaure aussi les paquets NuGet, après quoi ps12exe réutilise le répertoire de projet généré et lance `dotnet publish --no-restore`.
 
 Le compilateur lui-même est distribué sous forme de module PowerShell :
 
 | Paquet du compilateur   | Décompressé | Compressé |
 | ----------------------- | ----------- | --------- |
-| ps12exe (master actuel) | ~1,78 Mo    | ~622 Ko   |
-| PS2EXE 1.0.18           | ~171 Ko     | ~46 Ko    |
+| ps12exe (paquet selon les règles de publication actuelles) | 1 899 082 octets | 647 312 octets |
+| PS2EXE 1.0.18 (fichiers installés)                        | 169 382 octets   | 44 082 octets  |
 
 Le module ps12exe est plus volumineux car c'est un compilateur en pur script sans dépendance qui embarque des binaires [AsmResolver](https://github.com/Washi1337/AsmResolver) allégés, 7 localisations et une interface graphique en pur script ; PS2EXE ne fournit presque rien et s'appuie sur le compilateur .NET Framework intégré à Windows.
 
@@ -617,7 +617,7 @@ Un script avec `#_DllExport` est compilé en DLL Win32 appelable via `LoadLibrar
 
 | Build                               | Taille de sortie   | Compilation à chaud |
 | ----------------------------------- | ------------------ | ------------------- |
-| ps12exe · export DLL · Framework4.0 | 17 920 octets      | ~1,8 s              |
+| ps12exe · export DLL · Framework4.0 | 16 384 octets      | ~1864 ms              |
 | PS2EXE 1.0.18 · export DLL          | non pris en charge | non pris en charge  |
 
 ### Comportement d'exécution des EXE compilés 🖥️
