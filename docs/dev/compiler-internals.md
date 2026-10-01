@@ -66,6 +66,7 @@
 - 大脚本的长距重复会超出 gzip 的 32KB 窗口（Brotli 窗口大但仍逊于 LZMA 的大字典），因此打包时还会尝试 LZMA1：编码器来自 7-Zip LZMA SDK 19.00 的 C# 源码（public domain），按职责拆成 `src/programFrames/LzmaCommon.cs`（共用接口与常量）、`src/programFrames/LzmaDecode.cs`（解码器，随 launcher 编入）与 `src/programFrames/LzmaEncode.cs`（编码器，仅打包时用）。`src/Lzma.ps1` 把共用定义与编码器在宿主进程里按需 `Add-Type` 编译并缓存成 `cache\lzma` 下的 DLL（键含 PSEdition/版本/源码内容），跨进程复用；编译失败则回退默认压缩。
 - `pack.cs` 用 `#if CodecLzma` 选择 `LzmaCodec.DecompressStream`；负载容器是 `PS12LZMA` 魔数 + LZMA props + 未压缩长度 + 数据，`exe21sp.cs` 靠这个魔数识别（gzip 靠 `1F 8B`，否则按 Brotli 反射解压）。
 - 是否启用不是拍脑袋：CodeDom 会把 gzip/LZMA 两版 launcher 都生成出来、比最终字节数取小者（精简后的 LZMA 解码器增加约 10KB，小脚本通常回退 gzip）；Core 无帧模板可原地补丁、双次 `dotnet publish` 太贵，改用「LZMA 流 + 12KB 开销预算 < Brotli 流」的保守判据（约 10KB 实测增量外留 2KB 余量）。两条路径都只对 >=32KB 的负载尝试 LZMA，这一门槛用于控制编码成本。编码端需要的 RangeCoder Encoder/BitEncoder/BitTreeEncoder 仅放在 `LzmaEncode.cs`；launcher 只编译共用定义与解码器，不再依赖条件编译排除编码类型。
+- 解码器只保留独立流解码所需的入口；SDK 的通用区间解码、模型更新和字典训练方法不随 launcher 编入。对同一份 504832 字节负载做 Framework launcher 对比，裁剪前 26112 字节、裁剪后 25088 字节（均去掉 Win32 资源，压缩流完全相同），节省 1024 字节；实际产物收益受 PE 对齐影响。
 - 编码器类型名是 `LzmaPackCodec`（不是 `LzmaCodec`）：ps12exe 自身被编成 exe 且其 launcher 走 LZMA 时，产物里会带一个只有解码器的 `LzmaCodec`，按名字找编码器会误命中。
 
 <a id="core-gui-and-addtype"></a>

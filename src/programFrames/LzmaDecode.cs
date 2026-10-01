@@ -1,4 +1,5 @@
-﻿// 本文件由 7-Zip LZMA SDK 19.00 的 C# 源码（public domain）整并而来：
+﻿// ps12exe 只使用独立流解码；已裁掉 SDK 未使用的区间解码/模型更新/训练入口，减小 launcher。
+// 本文件由 7-Zip LZMA SDK 19.00 的 C# 源码（public domain）整并而来：
 //   Compress/RangeCoder/*Decoder.cs、Compress/LZ/LzOutWindow.cs、Compress/LZMA/LzmaDecoder.cs；共用定义见 LzmaCommon.cs
 // 仅 LzmaCodec.Decompress 为 ps12exe 添加。SDK 原文见 https://www.7-zip.org/sdk.html
 using System;
@@ -37,11 +38,6 @@ namespace SevenZip.Compression.RangeCoder
 			Stream = null;
 		}
 
-		public void CloseStream()
-		{
-			Stream.Close();
-		}
-
 		public void Normalize()
 		{
 			while (Range < kTopValue)
@@ -49,27 +45,6 @@ namespace SevenZip.Compression.RangeCoder
 				Code = (Code << 8) | (byte)Stream.ReadByte();
 				Range <<= 8;
 			}
-		}
-
-		public void Normalize2()
-		{
-			if (Range < kTopValue)
-			{
-				Code = (Code << 8) | (byte)Stream.ReadByte();
-				Range <<= 8;
-			}
-		}
-
-		public uint GetThreshold(uint total)
-		{
-			return Code / (Range /= total);
-		}
-
-		public void Decode(uint start, uint size, uint total)
-		{
-			Code -= start * Range;
-			Range *= size;
-			Normalize();
 		}
 
 		public uint DecodeDirectBits(int numTotalBits)
@@ -103,25 +78,6 @@ namespace SevenZip.Compression.RangeCoder
 			return result;
 		}
 
-		public uint DecodeBit(uint size0, int numTotalBits)
-		{
-			uint newBound = (Range >> numTotalBits) * size0;
-			uint symbol;
-			if (Code < newBound)
-			{
-				symbol = 0;
-				Range = newBound;
-			}
-			else
-			{
-				symbol = 1;
-				Code -= newBound;
-				Range -= newBound;
-			}
-			Normalize();
-			return symbol;
-		}
-
 		// ulong GetProcessedSize() {return Stream.GetProcessedSize(); }
 	}
 }
@@ -135,14 +91,6 @@ namespace SevenZip.Compression.RangeCoder
 		const int kNumMoveBits = 5;
 
 		uint Prob;
-
-		public void UpdateModel(int numMoveBits, uint symbol)
-		{
-			if (symbol == 0)
-				Prob += (kBitModelTotal - Prob) >> numMoveBits;
-			else
-				Prob -= (Prob) >> numMoveBits;
-		}
 
 		public void Init() { Prob = kBitModelTotal >> 1; }
 
@@ -268,30 +216,6 @@ namespace SevenZip.Compression.LZ
 				_pos = 0;
 				TrainSize = 0;
 			}
-		}
-
-		public bool Train(System.IO.Stream stream)
-		{
-			long len = stream.Length;
-			uint size = (len < _windowSize) ? (uint)len : _windowSize;
-			TrainSize = size;
-			stream.Position = len - size;
-			_streamPos = _pos = 0;
-			while (size > 0)
-			{
-				uint curSize = _windowSize - _pos;
-				if (size < curSize)
-					curSize = size;
-				int numReadBytes = stream.Read(_buffer, (int)_pos, (int)curSize);
-				if (numReadBytes == 0)
-					return false;
-				size -= (uint)numReadBytes;
-				_pos += (uint)numReadBytes;
-				_streamPos += (uint)numReadBytes;
-				if (_pos == _windowSize)
-					_streamPos = _pos = 0;
-			}
-			return true;
 		}
 
 		public void ReleaseStream()
@@ -703,12 +627,6 @@ namespace SevenZip.Compression.LZMA
 			SetDictionarySize(dictionarySize);
 			SetLiteralProperties(lp, lc);
 			SetPosBitsProperties(pb);
-		}
-
-		public bool Train(System.IO.Stream stream)
-		{
-			_solid = true;
-			return m_OutWindow.Train(stream);
 		}
 
 		/*
