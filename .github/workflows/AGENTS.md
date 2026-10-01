@@ -4,7 +4,7 @@
 
 ## 流水线结构
 
-- `CI.yml`：唯一的测试流水线。`windows-latest` 上跑 3 个分片作业（matrix `shard`）；按改动增量选用例、并行构建/测试。用例与构建逻辑在 `tests/run.ps1` / `tests/lib/`，workflow 只负责触发、分片、缓存、报告。
+- `CI.yml`：唯一的测试流水线。`windows-latest` 上跑 3 个分片作业（matrix `shard`）；按改动增量选用例、并行构建/测试。Linux/macOS 的 `cross-platform-self` 作业运行 `tests/cross-platform-self.ps1`，验证 Core 自编译产物脱离仓库运行、二次本机编译（含 Add-Type 与模块加载）及 Windows Core 交叉编译。workflow 只负责触发、分片、环境、缓存、报告。
 - `Publish.yml` / `AV-auto-test.yaml`：其它 Windows 作业，同样走 `defender-exclusions`（见下）。
 - `static.yml` 与 issue bot 系列跑在 `ubuntu-latest`，与编译无关，无需改动。
 

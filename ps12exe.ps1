@@ -787,7 +787,14 @@ elseif (!$AST) {
 	$AST = [System.Management.Automation.Language.Parser]::ParseInput($Content, [ref]$null, [ref]$null)
 }
 
-#_if PSScript #在PSEXE中主机永远是winpwsh，可省略该部分
+#_if PSEXE
+	# Core 自编译产物没有可用于交接的脚本入口，Framework CodeDom 只支持 Windows PowerShell。
+	#_!! if (-not $isCoreTarget -and $PSVersionTable.PSEdition -eq 'Core') {
+		#_!! Write-I18n Error CoreCompileNeedWindowsPowerShell -Category NotInstalled
+		#_!! exit 2 # 调用格式错误
+	#_!! }
+#_endif
+#_if PSScript #脚本模式可交接给 Windows PowerShell
 	# pwsh 下默认交给 Windows PowerShell + CodeDom；若没有 WinPS，只能报错让用户显式选 Core。
 	if (!$nested -and -not $isCoreTarget -and ($PSVersionTable.PSEdition -eq "Core")) {
 		if (Get-Command powershell -ErrorAction Ignore) {

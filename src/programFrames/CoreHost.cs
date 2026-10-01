@@ -23,7 +23,7 @@ internal static class CoreHost {
 		}
 		string modules = Path.Combine(pshome, "Modules");
 		string existing = Environment.GetEnvironmentVariable("PSModulePath");
-		Environment.SetEnvironmentVariable("PSModulePath", string.IsNullOrEmpty(existing) ? modules : modules + ";" + existing);
+		Environment.SetEnvironmentVariable("PSModulePath", string.IsNullOrEmpty(existing) ? modules : modules + Path.PathSeparator + existing);
 		AppDomain.CurrentDomain.AssemblyResolve += ResolveFromPshome;
 	}
 
@@ -40,7 +40,13 @@ internal static class CoreHost {
 		if (!string.IsNullOrEmpty(pathEnv)) {
 			string pwsh = OperatingSystem.IsWindows() ? "pwsh.exe" : "pwsh";
 			foreach (string dir in pathEnv.Split(Path.PathSeparator)) {
-				if (!string.IsNullOrWhiteSpace(dir) && File.Exists(Path.Combine(dir, pwsh))) candidates.Add(dir);
+				if (!string.IsNullOrWhiteSpace(dir) && File.Exists(Path.Combine(dir, pwsh))) {
+					candidates.Add(dir);
+					try {
+						FileSystemInfo target = new FileInfo(Path.Combine(dir, pwsh)).ResolveLinkTarget(true);
+						if (target != null) candidates.Add(Path.GetDirectoryName(target.FullName));
+					} catch (IOException) { }
+				}
 			}
 		}
 		candidates.AddRange(KnownPshomePaths());

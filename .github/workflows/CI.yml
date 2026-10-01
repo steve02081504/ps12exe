@@ -21,6 +21,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  cross-platform-self:
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect PowerShell runtime
+        id: runtime
+        shell: pwsh
+        run: |
+          $runtime = [Environment]::Version
+          "version=$($runtime.Major).$($runtime.Minor).x" >> $env:GITHUB_OUTPUT
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ steps.runtime.outputs.version }}
+      - name: Run native self compilation and Windows cross compilation
+        shell: pwsh
+        run: ./tests/cross-platform-self.ps1
   test:
     if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     runs-on: windows-latest

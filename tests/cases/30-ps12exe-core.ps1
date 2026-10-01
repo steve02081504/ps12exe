@@ -524,3 +524,58 @@ Write-Output ('wpf=' + [System.Windows.Window].FullName)
 		Assert-Match $r.Output 'wpf=System\.Windows\.Window' "Bundled console 不能用 WPF：$($r.Output)"
 	}
 }
+
+Add-Test @{
+	Name = 'ps12exe.core.publish-apphost-names'
+	Group = 'ps12exe'
+	Deps = @('src/CoreProject.ps1', 'src/CoreCompiler.ps1', 'src/CoreBundledCompiler.ps1')
+	Run = {
+		param($ctx)
+		. (Join-Path $ctx.RepoRoot 'src/CoreProject.ps1')
+		foreach ($rid in @('win-x64', 'linux-x64', 'osx-arm64')) {
+			foreach ($single in @($true, $false)) {
+				$publish = Join-Path $ctx.WorkDir "$rid-$single/publish"
+				New-Item -ItemType Directory -Path $publish -Force | Out-Null
+				$name = if ($rid -like 'win-*') { 'probe.exe' } else { 'probe' }
+				[IO.File]::WriteAllText((Join-Path $publish $name), $rid)
+				[IO.File]::WriteAllText((Join-Path $publish 'probe.runtimeconfig.json'), '{}')
+				[IO.File]::WriteAllText((Join-Path $publish 'probe.pdb'), 'symbols')
+				$out = Join-Path $ctx.WorkDir "$rid-$single/out/renamed.bin"
+				New-Item -ItemType Directory -Path (Split-Path $out) -Force | Out-Null
+				Copy-CorePublishOutput -PublishDir $publish -AssemblyName probe -OutputFile $out -SingleFile $single -PrepareDebug $true -RuntimeIdentifier $rid
+				Assert-Equal $rid ([IO.File]::ReadAllText($out)) '目标平台 apphost 拷贝/重命名错误'
+				Assert-Equal 'symbols' ([IO.File]::ReadAllText((Join-Path (Split-Path $out) 'renamed.pdb'))) 'pdb 未按输出名落盘'
+				if (-not $single) { Assert-FileExists (Join-Path (Split-Path $out) 'probe.runtimeconfig.json') '多文件依赖未拷贝' }
+			}
+		}
+	}
+}
+
+Add-Test @{
+	Name = 'ps12exe.self.core-cross-compile'
+	Group = 'ps12exe'
+	Deps = $deps
+	Build = @{ Name = 'selfcore'; InputFile = (Join-Path (Get-TestRepoRoot) 'ps12exe.ps1'); Output = 'selfcore.exe'; Params = @{ Build = @{ Target = 'Core'; Core = @{ TargetOs = 'Windows' } } } }
+	Run = {
+		param($ctx)
+		$self = $ctx.Builds['selfcore']
+		foreach ($os in @('Windows', 'Linux')) {
+			$out = Join-Path $ctx.WorkDir "inner-$os.exe"
+			& $self -Content "Get-Date | Out-Null; Write-Output 'self-core-cross-ok'" -outputFile $out -Build "@{Target='Core';Core=@{TargetOs='$os'}}" -NoUpdateCheck -Quiet | Out-Null
+			Assert-FileExists $out 'Core 自编译版本未产出交叉编译结果'
+			$bytes = [IO.File]::ReadAllBytes($out)
+			if ($os -eq 'Linux') {
+				Assert-Equal '7F454C46' ([Convert]::ToHexString($bytes[0..3])) 'Linux 产物必须是 ELF apphost'
+			}
+			else {
+				$r = Invoke-ExeCaptureMergedOutput -ExePath $out
+				Assert-Equal 0 $r.ExitCode '二次编译 Windows Core 产物退出码'
+				Assert-Match $r.Output 'self-core-cross-ok' '二次编译 Windows Core 产物输出'
+			}
+		}
+		$noTarget = Join-Path $ctx.WorkDir 'no-target.exe'
+		& $self -Content 'Write-Output 1' -outputFile $noTarget -NoUpdateCheck -Quiet 2>&1 | Out-Null
+		Assert-Equal 2 $LASTEXITCODE 'Core 自编译版本未显式选 Core 目标时应明确报错'
+		Assert-False (Test-Path -LiteralPath $noTarget) '未指定 Core 目标时不应产出文件'
+	}
+}

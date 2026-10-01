@@ -2,6 +2,27 @@
 
 主 [`AGENTS.md`](../../AGENTS.md) 只保留约定、入口与常用命令；这里是需要时再查的实现细节。
 
+## Core 自编译与跨平台编译
+
+编译 Linux 版编译器（输出扩展名 `.bin` 只是文件名，实际为 ELF apphost）：
+
+```powershell
+./ps12exe.ps1 ./ps12exe.ps1 ./ps12exe-linux.bin -Build @{Target='Core';Core=@{TargetOs='Linux'}} -NoUpdateCheck
+```
+
+Linux 上安装匹配的 PowerShell 7、.NET 运行时和 .NET SDK，给产物加执行权限，然后生成 Windows Core 产物：
+
+```sh
+chmod +x ./ps12exe-linux.bin
+./ps12exe-linux.bin ./input.ps1 ./output.exe -Build "@{Target='Core';Core=@{TargetOs='Windows'}}" -NoUpdateCheck
+```
+
+macOS 对应 `TargetOs='MacOS'`；架构用 `Build.Platform` 指定（默认跟随构建宿主，跨架构时显式指定）。Shared 自编译产物依赖目标机器的 PowerShell 与匹配的 .NET 运行时；二次编译另外需要 .NET SDK。Windows 产物同样需要匹配的 PowerShell/.NET，或选 Bundled 后端按需打包依赖。传统 Framework 编译仍依赖 Windows PowerShell；Core 自编译版本对此会明确报错，必须显式选择 `Build.Target='Core'`。
+
+`Copy-CorePublishOutput` 根据目标 RID 选择 Windows 的 `.exe` 或 Unix 无扩展名 apphost，单文件与多文件发布均按调用方输出路径重命名。Core 控制台重定向用 `Console.Is*Redirected`，Unix 终端检测避开 Kernel32；CoreHost 使用平台模块路径分隔符并解析 PATH 中 `pwsh` 的符号链接。运行时帧在 Unix 保留已有的 PowerShell 模块路径，不添加 WindowsPowerShell 路径。
+
+`CI.yml` 的 Linux/macOS 作业运行 `tests/cross-platform-self.ps1`，在仓库外启动自编译产物，再编译并运行包含 `Add-Type`/`Get-Date` 的本机脚本，最后检查 Windows 交叉编译产物的 PE 签名。Windows Core 产物实际执行由 Windows 测试 `ps12exe.self.core-cross-compile` 覆盖。
+
 <a id="preprocessing-roundtrip"></a>
 
 ## `#_!!` 剥离与 exe21sp 往返

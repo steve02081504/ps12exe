@@ -299,7 +299,7 @@ $refContentItem
 		$null = Invoke-CoreDotnet -DotnetArgs @('publish', (Join-Path $projectDir 'launcher.csproj'), '-c', 'Release', '-o', $publishDir) -AssetsPath (Join-Path $projectDir 'obj/project.assets.json') -DotnetPath $dotnet.Source
 	}
 
-	Copy-CorePublishOutput -PublishDir $publishDir -AssemblyName $assemblyName -OutputFile $outputFile -SingleFile $singleFile -PrepareDebug $prepareDebug
+	Copy-CorePublishOutput -PublishDir $publishDir -AssemblyName $assemblyName -OutputFile $outputFile -SingleFile $singleFile -PrepareDebug $prepareDebug -RuntimeIdentifier $rid
 }
 finally {
 	Exit-CoreProject $coreProject

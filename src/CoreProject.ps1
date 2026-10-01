@@ -67,8 +67,9 @@ function Invoke-CoreDotnet {
 
 # 校验 publish 产物并把 exe（单文件）或整个发布目录（非单文件）拷到 $OutputFile，附带可选 pdb。
 function Copy-CorePublishOutput {
-	param([string]$PublishDir, [string]$AssemblyName, [string]$OutputFile, [bool]$SingleFile, [bool]$PrepareDebug)
-	$publishedExe = Join-Path $PublishDir "$AssemblyName.exe"
+	param([string]$PublishDir, [string]$AssemblyName, [string]$OutputFile, [bool]$SingleFile, [bool]$PrepareDebug, [string]$RuntimeIdentifier = 'win-x64')
+	$appHostName = if ($RuntimeIdentifier -like 'win-*') { "$AssemblyName.exe" } else { $AssemblyName }
+	$publishedExe = Join-Path $PublishDir $appHostName
 	if (-not (Test-Path -LiteralPath $publishedExe)) {
 		Write-I18n Error OutputFileNotWritten -Category WriteError
 		throw 'ps12exe:core-no-output'
@@ -81,7 +82,7 @@ function Copy-CorePublishOutput {
 		$outDir = Split-Path -Parent $OutputFile
 		New-Item -ItemType Directory -Path $outDir -Force | Out-Null
 		Copy-Item -Path (Join-Path $PublishDir '*') -Destination $outDir -Recurse -Force
-		$copiedExe = Join-Path $outDir "$AssemblyName.exe"
+		$copiedExe = Join-Path $outDir $appHostName
 		if ([System.IO.Path]::GetFullPath($copiedExe) -ne [System.IO.Path]::GetFullPath($OutputFile)) {
 			Move-Item -LiteralPath $copiedExe -Destination $OutputFile -Force
 		}
@@ -89,7 +90,7 @@ function Copy-CorePublishOutput {
 	if ($PrepareDebug) {
 		$publishedPdb = Join-Path $PublishDir "$AssemblyName.pdb"
 		if (Test-Path -LiteralPath $publishedPdb) {
-			Copy-Item -LiteralPath $publishedPdb -Destination ($OutputFile -replace '\.exe$', '.pdb') -Force
+			Copy-Item -LiteralPath $publishedPdb -Destination ([System.IO.Path]::ChangeExtension($OutputFile, '.pdb')) -Force
 		}
 	}
 }

@@ -1441,23 +1441,38 @@ namespace PSRunnerNS {
 		static private extern bool GetConsoleMode(UIntPtr hConsoleHandle, out ConsoleMode lpConsoleMode);
 
 		static public bool IsInputRedirected() {
+			#if CoreHost
+			return Console.IsInputRedirected;
+			#else
 			UIntPtr hInput = GetStdHandle(STDHandle.STD_INPUT_HANDLE);
 			FileType fileType = GetFileType(hInput);
 			return fileType != FileType.FILE_TYPE_CHAR && fileType != FileType.FILE_TYPE_UNKNOWN;
+			#endif
 		}
 
 		static public bool IsOutputRedirected() {
+			#if CoreHost
+			return Console.IsOutputRedirected;
+			#else
 			UIntPtr hOutput = GetStdHandle(STDHandle.STD_OUTPUT_HANDLE);
 			FileType fileType = GetFileType(hOutput);
 			return fileType != FileType.FILE_TYPE_CHAR && fileType != FileType.FILE_TYPE_UNKNOWN;
+			#endif
 		}
 
 		static public bool IsErrorRedirected() {
+			#if CoreHost
+			return Console.IsErrorRedirected;
+			#else
 			UIntPtr hError = GetStdHandle(STDHandle.STD_ERROR_HANDLE);
 			FileType fileType = GetFileType(hError);
 			return fileType != FileType.FILE_TYPE_CHAR && fileType != FileType.FILE_TYPE_UNKNOWN;
+			#endif
 		}
 		static public bool IsVirtualTerminalSupported() {
+			#if CoreHost
+			if (!OperatingSystem.IsWindows()) return !Console.IsOutputRedirected && Environment.GetEnvironmentVariable("TERM") != "dumb";
+			#endif
 			UIntPtr hOutput = GetStdHandle(STDHandle.STD_OUTPUT_HANDLE);
 			ConsoleMode consoleMode;
 			if(!GetConsoleMode(hOutput, out consoleMode))
@@ -2446,6 +2461,9 @@ namespace PSRunnerNS {
 
 		// 把自己的模块目录前置；这里做同样的事，保证轻量 ISS 下命令仍能正确自动加载（issue 61）。
 		static void FixModulePath() {
+			#if CoreHost
+			if (!OperatingSystem.IsWindows()) return;
+			#endif
 			try {
 				string docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 				string programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
