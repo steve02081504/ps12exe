@@ -607,7 +607,7 @@ The compiler itself is installed as a PowerShell module:
 
 | Compiler package         | Unpacked | Compressed |
 | ------------------------ | -------- | ---------- |
-| ps12exe (current master) | ~1.79 MB | ~649 KB    |
+| ps12exe (current master) | ~1.78 MB | ~622 KB    |
 | PS2EXE 1.0.18            | ~171 KB  | ~46 KB     |
 
 ps12exe's module is larger because it is a dependency-free, pure-script compiler that bundles trimmed [AsmResolver](https://github.com/Washi1337/AsmResolver) binaries, 7 localizations and a pure-script GUI; PS2EXE ships almost nothing and relies on the .NET Framework compiler built into Windows.

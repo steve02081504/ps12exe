@@ -12,12 +12,14 @@
 	     Ci/Pr 在产物缺失或已过期时自动回退到 Source。
 	  2. 取出 netstandard2.0 程序集（可从 Windows PowerShell 5.1 / .NET Framework 和 PowerShell 7 / .NET 两种运行时加载），
 	  3. 把 tools/AsmResolver（TinySharp + exe21sp + src/ExeSinker.ps1 + src/DllExportCompiler.ps1 用法）构建成一个根程序集，
-	  4. 用该根对 .NET IL Linker（illink）运行，使 ps12exe 永不触达的每个 AsmResolver 成员都被丢弃；对具有字面量（const/enum）字段的类型会保留所有字段，因为 Add-Type 会内联这些值，否则将无法重新编译 C# 源码，
+	  4. 用该根对 .NET IL Linker（illink）运行，使 ps12exe 永不触达的每个 AsmResolver 成员都被丢弃；Roslyn 从相同 C# 源码绑定 const/enum 字段，只为实际引用的常量生成保留规则（常量会被 C# 内联，不能只分析 IL），
 	  5. 用 ILRepack 把裁剪后的 5 个程序集合并成单个 AsmResolver.dll（省掉 4 份程序集清单/元数据表/重定位；原始字节 860 KB→763 KB，压缩后 nupkg 约小 30 KB），
 	  6. 把单个 AsmResolver.dll 复制到 src/bin（不再单独建子目录）。
 	合并与裁剪产物都保留 netstandard2.0 引用，因此在两种运行时上都可用。之后请运行 CI 测试脚本验证结果。
 .PARAMETER Source
-	AsmResolver 的来源：NuGet（默认）、Ci、Pr 或 Source。Ci/Pr 依赖已安装并登录的 gh CLI；Source 依赖 git 与 dotnet。
+	AsmResolver 的来源：NuGet（默认）、Ci、Pr、Source 或 Local。Ci/Pr 依赖已安装并登录的 gh CLI；Source 依赖 git 与 dotnet。
+.PARAMETER AssemblyDirectory
+	Local 来源的完整 netstandard2.0 AsmResolver 程序集目录，可复用已有构建而不改变上游版本。
 .PARAMETER Version
 	NuGet 来源下要获取的 AsmResolver 版本。默认为最新稳定版。
 .PARAMETER Pr
@@ -48,11 +50,14 @@
 	./Update-AsmResolver.ps1 -Source Pr -Pr 793
 .EXAMPLE
 	./Update-AsmResolver.ps1 -Source Source -Ref master
+.EXAMPLE
+	./Update-AsmResolver.ps1 -Source Local -AssemblyDirectory ./bin/Release/net10.0
 #>
 [CmdletBinding()]
 param(
-	[Parameter()][ValidateSet('NuGet', 'Ci', 'Pr', 'Source')][string]$Source = 'NuGet',
+	[Parameter()][ValidateSet('NuGet', 'Ci', 'Pr', 'Source', 'Local')][string]$Source = 'NuGet',
 	[Parameter()][string]$Version,
+	[Parameter()][string]$AssemblyDirectory,
 	[Parameter()][int]$Pr,
 	[Parameter()][string]$Ref,
 	[Parameter()][long]$RunId,
@@ -340,45 +345,34 @@ function Get-IllinkPath {
 }
 
 function New-LinkerRootDescriptor {
-	param([string[]]$Assemblies, [string]$DescriptorPath, [string]$MonoCecilPath)
-	if (-not ('Mono.Cecil.AssemblyDefinition' -as [type])) {
-		Add-Type -Path $MonoCecilPath
-	}
-
-	$builder = [System.Text.StringBuilder]::new()
-	[void]$builder.AppendLine('<linker>')
-	foreach ($path in $Assemblies) {
-		$assembly = [Mono.Cecil.AssemblyDefinition]::ReadAssembly($path)
-		try {
-			$typeNames = [System.Collections.Generic.List[string]]::new()
-			foreach ($module in $assembly.Modules) {
-				$pending = [System.Collections.Generic.Stack[object]]::new()
-				foreach ($type in $module.Types) { $pending.Push($type) }
-				while ($pending.Count) {
-					$type = $pending.Pop()
-					foreach ($nested in $type.NestedTypes) { $pending.Push($nested) }
-					foreach ($field in $type.Fields) {
-						if ($field.HasConstant) { $typeNames.Add($type.FullName); break }
-					}
-				}
-			}
-			if ($typeNames.Count) {
-				[void]$builder.AppendLine("  <assembly fullname=`"$([System.Security.SecurityElement]::Escape($assembly.Name.Name))`">")
-				foreach ($name in $typeNames) {
-					[void]$builder.AppendLine("    <type fullname=`"$([System.Security.SecurityElement]::Escape($name))`" preserve=`"fields`" />")
-				}
-				[void]$builder.AppendLine('  </assembly>')
-			}
-		}
-		finally { $assembly.Dispose() }
-	}
-	[void]$builder.AppendLine('</linker>')
-	Set-Content -LiteralPath $DescriptorPath -Value $builder.ToString() -Encoding utf8
+	param([string]$LibraryDirectory, [string]$ReferenceDirectory, [string]$DescriptorPath, [string]$TargetFramework)
+	$project = Join-Path $PSScriptRoot 'LinkerRoots/LinkerRoots.csproj'
+	& dotnet restore $project -nologo -p:TargetFramework=$TargetFramework
+	if ($LASTEXITCODE) { throw "Constant-root analyzer restore failed: $LASTEXITCODE" }
+	& dotnet build $project -c Release -nologo --no-restore -p:TargetFramework=$TargetFramework
+	if ($LASTEXITCODE) { throw "Constant-root analyzer build failed: $LASTEXITCODE" }
+	$analyzer = Join-Path $PSScriptRoot "LinkerRoots/bin/Release/$TargetFramework/LinkerRoots.dll"
+	$sources = @(
+		(Join-Path $PSScriptRoot 'Root.cs')
+		(Join-Path $PSScriptRoot '../../src/programFrames/TinySharp.cs')
+		(Join-Path $PSScriptRoot '../../src/programFrames/exe21sp.cs')
+		(Join-Path $PSScriptRoot '../../src/programFrames/LzmaCommon.cs')
+		(Join-Path $PSScriptRoot '../../src/programFrames/LzmaDecode.cs')
+	)
+	& dotnet $analyzer $LibraryDirectory $ReferenceDirectory $DescriptorPath @sources
+	if ($LASTEXITCODE) { throw "Constant-root analysis failed: $LASTEXITCODE" }
 }
-
 # ---- 解析来源 ----
 $CiRun = $null
-if ($Source -eq 'NuGet') {
+if ($Source -eq 'Local') {
+	if (-not $AssemblyDirectory) { throw '-Source Local requires -AssemblyDirectory.' }
+	$AssemblyDirectory = (Resolve-Path -LiteralPath $AssemblyDirectory).Path
+	foreach ($name in $AssemblyNames) {
+		if (-not (Test-Path -LiteralPath (Join-Path $AssemblyDirectory "$name.dll"))) { throw "Missing local assembly: $name.dll" }
+	}
+	$cacheKey = 'local-' + (Get-FileHash (Join-Path $AssemblyDirectory 'AsmResolver.DotNet.dll')).Hash.Substring(0, 12)
+}
+elseif ($Source -eq 'NuGet') {
 	if (-not $Version) {
 		$Version = Get-LatestStableVersion -PackageId 'asmresolver'
 	}
@@ -410,7 +404,10 @@ if (-not $TargetFramework) {
 }
 Write-Host "Root target framework: $TargetFramework"
 
-$libDir = if ($Source -eq 'NuGet') {
+$libDir = if ($Source -eq 'Local') {
+	$AssemblyDirectory
+}
+elseif ($Source -eq 'NuGet') {
 	Get-AsmResolverLibDirectory -Version $Version -WorkDirectory $WorkDirectory -Force:$Force
 }
 elseif ($Source -eq 'Source') {
@@ -442,12 +439,11 @@ $rootDll = Join-Path $ProjectDir "bin\Release\$TargetFramework\AsmResolverRoot.d
 if (-not (Test-Path -LiteralPath $rootDll)) { throw "Root assembly not found: $rootDll" }
 
 $illink = Get-IllinkPath -ProjectFile $ProjectFile -TargetFramework $TargetFramework
-$monoCecil = Join-Path (Split-Path -Parent $illink) 'Mono.Cecil.dll'
 
 $trimRoot = Join-Path $WorkDirectory $cacheKey
 New-Item -ItemType Directory -Force -Path $trimRoot | Out-Null
 $descriptor = Join-Path $trimRoot 'linker-roots.xml'
-New-LinkerRootDescriptor -Assemblies (@($AssemblyNames | ForEach-Object { Join-Path $libDir "$_.dll" })) -DescriptorPath $descriptor -MonoCecilPath $monoCecil
+New-LinkerRootDescriptor -LibraryDirectory $libDir -ReferenceDirectory $refDir -DescriptorPath $descriptor -TargetFramework $TargetFramework
 
 $trimmedDir = Join-Path $trimRoot 'trimmed'
 Remove-Item -LiteralPath $trimmedDir -Recurse -Force -ErrorAction SilentlyContinue

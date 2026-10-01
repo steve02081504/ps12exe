@@ -16,6 +16,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: NuGet/setup-nuget@v2
       - name: Run a one-line script
         shell: pwsh
         run: ./.github/workflows/publish.ps1 -version ${{ github.event.inputs.version || github.ref_name }} -ApiKey ${{ secrets.NUGET_API_KEY }}

@@ -12,6 +12,7 @@
     <AssemblyName>AsmResolverRoot</AssemblyName>
     <RootNamespace>AsmResolverRoot</RootNamespace>
     <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <Nullable>disable</Nullable>
     <InvariantGlobalization>true</InvariantGlobalization>
     <!-- Only used to make the SDK bring in Microsoft.NET.ILLink.Tasks; we invoke illink ourselves. -->
@@ -29,6 +30,7 @@
        exe21sp.cs references LzmaCodec (its LZMA payload branch), so LzmaCommon.cs and LzmaDecode.cs must be
        compiled alongside it or the root assembly fails to build. -->
   <ItemGroup>
+    <Compile Include="Root.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)..\..\src\programFrames\TinySharp.cs" Link="extern\TinySharp.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)..\..\src\programFrames\exe21sp.cs" Link="extern\exe21sp.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)..\..\src\programFrames\LzmaCommon.cs" Link="extern\LzmaCommon.cs" />
