@@ -28,7 +28,7 @@
   3. 用 AsmResolver 读取 launcher，给每个转发包装设 `MethodDefinition.ExportInfo = new UnmanagedExportInfo(名字, VTableFromUnmanaged | (x86 ? VTable32Bit : VTable64Bit))`，清掉 module 的 `ILOnly` 标志后 `ModuleDefinition.Write` 重写：AsmResolver 的托管 PE 写出器据此生成 native 导出桩、`mscoree.dll!_CorDllMain` 引导桩与 CLR vtable fixup（与 ilasm 对 `.export` 的处理同机制），位数由 vtable 项的 32/64 位区分。
   4. 该路径跳过 pack 与 `ExeSinker`（后者重建 PE 会覆盖刚生成的导出表/引导桩），也不写产物缓存。
 - 必须清 `DotNetDirectoryFlags.ILOnly`，否则不写 CLR 引导桩、`LoadLibrary` 起不来 CLR。
-- 导出名指针表必须按字典序升序（Windows 才能二分查找），`Sort-DllExports` 以序数、区分大小写排好元数据方法顺序作为兜底。`src/bin/AsmResolver.dll` 目前是含上游修复（[Washi1337/AsmResolver#793](https://github.com/Washi1337/AsmResolver/pull/793)：导出名指针表按名排序）的本地构建；若换回不含该修复的版本，这一步就是必需的，否则 `GetProcAddress` 按名解析会漏掉部分导出。
+- 导出名指针表必须按字典序升序（Windows 才能二分查找），`Get-SortedDllExports` 以序数、区分大小写排好元数据方法顺序作为兜底。`src/bin/AsmResolver.dll` 目前是含上游修复（[Washi1337/AsmResolver#793](https://github.com/Washi1337/AsmResolver/pull/793)：导出名指针表按名排序）的本地构建；若换回不含该修复的版本，这一步就是必需的，否则 `GetProcAddress` 按名解析会漏掉部分导出。
 - 用到的 AsmResolver.DotNet 写出器 API 需镜像在 `tools/AsmResolver/Root.cs`，否则会被 illink 裁掉（见 `#asmresolver-trim`）。
 - 导出包装方法把异常挡在 native 边界内：出错写 stderr 并返回默认值（托管异常穿过 native 边界会变成进程级崩溃）。
 

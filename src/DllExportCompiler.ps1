@@ -9,7 +9,7 @@
 # （VTableFromUnmanaged），使产物可被 native 的 LoadLibrary/GetProcAddress 直接加载。
 # 这正是 ilasm 对 `.export` 指令所做的事，但省掉了 ildasm→文本→ilasm 的往返与外部进程。
 #
-# 导出名指针表必须按字典序升序，Windows 才能二分查找：Sort-DllExports 让元数据方法顺序有序，作为
+# 导出名指针表必须按字典序升序，Windows 才能二分查找：Get-SortedDllExports 让元数据方法顺序有序，作为
 # AsmResolver 未修复时的脚本层兜底（issue #792；当前 src/bin 的特供版内部已排序）。
 #
 # AsmResolver 与 ExeSinker 共用 src/bin 下 illink 裁剪并合并过的单个 AsmResolver.dll；本路径额外用到
@@ -40,7 +40,7 @@ function Get-DllExportField {
 
 # 按导出函数名以序数、区分大小写排序。PE 导出名指针表必须按字典序升序，Windows 才能二分查找（GetProcAddress）。
 # 当前 AsmResolver 特供版内部已排序；这里排好元数据方法顺序，使未修复的上游版本也能正确产出（issue #792 的脚本层兜底）。
-function Sort-DllExports {
+function Get-SortedDllExports {
 	param([object[]]$Exports)
 	$sorted = @($Exports)
 	[Array]::Sort($sorted, [System.Comparison[object]] {
@@ -54,7 +54,7 @@ function Sort-DllExports {
 # 默认生成 payload 侧包装（初始化宿主并调用脚本函数）；-Forward 生成 launcher 侧包装（直接静态转发到 payload 的同名方法）。
 function New-DllExportMethods {
 	param([object[]]$Exports, [switch]$Forward)
-	$Exports = Sort-DllExports $Exports
+	$Exports = Get-SortedDllExports $Exports
 	$sb = [System.Text.StringBuilder]::new()
 	$map = @()
 	for ($i = 0; $i -lt $Exports.Count; $i++) {
