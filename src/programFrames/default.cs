@@ -37,23 +37,9 @@ namespace PSRunnerNS {
 
 		[Flags]
 		enum CREDUI_FLAGS {
-			INCORRECT_PASSWORD = 0x1,
 			DO_NOT_PERSIST = 0x2,
-			REQUEST_ADMINISTRATOR = 0x4,
-			EXCLUDE_CERTIFICATES = 0x8,
-			REQUIRE_CERTIFICATE = 0x10,
-			SHOW_SAVE_CHECK_BOX = 0x40,
 			ALWAYS_SHOW_UI = 0x80,
-			REQUIRE_SMARTCARD = 0x100,
-			PASSWORD_ONLY_OK = 0x200,
-			VALIDATE_USERNAME = 0x400,
-			COMPLETE_USERNAME = 0x800,
-			PERSIST = 0x1000,
-			SERVER_CREDENTIAL = 0x4000,
-			EXPECT_CONFIRMATION = 0x20000,
 			GENERIC_CREDENTIALS = 0x40000,
-			USERNAME_TARGET_CREDENTIALS = 0x80000,
-			KEEP_USERNAME = 0x100000,
 		}
 
 		public enum CredUI_ReturnCodes {
@@ -1434,10 +1420,7 @@ namespace PSRunnerNS {
 	public class Console_Info {
 		private enum FileType: uint {
 			FILE_TYPE_UNKNOWN = 0x0000,
-			FILE_TYPE_DISK = 0x0001,
 			FILE_TYPE_CHAR = 0x0002,
-			FILE_TYPE_PIPE = 0x0003,
-			FILE_TYPE_REMOTE = 0x8000
 		}
 
 		private enum STDHandle: uint {
@@ -1446,20 +1429,7 @@ namespace PSRunnerNS {
 			STD_ERROR_HANDLE = unchecked((uint) - 12)
 		}
 		private enum ConsoleMode: uint {
-			ENABLE_ECHO_INPUT = 0x0004,
-			ENABLE_INSERT_MODE = 0x0020,
-			ENABLE_LINE_INPUT = 0x0002,
-			ENABLE_MOUSE_INPUT = 0x0010,
-			ENABLE_PROCESSED_INPUT = 0x0001,
-			ENABLE_QUICK_EDIT_MODE = 0x0040,
-			ENABLE_WINDOW_INPUT = 0x0008,
-			ENABLE_VIRTUAL_TERMINAL_INPUT = 0x0200,
-
-			ENABLE_PROCESSED_OUTPUT = 0x0001,
-			ENABLE_WRAP_AT_EOL_OUTPUT = 0x0002,
 			ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004,
-			DISABLE_NEWLINE_AUTO_RETURN = 0x0008,
-			ENABLE_LVB_GRID_WORLDWIDE = 0x0010
 		}
 
 		[DllImport("Kernel32.dll")]
@@ -1469,8 +1439,6 @@ namespace PSRunnerNS {
 		static private extern FileType GetFileType(UIntPtr hFile);
 		[DllImport("Kernel32.dll")]
 		static private extern bool GetConsoleMode(UIntPtr hConsoleHandle, out ConsoleMode lpConsoleMode);
-		[DllImport("Kernel32.dll")]
-		static private extern bool SetConsoleMode(UIntPtr hConsoleHandle, ConsoleMode dwMode);
 
 		static public bool IsInputRedirected() {
 			UIntPtr hInput = GetStdHandle(STDHandle.STD_INPUT_HANDLE);
@@ -2194,7 +2162,7 @@ namespace PSRunnerNS {
 			#endif
 		}
 
-		#if !noConsole
+		#if !noConsole && !(noDebug && noError && noVerbose && noWarning)
 		private void WriteLineInternal(ConsoleColor foregroundColor, ConsoleColor backgroundColor, string value) {
 			// 同上：ERROR/WARNING/DEBUG 走这条路，上色失败绝不能让失败原因本身消失（issue 60）。
 			try {
@@ -2995,7 +2963,7 @@ namespace PSRunnerNS {
 	public static partial class PSRunnerEntry {
 		static PSRunner runner;
 
-		#if ScriptHasParam
+		#if ScriptHasParam && !DllExport
 		// 把命令行参数当 PowerShell 数据(PSD)解析：只接受字面量（字符串/数字/bool/null/数组/哈希表），
 		// 任何表达式或命令都视为普通字符串。解析出的对象直接通过变量传入，不再作为文本进入命令行，
 		// 因此参数内容不会被当作 PowerShell 脚本求值。
@@ -3139,7 +3107,8 @@ namespace PSRunnerNS {
 		}
 		#endif
 
-		// EXE 主入口
+		#if !DllExport
+		// EXE 主入口；原生导出 DLL 只使用 DllExport.cs 的初始化/调用入口。
 		#if conHost
 		// App.ConHost：产物的 launcher 以 winexe 启动（未附加控制台），这里显式分配一个 conhost 控制台再接上标准流，
 		// 从而避免挂到 Windows Terminal。若已有控制台（如未走 pack 的直编路径）则跳过，不重复分配。
@@ -3288,5 +3257,6 @@ namespace PSRunnerNS {
 
 			return runner.ExitCode;
 		}
+		#endif
 	}
 }

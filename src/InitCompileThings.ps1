@@ -114,6 +114,7 @@ if ($winFormsDPIAware) { $Constants += "winFormsDPIAware" }
 if ($isPwsh20Sma) { $Constants += "Pwsh20" }
 if ($ScriptUsesInput) { $Constants += "ReadInput" }
 if ($AST -and $AST.ParamBlock) { $Constants += "ScriptHasParam" }
+if ($DllExportList) { $Constants += 'DllExport' }
 if ($StartupTiming) { $Constants += "StartupTiming" }
 
 if (-not $TempDir) {

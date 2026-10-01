@@ -41,6 +41,7 @@ Add-Test @{
 #_DllExport int GetStored()
 #_DllExport string Greet(string name)
 
+param([string]$Unused)
 $global:Stored = 0
 function Add($a, $b) { return $a + $b }
 function Store($v) { $global:Stored = $v }
