@@ -153,7 +153,7 @@ Measured on Windows 11 with PowerShell 7.6.6 (.NET 10) and Windows PowerShell 5.
 | ps12exe · constant · Framework4.0                    | 1024 bytes  | ~54 ms       |
 | ps12exe · non-constant · Framework4.0                | 14848 bytes | ~365 ms      |
 | PS2EXE 1.0.18 · non-constant                         | 25088 bytes | ~398 ms      |
-| ps12exe · non-constant · large script · Framework4.0 | 30208 bytes | ~381 ms      |
+| ps12exe · non-constant · large script · Framework4.0 | 27648 bytes | ~381 ms      |
 | PS2EXE 1.0.18 · non-constant · large script          | ~496 KB     | ~402 ms      |
 | ---------------------------------------------------- | ----------- | ------------ |
 | pwsh 7 running the script directly                   | —           | ~676 ms      |
@@ -162,7 +162,7 @@ Measured on Windows 11 with PowerShell 7.6.6 (.NET 10) and Windows PowerShell 5.
 | ps12exe · non-constant · large script · Core         | ~187 KB     | ~637 ms      |
 | PS2EXE 1.0.18 · non-constant · Core                  | not support | not support  |
 
-A constant script is evaluated at compile time, so its exe is 1 KB and never starts PowerShell — about 24× smaller and 6× faster to launch than a PS2EXE hello world. Non-constant exes are ~40% smaller than PS2EXE's, and for top-level-variable-heavy scripts they also run faster, because the script executes inside a function (local scope) rather than at global scope. Non-constant exes are always compressed, and the compression scales with the payload: a ~0.5 MB script still produces a ~30 KB Framework exe, about 1/16 of PS2EXE's ~496 KB output, while PS2EXE leaves its payload essentially uncompressed and balloons with script size. The Core exe adds only ~6 KB over its small-script counterpart, so large payloads stay small instead of ballooning.
+A constant script is evaluated at compile time, so its exe is 1 KB and never starts PowerShell — about 24× smaller and 6× faster to launch than a PS2EXE hello world. Non-constant exes are ~40% smaller than PS2EXE's, and for top-level-variable-heavy scripts they also run faster, because the script executes inside a function (local scope) rather than at global scope. Non-constant exes are always compressed, and the compression scales with the payload: a ~0.5 MB script still produces a ~27 KB Framework exe, about 1/16 of PS2EXE's ~496 KB output, while PS2EXE leaves its payload essentially uncompressed and balloons with script size. The Core exe adds only ~6 KB over its small-script counterpart, so large payloads stay small instead of ballooning.
 
 ### Windowed GUI Startup 🪟
 

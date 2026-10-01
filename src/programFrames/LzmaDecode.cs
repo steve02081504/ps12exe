@@ -158,6 +158,8 @@ namespace SevenZip
 
 namespace SevenZip.Compression.RangeCoder
 {
+// Encoder helpers are needed by the compiler, but not by packed launchers.
+#if !CodecLzma
 	class Encoder
 	{
 		public const uint kTopValue = (1 << 24);
@@ -274,6 +276,7 @@ namespace SevenZip.Compression.RangeCoder
 			// (long)Stream.GetProcessedSize();
 		}
 	}
+#endif
 
 	class Decoder
 	{
@@ -391,6 +394,7 @@ namespace SevenZip.Compression.RangeCoder
 
 namespace SevenZip.Compression.RangeCoder
 {
+#if !CodecLzma
 	struct BitEncoder
 	{
 		public const int kNumBitModelTotalBits = 11;
@@ -456,6 +460,7 @@ namespace SevenZip.Compression.RangeCoder
 	  public uint GetPrice0() { return ProbPrices[Prob >> kNumMoveReducingBits]; }
 		public uint GetPrice1() { return ProbPrices[(kBitModelTotal - Prob) >> kNumMoveReducingBits]; }
 	}
+#endif
 
 	struct BitDecoder
 	{
@@ -507,6 +512,7 @@ namespace SevenZip.Compression.RangeCoder
 
 namespace SevenZip.Compression.RangeCoder
 {
+#if !CodecLzma
 	struct BitTreeEncoder
 	{
 		BitEncoder[] Models;
@@ -604,6 +610,7 @@ namespace SevenZip.Compression.RangeCoder
 			}
 		}
 	}
+#endif
 
 	struct BitTreeDecoder
 	{

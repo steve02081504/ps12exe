@@ -557,7 +557,7 @@ Medido en Windows 11 con PowerShell 7.6.6 (.NET 10) y Windows PowerShell 5.1, 20
 | ps12exe · constante · Framework4.0                       | 1024 bytes       | ~54 ms               |
 | ps12exe · no constante · Framework4.0                    | 14848 bytes      | ~365 ms              |
 | PS2EXE 1.0.18 · no constante                             | 25088 bytes      | ~398 ms              |
-| ps12exe · no constante · script grande · Framework4.0    | 30208 bytes      | ~381 ms              |
+| ps12exe · no constante · script grande · Framework4.0    | 27648 bytes      | ~381 ms              |
 | PS2EXE 1.0.18 · no constante · script grande             | ~496 KB          | ~402 ms              |
 | -------------------------------------------------------- | ---------------- | -------------------- |
 | pwsh 7 ejecutando el script directamente                 | —                | ~676 ms              |
@@ -566,7 +566,7 @@ Medido en Windows 11 con PowerShell 7.6.6 (.NET 10) y Windows PowerShell 5.1, 20
 | ps12exe · no constante · script grande · Core            | ~187 KB          | ~637 ms              |
 | PS2EXE 1.0.18 · no constante · Core                      | no compatible    | no compatible        |
 
-Un script constante se evalúa en tiempo de compilación, por lo que su exe pesa 1 KB y nunca inicia PowerShell: es unas 24× más pequeño y 6× más rápido de lanzar que un hello world de PS2EXE. Los exe no constantes son ~40 % más pequeños que los de PS2EXE y, para scripts con muchas variables de ámbito global, también se ejecutan más rápido, porque el script se ejecuta dentro de una función (ámbito local) en lugar del ámbito global. Además, los exe no constantes siempre se comprimen y la ventaja crece con el tamaño: un script de ~0,5 MB sigue produciendo un exe Framework de ~30 KB, unas 1/16 partes de los ~496 KB de PS2EXE, que deja su carga útil prácticamente sin comprimir y crece con el script. El exe Core solo añade ~6 KB respecto a su equivalente de script pequeño, así que las cargas grandes se mantienen pequeñas en lugar de inflarse.
+Un script constante se evalúa en tiempo de compilación, por lo que su exe pesa 1 KB y nunca inicia PowerShell: es unas 24× más pequeño y 6× más rápido de lanzar que un hello world de PS2EXE. Los exe no constantes son ~40 % más pequeños que los de PS2EXE y, para scripts con muchas variables de ámbito global, también se ejecutan más rápido, porque el script se ejecuta dentro de una función (ámbito local) en lugar del ámbito global. Además, los exe no constantes siempre se comprimen y la ventaja crece con el tamaño: un script de ~0,5 MB sigue produciendo un exe Framework de ~27 KB, unas 1/16 partes de los ~496 KB de PS2EXE, que deja su carga útil prácticamente sin comprimir y crece con el script. El exe Core solo añade ~6 KB respecto a su equivalente de script pequeño, así que las cargas grandes se mantienen pequeñas en lugar de inflarse.
 
 ### Inicio de aplicaciones GUI en modo ventana 🪟
 

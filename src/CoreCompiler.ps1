@@ -233,8 +233,8 @@ $($publishedProps.Replace('__DefineConstants__', [System.Security.SecurityElemen
 		[byte[]]$brotliBytes = $brotliMs.ToArray()
 		$brotliMs.Dispose()
 		[byte[]]$lzmaBytes = if ($payloadBytes.Length -ge $LzmaPackMinBytes) { Compress-Lzma $payloadBytes } else { $null }
-		# LZMA 解码器编进 launcher 约 14KB；留余量，只有明显更小才切，避免产物体积反而变大。
-		$LzmaDecoderOverhead = 16384
+		# 精简后的 LZMA launcher 相对 Brotli 约多 10KB；按 12KB 预留元数据/对齐余量，只有明显更小才切。
+		$LzmaDecoderOverhead = 12288
 		$useLzma = [bool]($lzmaBytes -and (($lzmaBytes.Length + $LzmaDecoderOverhead) -lt $brotliBytes.Length))
 		if ($useLzma) { Write-Debug "Core compiler: LZMA wins ($($lzmaBytes.Length) + overhead < $($brotliBytes.Length))" }
 		[System.IO.File]::WriteAllBytes($mainPath, $(if ($useLzma) { $lzmaBytes } else { $brotliBytes }))

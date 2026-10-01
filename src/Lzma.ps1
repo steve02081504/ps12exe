@@ -5,7 +5,7 @@
 #
 # 注意编码侧类型名是 LzmaPackCodec（而非解码侧的 LzmaCodec）：ps12exe 自身被编成 exe 且该 exe 的 launcher 走 LZMA 时，
 # 产物里会带一个只有解码器的 LzmaCodec；按名字找编码器若用 LzmaCodec 会误命中它。
-# 低于该字节数的负载，LZMA 相对 gzip/Brotli 省下的必然不及解码器的固定开销，直接跳过以免白算。
+# 仅对 >=32KB 的负载尝试 LZMA，避免小脚本支付编码成本；这是尝试门槛，是否采用另由调用方比较体积。
 $LzmaPackMinBytes = 32768
 $script:LzmaPackCodecType = $null
 
