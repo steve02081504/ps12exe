@@ -12,8 +12,6 @@ namespace SevenZip
 }
 namespace SevenZip.Compression.RangeCoder
 {
-
-
 	class Decoder
 	{
 		public const uint kTopValue = (1 << 24);
@@ -130,7 +128,6 @@ namespace SevenZip.Compression.RangeCoder
 
 namespace SevenZip.Compression.RangeCoder
 {
-
 	struct BitDecoder
 	{
 		public const int kNumBitModelTotalBits = 11;
@@ -181,7 +178,6 @@ namespace SevenZip.Compression.RangeCoder
 
 namespace SevenZip.Compression.RangeCoder
 {
-
 	struct BitTreeDecoder
 	{
 		BitDecoder[] Models;

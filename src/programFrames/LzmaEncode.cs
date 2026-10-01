@@ -2571,5 +2571,4 @@ namespace SevenZip
 	{
 		void WriteCoderProperties(System.IO.Stream outStream);
 	}
-
 }

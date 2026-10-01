@@ -59,9 +59,6 @@ namespace SevenZip
 		void Code(System.IO.Stream inStream, System.IO.Stream outStream,
 			Int64 inSize, Int64 outSize, ICodeProgress progress);
 	}
-
-
-
 }
 
 namespace SevenZip.Compression.LZMA
@@ -138,4 +135,3 @@ namespace SevenZip.Compression.LZMA
 		public const uint kMatchMaxLen = kMatchMinLen + kNumLenSymbols - 1;
 	}
 }
-
