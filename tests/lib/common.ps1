@@ -43,7 +43,7 @@ $script:BuildComponentPatterns = [ordered]@{
 		'src/programFrames/default.cs', 'src/programFrames/DllExport.cs', 'src/programFrames/DllExportPack.cs',
 		'src/programFrames/pack.cs', 'src/programFrames/TinySharp.cs',
 		'src/programFrames/AssemblyInfo.cs',
-		'src/programFrames/LzmaDecode.cs', 'src/programFrames/LzmaEncode.cs',
+		'src/programFrames/LzmaCommon.cs', 'src/programFrames/LzmaDecode.cs', 'src/programFrames/LzmaEncode.cs',
 		'src/RuntimePwsh2.0/'
 	)
 	codeDom   = @('src/CodeDomCompiler.ps1', 'src/ExeSinker.ps1', 'src/Cache.ps1', 'src/DllExportCompiler.ps1', 'src/bin/')

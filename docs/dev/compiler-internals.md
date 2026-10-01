@@ -63,9 +63,9 @@
 ### 打包压缩与 LZMA（`cache\lzma`）
 
 - 非常量产物 = launcher（`src/programFrames/pack.cs`）+ 「main」资源（压缩后的 payload）。默认压缩是 Windows PowerShell（CodeDom）下 gzip、Core 下 Brotli。
-- 大脚本的长距重复会超出 gzip 的 32KB 窗口（Brotli 窗口大但仍逊于 LZMA 的大字典），因此打包时还会尝试 LZMA1：编码器来自 7-Zip LZMA SDK 19.00 的 C# 源码（public domain），整并成 `src/programFrames/LzmaDecode.cs`（解码器，随 launcher 编入）与 `src/programFrames/LzmaEncode.cs`（编码器，仅打包时用）。`src/Lzma.ps1` 把两者在宿主进程里按需 `Add-Type` 编译并缓存成 `cache\lzma` 下的 DLL（键含 PSEdition/版本/源码内容），跨进程复用；编译失败则回退默认压缩。
+- 大脚本的长距重复会超出 gzip 的 32KB 窗口（Brotli 窗口大但仍逊于 LZMA 的大字典），因此打包时还会尝试 LZMA1：编码器来自 7-Zip LZMA SDK 19.00 的 C# 源码（public domain），按职责拆成 `src/programFrames/LzmaCommon.cs`（共用接口与常量）、`src/programFrames/LzmaDecode.cs`（解码器，随 launcher 编入）与 `src/programFrames/LzmaEncode.cs`（编码器，仅打包时用）。`src/Lzma.ps1` 把共用定义与编码器在宿主进程里按需 `Add-Type` 编译并缓存成 `cache\lzma` 下的 DLL（键含 PSEdition/版本/源码内容），跨进程复用；编译失败则回退默认压缩。
 - `pack.cs` 用 `#if CodecLzma` 选择 `LzmaCodec.DecompressStream`；负载容器是 `PS12LZMA` 魔数 + LZMA props + 未压缩长度 + 数据，`exe21sp.cs` 靠这个魔数识别（gzip 靠 `1F 8B`，否则按 Brotli 反射解压）。
-- 是否启用不是拍脑袋：CodeDom 会把 gzip/LZMA 两版 launcher 都生成出来、比最终字节数取小者（精简后的 LZMA 解码器增加约 10KB，小脚本通常回退 gzip）；Core 无帧模板可原地补丁、双次 `dotnet publish` 太贵，改用「LZMA 流 + 12KB 开销预算 < Brotli 流」的保守判据（约 10KB 实测增量外留 2KB 余量）。两条路径都只对 >=32KB 的负载尝试 LZMA，这一门槛用于控制编码成本。编码端需要的 RangeCoder Encoder/BitEncoder/BitTreeEncoder 通过 `!CodecLzma` 条件保留，不编入产物 launcher。
+- 是否启用不是拍脑袋：CodeDom 会把 gzip/LZMA 两版 launcher 都生成出来、比最终字节数取小者（精简后的 LZMA 解码器增加约 10KB，小脚本通常回退 gzip）；Core 无帧模板可原地补丁、双次 `dotnet publish` 太贵，改用「LZMA 流 + 12KB 开销预算 < Brotli 流」的保守判据（约 10KB 实测增量外留 2KB 余量）。两条路径都只对 >=32KB 的负载尝试 LZMA，这一门槛用于控制编码成本。编码端需要的 RangeCoder Encoder/BitEncoder/BitTreeEncoder 仅放在 `LzmaEncode.cs`；launcher 只编译共用定义与解码器，不再依赖条件编译排除编码类型。
 - 编码器类型名是 `LzmaPackCodec`（不是 `LzmaCodec`）：ps12exe 自身被编成 exe 且其 launcher 走 LZMA 时，产物里会带一个只有解码器的 `LzmaCodec`，按名字找编码器会误命中。
 
 <a id="core-gui-and-addtype"></a>
@@ -108,7 +108,7 @@
 
 - 合并省掉 4 份程序集清单/元数据表/重定位，原始字节 860 KB→763 KB、压缩后 nupkg 约小 30 KB（4.5%）；合并后产物仍是 netstandard2.0，PS 5.1 与 PS 7 都能加载，且 AsmResolver 内部跨程序集 `internal` 调用不受影响（类型都在同一程序集了）。
 - 加载点统一 `Add-Type -LiteralPath (Join-Path <...>/bin/AsmResolver.dll)`（`ExeSinker.ps1` 曾按分体文件名 `AsmResolver.PE*.dll` 枚举，合并后已改为直接加载单个文件）；新增加载点请沿用同一路径。
-- `AsmResolverTrimmer.csproj` 必须把 `LzmaDecode.cs` 一起编译（`exe21sp.cs` 引用 `LzmaCodec`），否则根程序集构建失败。
+- `AsmResolverTrimmer.csproj` 必须把 `LzmaCommon.cs` 和 `LzmaDecode.cs` 一起编译（`exe21sp.cs` 引用 `LzmaCodec`），否则根程序集构建失败。
 
 - 来源用 `-Source` 选：`NuGet`（默认，`-Version` 指定版本）、`Ci`（`-Ref` 分支最近一次成功的 `build-artifacts`）、`Pr`（`-Pr <n>` 的构建产物）、`Source`（git 取 `-Ref`/PR head 源码本地 `dotnet build`）；`-RunId` 可直接指定某次 CI run。CI 产物保留 7 天、fork PR 的 workflow 常需维护者批准，故 Ci/Pr 在产物缺失或过期时自动回退到 `Source`。
 - 当前 `src/bin/AsmResolver.dll` 是用 `-Source Source -Pr 793` 产出的本地构建（含导出名排序修复，上游 PR 未合并）；上游合并后应改回 `./Update-AsmResolver.ps1 -Source NuGet` 重跑。

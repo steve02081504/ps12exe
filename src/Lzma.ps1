@@ -1,5 +1,5 @@
 ﻿# LZMA1 打包支持。打包负载默认走 gzip（Framework）/ Brotli（Core），但这两者的窗口/建模对大脚本的长距重复不够好；
-# 这里把 7-Zip LZMA SDK 的 C# 源码（public domain，见 programFrames/LzmaDecode.cs 与 LzmaEncode.cs）在打包时按需
+# 这里把 7-Zip LZMA SDK 的 C# 源码（public domain，见 programFrames/LzmaCommon.cs、LzmaDecode.cs 与 LzmaEncode.cs）在打包时按需
 # 编进宿主进程并缓存 DLL，供 Compress-Lzma 使用。解码器则随产物 launcher 一起编译（pack.cs 的 CodecLzma 分支）。
 # 是否启用交给调用方按「压完产物是否更小」决定，见 CodeDomCompiler.ps1 / CoreCompiler.ps1。
 #
@@ -10,12 +10,15 @@ $LzmaPackMinBytes = 32768
 $script:LzmaPackCodecType = $null
 
 #_if PSEXE
+	#_include_as_value lzmaCommonSource "$PSScriptRoot/programFrames/LzmaCommon.cs"
 	#_include_as_value lzmaDecodeSource "$PSScriptRoot/programFrames/LzmaDecode.cs"
 	#_include_as_value lzmaEncodeSource "$PSScriptRoot/programFrames/LzmaEncode.cs"
 #_else
+	[string]$lzmaCommonSource = Get-Content -LiteralPath "$PSScriptRoot/programFrames/LzmaCommon.cs" -Raw -Encoding UTF8
 	[string]$lzmaDecodeSource = Get-Content -LiteralPath "$PSScriptRoot/programFrames/LzmaDecode.cs" -Raw -Encoding UTF8
 	[string]$lzmaEncodeSource = Get-Content -LiteralPath "$PSScriptRoot/programFrames/LzmaEncode.cs" -Raw -Encoding UTF8
 #_endif
+$lzmaDecodeSource = "$lzmaCommonSource`n$($lzmaDecodeSource -replace '(?m)^using System(?:\.IO)?;\r?\n', '')"
 
 # 在已加载程序集里按名字找类型并转成 [type]。编译成 exe 的宿主（PSEXE）下 `'X' -as [type]` 不一定能解析动态加载的
 # 程序集，用反射更稳；返回的是 Type 对象而非类型字面量，调用方走反射。
@@ -38,8 +41,8 @@ function Get-LzmaPackCodecType {
 	if ($loaded) { $script:LzmaPackCodecType = $loaded; return $loaded }
 	$cacheRoot = Get-CacheRoot 'lzma'
 	Clear-StaleCache $cacheRoot
-	$key = Get-TextHash ("$($PSVersionTable.PSEdition)|$($PSVersionTable.PSVersion)|$lzmaDecodeSource|$lzmaEncodeSource")
-	$decPath = Join-Path $cacheRoot "LzmaDecode_$key.cs"
+	$key = Get-TextHash ("$($PSVersionTable.PSEdition)|$($PSVersionTable.PSVersion)|$lzmaCommonSource|$lzmaEncodeSource")
+	$commonPath = Join-Path $cacheRoot "LzmaCommon_$key.cs"
 	$encPath = Join-Path $cacheRoot "LzmaEncode_$key.cs"
 	$dllPath = Join-Path $cacheRoot "lzma_$key.dll"
 	$mutex = [System.Threading.Mutex]::new($false, "ps12exe-lzma-$key")
@@ -50,9 +53,9 @@ function Get-LzmaPackCodecType {
 			[void][System.Reflection.Assembly]::LoadFrom($dllPath)
 		}
 		else {
-			[System.IO.File]::WriteAllText($decPath, $lzmaDecodeSource, [System.Text.UTF8Encoding]::new($true))
+			[System.IO.File]::WriteAllText($commonPath, $lzmaCommonSource, [System.Text.UTF8Encoding]::new($true))
 			[System.IO.File]::WriteAllText($encPath, $lzmaEncodeSource, [System.Text.UTF8Encoding]::new($true))
-			Add-Type -Path @($decPath, $encPath) -OutputAssembly $dllPath -OutputType Library
+			Add-Type -Path @($commonPath, $encPath) -OutputAssembly $dllPath -OutputType Library
 			[void][System.Reflection.Assembly]::LoadFrom($dllPath)
 		}
 	}

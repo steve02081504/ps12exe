@@ -226,9 +226,10 @@ param(
 		$_.Exception.LoaderExceptions | Out-String | Write-Verbose
 		$Error.Remove($_)
 	}
-	# exe21sp.cs 用到 LzmaCodec（解压 LZMA 负载），与 LzmaDecode.cs 一起编译（多源文件用 -Path）。
+	# exe21sp.cs 用到 LzmaCodec（解压 LZMA 负载），与 LzmaCommon.cs、LzmaDecode.cs 一起编译（多源文件用 -Path）。
 	Add-Type -Path @(
 		(Join-Path $PSScriptRoot 'src\programFrames\exe21sp.cs'),
+		(Join-Path $PSScriptRoot 'src\programFrames\LzmaCommon.cs'),
 		(Join-Path $PSScriptRoot 'src\programFrames\LzmaDecode.cs')
 	) -ReferencedAssemblies $Refs -IgnoreWarnings
 
