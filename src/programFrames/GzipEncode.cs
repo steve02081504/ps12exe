@@ -1,4 +1,4 @@
-﻿// C# port of the selected 7-Zip Deflate encoder, compile-time only.
+// C# port of the selected 7-Zip Deflate encoder, compile-time only.
 // Copyright (C) 1999-2026 Igor Pavlov; C# adaptation (C) 2026 ps12exe contributors.
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Upstream: https://github.com/ip7z/7zip/tree/0766b733fe3e06dd2a7f9a3cfbf2108ac73abd17
@@ -16,7 +16,7 @@ namespace Ps12exe.Gzip.Internal
 		const int kNumDivPassesMax = 10, kNumTables = 1 << 10;
 		const int kFixedHuffmanCodeBlockSizeMax = 256, kDivideCodeBlockSizeMin = 128, kDivideBlockSizeMin = 64;
 		const int kMaxUncompressedBlockSize = 65535, kMatchArraySize = 65535 * 10;
-		const int kMatchArrayLimit = kMatchArraySize - 258 * 4 * 2;
+		const int kMatchArrayLimit = kMatchArraySize - (258 * 4 * 2);
 		const int kNumOptsBase = 4096, kNumOpts = 4096 + 258;
 		const int kBlockUncompressedSizeThreshold = 65535 - 258 - kNumOpts;
 		const int kNoLiteralStatPrice = 11, kNoLenStatPrice = 11, kNoPosStatPrice = 6;
@@ -56,7 +56,7 @@ namespace Ps12exe.Gzip.Internal
 		static int GetPosSlot(int pos)
 		{
 			int shift = pos < 512 ? 0 : 8;
-			return g_FastPos[pos >> shift] + shift * 2;
+			return g_FastPos[pos >> shift] + (shift * 2);
 		}
 
 		struct IntSlice
@@ -132,7 +132,7 @@ namespace Ps12exe.Gzip.Internal
 		// Upstream normalizes 15 passes to 7 Huffman passes and 10 split levels.
 		const int m_NumFastBytes = 258, m_NumPasses = 7, m_NumDivPasses = 10;
 		readonly bool m_CheckStatic = true;
-		const int m_ValueBlockSize = (7 << 10) + (1 << 12) * m_NumDivPasses;
+		const int m_ValueBlockSize = (7 << 10) + ((1 << 12) * m_NumDivPasses);
 		const int m_NumLenCombinations = 256;
 		readonly int[] m_LenStart = kLenStart32, m_LenDirectBits = kLenDirectBits32;
 		int m_Pos, m_NumLitLenLevels, m_NumDistLevels, m_NumLevelCodes, m_ValueIndex;
@@ -145,7 +145,7 @@ namespace Ps12exe.Gzip.Internal
 		readonly int[] mainCodes = new int[288], distCodes = new int[32], levelCodes = new int[19], levelLens = new int[19];
 		readonly CTables[] m_Tables = new CTables[kNumTables];
 		readonly COptimal[] m_Optimum = new COptimal[kNumOpts];
-		readonly int[] distanceTmp = new int[kMatchMaxLen * 2 + 3];
+		readonly int[] distanceTmp = new int[(kMatchMaxLen * 2) + 3];
 
 		DeflateEncoder(byte[] data)
 		{
@@ -155,9 +155,8 @@ namespace Ps12exe.Gzip.Internal
 		}
 		public static byte[] Encode(byte[] data)
 		{
-			if (data == null)
-				throw new ArgumentNullException("data");
-			return new DeflateEncoder(data).Encode();
+            ArgumentNullException.ThrowIfNull(data);
+            return new DeflateEncoder(data).Encode();
 		}
 		byte[] Encode()
 		{
@@ -593,7 +592,7 @@ namespace Ps12exe.Gzip.Internal
 				int nextBitPosition = (bitPosition + kFinalBlockFieldSize + kBlockTypeFieldSize) & 7;
 				int numBitsForAlign = nextBitPosition > 0 ? (8 - nextBitPosition) : 0;
 				int curBlockSize = (blockSize < (1 << 16)) ? blockSize : (1 << 16) - 1;
-				price += kFinalBlockFieldSize + kBlockTypeFieldSize + numBitsForAlign + (2 + 2) * 8 + curBlockSize * 8;
+				price += kFinalBlockFieldSize + kBlockTypeFieldSize + numBitsForAlign + ((2 + 2) * 8) + (curBlockSize * 8);
 				bitPosition = 0;
 				blockSize -= curBlockSize;
 			} while (blockSize != 0);
@@ -666,7 +665,7 @@ namespace Ps12exe.Gzip.Internal
 			return GetLzBlockPrice() +
 				Huffman_GetPrice_Spec(levelFreqs, levelLens, kLevelTableSize, kLevelDirectBits, kTableDirectLevels) +
 				kNumLenCodesFieldSize + kNumDistCodesFieldSize + kNumLevelCodesFieldSize +
-				m_NumLevelCodes * kLevelFieldSize + kFinalBlockFieldSize + kBlockTypeFieldSize;
+				(m_NumLevelCodes * kLevelFieldSize) + kFinalBlockFieldSize + kBlockTypeFieldSize;
 		}
 
 		int TryFixedBlock(int tableIndex)
@@ -964,7 +963,7 @@ namespace Ps12exe.Gzip.Internal
 				int hv = (int)(((uint)Data[Index + 2] | ((uint)Data[Index] << 8)) ^ crc[Data[Index + 1]]) & 65535;
 				int curMatch = hash[hv];
 				hash[hv] = pos;
-				int ptr0 = cyclic * 2 + 1, ptr1 = cyclic * 2;
+				int ptr0 = (cyclic * 2) + 1, ptr1 = cyclic * 2;
 				int len0 = 0, len1 = 0, maxLen = 2, count = 0;
 				int minPosition = Math.Max(0, pos - Window), cycles = 145;
 				while (curMatch > minPosition)

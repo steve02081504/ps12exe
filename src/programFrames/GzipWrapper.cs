@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Ps12exe.Gzip.Internal;
 
@@ -20,8 +20,8 @@ public static class GzipPackCodec
 	}
 	public static byte[] Compress(byte[] data)
 	{
-		if (data == null) throw new ArgumentNullException("data");
-		byte[] body = DeflateEncoder.Encode(data);
+        ArgumentNullException.ThrowIfNull(data);
+        byte[] body = DeflateEncoder.Encode(data);
 		using (MemoryStream output = new MemoryStream())
 		{
 			// MTIME=0, no filename, XFL=2, OS=255.
