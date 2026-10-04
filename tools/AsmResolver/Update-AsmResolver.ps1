@@ -320,7 +320,8 @@ function Get-ILRepackPath {
 	if (Test-Path -LiteralPath $exe) { return $exe }
 	New-Item -ItemType Directory -Force -Path $toolDir | Out-Null
 	Write-Host 'Installing ILRepack (dotnet tool)'
-	& dotnet tool install --tool-path $toolDir dotnet-ilrepack --version 2.0.48
+	# 必须吞掉安装输出：函数会把未捕获的输出一并返回，首台机器上安装时的提示行会让 `& $ilrepack` 变成执行提示文本。
+	& dotnet tool install --tool-path $toolDir dotnet-ilrepack --version 2.0.48 | Out-Null
 	if ($LASTEXITCODE) { throw "dotnet tool install dotnet-ilrepack failed with exit code $LASTEXITCODE" }
 	if (-not (Test-Path -LiteralPath $exe)) { throw "ILRepack not found after install: $exe" }
 	return $exe
