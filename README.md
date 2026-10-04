@@ -200,10 +200,10 @@ PS2EXE compiles a hello world faster because it is a thin wrapper around the .NE
 
 The compiler itself is installed as a PowerShell module:
 
-| Compiler package         | Unpacked | Compressed |
-| ------------------------ | -------- | ---------- |
-| ps12exe (current working tree) | 1,899,082 bytes | 647,312 bytes |
-| PS2EXE 1.0.18 (installed files) | 169,382 bytes | 44,082 bytes |
+| Compiler package                | Unpacked        | Compressed    |
+| ------------------------------- | --------------- | ------------- |
+| ps12exe (current working tree)  | 1,899,082 bytes | 647,312 bytes |
+| PS2EXE 1.0.18 (installed files) | 169,382 bytes   | 44,082 bytes  |
 
 ps12exe's module is larger because it is a dependency-free, pure-script compiler that bundles trimmed [AsmResolver](https://github.com/Washi1337/AsmResolver) binaries, 7 localizations and a pure-script GUI; PS2EXE ships almost nothing and relies on the .NET Framework compiler built into Windows.
 

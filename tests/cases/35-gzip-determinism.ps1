@@ -1,8 +1,8 @@
 ﻿Add-Test @{
-	Name = 'ps12exe.gzip.deterministic-roundtrip'
+	Name  = 'ps12exe.gzip.deterministic-roundtrip'
 	Group = 'ps12exe'
-	Deps = @('src/Gzip.ps1', 'src/programFrames/GzipEncode.cs', 'src/programFrames/GzipWrapper.cs', 'src/Cache.ps1', 'src/Lzma.ps1')
-	Run = {
+	Deps  = @('src/Gzip.ps1', 'src/programFrames/GzipEncode.cs', 'src/programFrames/GzipWrapper.cs', 'src/Cache.ps1', 'src/Lzma.ps1')
+	Run   = {
 		param($ctx)
 		. (Join-Path $ctx.RepoRoot 'src/Cache.ps1')
 		. (Join-Path $ctx.RepoRoot 'src/Lzma.ps1')
@@ -29,7 +29,8 @@
 		try {
 			$env:PATH = ''
 			Assert-Equal $before ([Convert]::ToBase64String((Compress-Gzip $data))) 'Bundled encoder works with empty PATH'
-		} finally { $env:PATH = $savedPath }
+		}
+		finally { $env:PATH = $savedPath }
 		# Golden streams were compared byte-for-byte against the pinned native
 		# 7-Zip core (9/258/15), covering stored blocks, tree wrapping and splitting.
 		$pattern = [byte[]]::new(65536)
@@ -63,10 +64,10 @@ param($RepoRoot, $InputPath)
 }
 
 Add-Test @{
-	Name = 'ps12exe.pack.deterministic-cold-caches'
+	Name  = 'ps12exe.pack.deterministic-cold-caches'
 	Group = 'ps12exe'
-	Deps = $script:CoreCompileDeps
-	Run = {
+	Deps  = $script:CoreCompileDeps
+	Run   = {
 		param($ctx)
 		$probe = Join-Path $ctx.WorkDir 'compile-probe.ps1'
 		[IO.File]::WriteAllText($probe, @'

@@ -561,7 +561,7 @@ Medido en Windows 11 con PowerShell 7.6.6 (.NET 10) y Windows PowerShell 5.1 el 
 | PS2EXE 1.0.18 · no constante · script grande             | ~496 KB          | ~275 ms              |
 | -------------------------------------------------------- | ---------------- | -------------------- |
 | pwsh 7 ejecutando el script directamente                 | —                | ~461 ms              |
-| ps12exe · constante · Core                               | ~165 KB          | ~86 ms              |
+| ps12exe · constante · Core                               | ~165 KB          | ~86 ms               |
 | ps12exe · no constante · Core                            | ~180 KB          | ~370 ms              |
 | ps12exe · no constante · script grande · Core            | ~188 KB          | ~401 ms              |
 | PS2EXE 1.0.18 · no constante · Core                      | no compatible    | no compatible        |
@@ -589,23 +589,23 @@ Medido con la misma herramienta (`-Compile -IncludeCore`). Cada muestra es un pr
 
 | Compilación                                           | Compilación en caliente |
 | ----------------------------------------------------- | ----------------------- |
-| ps12exe · constante · Framework4.0                    | ~1466 ms                  |
-| ps12exe · no constante · Framework4.0                 | ~900 ms                  |
-| PS2EXE · no constante                                 | ~585 ms                  |
-| ps12exe · no constante · script grande · Framework4.0 | ~2063 ms                  |
-| PS2EXE · no constante · script grande                 | ~596 ms                  |
+| ps12exe · constante · Framework4.0                    | ~1466 ms                |
+| ps12exe · no constante · Framework4.0                 | ~900 ms                 |
+| PS2EXE · no constante                                 | ~585 ms                 |
+| ps12exe · no constante · script grande · Framework4.0 | ~2063 ms                |
+| PS2EXE · no constante · script grande                 | ~596 ms                 |
 | ----------------------------------------------------- | ----------------------- |
-| ps12exe · constante · Core                            | ~2742 ms                  |
-| ps12exe · no constante · Core                         | ~3633 ms                  |
-| ps12exe · no constante · script grande · Core         | ~5402 ms                  |
+| ps12exe · constante · Core                            | ~2742 ms                |
+| ps12exe · no constante · Core                         | ~3633 ms                |
+| ps12exe · no constante · script grande · Core         | ~5402 ms                |
 | PS2EXE · no constante · Core                          | no compatible           |
 
 PS2EXE compila un hello world más rápido porque no es más que una fina envoltura del compilador de .NET Framework integrado en Windows: realiza una sola pasada de CodeDom y nada más. ps12exe además ejecuta una comprobación de sintaxis, clasifica el script y (para scripts constantes) lo evalúa, y empaqueta el marco del programa como carga útil dentro de un lanzador, por lo que su compilación no constante es ~1,5× la de PS2EXE en esta medición. La contrapartida se ve en la salida: ps12exe genera 1024 / 13312 bytes donde PS2EXE genera 25088, y los programas constantes se lanzan unas 6× más rápido. La compilación Core está dominada por `dotnet publish`; la primera compilación de una configuración también restaura los paquetes NuGet, tras lo cual ps12exe reutiliza el directorio de proyecto generado y ejecuta `dotnet publish --no-restore`.
 
 El compilador en sí se distribuye como módulo de PowerShell:
 
-| Paquete del compilador  | Descomprimido | Comprimido |
-| ----------------------- | ------------- | ---------- |
+| Paquete del compilador                               | Descomprimido | Comprimido   |
+| ---------------------------------------------------- | ------------- | ------------ |
 | ps12exe (paquete actual según reglas de publicación) | 1899082 bytes | 647312 bytes |
 | PS2EXE 1.0.18 (archivos instalados)                  | 169382 bytes  | 44082 bytes  |
 
@@ -617,7 +617,7 @@ Un script con `#_DllExport` se compila en una DLL Win32 invocable mediante `Load
 
 | Compilación                              | Tamaño de salida | Compilación en caliente |
 | ---------------------------------------- | ---------------- | ----------------------- |
-| ps12exe · exportación DLL · Framework4.0 | 16384 bytes      | ~1864 ms                  |
+| ps12exe · exportación DLL · Framework4.0 | 16384 bytes      | ~1864 ms                |
 | PS2EXE 1.0.18 · exportación DLL          | no compatible    | no compatible           |
 
 ### Comportamiento en tiempo de ejecución de los EXE compilados 🖥️

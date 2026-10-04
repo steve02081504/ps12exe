@@ -526,10 +526,10 @@ Write-Output ('wpf=' + [System.Windows.Window].FullName)
 }
 
 Add-Test @{
-	Name = 'ps12exe.core.publish-apphost-names'
+	Name  = 'ps12exe.core.publish-apphost-names'
 	Group = 'ps12exe'
-	Deps = @('src/CoreProject.ps1', 'src/CoreCompiler.ps1', 'src/CoreBundledCompiler.ps1')
-	Run = {
+	Deps  = @('src/CoreProject.ps1', 'src/CoreCompiler.ps1', 'src/CoreBundledCompiler.ps1')
+	Run   = {
 		param($ctx)
 		. (Join-Path $ctx.RepoRoot 'src/CoreProject.ps1')
 		foreach ($rid in @('win-x64', 'linux-x64', 'osx-arm64')) {
@@ -552,11 +552,11 @@ Add-Test @{
 }
 
 Add-Test @{
-	Name = 'ps12exe.self.core-cross-compile'
+	Name  = 'ps12exe.self.core-cross-compile'
 	Group = 'ps12exe'
-	Deps = $deps
+	Deps  = $deps
 	Build = @{ Name = 'selfcore'; InputFile = (Join-Path (Get-TestRepoRoot) 'ps12exe.ps1'); Output = 'selfcore.exe'; Params = @{ Build = @{ Target = 'Core'; Core = @{ TargetOs = 'Windows' } } } }
-	Run = {
+	Run   = {
 		param($ctx)
 		$self = $ctx.Builds['selfcore']
 		foreach ($os in @('Windows', 'Linux')) {

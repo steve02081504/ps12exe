@@ -1,9 +1,9 @@
 ﻿# Compiler-tool regression: const values disappear from IL, but runtime C# still needs their fields.
 Add-Test @{
-	Name = 'packaging.constant-roots'
+	Name  = 'packaging.constant-roots'
 	Group = 'packaging'
-	Deps = @('tools/AsmResolver/')
-	Run = {
+	Deps  = @('tools/AsmResolver/')
+	Run   = {
 		param($ctx)
 		$dotnet = (Get-Command dotnet -ErrorAction Stop).Source
 		$packRoot = Join-Path (Split-Path $dotnet) 'packs/Microsoft.NETCore.App.Ref'

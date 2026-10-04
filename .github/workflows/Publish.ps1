@@ -15,7 +15,8 @@ try {
 	# Upload the verified package; Publish-Module would repack it.
 	& $nuget push $package -Source 'https://www.powershellgallery.com/api/v2/package' -NonInteractive -ApiKey $ApiKey
 	if ($LASTEXITCODE) { throw "NuGet push failed: $LASTEXITCODE" }
-} finally {
+}
+finally {
 	if ((Split-Path $output) -ne [IO.Path]::GetTempPath().TrimEnd('\', '/')) { throw "Unexpected temporary path: $output" }
 	if (Test-Path -LiteralPath $output) { Remove-Item -LiteralPath $output -Recurse -Force }
 }

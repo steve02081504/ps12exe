@@ -65,7 +65,8 @@ try {
 			# Deflate is the interoperable nupkg method; 258 fast bytes and 15 passes are its maxima.
 			& $SevenZip a -tzip $optimized "@$list" -scsUTF-8 -mm=Deflate -mx=9 -mfb=258 -mpass=15 -mtc=off -mta=off -mcu=off | Out-Host
 			if ($LASTEXITCODE) { throw "7-Zip failed: $LASTEXITCODE" }
-		} finally { Pop-Location }
+		}
+		finally { Pop-Location }
 		$check = [IO.Compression.ZipFile]::OpenRead($optimized)
 		try {
 			if ($check.Entries.Count -ne $archive.Entries.Count) { throw 'Recompression changed the entry count.' }
@@ -79,18 +80,23 @@ try {
 						if ([Convert]::ToBase64String($sha.ComputeHash($left)) -ne [Convert]::ToBase64String($sha.ComputeHash($right))) {
 							throw "Recompression changed content: $($entry.FullName)."
 						}
-					} finally { $sha.Dispose() }
-				} finally { $left.Dispose(); $right.Dispose() }
+					}
+					finally { $sha.Dispose() }
+				}
+				finally { $left.Dispose(); $right.Dispose() }
 			}
-		} finally { $check.Dispose() }
-	} finally { $archive.Dispose() }
+		}
+		finally { $check.Dispose() }
+	}
+	finally { $archive.Dispose() }
 	if ((Get-Item $optimized).Length -gt $original[0].Length) { throw 'Maximum compression produced a larger package.' }
 	New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
 	$result = Join-Path (Resolve-Path -LiteralPath $OutputDirectory).Path $original[0].Name
 	Copy-Item -LiteralPath $optimized -Destination $result -Force
 	Write-Host ("nupkg: {0:N0} -> {1:N0} bytes" -f $original[0].Length, (Get-Item $result).Length)
 	$result
-} finally {
+}
+finally {
 	# $work is an absolute, unique directory created under the OS temp directory above.
 	if ((Split-Path $work) -ne [IO.Path]::GetTempPath().TrimEnd('\', '/')) { throw "Unexpected temporary path: $work" }
 	Remove-Item -LiteralPath $work -Recurse -Force
