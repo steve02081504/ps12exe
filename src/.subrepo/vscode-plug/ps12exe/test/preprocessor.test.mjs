@@ -468,6 +468,8 @@ suite('ps12exe preprocessor', () => {
 	})
 
 	test('ps12exe\'s own scripts analyse without diagnostics', function () {
+		// 该用例读取并分析仓库下 100+ 个脚本，远超 mocha 默认的 2 秒预算（在负载高的机器上会假失败）。
+		this.timeout(120000)
 		// 防止编辑器规则与 ps12exe 随附的脚本发生偏移。
 		if (!fs.existsSync(path.join(REPO_ROOT, 'ps12exe.ps1'))) this.skip()
 

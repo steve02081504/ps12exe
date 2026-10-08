@@ -223,7 +223,9 @@ suite('ps12exe extension', () => {
 		}
 	})
 
-	test('typing `#_` opens the suggestion list', async () => {
+	test('typing `#_` opens the suggestion list', async function () {
+		// `acceptUntil` 自带 5 秒重试预算，比 mocha 默认的 2 秒长；高负载下会先撞上 mocha 的超时而假失败。
+		this.timeout(60000)
 		// `_` 是单词字符、注释行上 quick suggestions 默认关闭，因此弹出列表依赖 registerDirectiveSuggest 显式触发。
 		const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ps12exe-suggest-'))
 		const file = path.join(dir, 'sample.ps1')
@@ -245,7 +247,8 @@ suite('ps12exe extension', () => {
 		}
 	})
 
-	test('accepting `#_if` continues into the condition list and auto-closes `#_endif`', async () => {
+	test('accepting `#_if` continues into the condition list and auto-closes `#_endif`', async function () {
+		this.timeout(60000)
 		// 补全自带尾随空格，不会再触发注册的触发字符；`#_if` 用 follow-up 命令重开列表，选定条件后用换行命令触发自动闭合。
 		const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ps12exe-followup-'))
 		const file = path.join(dir, 'sample.ps1')
@@ -268,7 +271,8 @@ suite('ps12exe extension', () => {
 		}
 	})
 
-	test('corrects a full-width `#——` into `#_` and opens the list', async () => {
+	test('corrects a full-width `#——` into `#_` and opens the list', async function () {
+		this.timeout(60000)
 		// 输入法未切半角时 `_` 会变成中文标点；纠正后应像手动输入 `#_` 一样弹出补全。
 		const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ps12exe-fixdash-'))
 		const file = path.join(dir, 'sample.ps1')
