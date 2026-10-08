@@ -2,7 +2,7 @@
 import { createHash } from 'node:crypto'
 
 import { resolvePlainPowerShell, findIncompleteFragments } from './powershell.mjs'
-import { analyze, indentText, branchFragments, restoreParenIndentation, restoreClauseIndentation, restoreMarkerIndentation } from './preprocessor.mjs'
+import { analyze, indentText, branchFragments, restoreParenIndentation, restoreClauseIndentation, restoreCarriedIndentation, restoreMarkerIndentation } from './preprocessor.mjs'
 
 const INCOMPLETE_CACHE_LIMIT = 32
 /** @type {Map<string, Set<number>>} */
@@ -48,12 +48,12 @@ export async function findIncompleteBlocks(text, onError) {
 }
 
 /**
- * 对 `baseText`（官方 formatter 产生的文本，若其不可用则为原始文档）应用 ps12exe 格式化规则：修复官方 formatter 的 attribute/scriptblock 怪癖，然后缩进 preprocessor 块。
+ * 对 `baseText`（官方 formatter 产生的文本，若其不可用则为原始文档）应用 ps12exe 格式化规则：修复官方 formatter 的 attribute/scriptblock 怪癖，缩进 preprocessor 块，最后把作者写的缩进搬回内容未变的行。
  *
  * @param {string} baseText - 官方 formatter 产生的文本
  * @param {object} [options] - 格式化选项
  * @param {string} [options.indentUnit] 默认为制表符
- * @param {string} [options.originalText] 官方 formatter 之前的文档；提供时用它还原 `#_!!`/`#_balus` 行的嵌套缩进
+ * @param {string} [options.originalText] 官方 formatter 之前的文档；提供时用它还原 `#_!!`/`#_balus` 行与续行的嵌套缩进
  * @param {(message: string) => void} [options.onError] - 出错时的回调
  * @returns {Promise<string>} 格式化后的文本
  */
@@ -63,7 +63,8 @@ export async function formatPreprocessedText(baseText, options = {}) {
 	const incomplete = await findIncompleteBlocks(styled, options.onError)
 	const indented = indentText(styled, { indentUnit, incompleteBlocks: incomplete })
 	if (!options.originalText) return indented
-	return restoreMarkerIndentation(indented, options.originalText)
+	// 作者缩进先于 `#_!!`/`#_balus` 的相对缩进还原：后者按「相对分支指令」计算，不依赖这些行当前的缩进。
+	return restoreMarkerIndentation(restoreCarriedIndentation(indented, options.originalText, indentUnit), options.originalText)
 }
 
 /**

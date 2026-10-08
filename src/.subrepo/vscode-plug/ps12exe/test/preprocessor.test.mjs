@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { analyze, indentText, endifAutoClose, isBalanced, foldingRanges, toggleBangLine, toggleBangLines, branchFragments, pickExemptBlock, computeSkipMask, restoreMarkerIndentation, restoreParenIndentation, restoreClauseIndentation, MESSAGES } from '../lib/preprocessor.mjs'
+import { analyze, indentText, endifAutoClose, isBalanced, foldingRanges, toggleBangLine, toggleBangLines, branchFragments, pickExemptBlock, computeSkipMask, restoreCarriedIndentation, restoreMarkerIndentation, restoreParenIndentation, restoreClauseIndentation, MESSAGES } from '../lib/preprocessor.mjs'
 
 // 该扩展位于 <repo>/src/.subrepo/vscode-plug/ps12exe，因此本测试文件位于 ps12exe 仓库根目录下五层。
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..')
@@ -441,6 +441,88 @@ suite('ps12exe preprocessor', () => {
 		// 字符串内的前导空白不能被误认为开括号：没有任何内容具有过度缩进的特征，因此什么都不会移动。
 		const stringParen = ['$x = "(" | ForEach-Object {', '\t$_', '}'].join('\n')
 		assert.strictEqual(restoreParenIndentation(stringParen, '\t'), stringParen)
+	})
+
+	test('carries the author\'s indentation over for lines the official formatter re-indented', () => {
+		// 官方 formatter 只重排空白、不改内容，因此「内容逐字未变、只有缩进不同」的行用原文的缩进；注释与指令行整类跳过
+		// （`indentText` 管指令层级，`restoreMarkerIndentation` 管 `#_!!`/`#_balus` 的相对嵌套）。
+		const original = [
+			'function Invoke-Sample {',
+			'\tGet-ChildItem |',
+			'\t\tWhere-Object { $_ }',
+			'\t$frame = (Get-Content $path).',
+			'\t\tReplace(\'a\', $b)',
+			'\t#_if PSScript',
+			'\t\tparam($x)',
+			'\t#_endif',
+			'\t#_!! if ($a) {',
+			'}'
+		].join('\n')
+		const official = [
+			'function Invoke-Sample {',
+			'\tGet-ChildItem |',
+			'\tWhere-Object { $_ }',
+			'\t$frame = (Get-Content $path).',
+			'\tReplace(\'a\', $b)',
+			'\t#_if PSScript',
+			'\tparam($x)',
+			'\t#_endif',
+			'\t#_!! if ($a) {',
+			'}'
+		].join('\n')
+		assert.strictEqual(restoreCarriedIndentation(official, original), original)
+		// 已正确的文本是恒等变换；没有原文时不做任何事。
+		assert.strictEqual(restoreCarriedIndentation(original, original), original)
+		assert.strictEqual(restoreCarriedIndentation(official, undefined), official)
+		// 内容被 formatter 改写（例如拆行）的行不参与搬回，整行保持 formatter 的输出。
+		const rewritten = ['\t$list.Add(', '\t\t$x)'].join('\n')
+		const movedByFormatter = ['\t$list.Add($x)'].join('\n')
+		assert.strictEqual(restoreCarriedIndentation(movedByFormatter, rewritten), movedByFormatter)
+		// 注释行的缩进归官方 formatter（`indentText` 与 `restoreMarkerIndentation` 都按所在块重排它们），因此不搬回。
+		const commentMoved = ['\t# 说明', '\t$b'].join('\n')
+		const originalComment = ['\t\t# 说明', '\t$b'].join('\n')
+		assert.strictEqual(restoreCarriedIndentation(commentMoved, originalComment), commentMoved)
+	})
+
+	test('aligns pipe and member-access continuations with their statement', () => {
+		// 上面的用例里原文是权威；这里传入「原文自己也多缩进」的文本，检查结构规则会把过深的续行收回「语句 + 1 层」。
+		const tooDeep = [
+			'function f {',
+			'\tGet-ChildItem |',
+			'\t\t\tWhere-Object { $_ } |',
+			'\t\t\tForEach-Object { $_ }',
+			'\t$x = (Get-Content $f).',
+			'\t\t\tReplace("a", "b")',
+			'}'
+		].join('\n')
+		assert.strictEqual(restoreCarriedIndentation(tooDeep, tooDeep, '\t'), [
+			'function f {',
+			'\tGet-ChildItem |',
+			'\t\tWhere-Object { $_ } |',
+			'\t\tForEach-Object { $_ }',
+			'\t$x = (Get-Content $f).',
+			'\t\tReplace("a", "b")',
+			'}'
+		].join('\n'))
+
+		// 已经平铺到语句同级的续行、反引号续行、点源与 `.SYNOPSIS`（注释帮助）都不动：它们的正确层级无法从行本身判定。
+		const untouched = [
+			'<#',
+			'.SYNOPSIS',
+			'# 说明',
+			'#>',
+			'. $PSScriptRoot\\a.ps1',
+			'$x = (Get-Foo -Bar `',
+			'\t\t-Baz qux)',
+			'Get-ChildItem |',
+			'Where-Object { $_ }'
+		].join('\n')
+		assert.strictEqual(restoreCarriedIndentation(untouched, untouched, '\t'), untouched)
+
+		// 链中间出现更浅的行说明结构已断开，宁可不猜；不传 indentUnit 时不修正续行链。
+		const broken = ['Get-ChildItem |', 'if ($a) {', '\t\t\tWhere-Object { $_ }', '}'].join('\n')
+		assert.strictEqual(restoreCarriedIndentation(broken, broken, '\t'), broken)
+		assert.strictEqual(restoreCarriedIndentation(tooDeep, tooDeep), tooDeep)
 	})
 
 	test('realigns an else/catch moved onto its own line', () => {

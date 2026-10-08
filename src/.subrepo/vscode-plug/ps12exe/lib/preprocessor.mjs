@@ -334,9 +334,10 @@ export function pickExemptBlock(blocks, totalLines) {
  * 只包含块注释的行会被跳过，但一行上先有代码、再出现 `<# … #>`（例如 `catch { <# ignore #> }`）时不是「块注释行」：它是代码，任何前导空白都必须照常参与 preprocessor 缩进。旧实现只要一行出现 `<#` 就整行跳过，导致这类代码行永远得不到块的缩进层级。
  *
  * @param {string[]} lines - 文档的所有行
+ * @param {boolean[]} [opaqueOut] 可选输出数组，逐行标记该行是否位于块注释或 here-string 文本内部（含起始/终止行本身）
  * @returns {boolean[]} 逐行的跳过标记
  */
-export function computeSkipMask(lines) {
+export function computeSkipMask(lines, opaqueOut) {
 	const skip = new Array(lines.length).fill(false)
 	let hereTerminator = null
 	let inBlockComment = false
@@ -347,6 +348,7 @@ export function computeSkipMask(lines) {
 
 		if (hereTerminator) {
 			skip[i] = true
+			if (opaqueOut) opaqueOut[i] = true
 			// 终止符只需位于行首；PowerShell 允许在同一行紧跟管道或重定向（`"@ *> $null`）。
 			if (trimmed.startsWith(hereTerminator)) hereTerminator = null
 			continue
@@ -354,12 +356,14 @@ export function computeSkipMask(lines) {
 
 		if (inBlockComment) {
 			skip[i] = true
+			if (opaqueOut) opaqueOut[i] = true
 			if (line.includes('#>')) inBlockComment = false
 			continue
 		}
 
 		const here = line.match(/@(["'])\s*$/)
 		if (here) {
+			if (opaqueOut) opaqueOut[i] = true
 			hereTerminator = `${here[1]}@`
 			continue
 		}
@@ -376,7 +380,9 @@ export function computeSkipMask(lines) {
 			if (rest.slice(0, open).trim() !== '') hasCode = true
 			const close = rest.indexOf('#>', open + 2)
 			if (close < 0) {
+				// 块注释从这里开始：本行之外的部分都属于注释文本。
 				inBlockComment = true
+				if (opaqueOut) opaqueOut[i] = true
 				break
 			}
 			rest = rest.slice(close + 2)
@@ -412,7 +418,7 @@ export function indentText(text, options = {}) {
 		if (entry) incompleteStartLines.add(entry.startLine)
 	}
 
-	const isComment = lines.map((line) => /^[\t ]*#/.test(line))
+	const isComment = lines.map(isLineComment)
 	const isCode = lines.map((line, i) => lines[i].trim() !== '' && !skip[i] && !isComment[i])
 	const leading = lines.map(leadingOf)
 
@@ -623,6 +629,107 @@ export function restoreClauseIndentation(text) {
 		const indent = leadingOf(lines[previous])
 		if (clause[1] === indent) continue
 		lines[i] = indent + clause[2]
+	}
+
+	return lines.join(eol)
+}
+
+/**
+ * 修正续行链（管道 / 成员访问）的缩进：链上每一行对齐到「链首语句 + 1 层」。
+ *
+ * `restoreCarriedIndentation` 只会在「内容未变」时保留作者缩进，因此作者少缩进、或者把多行代码粘成一行后再排版时，续行会留在错误层级。
+ * 这一轮把过深的续行收回「链首 + 1 层」；判据只依赖「行首是 `|`/`.`、行尾是 `|`/`.`」这类局部、无歧义的形状，不看 PSSA 的缩进，因此普通块嵌套的缩进仍由官方 formatter 纠正。
+ *
+ * 只在链首与链上各行之间没有更浅的行时才改写（否则说明链中间已经出现了独立语句，宁可不猜）。点源（`. ` 带空格）与 `.SYNOPSIS` 注释帮助不是成员访问，不参与链路。
+ *
+ * @param {string[]} lines - 文档的所有行（原地改写）
+ * @param {string} indentUnit - 缩进单位
+ * @param {boolean[]} opaque - 位于块注释或 here-string 文本内的行（`computeSkipMask` 的第二个输出），不参与
+ * @returns {void}
+ */
+function normalizeContinuationChains(lines, indentUnit, opaque) {
+	let anchor = -1
+	for (let i = 1; i < lines.length; i++) {
+		if (lines[i].trim() === '' || opaque[i]) continue
+		// 下一行是续行，或上一行以续行算符结尾（注释与指令行不算）。反引号续行也算「链接上了」，只是下面不会改写它。
+		const chained = anchor >= 0 && (startsContinuationLine(lines[i]) || (!isLineComment(lines[i - 1]) && /[|.`][\t ]*$/.test(lines[i - 1])))
+		if (!chained) {
+			anchor = i
+			continue
+		}
+		const anchorIndent = leadingOf(lines[anchor])
+		const indent = leadingOf(lines[i])
+		// 链中间出现比链首更浅的行：结构已经断开，不猜。
+		if (indent.length < anchorIndent.length) {
+			anchor = i
+			continue
+		}
+		// 只收回管道 / 成员访问的续行。已经平铺到链首同级的续行不动：PSSA 的 `NoIndentation` 与作者有意的扁平风格都会长成这样，分不清是谁写的，宁可不猜。
+		// 反引号续行的正确层级无法从行本身判定（`$x = (Get-Foo -Bar ` + `\t\t-Baz` 与 `Write-Host ("{0}" -f ` + `\t\t$a` 都一样合法），因此一律不动。
+		const continuable = startsContinuationLine(lines[i]) || /[|.][\t ]*$/.test(lines[i - 1])
+		if (continuable && indent.length > anchorIndent.length + indentUnit.length)
+			lines[i] = anchorIndent + indentUnit + lines[i].slice(indent.length)
+	}
+}
+
+/**
+ * 该行是否是注释（含 preprocessor 指令行：`indentText` 与 `normalizeContinuationChains` 都不按内容把这类行当作代码）。
+ *
+ * @param {string} line - 待判断的行
+ * @returns {boolean} 是注释时为 true
+ */
+function isLineComment(line) {
+	return /^[\t ]*#/.test(line)
+}
+
+/**
+ * 该行是否本身是续行：以 `|` 开头，或以成员访问的 `.` 开头。`. ` 点源（后面的空格使它不是标识符）、`.SYNOPSIS` 注释帮助都不算。
+ *
+ * @param {string} line - 待判断的行
+ * @returns {boolean} 该行本身是续行时为 true
+ */
+function startsContinuationLine(line) {
+	return /^[\t ]*\|/.test(line) || /^[\t ]*\.[A-Z_a-z$]/.test(line)
+}
+
+/**
+ * 把作者写的缩进从 `originalText` 搬回官方 formatter 改动过缩进的那些行，然后修正续行链的缩进深度。
+ *
+ * `PSUseConsistentIndentation` 对不少构造算错层级（管道/成员访问续行被压平、括号里的 scriptblock/hashtable 每层多余一级，见
+ * `restoreParenIndentation` 与 `restoreMarkerIndentation` 记录的上游 issue），而它只重排空白、不改行内容。因此对「内容逐字未变、
+ * 只有缩进不同」的行，作者写在 `originalText` 里的缩进就是期望结果：搬回来即可，不必再逐个构造去猜 formatter 想干什么。
+ *
+ * 只处理逐行内容完全对应的行，任何结构差异（formatter 拆行/合行、改了内容）都跳过；注释与指令行整类跳过，它们的缩进另有出处
+ * （`indentText` 管 `#_if`/`#_else`/`#_endif` 所在的层级，`restoreMarkerIndentation` 管 `#_!!`/`#_balus` 的相对嵌套）。
+ *
+ * 搬回之后再跑一遍 `normalizeContinuationChains`：作者自己多缩进的管道 / 成员访问续行也由此回到「链首 + 1 层」，让格式化仍然能纠正真正写错的续行。
+ *
+ * @param {string} text 已应用 preprocessor 缩进的文本
+ * @param {string} originalText 官方 formatter 之前的文本
+ * @param {string} [indentUnit] 缩进单位；缺省时不修正续行链
+ * @returns {string} 还原作者缩进后的文本
+ */
+export function restoreCarriedIndentation(text, originalText, indentUnit) {
+	if (!originalText) return text
+	const eol = detectEol(text)
+	const lines = splitLines(text)
+	const originalLines = splitLines(originalText)
+
+	for (let i = 0; i < lines.length && i < originalLines.length; i++) {
+		// 注释与指令行的缩进另有出处，见函数文档。
+		if (isLineComment(lines[i])) continue
+		const content = lines[i].trim()
+		if (!content || content !== originalLines[i].trim()) continue
+		const indent = leadingOf(lines[i])
+		const originalIndent = leadingOf(originalLines[i])
+		if (indent === originalIndent) continue
+		lines[i] = originalIndent + lines[i].slice(indent.length)
+	}
+
+	if (indentUnit) {
+		const opaque = new Array(lines.length).fill(false)
+		computeSkipMask(lines, opaque)
+		normalizeContinuationChains(lines, indentUnit, opaque)
 	}
 
 	return lines.join(eol)
